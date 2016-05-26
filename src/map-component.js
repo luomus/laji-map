@@ -6,10 +6,6 @@ import draw from 'leaflet-draw';
 
 import 'proj4leaflet';
 
-import 'leaflet/dist/leaflet.css';
-
-import 'leaflet-draw/dist/leaflet.draw.css';
-
 import MMLWmtsLayer from './mml-wmts-tile-layer.js';
 
 const style = {

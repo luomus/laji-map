@@ -1,40 +1,28 @@
 {
-  "name": "react-hot-boilerplate",
+  "name": "laji-map",
   "version": "1.0.0",
-  "description": "Boilerplate for ReactJS project with hot code reloading",
+  "description": "An importable React component built on Leaflet.draw.",
+  "main": "lib/map-component.js",
   "scripts": {
-    "build": "webpack --progress -p --config webpack.production.js --optimize-minimize",
+    "build": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
     "start": "node server.js",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "install": "npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gaearon/react-hot-boilerplate.git"
+    "url": "https://bitbucket.org/luomus/laji-map.js"
   },
   "keywords": [
-    "react",
-    "reactjs",
-    "boilerplate",
-    "hot",
-    "reload",
-    "hmr",
-    "live",
-    "edit",
-    "webpack"
+    "leaflet",
+    "leaflet.draw",
+    "laji-map",
+    "luomus"
   ],
-  "author": "Dan Abramov <dan.abramov@me.com> (http://github.com/gaearon)",
+  "author": "Kalle Myllymaa <kalle.myllymaa@helsinki.fi>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/gaearon/react-hot-boilerplate/issues"
-  },
-  "homepage": "https://github.com/gaearon/react-hot-boilerplate",
   "devDependencies": {
-    "babel-core": "*",
     "babel-eslint": "*",
-    "babel-loader": "*",
-    "babel-preset-es2015": "*",
-    "babel-preset-react": "*",
-    "babel-preset-stage-0": "*",
     "css-loader": "^0.23.1",
     "eslint": "*",
     "eslint-plugin-react": "*",
@@ -42,14 +30,21 @@
     "react-hot-loader": "*",
     "style-loader": "^0.13.1",
     "url-loader": "^0.5.7",
-    "webpack": "*",
+	  "webpack": "*",
     "webpack-dev-server": "*"
   },
   "dependencies": {
+    "babel-cli": "^6.9.0",
+    "babel-core": "*",
+    "babel-loader": "*",
+    "babel-preset-es2015": "*",
+    "babel-preset-react": "*",
+    "babel-preset-stage-0": "*",
     "leaflet": "^0.7.7",
     "leaflet-draw": "^0.3.0",
     "proj4leaflet": "^0.7.2",
     "react": "*",
-    "react-dom": "*"
+    "react-dom": "*",
+    "rimraf": "^2.5.2"
   }
 }

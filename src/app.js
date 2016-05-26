@@ -2,6 +2,8 @@ import React, { Component, PropTypes } from 'react';
 
 import MapComponent from './map-component';
 
+import './styles.js';
+
 const style = {
   map: {
     width: '800px',

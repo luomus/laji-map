@@ -1,12 +1,9 @@
 import React, { Component } from 'react';
 
-import { map, Proj, Control, FeatureGroup, geoJson, Path } from 'leaflet';
-
-import draw from 'leaflet-draw';
-
-import 'proj4leaflet';
-
-import MMLWmtsLayer from './mml-wmts-tile-layer.js';
+// These are imported at componentDidMount, so they won't be imported on server side rendering.
+let L;
+let map, Control, FeatureGroup, geoJson, Path;
+let draw;
 
 const style = {
   map: {
@@ -22,45 +19,14 @@ export default class MapComponent extends Component {
   }
 
   componentDidMount() {
-    L.Icon.Default.imagePath = 'http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images';
+	  L = require('leaflet');
+	  ({ map, Control, FeatureGroup, geoJson, Path } = L);
+	  draw = require('leaflet-draw');
+		require('proj4leaflet');
+	  require('./lib/Leaflet.MML-layers/mmlLayers.js');
 
     this.map = map(this.refs.map, {
-      crs: new Proj.CRS.TMS('EPSG:3067',
-      '+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
-      [
-        -548576,
-        6291456,
-        1548576,
-        8388608
-      ],
-      {
-        origin: [
-          0,
-          0
-        ],
-        resolutions: [
-          8192,
-          4096,
-          2048,
-          1024,
-          512,
-          256,
-          128,
-          64,
-          32,
-          16,
-          8,
-          4,
-          2,
-          1,
-          0.5,
-          0.25,
-          0.125,
-          0.0625,
-          0.03125,
-          0.015625,
-        ]
-      }),
+	    crs: L.TileLayer.MML.get3067Proj()
     });
 
     this.map.setView([
@@ -68,7 +34,7 @@ export default class MapComponent extends Component {
       this.props.latitude || 24.9419917
     ], this.props.zoom || 10);
 
-    const layer = new MMLWmtsLayer({
+    const layer = L.tileLayer.mml_wmts({
       layer: 'maastokartta',
     });
 

@@ -22,6 +22,8 @@ export default class MapComponent extends Component {
   }
 
   componentDidMount() {
+    L.Icon.Default.imagePath = 'http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images';
+
     this.map = map(this.refs.map, {
       crs: new Proj.CRS.TMS('EPSG:3067',
       '+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
@@ -73,66 +75,91 @@ export default class MapComponent extends Component {
     this.map.addLayer(layer);
 
     // Initialise the FeatureGroup to store editable layers
-    const drawnItems = this.props.data ? geoJson(this.props.data) : new FeatureGroup();
+    this.drawnItems = geoJson(this.props.data);
 
-    this.map.addLayer(drawnItems);
+    let ids = [];
+    this.drawnItems.eachLayer(layer => {
+      ids.push(layer._leaflet_id);
+      this.initializeFeatureLayer(layer)
+    });
+    if (this.props.getInitialIds) this.props.getInitialIds(ids);
+
+    this.map.addLayer(this.drawnItems);
 
     // Initialise the draw control and pass it the FeatureGroup of editable layers
     const drawControl = new Control.Draw({
       position: 'topright',
       draw: {
-        marker: false,
+        circle: false
       },
       edit: {
-        featureGroup: drawnItems
+        featureGroup: this.drawnItems
       }
     });
 
     this.map.addControl(drawControl);
 
+    function layersToIds(layers) {
+      return Object.keys(layers._layers).map( id => { return parseInt(id); });
+    }
+
     this.map.on('draw:created', e => {
 
       const { layer, layerType } = e;
 
-      const { options } = new Path();
+      this.initializeFeatureLayer(layer);
 
-      layer.setStyle(options);
+      if (layerType !== 'marker') {
+        const { options } = new Path();
+        layer.setStyle(options);
+      }
 
       // Do whatever else you need to. (save to db, add to map etc)
-      drawnItems.addLayer(layer);
+      this.drawnItems.addLayer(layer);
 
+      let id = layer._leaflet_id;
       if(this.props.onChange) {
         this.props.onChange({
           type: 'create',
-          data: drawnItems.toGeoJSON(),
+          id: id,
+          data: layer.toGeoJSON()
         });
       }
 
-      drawnItems.resetStyle();
+      this.drawnItems.resetStyle();
     });
 
     this.map.on('draw:edited', e => {
+      const { layers, layerType } = e;
 
-      const { layer, layerType } = e;
+      let data = {};
+      Object.keys(layers._layers).map(id => {
+        data[id] = layers._layers[id].toGeoJSON();
+      });
 
       if(this.props.onChange) {
         this.props.onChange({
           type: 'edit',
-          data: drawnItems.toGeoJSON(),
+          data: data
         });
       }
     });
 
     this.map.on('draw:deleted', e => {
-
-      const { layer, layerType } = e;
+      const { layers, layerType } = e;
 
       if(this.props.onChange) {
         this.props.onChange({
           type: 'delete',
-          data: drawnItems.toGeoJSON(),
+          ids: layersToIds(layers)
         });
       }
+    });
+  }
+
+  initializeFeatureLayer = (layer)  => {
+    layer.on('click', () => {
+      if (this.props.onFeatureClick) this.props.onFeatureClick(layer._leaflet_id);
     });
   }
 
@@ -143,7 +170,7 @@ export default class MapComponent extends Component {
 
   render() {
     return (
-      <div ref="map" style={ style.map } />
+      <div ref='map' style={ style.map } />
     );
   }
 

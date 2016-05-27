@@ -16,7 +16,7 @@ const data = '{"type":"FeatureCollection","features":[{"type":"Feature","propert
 class App extends Component {
 
   handleChange(e) {
-    console.log(e.type, JSON.stringify(e.data));
+    console.log(JSON.stringify(e));
   }
 
   render () {

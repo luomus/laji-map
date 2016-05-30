@@ -25,6 +25,8 @@ export default class MapComponent extends Component {
 		require('proj4leaflet');
 	  require('./lib/Leaflet.MML-layers/mmlLayers.js');
 
+	  L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
+
     this.map = map(this.refs.map, {
 	    crs: L.TileLayer.MML.get3067Proj()
     });

@@ -7,7 +7,7 @@ let draw;
 
 const style = {
   map: {
-    height: '100%',
+    height: '100%'
   },
 };
 
@@ -15,10 +15,57 @@ export default class MapComponent extends Component {
   constructor(props) {
     super(props);
     this.map = null;
-    this.layer = null;
+    this.data = undefined;
+		this.activeId = 0;
+    this.updateFromProps(props)
+  }
+  
+  componentWillReceiveProps(props) {
+    this.updateFromProps(props)
+  }
+  
+  updateFromProps(props) {
+    this.data = props.data;
+		if (this.activateAfterUpdate !== undefined) {
+			this.activeId = this.activateAfterUpdate;
+			this.activateAfterUpdate = undefined;
+		}
+    if (this.mounted) this.redrawFeatures();
+    else this.shouldUpdateAfterMount = true;
   }
 
+  redrawFeatures() {
+    if (!this.mounted) throw "map wasn't mounted";
+
+    let drawnItems = geoJson(this.data);
+
+    this.drawnItems.clearLayers();
+    
+    this.idsToLeafletIds = {};
+    this.leafletIdsToIds = {};
+    
+    let id = 0;
+    drawnItems.eachLayer(layer => {
+      this.idsToLeafletIds[id] = layer._leaflet_id;
+      this.leafletIdsToIds[layer._leaflet_id] = id;
+			
+			let j = id;
+      layer.on('click', () => {
+				if (this.preventActivatingByClick) return;
+        this.onActiveChanged(j);
+      });
+			
+			this.setOpacity(layer);
+      this.drawnItems.addLayer(layer);
+      id++;
+    });
+  }
+	
+	updateFeatures = () => this.drawnItems.eachLayer(this.setOpacity);
+
   componentDidMount() {
+    this.mounted = true;
+    
 	  L = require('leaflet');
 	  ({ map, Control, FeatureGroup, geoJson, Path } = L);
 	  draw = require('leaflet-draw');
@@ -41,18 +88,10 @@ export default class MapComponent extends Component {
     });
 
     this.map.addLayer(layer);
-
-    // Initialise the FeatureGroup to store editable layers
-    this.drawnItems = geoJson(this.props.data);
-
-    let ids = [];
-    this.drawnItems.eachLayer(layer => {
-      ids.push(layer._leaflet_id);
-      this.initializeFeatureLayer(layer)
-    });
-    if (this.props.getInitialIds) this.props.getInitialIds(ids);
-
+    
+    this.drawnItems = geoJson();
     this.map.addLayer(this.drawnItems);
+    if (this.shouldUpdateAfterMount) this.redrawFeatures();
 
     // Initialise the draw control and pass it the FeatureGroup of editable layers
     const drawControl = new Control.Draw({
@@ -67,73 +106,105 @@ export default class MapComponent extends Component {
 
     this.map.addControl(drawControl);
 
-    function layersToIds(layers) {
-      return Object.keys(layers._layers).map( id => { return parseInt(id); });
-    }
+    this.map.on('draw:created', this.onAdd);
+    this.map.on('draw:edited', this.onEdit);
+    this.map.on('draw:deleted', this.onDelete);
+		
+		['deletestart', 'editstart'].forEach(start => this.map.on('draw:' + start, e => {
+			this.preventActivatingByClick = true;
+		}));
+		['deletestop', 'editstop'].forEach(stop => this.map.on('draw:' + stop, e => {
+			this.preventActivatingByClick = false;
+		}));
+  }
+	
+	onChange = change => {
+		if (this.props.onChange) this.props.onChange(change);
+	}
 
-    this.map.on('draw:created', e => {
+  onAdd = e => {
+    const { layer } = e;
 
-      const { layer, layerType } = e;
+		this.activateAfterUpdate = this.data.length;
+    this.onChange({
+			type: 'create',
+			data: layer.toGeoJSON()
+		});
+  };
 
-      this.initializeFeatureLayer(layer);
+  onEdit = e => {
+		const { layers } = e;
 
-      if (layerType !== 'marker') {
-        const { options } = new Path();
-        layer.setStyle(options);
-      }
+		let data = {};
+		Object.keys(layers._layers).map(id => {
+      data[this.leafletIdsToIds[id]] = layers._layers[id].toGeoJSON();
+		});
 
-      // Do whatever else you need to. (save to db, add to map etc)
-      this.drawnItems.addLayer(layer);
-
-      let id = layer._leaflet_id;
-      if(this.props.onChange) {
-        this.props.onChange({
-          type: 'create',
-          id: id,
-          data: layer.toGeoJSON()
-        });
-      }
-
-      this.drawnItems.resetStyle();
-    });
-
-    this.map.on('draw:edited', e => {
-      const { layers, layerType } = e;
-
-      let data = {};
-      Object.keys(layers._layers).map(id => {
-        data[id] = layers._layers[id].toGeoJSON();
-      });
-
-      if(this.props.onChange) {
-        this.props.onChange({
-          type: 'edit',
-          data: data
-        });
-      }
-    });
-
-    this.map.on('draw:deleted', e => {
-      const { layers, layerType } = e;
-
-      if(this.props.onChange) {
-        this.props.onChange({
-          type: 'delete',
-          ids: layersToIds(layers)
-        });
-      }
-    });
+    this.onChange({
+			type: 'edit',
+			data: data
+		});
   }
 
-  initializeFeatureLayer = (layer)  => {
-    layer.on('click', () => {
-      if (this.props.onFeatureClick) this.props.onFeatureClick(layer._leaflet_id);
-    });
+	onDelete = e => {
+		const { layers } = e;
+
+		const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
+
+		if (this.activeId !== undefined && ids.includes(this.activeId)) {
+			let newActiveId = undefined;
+			if (this.activeId === 0 && ids.length != this.data.length) newActiveId = 0;
+			else {
+				newActiveId = this.activeId;
+				let idxOfActive = ids.indexOf(this.activeId);
+				for (let idx = idxOfActive; idx >= 0; idx--) {
+					if (ids[idx] <= this.activeId) newActiveId--;
+				}
+				if (newActiveId === -1) newActiveId = 0;
+			}
+			this.activateAfterUpdate = newActiveId;
+		} else if (this.activeId) {
+			let newActiveId = this.activeId;
+			ids.forEach(id => {
+				if (id < newActiveId) newActiveId--;
+			})
+			if (newActiveId !== this.activeId) this.activateAfterUpdate = newActiveId;
+		}
+
+		this.onChange({
+			type: 'delete',
+			ids: ids
+		});
+	}
+
+  onActiveChanged = id => {
+    if (id === undefined) {
+			this.activeId = id;
+			return;
+		}
+		
+		let layer = this.drawnItems._layers[this.idsToLeafletIds[id]];
+    if (!layer) return;
+
+    if (layer instanceof L.Marker) {
+      this.map.setView(layer.getLatLng());
+    } else  {
+      this.map.fitBounds(layer.getBounds());
+    }
+    
+		this.activeId = id;
+		this.updateFeatures();
+		
+		this.onChange({
+			type: 'active',
+			id: id
+		});
   }
 
   componentWillUnmount() {
     this.map.off();
     this.map = null;
+    this.mounted = false;
   }
 
   render() {
@@ -141,5 +212,26 @@ export default class MapComponent extends Component {
       <div ref='map' style={ style.map } />
     );
   }
+	
+	setOpacity = layer => {
+		let id = this.leafletIdsToIds[layer._leaflet_id];
+
+		let opacitySubtract = 0.4;
+
+		if (layer instanceof L.Marker) {
+			let opacity = 1;
+			if (this.activeId !== id) opacity -= opacitySubtract;
+			layer.setOpacity(opacity)
+		} else {
+			let options = new Path().options;
+			let opacity = 1;
+			let fillOpacity = options.fillOpacity;
+			if (this.activeId !== id) {
+				opacity -= opacitySubtract;
+				fillOpacity = 0.1;
+			}
+			layer.setStyle({opacity, fillOpacity});
+		}
+	}
 
 }

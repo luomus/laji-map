@@ -7,27 +7,51 @@ import './styles.js';
 const style = {
   map: {
     width: '800px',
-    height: '600px',
+    height: '600px'
   }
 }
 
-const data = '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[24.94117255463528,60.17994558364109],[24.94743538755845,60.17436615002091]]}}]}'
-
 class App extends Component {
 
-  handleChange(e) {
-    console.log(JSON.stringify(e));
+  constructor(props) {
+    super(props);
+    this.state = {};
+    this.state.data = [
+      {"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.19795098463816,60.47883388654405]}},
+      {"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}}
+    ]
+  }
+
+  onMapChange = (e) => {
+    let data = this.state.data;
+    console.log(e);
+    switch (e.type) {
+      case "create":
+        data.push(e.data);
+        this.setState({data});
+        break;
+      case "delete":
+        data = this.state.data.filter((item, i) => !e.ids.includes(i));
+        this.setState({data});
+        break;
+      case "edit":
+        for (let idx in e.data) {
+          data[idx] = e.data[idx];
+        }
+        this.setState({data});
+        break;
+    }
   }
 
   render () {
     return (
       <div style={style.map}>
         <MapComponent
-          data={JSON.parse(data)}
+          data={this.state.data}
           longitude={60.4353462}
           latitude={22.2285623}
           zoom={6}
-          onChange={this.handleChange.bind(this)} />
+          onChange={this.onMapChange} />
       </div>
     );
   }

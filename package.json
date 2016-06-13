@@ -30,7 +30,7 @@
     "react-hot-loader": "*",
     "style-loader": "^0.13.1",
     "url-loader": "^0.5.7",
-	  "webpack": "*",
+    "webpack": "*",
     "webpack-dev-server": "*"
   },
   "dependencies": {

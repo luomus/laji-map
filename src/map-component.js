@@ -16,7 +16,7 @@ export default class MapComponent extends Component {
     super(props);
     this.map = null;
     this.data = undefined;
-		this.activeId = undefined;
+    this.activeId = undefined;
     this.updateFromProps(props)
   }
   
@@ -24,26 +24,26 @@ export default class MapComponent extends Component {
     this.updateFromProps(props)
   }
 
-	componentWillUnmount() {
-		this.map.off();
-		this.map = null;
-		this.mounted = false;
-	}
+  componentWillUnmount() {
+    this.map.off();
+    this.map = null;
+    this.mounted = false;
+  }
 
-	render() {
-		return (
-			<div ref='map' style={ style.map } />
-		);
-	}
+  render() {
+    return (
+      <div ref='map' style={ style.map } />
+    );
+  }
 
   updateFromProps(props) {
     this.data = props.data;
-	  this.activeId = props.activeId;
-		if (this.activateAfterUpdate !== undefined) {
-			//this.activeId = this.activateAfterUpdate;
-			this.setActive(this.activateAfterUpdate);
-			this.activateAfterUpdate = undefined;
-		}
+    this.activeId = props.activeId;
+    if (this.activateAfterUpdate !== undefined) {
+      //this.activeId = this.activateAfterUpdate;
+      this.setActive(this.activateAfterUpdate);
+      this.activateAfterUpdate = undefined;
+    }
     if (this.mounted) this.redrawFeatures();
     else this.shouldUpdateAfterMount = true;
   }
@@ -62,32 +62,32 @@ export default class MapComponent extends Component {
     drawnItems.eachLayer(layer => {
       this.idsToLeafletIds[id] = layer._leaflet_id;
       this.leafletIdsToIds[layer._leaflet_id] = id;
-			
-			let j = id;
+
+      let j = id;
       layer.on('click', () => {
-				if (this.preventActivatingByClick) return;
+        if (this.preventActivatingByClick) return;
         this.focusToLayer(j);
       });
-			
-			this.setOpacity(layer);
+
+      this.setOpacity(layer);
       this.drawnItems.addLayer(layer);
       id++;
     });
   }
-	
+
   componentDidMount() {
     this.mounted = true;
     
-	  L = require('leaflet');
-	  ({ map, Control, FeatureGroup, geoJson, Path } = L);
-	  draw = require('leaflet-draw');
-		require('proj4leaflet');
-	  require('./lib/Leaflet.MML-layers/mmlLayers.js');
+    L = require('leaflet');
+    ({ map, Control, FeatureGroup, geoJson, Path } = L);
+    draw = require('leaflet-draw');
+    require('proj4leaflet');
+    require('./lib/Leaflet.MML-layers/mmlLayers.js');
 
-	  L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
+    L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
     this.map = map(this.refs.map, {
-	    crs: L.TileLayer.MML.get3067Proj()
+      crs: L.TileLayer.MML.get3067Proj()
     });
 
     this.map.setView([
@@ -121,91 +121,91 @@ export default class MapComponent extends Component {
     this.map.on('draw:created', this.onAdd);
     this.map.on('draw:edited', this.onEdit);
     this.map.on('draw:deleted', this.onDelete);
-		
-		['deletestart', 'editstart'].forEach(start => this.map.on('draw:' + start, e => {
-			this.preventActivatingByClick = true;
-		}));
-		['deletestop', 'editstop'].forEach(stop => this.map.on('draw:' + stop, e => {
-			this.preventActivatingByClick = false;
-		}));
+
+    ['deletestart', 'editstart'].forEach(start => this.map.on('draw:' + start, e => {
+      this.preventActivatingByClick = true;
+    }));
+    ['deletestop', 'editstop'].forEach(stop => this.map.on('draw:' + stop, e => {
+      this.preventActivatingByClick = false;
+    }));
   }
-	
-	onChange = change => {
-		if (this.props.onChange) this.props.onChange(change);
-	}
+
+  onChange = change => {
+    if (this.props.onChange) this.props.onChange(change);
+  }
 
   onAdd = e => {
     const { layer } = e;
 
-	  this.activateAfterUpdate = this.data.length;
+    this.activateAfterUpdate = this.data.length;
     this.onChange({
-			type: 'create',
-			data: layer.toGeoJSON()
-		});
+      type: 'create',
+      data: layer.toGeoJSON()
+    });
   };
 
   onEdit = e => {
-		const { layers } = e;
+    const { layers } = e;
 
-		let data = {};
-		Object.keys(layers._layers).map(id => {
+    let data = {};
+    Object.keys(layers._layers).map(id => {
       data[this.leafletIdsToIds[id]] = layers._layers[id].toGeoJSON();
-		});
+    });
 
     this.onChange({
-			type: 'edit',
-			data: data
-		});
+      type: 'edit',
+      data: data
+    });
   }
 
-	onDelete = e => {
-		const { layers } = e;
+  onDelete = e => {
+    const { layers } = e;
 
-		const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
+    const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
 
-		if (this.data && this.data.filter((item, id) => !ids.includes(id)).length === 0) {
-			this.setActive(undefined)
-		} else if (this.activeId !== undefined && ids.includes(this.activeId)) {
-			let newActiveId = undefined;
-			if (this.activeId === 0 && ids.length != this.data.length) newActiveId = 0;
-			else {
-				newActiveId = this.activeId;
-				let idxOfActive = ids.indexOf(this.activeId);
-				for (let idx = idxOfActive; idx >= 0; idx--) {
-					if (ids[idx] <= this.activeId) newActiveId--;
-				}
-				if (newActiveId === -1) newActiveId = 0;
-			}
-			this.setActive(newActiveId);
+    if (this.data && this.data.filter((item, id) => !ids.includes(id)).length === 0) {
+      this.setActive(undefined)
+    } else if (this.activeId !== undefined && ids.includes(this.activeId)) {
+      let newActiveId = undefined;
+      if (this.activeId === 0 && ids.length != this.data.length) newActiveId = 0;
+      else {
+        newActiveId = this.activeId;
+        let idxOfActive = ids.indexOf(this.activeId);
+        for (let idx = idxOfActive; idx >= 0; idx--) {
+          if (ids[idx] <= this.activeId) newActiveId--;
+        }
+        if (newActiveId === -1) newActiveId = 0;
+      }
+      this.setActive(newActiveId);
 
-		} else if (this.activeId) {
-			let newActiveId = this.activeId;
-			ids.forEach(id => {
-				if (id < newActiveId) newActiveId--;
-			})
-			if (newActiveId !== this.activeId) this.setActive(newActiveId);
-		}
+    } else if (this.activeId) {
+      let newActiveId = this.activeId;
+      ids.forEach(id => {
+        if (id < newActiveId) newActiveId--;
+      })
+      if (newActiveId !== this.activeId) this.setActive(newActiveId);
+    }
 
-		this.onChange({
-			type: 'delete',
-			ids: ids
-		});
-	}
+    this.onChange({
+      type: 'delete',
+      ids: ids
+    });
+  }
 
-	setActive = id => {
-		this.onChange({
-			type: 'active',
-			id: id
-		});
-	}
+  setActive = id => {
+    this.onChange({
+      type: 'active',
+      id: id
+    });
+  }
 
   focusToLayer = id => {
     if (id === undefined) {
-			this.activeId = id;
-			return;
-		}
-		
-		let layer = this.drawnItems._layers[this.idsToLeafletIds[id]];
+      this.activeId = id;
+      return;
+    }
+
+    let layer = this.drawnItems._layers[this.idsToLeafletIds[id]];
     if (!layer) return;
 
     if (layer instanceof L.Marker) {
@@ -214,29 +214,29 @@ export default class MapComponent extends Component {
       this.map.fitBounds(layer.getBounds());
     }
 
-	  this.setActive(id);
+    this.setActive(id);
   }
 
 
-	setOpacity = layer => {
-		let id = this.leafletIdsToIds[layer._leaflet_id];
+  setOpacity = layer => {
+    let id = this.leafletIdsToIds[layer._leaflet_id];
 
-		let opacitySubtract = 0.4;
+    let opacitySubtract = 0.4;
 
-		if (layer instanceof L.Marker) {
-			let opacity = 1;
-			if (this.activeId !== id) opacity -= opacitySubtract;
-			layer.setOpacity(opacity)
-		} else {
-			let options = new Path().options;
-			let opacity = 1;
-			let fillOpacity = options.fillOpacity;
-			if (this.activeId !== id) {
-				opacity -= opacitySubtract;
-				fillOpacity = 0.1;
-			}
-			layer.setStyle({opacity, fillOpacity});
-		}
-	}
+    if (layer instanceof L.Marker) {
+      let opacity = 1;
+      if (this.activeId !== id) opacity -= opacitySubtract;
+      layer.setOpacity(opacity)
+    } else {
+      let options = new Path().options;
+      let opacity = 1;
+      let fillOpacity = options.fillOpacity;
+      if (this.activeId !== id) {
+        opacity -= opacitySubtract;
+        fillOpacity = 0.1;
+      }
+      layer.setStyle({opacity, fillOpacity});
+    }
+  }
 
 }

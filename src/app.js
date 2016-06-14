@@ -20,7 +20,7 @@ class App extends Component {
       {"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.19795098463816,60.47883388654405]}},
       {"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}}
     ]
-	  this.state.activeId = 0;
+    this.state.activeId = 0;
   }
 
   onMapChange = (e) => {
@@ -41,8 +41,8 @@ class App extends Component {
         }
         this.setState({data});
         break;
-	    case "active":
-		    this.setState({activeId: e.id})
+      case "active":
+        this.setState({activeId: e.id})
     }
   }
 

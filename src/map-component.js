@@ -163,7 +163,9 @@ export default class MapComponent extends Component {
 
 		const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
 
-		if (this.activeId !== undefined && ids.includes(this.activeId)) {
+		if (this.data && this.data.filter((item, id) => !ids.includes(id)).length === 0) {
+			this.setActive(undefined)
+		} else if (this.activeId !== undefined && ids.includes(this.activeId)) {
 			let newActiveId = undefined;
 			if (this.activeId === 0 && ids.length != this.data.length) newActiveId = 0;
 			else {

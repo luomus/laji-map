@@ -16,18 +16,32 @@ export default class MapComponent extends Component {
     super(props);
     this.map = null;
     this.data = undefined;
-		this.activeId = 0;
+		this.activeId = undefined;
     this.updateFromProps(props)
   }
   
   componentWillReceiveProps(props) {
     this.updateFromProps(props)
   }
-  
+
+	componentWillUnmount() {
+		this.map.off();
+		this.map = null;
+		this.mounted = false;
+	}
+
+	render() {
+		return (
+			<div ref='map' style={ style.map } />
+		);
+	}
+
   updateFromProps(props) {
     this.data = props.data;
+	  this.activeId = props.activeId;
 		if (this.activateAfterUpdate !== undefined) {
-			this.activeId = this.activateAfterUpdate;
+			//this.activeId = this.activateAfterUpdate;
+			this.setActive(this.activateAfterUpdate);
 			this.activateAfterUpdate = undefined;
 		}
     if (this.mounted) this.redrawFeatures();
@@ -52,7 +66,7 @@ export default class MapComponent extends Component {
 			let j = id;
       layer.on('click', () => {
 				if (this.preventActivatingByClick) return;
-        this.onActiveChanged(j);
+        this.focusToLayer(j);
       });
 			
 			this.setOpacity(layer);
@@ -61,8 +75,6 @@ export default class MapComponent extends Component {
     });
   }
 	
-	updateFeatures = () => this.drawnItems.eachLayer(this.setOpacity);
-
   componentDidMount() {
     this.mounted = true;
     
@@ -125,7 +137,7 @@ export default class MapComponent extends Component {
   onAdd = e => {
     const { layer } = e;
 
-		this.activateAfterUpdate = this.data.length;
+	  this.activateAfterUpdate = this.data.length;
     this.onChange({
 			type: 'create',
 			data: layer.toGeoJSON()
@@ -162,13 +174,14 @@ export default class MapComponent extends Component {
 				}
 				if (newActiveId === -1) newActiveId = 0;
 			}
-			this.activateAfterUpdate = newActiveId;
+			this.setActive(newActiveId);
+
 		} else if (this.activeId) {
 			let newActiveId = this.activeId;
 			ids.forEach(id => {
 				if (id < newActiveId) newActiveId--;
 			})
-			if (newActiveId !== this.activeId) this.activateAfterUpdate = newActiveId;
+			if (newActiveId !== this.activeId) this.setActive(newActiveId);
 		}
 
 		this.onChange({
@@ -177,7 +190,14 @@ export default class MapComponent extends Component {
 		});
 	}
 
-  onActiveChanged = id => {
+	setActive = id => {
+		this.onChange({
+			type: 'active',
+			id: id
+		});
+	}
+
+  focusToLayer = id => {
     if (id === undefined) {
 			this.activeId = id;
 			return;
@@ -191,28 +211,11 @@ export default class MapComponent extends Component {
     } else  {
       this.map.fitBounds(layer.getBounds());
     }
-    
-		this.activeId = id;
-		this.updateFeatures();
-		
-		this.onChange({
-			type: 'active',
-			id: id
-		});
+
+	  this.setActive(id);
   }
 
-  componentWillUnmount() {
-    this.map.off();
-    this.map = null;
-    this.mounted = false;
-  }
 
-  render() {
-    return (
-      <div ref='map' style={ style.map } />
-    );
-  }
-	
 	setOpacity = layer => {
 		let id = this.leafletIdsToIds[layer._leaflet_id];
 

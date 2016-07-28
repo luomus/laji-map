@@ -105,6 +105,10 @@ export default class MapComponent extends Component {
     this.map.addLayer(this.drawnItems);
     if (this.shouldUpdateAfterMount) this.redrawFeatures();
 
+    this.map.on('click', (e) => {
+      this.onAdd({layer: new L.marker(e.latlng)});
+    });
+
     // Initialise the draw control and pass it the FeatureGroup of editable layers
     const drawControl = new Control.Draw({
       position: 'topright',

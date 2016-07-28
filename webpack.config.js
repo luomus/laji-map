@@ -14,7 +14,8 @@ module.exports = {
     publicPath: '/static/'
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin()
+    new webpack.HotModuleReplacementPlugin(),
+    new webpack.IgnorePlugin(/^(buffertools)$/), // unwanted "deeper" dependency
   ],
   module: {
     loaders: [

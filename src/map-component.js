@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import deepEquals from "deeper";
 
 // These are imported at componentDidMount, so they won't be imported on server side rendering.
 let L;
@@ -37,7 +38,8 @@ export default class MapComponent extends Component {
   }
 
   updateFromProps(props) {
-    this.data = props.data;
+    this.prevData = this.data ? this.data.slice(0) : undefined;
+    this.data = props.data.slice(0);
     this.activeId = props.activeId;
     if (this.activateAfterUpdate !== undefined) {
       //this.activeId = this.activateAfterUpdate;
@@ -51,9 +53,11 @@ export default class MapComponent extends Component {
   redrawFeatures() {
     if (!this.mounted) throw "map wasn't mounted";
 
-    let drawnItems = geoJson(this.data);
+    const shouldResetLayers = (!this.prevData && this.data || this.prevData.length !== this.data.length || !deepEquals(this.prevData, this.data));
 
-    this.drawnItems.clearLayers();
+    let drawnItems = shouldResetLayers ? geoJson(this.data) : this.drawnItems;
+
+    if (shouldResetLayers) this.drawnItems.clearLayers();
     
     this.idsToLeafletIds = {};
     this.leafletIdsToIds = {};
@@ -63,14 +67,20 @@ export default class MapComponent extends Component {
       this.idsToLeafletIds[id] = layer._leaflet_id;
       this.leafletIdsToIds[layer._leaflet_id] = id;
 
-      let j = id;
-      layer.on('click', () => {
-        if (this.preventActivatingByClick) return;
-        this.focusToLayer(j);
-      });
+      if (shouldResetLayers) {
+				let j = id;
+				layer.on('click', () => {
+					if (this.preventActivatingByClick) return;
+					this.setActive(j);
+				});
+        layer.on('dblclick', () => {
+          this.layerBeingEdited = layer;
+          layer.editing.enable();
+        })
+			}
 
       this.setOpacity(layer);
-      this.drawnItems.addLayer(layer);
+      if (shouldResetLayers) this.drawnItems.addLayer(layer);
       id++;
     });
   }
@@ -106,7 +116,13 @@ export default class MapComponent extends Component {
     if (this.shouldUpdateAfterMount) this.redrawFeatures();
 
     this.map.on('click', (e) => {
-      this.onAdd({layer: new L.marker(e.latlng)});
+      if (this.layerBeingEdited) {
+        this.layerBeingEdited.editing.disable();
+        this.onEdit({layers: {_layers: {[this.layerBeingEdited._leaflet_id]: this.layerBeingEdited}}});
+        this.layerBeingEdited = undefined;
+      } else {
+				this.onAdd({layer: new L.marker(e.latlng)});
+			}
     });
 
     // Initialise the draw control and pass it the FeatureGroup of editable layers
@@ -138,9 +154,7 @@ export default class MapComponent extends Component {
     if (this.props.onChange) this.props.onChange(change);
   }
 
-  onAdd = e => {
-    const { layer } = e;
-
+  onAdd = ({ layer }) => {
     this.activateAfterUpdate = this.data.length;
     this.onChange({
       type: 'create',
@@ -148,9 +162,7 @@ export default class MapComponent extends Component {
     });
   };
 
-  onEdit = e => {
-    const { layers } = e;
-
+  onEdit = ({ layers }) => {
     let data = {};
     Object.keys(layers._layers).map(id => {
       data[this.leafletIdsToIds[id]] = layers._layers[id].toGeoJSON();
@@ -162,9 +174,7 @@ export default class MapComponent extends Component {
     });
   }
 
-  onDelete = e => {
-    const { layers } = e;
-
+  onDelete = ({ layers }) => {
     const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
 
     if (this.data && this.data.filter((item, id) => !ids.includes(id)).length === 0) {

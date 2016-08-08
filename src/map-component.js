@@ -72,29 +72,29 @@ export default class MapComponent extends Component {
       this.leafletIdsToIds[layer._leaflet_id] = id;
 
       if (shouldResetLayers) {
-        let j = id;
+	      let j = id;
 
-        layer.on('click', () => {
-          if (!this.interceptClick()) this.setActive(j);
-        });
+	      layer.on('click', () => {
+		      if (!this.interceptClick()) this.setActive(j);
+	      });
+	      layer.on('dblclick', () => this.setEditable(j));
 
-        layer.on('dblclick', () => this.setEditable(j));
-
-        layer.bindContextMenu({
-          contextmenuItems: [{
-            text: 'Edit feature',
-            callback: () => this.setEditable(j)
-          }, {
-            text: 'Remove feature',
-            callback: () => this.onDelete({layers: {_layers: {[layer._leaflet_id]: layer}}})
-          }]
-        });
+	      layer.bindContextMenu({
+		      contextmenuItems: [{
+			      text: 'Edit feature',
+			      callback: () => this.setEditable(j)
+		      }, {
+			      text: 'Remove feature',
+			      callback: () => this.onDelete({layers: {_layers: {[layer._leaflet_id]: layer}}})
+		      }]
+	      });
       }
 
       this.setOpacity(layer);
       if (shouldResetLayers) this.drawnItems.addLayer(layer);
       id++;
     });
+
   }
 
   componentDidMount() {
@@ -120,11 +120,11 @@ export default class MapComponent extends Component {
       this.props.latitude || 24.9419917
     ], this.props.zoom || 10);
 
-    const layer = L.tileLayer.mml_wmts({
+    const tileLayer = L.tileLayer.mml_wmts({
       layer: 'maastokartta'
     });
 
-    this.map.addLayer(layer);
+    this.map.addLayer(tileLayer);
     
     this.drawnItems = geoJson();
     this.map.addLayer(this.drawnItems);
@@ -152,8 +152,6 @@ export default class MapComponent extends Component {
       this.onAdd({layer: new L.marker(e.latlng)});
     });
     this.map.on('draw:created', this.onAdd);
-    this.map.on('draw:edited', this.onEdit);
-    this.map.on('draw:deleted', this.onDelete);
   }
 
   getLayerById = id => {
@@ -252,7 +250,7 @@ export default class MapComponent extends Component {
   }
 
   commitEdit = () => {
-    this.onEdit({layers: {_layers: {[this.leafletIdsToIds[this.editId]]: this.getLayerById(this.editId)}}});
+    this.onEdit({layers: {_layers: {[this.idsToLeafletIds[this.editId]]: this.getLayerById(this.editId)}}});
     this.clearEditable();
   }
 

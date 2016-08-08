@@ -14,7 +14,8 @@ module.exports = {
     publicPath: '/static/'
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin()
+    new webpack.HotModuleReplacementPlugin(),
+	  new webpack.IgnorePlugin(/^(buffertools)$/) // unwanted "deeper" dependency
   ],
   module: {
     loaders: [
@@ -34,8 +35,14 @@ module.exports = {
         test: /\.js$/,
         loaders: ['react-hot', 'babel'],
         include: path.join(__dirname, 'src')
-      }
+      },
+	    {
+		    test: /\.svg/,
+		    loader: 'svg-url-loader'
+	    }
     ],
-    noParse: /dist\/(ol|proj4).js/,
+    noParse: [
+	    /dist\/(ol|proj4).js/
+		]
   }
 };

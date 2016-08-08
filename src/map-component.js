@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import deepEquals from "deeper";
+import { MenuItem } from "react-bootstrap";
 
 // These are imported at componentDidMount, so they won't be imported on server side rendering.
 let L;
@@ -7,6 +9,7 @@ let draw;
 
 const style = {
   map: {
+    width: '100%',
     height: '100%'
   },
 };
@@ -17,7 +20,7 @@ export default class MapComponent extends Component {
     this.map = null;
     this.data = undefined;
     this.activeId = undefined;
-    this.updateFromProps(props)
+    this.updateFromProps(props);
   }
   
   componentWillReceiveProps(props) {
@@ -32,15 +35,17 @@ export default class MapComponent extends Component {
 
   render() {
     return (
-      <div ref='map' style={ style.map } />
+      <div style={ style.map }>
+        <div ref='map' style={ style.map } />
+      </div>
     );
   }
 
   updateFromProps(props) {
-    this.data = props.data;
+    this.prevData = this.data ? this.data.slice(0) : undefined;
+    this.data = props.data.slice(0);
     this.activeId = props.activeId;
     if (this.activateAfterUpdate !== undefined) {
-      //this.activeId = this.activateAfterUpdate;
       this.setActive(this.activateAfterUpdate);
       this.activateAfterUpdate = undefined;
     }
@@ -51,9 +56,12 @@ export default class MapComponent extends Component {
   redrawFeatures() {
     if (!this.mounted) throw "map wasn't mounted";
 
-    let drawnItems = geoJson(this.data);
+    const shouldResetLayers = (!this.prevData && this.data || this.prevData.length !== this.data.length ||
+                               !deepEquals(this.prevData, this.data));
 
-    this.drawnItems.clearLayers();
+    let drawnItems = shouldResetLayers ? geoJson(this.data) : this.drawnItems;
+
+    if (shouldResetLayers) this.drawnItems.clearLayers();
     
     this.idsToLeafletIds = {};
     this.leafletIdsToIds = {};
@@ -63,14 +71,28 @@ export default class MapComponent extends Component {
       this.idsToLeafletIds[id] = layer._leaflet_id;
       this.leafletIdsToIds[layer._leaflet_id] = id;
 
-      let j = id;
-      layer.on('click', () => {
-        if (this.preventActivatingByClick) return;
-        this.focusToLayer(j);
-      });
+      if (shouldResetLayers) {
+        let j = id;
+
+        layer.on('click', () => {
+          if (!this.interceptClick()) this.setActive(j);
+        });
+
+        layer.on('dblclick', () => this.setEditable(j));
+
+        layer.bindContextMenu({
+          contextmenuItems: [{
+            text: 'Edit feature',
+            callback: () => this.setEditable(j)
+          }, {
+            text: 'Remove feature',
+            callback: () => this.onDelete({layers: {_layers: {[layer._leaflet_id]: layer}}})
+          }]
+        });
+      }
 
       this.setOpacity(layer);
-      this.drawnItems.addLayer(layer);
+      if (shouldResetLayers) this.drawnItems.addLayer(layer);
       id++;
     });
   }
@@ -83,11 +105,14 @@ export default class MapComponent extends Component {
     draw = require('leaflet-draw');
     require('proj4leaflet');
     require('./lib/Leaflet.MML-layers/mmlLayers.js');
+    require('leaflet-contextmenu');
 
     L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
     this.map = map(this.refs.map, {
-      crs: L.TileLayer.MML.get3067Proj()
+      crs: L.TileLayer.MML.get3067Proj(),
+      contextmenu: true,
+      contextmenuItems: []
     });
 
     this.map.setView([
@@ -96,7 +121,7 @@ export default class MapComponent extends Component {
     ], this.props.zoom || 10);
 
     const layer = L.tileLayer.mml_wmts({
-      layer: 'maastokartta',
+      layer: 'maastokartta'
     });
 
     this.map.addLayer(layer);
@@ -112,31 +137,34 @@ export default class MapComponent extends Component {
         circle: false
       },
       edit: {
-        featureGroup: this.drawnItems
+        featureGroup: this.drawnItems,
+	      edit: false,
+	      remove: false
       }
     });
 
     this.map.addControl(drawControl);
 
+    this.map.on('click', () => {
+      this.interceptClick();
+    });
+    this.map.on('dblclick', (e) => {
+      this.onAdd({layer: new L.marker(e.latlng)});
+    });
     this.map.on('draw:created', this.onAdd);
     this.map.on('draw:edited', this.onEdit);
     this.map.on('draw:deleted', this.onDelete);
+  }
 
-    ['deletestart', 'editstart'].forEach(start => this.map.on('draw:' + start, e => {
-      this.preventActivatingByClick = true;
-    }));
-    ['deletestop', 'editstop'].forEach(stop => this.map.on('draw:' + stop, e => {
-      this.preventActivatingByClick = false;
-    }));
+  getLayerById = id => {
+    return this.drawnItems._layers[this.idsToLeafletIds[id]];
   }
 
   onChange = change => {
     if (this.props.onChange) this.props.onChange(change);
   }
 
-  onAdd = e => {
-    const { layer } = e;
-
+  onAdd = ({ layer }) => {
     this.activateAfterUpdate = this.data.length;
     this.onChange({
       type: 'create',
@@ -144,9 +172,7 @@ export default class MapComponent extends Component {
     });
   };
 
-  onEdit = e => {
-    const { layers } = e;
-
+  onEdit = ({ layers }) => {
     let data = {};
     Object.keys(layers._layers).map(id => {
       data[this.leafletIdsToIds[id]] = layers._layers[id].toGeoJSON();
@@ -158,9 +184,7 @@ export default class MapComponent extends Component {
     });
   }
 
-  onDelete = e => {
-    const { layers } = e;
-
+  onDelete = ({ layers }) => {
     const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
 
     if (this.data && this.data.filter((item, id) => !ids.includes(id)).length === 0) {
@@ -205,7 +229,7 @@ export default class MapComponent extends Component {
       return;
     }
 
-    let layer = this.drawnItems._layers[this.idsToLeafletIds[id]];
+    let layer = this.getLayerById(id);
     if (!layer) return;
 
     if (layer instanceof L.Marker) {
@@ -217,6 +241,27 @@ export default class MapComponent extends Component {
     this.setActive(id);
   }
 
+  setEditable = id => {
+    this.editId = id;
+    this.getLayerById(this.editId).editing.enable();
+  }
+
+  clearEditable = () => {
+    this.getLayerById(this.editId).editing.disable();
+    this.editId = undefined;
+  }
+
+  commitEdit = () => {
+    this.onEdit({layers: {_layers: {[this.leafletIdsToIds[this.editId]]: this.getLayerById(this.editId)}}});
+    this.clearEditable();
+  }
+
+  interceptClick = () => {
+    if (this.editId !== undefined) {
+      this.commitEdit();
+      return true;
+    }
+  }
 
   setOpacity = layer => {
     let id = this.leafletIdsToIds[layer._leaflet_id];

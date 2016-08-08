@@ -19,32 +19,36 @@
     "laji-map",
     "luomus"
   ],
-  "author": "Kalle Myllymaa <kalle.myllymaa@helsinki.fi>",
+  "author": "Kalle Myllymaa <kalle.myllymaa@helsinki.fi>, Olli Raitio <olli.raitio@helsinki.fi>",
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "*",
-    "css-loader": "^0.23.1",
+    "css-loader": "*",
     "eslint": "*",
     "eslint-plugin-react": "*",
-    "file-loader": "^0.8.5",
+    "file-loader": "*",
     "react-hot-loader": "*",
-    "style-loader": "^0.13.1",
-    "url-loader": "^0.5.7",
+    "style-loader": "*",
+    "svg-url-loader": "^1.1.0",
+    "url-loader": "*",
     "webpack": "*",
     "webpack-dev-server": "*"
   },
   "dependencies": {
-    "babel-cli": "^6.9.0",
+    "babel-cli": "*",
     "babel-core": "*",
     "babel-loader": "*",
     "babel-preset-es2015": "*",
     "babel-preset-react": "*",
     "babel-preset-stage-0": "*",
-    "leaflet": "^0.7.7",
-    "leaflet-draw": "^0.3.0",
-    "proj4leaflet": "^0.7.2",
+    "deeper": "*",
+    "leaflet": "*",
+    "leaflet-contextmenu": "git+ssh://git@github.com/aratcliffe/Leaflet.contextmenu.git",
+    "leaflet-draw": "*",
+    "proj4leaflet": "*",
     "react": "*",
+    "react-bootstrap": "*",
     "react-dom": "*",
-    "rimraf": "^2.5.2"
+    "rimraf": "*"
   }
 }

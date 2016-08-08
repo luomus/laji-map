@@ -5,7 +5,7 @@
   "main": "lib/map-component.js",
   "scripts": {
     "build": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
-    "start": "node server.js",
+    "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
     "lint": "eslint src",
     "install": "npm run build"
   },

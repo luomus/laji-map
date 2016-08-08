@@ -1,8 +1,9 @@
 import React, { Component, PropTypes } from 'react';
+import { render } from "react-dom"
 
-import MapComponent from './map-component';
+import MapComponent from '../src/map-component';
 
-import './styles.js';
+import '../src/styles.js';
 
 const style = {
   map: {
@@ -61,4 +62,4 @@ class App extends Component {
   }
 }
 
-export default App;
+render((<App />), document.getElementById("root"));

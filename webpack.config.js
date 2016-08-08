@@ -3,16 +3,13 @@ var webpack = require('webpack');
 
 module.exports = {
   devtool: 'eval',
-  entry: [
-    'webpack-dev-server/client?http://localhost:4000',
-    'webpack/hot/only-dev-server',
-    './src/index'
-  ],
-  output: {
-    path: path.join(__dirname, 'dist'),
-    filename: 'bundle.js',
-    publicPath: '/static/'
-  },
+	entry: [
+		path.join(__dirname, "playground", "app"),
+	],
+	output: {
+		publicPath: "/build/",
+		filename: "main.js"
+	},
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
 	  new webpack.IgnorePlugin(/^(buffertools)$/) // unwanted "deeper" dependency
@@ -34,7 +31,10 @@ module.exports = {
       {
         test: /\.js$/,
         loaders: ['react-hot', 'babel'],
-        include: path.join(__dirname, 'src')
+        include: [
+	        path.join(__dirname, 'src'),
+	        path.join(__dirname, "playground")
+				]
       },
 	    {
 		    test: /\.svg/,

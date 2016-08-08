@@ -35,6 +35,7 @@
     "webpack-dev-server": "*"
   },
   "dependencies": {
+    "Leaflet.vector-markers": "git+ssh://git@github.com/hiasinho/Leaflet.vector-markers.git",
     "babel-cli": "*",
     "babel-core": "*",
     "babel-loader": "*",

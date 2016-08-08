@@ -7,6 +7,9 @@ let L;
 let map, Control, FeatureGroup, geoJson, Path;
 let draw;
 
+const NORMAL_COLOR = "#257ECA";
+const ACTIVE_COLOR = "#06840A";
+
 const style = {
   map: {
     width: '100%',
@@ -60,6 +63,7 @@ export default class MapComponent extends Component {
                                !deepEquals(this.prevData, this.data));
 
     let drawnItems = shouldResetLayers ? geoJson(this.data) : this.drawnItems;
+	  console.log(drawnItems);
 
     if (shouldResetLayers) this.drawnItems.clearLayers();
     
@@ -90,8 +94,8 @@ export default class MapComponent extends Component {
 	      });
       }
 
-      this.setOpacity(layer);
       if (shouldResetLayers) this.drawnItems.addLayer(layer);
+	    this.updateLayerStyle(id);
       id++;
     });
 
@@ -106,6 +110,7 @@ export default class MapComponent extends Component {
     require('proj4leaflet');
     require('./lib/Leaflet.MML-layers/mmlLayers.js');
     require('leaflet-contextmenu');
+	  require('Leaflet.vector-markers');
 
     L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
@@ -130,8 +135,7 @@ export default class MapComponent extends Component {
     this.map.addLayer(this.drawnItems);
     if (this.shouldUpdateAfterMount) this.redrawFeatures();
 
-    // Initialise the draw control and pass it the FeatureGroup of editable layers
-    const drawControl = new Control.Draw({
+	  const drawOptions = {
       position: 'topright',
       draw: {
         circle: false
@@ -141,7 +145,15 @@ export default class MapComponent extends Component {
 	      edit: false,
 	      remove: false
       }
-    });
+    };
+
+	  ['polyline', 'polygon', 'rectangle'].forEach(type => {
+		  drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {opacity: 0.8})}
+	  });
+	  console.log(drawOptions);
+
+    // Initialise the draw control and pass it the FeatureGroup of editable layers
+    const drawControl = new Control.Draw(drawOptions);
 
     this.map.addControl(drawControl);
 
@@ -259,24 +271,41 @@ export default class MapComponent extends Component {
     }
   }
 
-  setOpacity = layer => {
-    let id = this.leafletIdsToIds[layer._leaflet_id];
+	getStyleForType = (type, overrideStyles) => {
+		const styles = {
+			weight: type.toLowerCase().includes("line") ? 8 : 14,
+			opacity: 1,
+			fillOpacity: 0.4,
+			color: NORMAL_COLOR
+		};
 
-    let opacitySubtract = 0.4;
+		if (overrideStyles) for (let style in overrideStyles) {
+			styles[style] = overrideStyles[style];
+		}
+
+		return styles;
+	}
+
+	getStyleForId = id => {
+		return this.getStyleForType(this.data[id].geometry.type,
+			{color: this.activeId === id ? ACTIVE_COLOR : NORMAL_COLOR});
+	}
+
+  updateLayerStyle = id => {
+	  const layer = this.getLayerById(id);
+
 
     if (layer instanceof L.Marker) {
-      let opacity = 1;
-      if (this.activeId !== id) opacity -= opacitySubtract;
-      layer.setOpacity(opacity)
+	    layer.setIcon(
+		    L.VectorMarkers.icon({
+					prefix: 'glyphicon',
+					icon: 'record',
+					markerColor: this.activeId === id ? ACTIVE_COLOR : NORMAL_COLOR
+				})
+	    );
     } else {
-      let options = new Path().options;
-      let opacity = 1;
-      let fillOpacity = options.fillOpacity;
-      if (this.activeId !== id) {
-        opacity -= opacitySubtract;
-        fillOpacity = 0.1;
-      }
-      layer.setStyle({opacity, fillOpacity});
+	    if (this.activeId === id) style.color = ACTIVE_COLOR;
+      layer.setStyle(this.getStyleForId(id));
     }
   }
 

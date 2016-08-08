@@ -85,7 +85,7 @@ export default class MapComponent extends Component {
 			      callback: () => this.setEditable(j)
 		      }, {
 			      text: 'Remove feature',
-			      callback: () => this.onDelete({layers: {_layers: {[layer._leaflet_id]: layer}}})
+			      callback: () => this.onDelete(j)
 		      }]
 	      });
       }
@@ -149,9 +149,9 @@ export default class MapComponent extends Component {
       this.interceptClick();
     });
     this.map.on('dblclick', (e) => {
-      this.onAdd({layer: new L.marker(e.latlng)});
+      this.onAdd(new L.marker(e.latlng));
     });
-    this.map.on('draw:created', this.onAdd);
+    this.map.on('draw:created', ({ layer }) => this.onAdd(layer));
   }
 
   getLayerById = id => {
@@ -162,7 +162,7 @@ export default class MapComponent extends Component {
     if (this.props.onChange) this.props.onChange(change);
   }
 
-  onAdd = ({ layer }) => {
+  onAdd = layer => {
     this.activateAfterUpdate = this.data.length;
     this.onChange({
       type: 'create',
@@ -170,11 +170,10 @@ export default class MapComponent extends Component {
     });
   };
 
-  onEdit = ({ layers }) => {
-    let data = {};
-    Object.keys(layers._layers).map(id => {
-      data[this.leafletIdsToIds[id]] = layers._layers[id].toGeoJSON();
-    });
+  onEdit = data => {
+	  for (let id in data) {
+      data[id] = data[id].toGeoJSON();
+    }
 
     this.onChange({
       type: 'edit',
@@ -182,9 +181,8 @@ export default class MapComponent extends Component {
     });
   }
 
-  onDelete = ({ layers }) => {
-    const ids = Object.keys(layers._layers).map(id => this.leafletIdsToIds[id]);
-
+  onDelete = ids => {
+	  if (!Array.isArray(ids)) ids = [ids];
     if (this.data && this.data.filter((item, id) => !ids.includes(id)).length === 0) {
       this.setActive(undefined)
     } else if (this.activeId !== undefined && ids.includes(this.activeId)) {
@@ -250,7 +248,7 @@ export default class MapComponent extends Component {
   }
 
   commitEdit = () => {
-    this.onEdit({layers: {_layers: {[this.idsToLeafletIds[this.editId]]: this.getLayerById(this.editId)}}});
+    this.onEdit({[this.editId]: this.getLayerById(this.editId)});
     this.clearEditable();
   }
 

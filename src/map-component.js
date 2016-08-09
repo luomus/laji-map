@@ -48,6 +48,7 @@ export default class MapComponent extends Component {
   updateFromProps(props) {
     this.prevData = this.data ? this.data.slice(0) : undefined;
     this.data = props.data.slice(0);
+    this.prevActiveId = this.activeId;
     this.activeId = props.activeId;
     if (this.activateAfterUpdate !== undefined) {
       this.setActive(this.activateAfterUpdate);
@@ -95,7 +96,7 @@ export default class MapComponent extends Component {
       }
 
       if (shouldResetLayers) this.drawnItems.addLayer(layer);
-	    this.updateLayerStyle(id);
+	    if (shouldResetLayers || this.prevActiveId !== this.activeId) this.updateLayerStyle(id);
       id++;
     });
 

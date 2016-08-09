@@ -63,7 +63,6 @@ export default class MapComponent extends Component {
                                !deepEquals(this.prevData, this.data));
 
     let drawnItems = shouldResetLayers ? geoJson(this.data) : this.drawnItems;
-	  console.log(drawnItems);
 
     if (shouldResetLayers) this.drawnItems.clearLayers();
     
@@ -150,7 +149,6 @@ export default class MapComponent extends Component {
 	  ['polyline', 'polygon', 'rectangle'].forEach(type => {
 		  drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {opacity: 0.8})}
 	  });
-	  console.log(drawOptions);
 
     // Initialise the draw control and pass it the FeatureGroup of editable layers
     const drawControl = new Control.Draw(drawOptions);

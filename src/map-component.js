@@ -7,8 +7,9 @@ let L;
 let map, Control, FeatureGroup, geoJson, Path;
 let draw;
 
-const NORMAL_COLOR = "#257ECA";
-const ACTIVE_COLOR = "#06840A";
+const NORMAL_COLOR = '#257ECA';
+const ACTIVE_COLOR = '#06840A';
+const INCOMPLETE_COLOR = '#55AEFA';
 
 const style = {
   map: {
@@ -102,7 +103,7 @@ export default class MapComponent extends Component {
 
   componentDidMount() {
     this.mounted = true;
-    
+
     L = require('leaflet');
     ({ map, Control, FeatureGroup, geoJson, Path } = L);
     draw = require('leaflet-draw');
@@ -129,7 +130,7 @@ export default class MapComponent extends Component {
     });
 
     this.map.addLayer(tileLayer);
-    
+
     this.drawnItems = geoJson();
     this.map.addLayer(this.drawnItems);
     if (this.shouldUpdateAfterMount) this.redrawFeatures();
@@ -137,7 +138,14 @@ export default class MapComponent extends Component {
 	  const drawOptions = {
       position: 'topright',
       draw: {
-        circle: false
+        circle: false,
+	      marker: {
+		      icon: L.VectorMarkers.icon({
+						prefix: 'glyphicon',
+						icon: 'record',
+						markerColor: INCOMPLETE_COLOR,
+					}),
+	      }
       },
       edit: {
         featureGroup: this.drawnItems,
@@ -147,7 +155,7 @@ export default class MapComponent extends Component {
     };
 
 	  ['polyline', 'polygon', 'rectangle'].forEach(type => {
-		  drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {opacity: 0.8})}
+		  drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
 	  });
 
     // Initialise the draw control and pass it the FeatureGroup of editable layers
@@ -291,7 +299,6 @@ export default class MapComponent extends Component {
 
   updateLayerStyle = id => {
 	  const layer = this.getLayerById(id);
-
 
     if (layer instanceof L.Marker) {
 	    layer.setIcon(

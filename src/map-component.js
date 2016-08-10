@@ -47,7 +47,9 @@ export default class MapComponent extends Component {
 
 	render() {
 		const { translations } = this.state;
+		let id = 0;
 		if (this.drawnItems) this.drawnItems.eachLayer(layer => {
+			let j = id;
 			layer.unbindContextMenu();
 			layer.bindContextMenu({
 				contextmenuItems: [{
@@ -58,6 +60,7 @@ export default class MapComponent extends Component {
 					callback: () => this.onDelete(j)
 				}]
 			});
+			id++;
 		});
 		return (
 			<div style={ style.map }>
@@ -359,11 +362,13 @@ export default class MapComponent extends Component {
 	}
 
 	setEditable = id => {
+		this.clearEditable();
 		this.editId = id;
 		this.getLayerById(this.editId).editing.enable();
 	}
 
 	clearEditable = () => {
+		if (this.editId === undefined) return;
 		this.getLayerById(this.editId).editing.disable();
 		this.editId = undefined;
 	}

@@ -194,4 +194,14 @@ export default {
 		en: "changes",
 		sv: "changes"
 	},
+	zoomIn: {
+		fi: "lähennä",
+		en: "zoom in",
+		sv: "zoom in"
+	},
+	zoomOut: {
+		fi: "loitonna",
+		en: "zoom out",
+		sv: "zoom out"
+	},
 }

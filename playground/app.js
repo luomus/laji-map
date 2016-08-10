@@ -22,6 +22,7 @@ class App extends Component {
       {"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}}
     ]
     this.state.activeId = 0;
+	  this.state.lang = "fi";
   }
 
   onMapChange = (e) => {
@@ -56,7 +57,9 @@ class App extends Component {
           longitude={60.4353462}
           latitude={22.2285623}
           zoom={6}
-          onChange={this.onMapChange} />
+          onChange={this.onMapChange}
+          lang={this.state.lang}
+        />
       </div>
     );
   }

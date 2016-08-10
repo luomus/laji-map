@@ -11,6 +11,8 @@ const NORMAL_COLOR = '#257ECA';
 const ACTIVE_COLOR = '#06840A';
 const INCOMPLETE_COLOR = '#55AEFA';
 
+import translations from "./translations.js";
+
 const style = {
   map: {
     width: '100%',
@@ -19,11 +21,17 @@ const style = {
 };
 
 export default class MapComponent extends Component {
+	static defaultProps = {
+		lang: "en"
+	}
+
   constructor(props) {
     super(props);
     this.map = null;
     this.data = undefined;
     this.activeId = undefined;
+	  this.dictionary = this.constructTranslations();
+	  this.state = {};
     this.updateFromProps(props);
   }
   
@@ -38,6 +46,19 @@ export default class MapComponent extends Component {
   }
 
   render() {
+	  const { translations } = this.state;
+	  if (this.drawnItems) this.drawnItems.eachLayer(layer => {
+		  layer.unbindContextMenu();
+		  layer.bindContextMenu({
+			  contextmenuItems: [{
+				  text: translations ? translations.Edit + ' ' + translations.featurePartitive : '',
+				  callback: () => this.setEditable(j)
+			  }, {
+				  text: translations ? translations.Delete + ' ' + translations.feature : '',
+				  callback: () => this.onDelete(j)
+			  }]
+		  });
+	  });
     return (
       <div style={ style.map }>
         <div ref='map' style={ style.map } />
@@ -54,9 +75,83 @@ export default class MapComponent extends Component {
       this.setActive(this.activateAfterUpdate);
       this.activateAfterUpdate = undefined;
     }
+	  if (this.mounted) this.updateTranslations(props);
     if (this.mounted) this.redrawFeatures();
     else this.shouldUpdateAfterMount = true;
   }
+
+	constructTranslations = () => {
+		function capitalizeFirstLetter(string) {
+			return string.charAt(0).toUpperCase() + string.slice(1);
+		}
+		let dictionaries = {};
+		for (let word in translations) {
+			for (let lang in translations[word]) {
+				const translation = translations[word][lang];
+				if (!dictionaries.hasOwnProperty(lang)) dictionaries[lang] = {};
+				dictionaries[lang][word] = translation;
+				dictionaries[lang][capitalizeFirstLetter(word)] = capitalizeFirstLetter(translation);
+			}
+		}
+
+		for (let lang in dictionaries) {
+			const dictionary = dictionaries[lang];
+			for (let key in dictionary) {
+				while (dictionary[key].includes('$')) {
+					const keyToReplace = dictionary[key].match(/\$\w+/)[0];
+					const replaceKey = keyToReplace.substring(1);
+					dictionary[key] = dictionary[key].replace(keyToReplace, dictionary[replaceKey]);
+				}
+			}
+		}
+		return dictionaries;
+	}
+
+	updateTranslations = (props) => {
+
+		if (!this.state.translations || this.lang !== props.lang) {
+			this.lang = props.lang;
+			const drawLocalizations = L.drawLocal.draw;
+			this.setState({translations: this.dictionary[this.lang]}, () => {
+
+				const { translations } = this.state;
+				function join(...words) {
+					return words.map(word => translations[word]).join(" ");
+				}
+
+				// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
+				['polyline', 'polygon', 'rectangle'].forEach(featureType => {
+					drawLocalizations.toolbar.buttons[featureType] = join('Draw', featureType);
+				})
+				drawLocalizations.toolbar.buttons.marker = join('Add', 'marker');
+
+				drawLocalizations.toolbar.actions.title = join('Cancel', 'drawPassiveVerb');
+				drawLocalizations.toolbar.actions.text = join('Cancel');
+				drawLocalizations.toolbar.finish.title = join('Finish', 'drawPassiveVerb');
+				drawLocalizations.toolbar.finish.text = join('Finish');
+				drawLocalizations.toolbar.undo.title = join('Delete', 'lastPointDrawn');
+				drawLocalizations.toolbar.undo.text = join('Delete', 'last', 'point');
+
+				drawLocalizations.handlers.circle.tooltip.start = join('Click', 'and', 'drag', 'toDrawCircle');
+				drawLocalizations.handlers.marker.tooltip.start = join('Click', 'mapPartitive', 'toPlaceMarker');
+
+				drawLocalizations.handlers.polygon.tooltip.start = join('ClickToStartDrawingShape');
+				drawLocalizations.handlers.polygon.tooltip.cont = join('ClickToContinueDrawingShape');
+				drawLocalizations.handlers.polygon.tooltip.end = join('ClickToEndDrawingShape');
+
+				drawLocalizations.handlers.polyline.tooltip.start = join('ClickToStartDrawingPolyline');
+				drawLocalizations.handlers.polyline.tooltip.cont = join('ClickToContinueDrawingPolyline');
+				drawLocalizations.handlers.polyline.tooltip.end = join('ClickToEndDrawingPolyline');
+
+				drawLocalizations.handlers.rectangle.tooltip.start = join('Click', 'and', 'drag', 'toDrawRectangle');
+
+				drawLocalizations.handlers.simpleshape.tooltip.end = join('simpleShapeEnd');
+
+				this.map.removeControl(this.drawControl);
+				this.map.addControl(this.drawControl);
+			})
+		}
+	}
 
   redrawFeatures() {
     if (!this.mounted) throw "map wasn't mounted";
@@ -70,7 +165,7 @@ export default class MapComponent extends Component {
     
     this.idsToLeafletIds = {};
     this.leafletIdsToIds = {};
-    
+
     let id = 0;
     drawnItems.eachLayer(layer => {
       this.idsToLeafletIds[id] = layer._leaflet_id;
@@ -83,16 +178,6 @@ export default class MapComponent extends Component {
 		      if (!this.interceptClick()) this.setActive(j);
 	      });
 	      layer.on('dblclick', () => this.setEditable(j));
-
-	      layer.bindContextMenu({
-		      contextmenuItems: [{
-			      text: 'Edit feature',
-			      callback: () => this.setEditable(j)
-		      }, {
-			      text: 'Remove feature',
-			      callback: () => this.onDelete(j)
-		      }]
-	      });
       }
 
       if (shouldResetLayers) this.drawnItems.addLayer(layer);
@@ -134,7 +219,10 @@ export default class MapComponent extends Component {
 
     this.drawnItems = geoJson();
     this.map.addLayer(this.drawnItems);
-    if (this.shouldUpdateAfterMount) this.redrawFeatures();
+    if (this.shouldUpdateAfterMount) {
+	    this.updateTranslations(this.props);
+	    this.redrawFeatures();
+    }
 
 	  const drawOptions = {
       position: 'topright',
@@ -161,6 +249,7 @@ export default class MapComponent extends Component {
 
     // Initialise the draw control and pass it the FeatureGroup of editable layers
     const drawControl = new Control.Draw(drawOptions);
+	  this.drawControl = drawControl;
 
     this.map.addControl(drawControl);
 
@@ -171,6 +260,8 @@ export default class MapComponent extends Component {
       this.onAdd(new L.marker(e.latlng));
     });
     this.map.on('draw:created', ({ layer }) => this.onAdd(layer));
+
+	  this.updateTranslations(this.props);
   }
 
   getLayerById = id => {

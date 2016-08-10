@@ -35,7 +35,7 @@
     "webpack-dev-server": "*"
   },
   "dependencies": {
-    "Leaflet.vector-markers": "git+ssh://git@github.com/hiasinho/Leaflet.vector-markers.git",
+    "Leaflet.vector-markers": "git+https://git@github.com/hiasinho/Leaflet.vector-markers.git",
     "babel-cli": "*",
     "babel-core": "*",
     "babel-loader": "*",
@@ -44,7 +44,7 @@
     "babel-preset-stage-0": "*",
     "deeper": "*",
     "leaflet": "*",
-    "leaflet-contextmenu": "git+ssh://git@github.com/aratcliffe/Leaflet.contextmenu.git",
+    "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git",
     "leaflet-draw": "*",
     "proj4leaflet": "*",
     "react": "*",

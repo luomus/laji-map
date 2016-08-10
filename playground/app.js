@@ -54,6 +54,7 @@ class App extends Component {
 				<MapComponent
 					data={this.state.data}
 					activeId={this.state.activeId}
+					//locate={true}
 					longitude={60.4353462}
 					latitude={22.2285623}
 					zoom={6}

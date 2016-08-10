@@ -204,4 +204,9 @@ export default {
 		en: "zoom out",
 		sv: "zoom out"
 	},
+	geolocationFailed: {
+		fi: "Paikannus epäonnistui. Laitteesi ei välttämättä tue tätä ominaisuutta.",
+		en: "Geolocation failed. Your device might not support this feature.",
+		sv: "Geolocation failed. Your device might not support this feature."
+	},
 }

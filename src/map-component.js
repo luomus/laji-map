@@ -219,10 +219,14 @@ export default class MapComponent extends Component {
 			zoomControl: false
 		});
 
-		this.map.setView([
-			this.props.longitude || 60.1718699,
-			this.props.latitude || 24.9419917
-		], this.props.zoom || 10);
+		if (this.props.locate) {
+			this.onLocate();
+		} else {
+			this.map.setView([
+				this.props.longitude || 60.1718699,
+				this.props.latitude || 24.9419917
+			], this.props.zoom || 10);
+		}
 
 		const tileLayer = L.tileLayer.mml_wmts({
 			layer: "maastokartta"
@@ -265,7 +269,42 @@ export default class MapComponent extends Component {
 
 		this.zoomControl = new L.control.zoom();
 		this.map.addControl(this.zoomControl);
-		//L.control.zoom({position: "topleft"}).addTo(this.map);
+
+		const that = this;
+		const GeoControl = L.Control.extend({
+			options: {
+				position: "topleft"
+			},
+
+			onAdd: function(map) {
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-geocontrol");
+				this._createSearch(container);
+				this._createLocate(container);
+				return container;
+			},
+
+			_createItem: function(container, glyphName) {
+				return L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, L.DomUtil.create("a", "", container))
+			},
+
+			_createSearch: function(container) {
+				this._searchElem = this._createItem(container, "search");
+				L.DomEvent.on(this._searchElem, "click", this._onSearch, this);
+				return this._searchElem;
+			},
+
+			_createLocate: function(container) {
+				const locateElem = this._createItem(container, "screenshot");
+				L.DomEvent.on(locateElem, "click", that.onLocate);
+				return locateElem;
+			},
+
+			_onSearch: function() {
+				console.log("search");
+			}
+		});
+
+		this.map.addControl(new GeoControl());
 
 		this.map.on("click", () => {
 			this.interceptClick();
@@ -276,6 +315,20 @@ export default class MapComponent extends Component {
 		this.map.on("draw:created", ({ layer }) => this.onAdd(layer));
 
 		this.updateTranslations(this.props);
+	}
+
+	onLocate = () => {
+		if (!navigator) return;
+
+		navigator.geolocation.getCurrentPosition(
+			// success
+			({ coords }) => {
+				this.map.setView([coords.latitude, coords.longitude], this.props.zoom || 7);
+			},
+			// fail
+			() => {
+				alert(this.state.translations.geolocationFailed)
+			})
 	}
 
 	getLayerById = id => {

@@ -1,3 +1,9 @@
 .leaflet-mouse-marker {
 	opacity: 0.5;
 }
+.laji-map-geocontrol {
+	background: white;
+	width: 26px;
+	font-size: 14px;
+	text-align: center;
+}

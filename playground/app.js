@@ -14,6 +14,7 @@ class App {
 			rootElem: document.getElementById("root"),
 			data: this.data,
 			activeIdx: this.activeIdx,
+			locate: true,
 			longitude: 60.4353462,
 			latitude: 22.2285623,
 			zoom: 6,

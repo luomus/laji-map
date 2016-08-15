@@ -9,6 +9,7 @@ import "Leaflet.vector-markers";
 const NORMAL_COLOR = "#257ECA";
 const ACTIVE_COLOR = "#06840A";
 const INCOMPLETE_COLOR = "#55AEFA";
+const USER_LOCATION_COLOR = "#FF0000";
 
 import translations from "./translations.js";
 
@@ -43,8 +44,11 @@ export default class LajiMap {
 			layer: "maastokartta"
 		}));
 
+		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
+
 		if (this.locate) {
-			this.onLocate(this.initializeView);
+			this.initializeViewAfterLocateFail = true;
+			this.onLocate();
 		} else {
 			this.initializeView();
 		}
@@ -65,6 +69,8 @@ export default class LajiMap {
 			this.onAdd(new L.marker(e.latlng));
 		});
 		this.map.on("draw:created", ({ layer }) => this.onAdd(layer));
+		this.map.on("locationfound", this.onLocationFound);
+		this.map.on("locationerror", this.onLocationNotFound);
 	}
 
 	initalizeMapControls() {
@@ -314,17 +320,37 @@ export default class LajiMap {
 	}
 
 
-	onLocate = (onFail) => {
-		if (!navigator) return;
+	onLocate = () => {
+		this.map.locate();
+	}
 
-		navigator.geolocation.getCurrentPosition(
-			({ coords }) => { // success
-				this.map.setView([coords.latitude, coords.longitude], this.zoom || 7);
-			},
-			() => { // fail
-				alert(this.translations.geolocationFailed);
-				if (typeof onFail === "function") onFail();
-		});
+	onLocationFound = ({latlng, accuracy, bounds}) => {
+		this.map.fitBounds(bounds);
+
+		if (this.userLocationRadiusMarker) {
+			this.userLocationRadiusMarker.setLatLng(latlng).setRadius(accuracy);
+			this.userLocationMarker.setLatLng(latlng);
+		} else {
+			this.userLocationRadiusMarker = new L.circle(latlng, accuracy,
+				{
+					color: USER_LOCATION_COLOR,
+					fillColor: USER_LOCATION_COLOR,
+					opacity: 0
+				}).addTo(this.userLocationLayer);
+			this.userLocationMarker = new L.CircleMarker(latlng,
+				{
+					color: USER_LOCATION_COLOR,
+					fillColor: USER_LOCATION_COLOR,
+					fillOpacity: 0.7
+				}).addTo(this.userLocationLayer);
+		}
+
+		this.userLocationMarker.on("click", () => { if (!this.interceptClick()) this.map.fitBounds(this.userLocationRadiusMarker.getBounds()) });
+	}
+
+	onLocationNotFound() {
+		alert(this.translations.geolocationFailed);
+		if (this.initializeViewAfterLocateFail) this.initializeView();
 	}
 
 	getLayerById(id) {

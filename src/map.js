@@ -314,7 +314,7 @@ export default class LajiMap {
 	}
 
 
-	onLocate(onFail) {
+	onLocate = (onFail) => {
 		if (!navigator) return;
 
 		navigator.geolocation.getCurrentPosition(
@@ -323,7 +323,7 @@ export default class LajiMap {
 			},
 			() => { // fail
 				alert(this.translations.geolocationFailed);
-				if (onFail) onFail();
+				if (typeof onFail === "function") onFail();
 		});
 	}
 

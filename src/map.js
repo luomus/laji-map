@@ -8,7 +8,7 @@ import "Leaflet.vector-markers";
 
 const NORMAL_COLOR = "#257ECA";
 const ACTIVE_COLOR = "#06840A";
-const INCOMPLETE_COLOR = "#55AEFA";
+const INCOMPLETE_COLOR = "#36B43A";
 const USER_LOCATION_COLOR = "#FF0000";
 
 import translations from "./translations.js";

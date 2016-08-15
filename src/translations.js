@@ -209,4 +209,14 @@ export default {
 		en: "Geolocation failed. Your device might not support this feature.",
 		sv: "Geolocation failed. Your device might not support this feature."
 	},
+	geolocate: {
+		fi: "paikanna sijaintisi",
+		en: "locate yourself",
+		sv: "locate yourself"
+	},
+	search: {
+		fi: "hae nimellä",
+		en: "search with name",
+		sv: "hae nimellä"
+	}
 }

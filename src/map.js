@@ -97,14 +97,8 @@ export default class LajiMap {
 			drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
-		this.drawControl = new Control.Draw(drawOptions);
-		this.map.addControl(this.drawControl);
-
-		this.zoomControl = new L.control.zoom();
-		this.map.addControl(this.zoomControl);
-
 		const that = this;
-		const GeoControl = L.Control.extend({
+		const LocationControl = L.Control.extend({
 			options: {
 				position: "topleft"
 			},
@@ -122,12 +116,14 @@ export default class LajiMap {
 
 			_createSearch: function(container) {
 				this._searchElem = this._createItem(container, "search");
+				this._searchElem.title = that.translations.Search;
 				L.DomEvent.on(this._searchElem, "click", this._onSearch, this);
 				return this._searchElem;
 			},
 
 			_createLocate: function(container) {
 				const locateElem = this._createItem(container, "screenshot");
+				locateElem.title = that.translations.Geolocate;
 				L.DomEvent.on(locateElem, "click", that.onLocate);
 				return locateElem;
 			},
@@ -137,7 +133,14 @@ export default class LajiMap {
 			}
 		});
 
-		this.map.addControl(new GeoControl());
+		this.drawControl = new Control.Draw(drawOptions);
+		this.map.addControl(this.drawControl);
+
+		this.zoomControl = new L.control.zoom();
+		this.map.addControl(this.zoomControl);
+
+		this.locationControl = new LocationControl();
+		this.map.addControl(this.locationControl);
 	}
 
 	destroy() {
@@ -212,11 +215,6 @@ export default class LajiMap {
 
 			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
 
-			if (this.drawControl) {
-				this.map.removeControl(this.drawControl);
-				this.map.addControl(this.drawControl);
-			}
-
 			if (this.zoomControl) {
 				this.map.removeControl(this.zoomControl);
 				this.zoomControl = new L.control.zoom({
@@ -225,6 +223,12 @@ export default class LajiMap {
 				});
 				this.map.addControl(this.zoomControl);
 			}
+
+			[this.drawControl, this.locationControl].forEach(control => {
+				if (!control) return;
+				this.map.removeControl(control);
+				this.map.addControl(control);
+			});
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
 				this.updateContextMenuFor(id);

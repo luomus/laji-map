@@ -1,8 +1,8 @@
 {
   "name": "laji-map",
   "version": "1.0.0",
-  "description": "An importable React component built on Leaflet.draw.",
-  "main": "lib/map-component.js",
+  "description": "A map with drawing functionality",
+  "main": "lib/map.js",
   "scripts": {
     "build": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
@@ -25,11 +25,9 @@
     "babel-eslint": "*",
     "css-loader": "*",
     "eslint": "*",
-    "eslint-plugin-react": "*",
     "file-loader": "*",
-    "react-hot-loader": "*",
     "style-loader": "*",
-    "svg-url-loader": "^1.1.0",
+    "svg-url-loader": "*",
     "url-loader": "*",
     "webpack": "*",
     "webpack-dev-server": "*"
@@ -40,16 +38,11 @@
     "babel-core": "*",
     "babel-loader": "*",
     "babel-preset-es2015": "*",
-    "babel-preset-react": "*",
     "babel-preset-stage-0": "*",
-    "deeper": "*",
     "leaflet": "*",
     "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git",
     "leaflet-draw": "*",
     "proj4leaflet": "*",
-    "react": "*",
-    "react-bootstrap": "*",
-    "react-dom": "*",
     "rimraf": "*"
   }
 }

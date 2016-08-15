@@ -352,7 +352,7 @@ export default class LajiMap {
 		this.userLocationMarker.on("click", () => { if (!this.interceptClick()) this.map.fitBounds(this.userLocationRadiusMarker.getBounds()) });
 	}
 
-	onLocationNotFound() {
+	onLocationNotFound = () => {
 		alert(this.translations.geolocationFailed);
 		if (this.initializeViewAfterLocateFail) this.initializeView();
 	}

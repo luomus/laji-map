@@ -133,14 +133,15 @@ export default class LajiMap {
 			}
 		});
 
+		this.locationControl = new LocationControl();
+		this.map.addControl(this.locationControl);
+
 		this.drawControl = new Control.Draw(drawOptions);
 		this.map.addControl(this.drawControl);
 
 		this.zoomControl = new L.control.zoom();
 		this.map.addControl(this.zoomControl);
 
-		this.locationControl = new LocationControl();
-		this.map.addControl(this.locationControl);
 	}
 
 	destroy() {
@@ -215,6 +216,12 @@ export default class LajiMap {
 
 			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
 
+			[this.drawControl, this.locationControl].forEach(control => {
+				if (!control) return;
+				this.map.removeControl(control);
+				this.map.addControl(control);
+			});
+
 			if (this.zoomControl) {
 				this.map.removeControl(this.zoomControl);
 				this.zoomControl = new L.control.zoom({
@@ -223,12 +230,6 @@ export default class LajiMap {
 				});
 				this.map.addControl(this.zoomControl);
 			}
-
-			[this.drawControl, this.locationControl].forEach(control => {
-				if (!control) return;
-				this.map.removeControl(control);
-				this.map.addControl(control);
-			});
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
 				this.updateContextMenuFor(id);

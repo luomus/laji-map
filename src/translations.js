@@ -218,5 +218,15 @@ export default {
 		fi: "hae nimellä",
 		en: "search with name",
 		sv: "hae nimellä"
+	},
+	taustakartta: {
+		fi: "taustakartta",
+		en: "background map",
+		sv: "taustakartta"
+	},
+	maastokartta: {
+		fi: "maastokartta",
+		en: "base map",
+		sv: "base map"
 	}
 }

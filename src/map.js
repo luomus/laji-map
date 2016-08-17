@@ -47,9 +47,12 @@ export default class LajiMap {
 			zoomControl: false
 		});
 
-		this.map.addLayer(L.tileLayer.mml_wmts({
-			layer: this.tileLayerName
-		}));
+		["taustakartta", "maastokartta"].forEach(tileLayerName => {
+			this[tileLayerName] = L.tileLayer.mml_wmts({
+				layer: tileLayerName
+			});
+		});
+		this.map.addLayer(this[this.tileLayerName]);
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
@@ -140,6 +143,8 @@ export default class LajiMap {
 			}
 		});
 
+		this.map.addControl(this.getLayerControl());
+
 		this.locationControl = new LocationControl();
 		this.map.addControl(this.locationControl);
 
@@ -148,7 +153,17 @@ export default class LajiMap {
 
 		this.zoomControl = new L.control.zoom();
 		this.map.addControl(this.zoomControl);
+	}
 
+	getLayerControl() {
+		const baseMaps = {};
+		const { translations } = this;
+		["taustakartta", "maastokartta"].forEach(tileLayerName => {
+			baseMaps[translations[tileLayerName]] = this[tileLayerName];
+		});
+
+		this.layerControl = L.control.layers(baseMaps, {}, {position: "bottomleft"});
+		return this.layerControl;
 	}
 
 	destroy() {
@@ -236,6 +251,11 @@ export default class LajiMap {
 					zoomOutTitle: translations.ZoomOut
 				});
 				this.map.addControl(this.zoomControl);
+			}
+
+			if (this.layerControl) {
+				this.map.removeControl(this.layerControl);
+				this.map.addControl(this.getLayerControl());
 			}
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {

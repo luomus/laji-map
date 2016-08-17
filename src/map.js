@@ -1,4 +1,3 @@
-import React, { Component } from "react";
 import L, { map, Control, FeatureGroup, geoJson, Path } from "leaflet";
 import draw from "leaflet-draw";
 import "proj4leaflet";
@@ -15,15 +14,23 @@ import translations from "./translations.js";
 
 export default class LajiMap {
 	constructor(props) {
-		["rootElem", "locate", "latitude", "longitude", "zoom", "onChange"].forEach(prop => {
-			this[prop] = props[prop];
+		this.tileLayerName = "taustakartta";
+		this.lang = "en";
+		this.locate = false;
+		this.zoom = 4;
+		this.data = [];
+		this.activeIdx = 0;
+
+		["rootElem", "locate", "latitude", "longitude","zoom",
+		 "onChange", "tileLayerName", "data", "activeIdx"].forEach(prop => {
+			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 
 		this.constructDictionary();
 		this.initializeMap();
-		this.setLang(props.lang);
-		this.setData(props.data);
-		this.activeId = (props.activeIdx !== undefined) ? this.idxsToIds[props.activeIdx] : undefined;
+		this.setLang(this.lang);
+		this.setData(this.data);
+		this.activeId = (this.activeIdx !== undefined) ? this.idxsToIds[this.activeIdx] : undefined;
 		this.setActive(this.activeId);
 		this.map.addLayer(this.drawnItems);
 		this.initalizeMapControls();
@@ -41,7 +48,7 @@ export default class LajiMap {
 		});
 
 		this.map.addLayer(L.tileLayer.mml_wmts({
-			layer: "maastokartta"
+			layer: this.tileLayerName
 		}));
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);

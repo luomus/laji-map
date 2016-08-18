@@ -40,6 +40,9 @@ export default class LajiMap {
 	initializeMap() {
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
+		this.foreignCRS = L.CRS.EPSG3857;
+		this.mmlCRS = L.TileLayer.MML.get3067Proj();
+
 		this.map = map(this.rootElem, {
 			crs: L.TileLayer.MML.get3067Proj(),
 			contextmenu: true,
@@ -52,15 +55,50 @@ export default class LajiMap {
 				layer: tileLayerName
 			});
 		});
-		this.map.addLayer(this[this.tileLayerName]);
+
+		this.foreignTileLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+		this.switchTileLayer(this[this.tileLayerName]);
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
+		this.initializeView();
+		return;
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
 			this.onLocate();
 		} else {
 			this.initializeView();
+		}
+	}
+
+	switchTileLayer(layer) {
+		if (this.tileLayer) {
+			if ([this.maastokartta, this.taustakartta].includes(layer)) {
+				this.interceptMapMoveEnd = true;
+				this.map.setView(this.map.getCenter(), 4, {animate: false});
+				this.map.addControl(this.layerControl);
+			} else {
+				this.interceptMapMoveEnd = true;
+				this.map.setView(this.map.getCenter(), 6, {animate: false});
+				this.map.removeControl(this.layerControl);
+			}
+
+			this.map.removeLayer(this.tileLayer);
+			const center = this.map.getCenter();
+			this.map.options.crs = (layer === this.foreignTileLayer) ? this.foreignCRS : this.mmlCRS;
+
+			this.interceptMapMoveEnd = true;
+			this.map.setView(center); // Fix shifted center.
+
+			this.interceptMapMoveEnd = true;
+			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+
+			this.tileLayer = layer;
+			this.map.addLayer(this.tileLayer);
+		} else {
+			this.tileLayer = layer;
+			this.map.addLayer(this.tileLayer);
 		}
 	}
 
@@ -72,15 +110,14 @@ export default class LajiMap {
 	}
 
 	initializeMapEvents() {
-		this.map.on("click", () => {
-			this.interceptClick();
+		this.map.addEventListener({
+			click: () => this.interceptClick(),
+			dblclick: e => this.onAdd(new L.marker(e.latlng)),
+			"draw:created": ({ layer }) => this.onAdd(layer),
+			locationfound: this.onLocationFound,
+			locationerror: this.onLocationNotFound,
+			moveend: this.onMapMoveEnd
 		});
-		this.map.on("dblclick", (e) => {
-			this.onAdd(new L.marker(e.latlng));
-		});
-		this.map.on("draw:created", ({ layer }) => this.onAdd(layer));
-		this.map.on("locationfound", this.onLocationFound);
-		this.map.on("locationerror", this.onLocationNotFound);
 	}
 
 	initalizeMapControls() {
@@ -169,6 +206,28 @@ export default class LajiMap {
 	destroy() {
 		this.map.off();
 		this.map = null;
+	}
+
+
+	coordinatesAreInFinland(latLng) {
+		if (!latLng || !latLng.lat || !latLng.lng) return;
+		else if (latLng.lat > 59.5 && latLng.lat < 70 && latLng.lng > 19 && latLng.lng < 31.5 ) return true;
+		else return false;
+	}
+
+	onMapMoveEnd = () => {
+		if (this.interceptMapMoveEnd) {
+			this.interceptMapMoveEnd = false;
+			return;
+		}
+		const latLng = this.map.getCenter();
+
+		if ([this.maastokartta, this.taustakartta].includes(this.tileLayer) &&
+			!this.coordinatesAreInFinland(latLng)) {
+			this.switchTileLayer(this.foreignTileLayer);
+		} else if (this.tileLayer === this.foreignTileLayer && this.coordinatesAreInFinland(latLng)) {
+			this.switchTileLayer(this[this.tileLayerName]);
+		}
 	}
 
 	constructDictionary() {
@@ -351,7 +410,6 @@ export default class LajiMap {
 		});
 	}
 
-
 	onLocate = () => {
 		this.map.locate();
 	}
@@ -425,7 +483,6 @@ export default class LajiMap {
 		});
 	}
 
-	//TODO nää idx. Sit fix laji-form. Sit bugi tää: edit tilaan marker ja poista -> ????
 	onDelete(deleteIds) {
 		this.clearEditable();
 

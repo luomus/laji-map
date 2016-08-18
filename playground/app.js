@@ -5,7 +5,7 @@ import "../src/styles.js";
 class App {
 	constructor() {
 		this.data = [
-			{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.19795098463816,60.47883388654405]}},
+			{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},
 			{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}}
 		]
 		this.activeIdx = 0;

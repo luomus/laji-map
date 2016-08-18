@@ -124,7 +124,6 @@ export default class LajiMap {
 		const drawOptions = {
 			position: "topright",
 			draw: {
-				circle: false,
 				marker: {
 					icon: L.VectorMarkers.icon({
 						prefix: "glyphicon",
@@ -140,7 +139,7 @@ export default class LajiMap {
 			}
 		};
 
-		["polyline", "polygon", "rectangle"].forEach(type => {
+		["polyline", "polygon", "rectangle", "circle"].forEach(type => {
 			drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
@@ -270,7 +269,7 @@ export default class LajiMap {
 			const drawLocalizations = L.drawLocal.draw;
 
 			// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
-			["polyline", "polygon", "rectangle"].forEach(featureType => {
+			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
 				drawLocalizations.toolbar.buttons[featureType] = join("Draw", featureType);
 			});
 			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
@@ -452,10 +451,18 @@ export default class LajiMap {
 		if (this.onChange) this.onChange(e);
 	}
 
+	enchanceGeoJSON(geoJSON, layer) {
+		// GeoJSON circles doesn't have radius, so we extend GeoJSON.
+		if (layer instanceof L.Circle) {
+			geoJSON.geometry.radius = layer._radius;
+		}
+		return geoJSON;
+	}
+
 	onAdd(layer) {
 		if (layer instanceof L.Marker) layer.setIcon(this.createIcon());
 
-		const newItem = this.initializeLayer(layer, this.data.length);
+		const newItem = this.enchanceGeoJSON(this.initializeLayer(layer, this.data.length), layer);
 		this.data.push(newItem);
 
 		const event = [
@@ -472,7 +479,7 @@ export default class LajiMap {
 	onEdit(data) {
 		const eventData = {};
 		for (let id in data) {
-			const geoJson = data[id].toGeoJSON();
+			const geoJson = this.enchanceGeoJSON(data[id].toGeoJSON(), data[id]);
 			eventData[this.idsToIdxs[id]] = geoJson;
 			this.data[id] = geoJson;
 		}

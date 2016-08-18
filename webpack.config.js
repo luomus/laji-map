@@ -17,6 +17,18 @@ module.exports = {
 	module: {
 		loaders: [
 			{
+				test: /\.js$/,
+				loaders: ["babel"],
+				include: [
+					path.join(__dirname, "src"),
+					path.join(__dirname, "playground")
+				]
+			},
+			{
+				test: /\.json$/,
+				loader: "json"
+			},
+			{
 				test: /\.css$/,
 				loader: "style-loader!css-loader"
 			},
@@ -27,14 +39,6 @@ module.exports = {
 			{
 				test: /\.jpg$/,
 				loader: "file-loader"
-			},
-			{
-				test: /\.js$/,
-				loaders: ["babel"],
-				include: [
-					path.join(__dirname, "src"),
-					path.join(__dirname, "playground")
-				]
 			},
 			{
 				test: /\.svg/,

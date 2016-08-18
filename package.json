@@ -39,6 +39,7 @@
     "babel-loader": "*",
     "babel-preset-es2015": "*",
     "babel-preset-stage-0": "*",
+    "json-loader": "^0.5.4",
     "leaflet": "*",
     "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git",
     "leaflet-draw": "*",

@@ -12,6 +12,10 @@ const USER_LOCATION_COLOR = "#FF0000";
 
 import translations from "./translations.js";
 
+import boundsOfFinland from "./finland_bounds.json";
+
+const finlandPolygon = geoJson(boundsOfFinland);
+
 export default class LajiMap {
 	constructor(props) {
 		this.tileLayerName = "taustakartta";
@@ -209,9 +213,7 @@ export default class LajiMap {
 
 
 	coordinatesAreInFinland(latLng) {
-		if (!latLng || !latLng.lat || !latLng.lng) return;
-		else if (latLng.lat > 59.5 && latLng.lat < 70 && latLng.lng > 19 && latLng.lng < 31.5 ) return true;
-		else return false;
+		return finlandPolygon.getBounds().contains(latLng);
 	}
 
 	onMapMoveEnd = () => {

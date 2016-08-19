@@ -25,7 +25,7 @@ export default class LajiMap {
 		this.data = [];
 		this.activeIdx = 0;
 
-		["rootElem", "locate", "latitude", "longitude","zoom",
+		["rootElem", "locate", "latitude", "longitude","zoom", "lang",
 		 "onChange", "tileLayerName", "data", "activeIdx"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
@@ -191,8 +191,15 @@ export default class LajiMap {
 		this.drawControl = new Control.Draw(drawOptions);
 		this.map.addControl(this.drawControl);
 
-		this.zoomControl = new L.control.zoom();
-		this.map.addControl(this.zoomControl);
+		this.map.addControl(this.getZoomControl());
+	}
+
+	getZoomControl() {
+		this.zoomControl = L.control.zoom({
+			zoomInTitle: this.translations.ZoomIn,
+			zoomOutTitle: this.translations.ZoomOut
+		});
+		return this.zoomControl;
 	}
 
 	getLayerControl() {
@@ -300,17 +307,14 @@ export default class LajiMap {
 
 			[this.drawControl, this.locationControl].forEach(control => {
 				if (!control) return;
+				console.log(control);
 				this.map.removeControl(control);
 				this.map.addControl(control);
 			});
 
 			if (this.zoomControl) {
 				this.map.removeControl(this.zoomControl);
-				this.zoomControl = new L.control.zoom({
-					zoomInTitle: translations.ZoomIn,
-					zoomOutTitle: translations.ZoomOut
-				});
-				this.map.addControl(this.zoomControl);
+				this.map.addControl(this.getZoomControl());
 			}
 
 			if (this.layerControl) {

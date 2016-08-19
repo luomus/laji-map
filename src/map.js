@@ -23,6 +23,19 @@ export default class LajiMap {
 		this.locate = false;
 		this.zoom = 4;
 		this.data = [];
+		this.drawnItems = geoJson([], {
+			pointToLayer: (featureData, latlng) => {
+				let layer;
+				if (featureData.geometry.type === "Point") {
+					layer = (featureData.geometry.radius) ?
+						new L.circle(latlng, featureData.geometry.radius) :
+						new L.marker(latlng, {icon: this.createIcon()});
+				} else {
+					layer = L.GeoJSON.geometryToLayer(featureData);
+				}
+				return layer;
+			}
+		});
 		this.activeIdx = 0;
 
 		["rootElem", "locate", "latitude", "longitude","zoom", "lang",
@@ -329,20 +342,9 @@ export default class LajiMap {
 	}
 
 	setData(data) {
-		this.data = data.slice(0);
-		this.drawnItems = geoJson(this.data, {
-			pointToLayer: (featureData, latlng) => {
-				let layer;
-				if (featureData.geometry.type === "Point") {
-					layer = (featureData.geometry.radius) ?
-						new L.circle(latlng, featureData.geometry.radius) :
-						new L.marker(latlng, {icon: this.createIcon()});
-				} else {
-					layer = L.GeoJSON.geometryToLayer(featureData);
-				}
-				return layer;
-			}
-		});
+		this.data = (data && Array.isArray(data)) ? data.slice(0) : [];
+		this.drawnItems.clearLayers();
+		this.drawnItems.addData(this.data);
 		this.resetIds();
 		this.redrawFeatures();
 	}
@@ -451,7 +453,7 @@ export default class LajiMap {
 	}
 
 	getLayerById(id) {
-		return this.drawnItems._layers[id];
+		return this.drawnItems ? this.drawnItems._layers[id] : undefined;
 	}
 
 	triggerEvent(e) {

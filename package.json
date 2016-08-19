@@ -2,12 +2,13 @@
   "name": "laji-map",
   "version": "1.0.0",
   "description": "A map with drawing functionality",
-  "main": "lib/map.js",
+  "main": "dist/laji-map.js",
   "scripts": {
-    "build": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
-    "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
-    "lint": "eslint src playground --ignore-pattern src/lib/*",
-    "install": "npm run build"
+	  "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
+	  "lint": "eslint src playground --ignore-pattern src/lib/*",
+    "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
+    "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
+    "install": "npm run build:dist && npm run build:lib"
   },
   "repository": {
     "type": "git",
@@ -23,13 +24,7 @@
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "*",
-    "css-loader": "*",
     "eslint": "*",
-    "file-loader": "*",
-    "style-loader": "*",
-    "svg-url-loader": "*",
-    "url-loader": "*",
-    "webpack": "*",
     "webpack-dev-server": "*"
   },
   "dependencies": {
@@ -39,11 +34,18 @@
     "babel-loader": "*",
     "babel-preset-es2015": "*",
     "babel-preset-stage-0": "*",
+    "extract-text-webpack-plugin": "^1.0.1",
     "json-loader": "^0.5.4",
     "leaflet": "*",
     "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git",
     "leaflet-draw": "*",
     "proj4leaflet": "*",
-    "rimraf": "*"
+    "rimraf": "*",
+	  "file-loader": "*",
+	  "style-loader": "*",
+	  "svg-url-loader": "*",
+	  "webpack": "*",
+	  "url-loader": "*",
+	  "css-loader": "*"
   }
 }

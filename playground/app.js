@@ -1,4 +1,4 @@
-import MapComponent from "../src/map";
+import LajiMap from "../src/map";
 
 import "../src/styles.js";
 
@@ -10,7 +10,7 @@ class App {
 		]
 		this.activeIdx = 0;
 
-		this.map = new MapComponent({
+		this.map = new LajiMap({
 			rootElem: document.getElementById("root"),
 			data: this.data,
 			activeIdx: this.activeIdx,

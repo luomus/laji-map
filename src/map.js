@@ -334,7 +334,9 @@ export default class LajiMap {
 			pointToLayer: (featureData, latlng) => {
 				let layer;
 				if (featureData.geometry.type === "Point") {
-					layer = new L.marker(latlng, {icon: this.createIcon()});
+					layer = (featureData.geometry.radius) ?
+						new L.circle(latlng, featureData.geometry.radius) :
+						new L.marker(latlng, {icon: this.createIcon()});
 				} else {
 					layer = L.GeoJSON.geometryToLayer(featureData);
 				}
@@ -460,7 +462,7 @@ export default class LajiMap {
 	enchanceGeoJSON(geoJSON, layer) {
 		// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 		if (layer instanceof L.Circle) {
-			geoJSON.geometry.radius = layer._radius;
+			geoJSON.geometry.radius = layer.getRadius();
 		}
 		return geoJSON;
 	}

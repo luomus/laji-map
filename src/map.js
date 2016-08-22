@@ -80,7 +80,7 @@ export default class LajiMap {
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 		this.initializeView();
-		return;
+
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
 			this.onLocate();
@@ -128,9 +128,10 @@ export default class LajiMap {
 
 	initializeMapEvents() {
 		this.map.addEventListener({
-			click: () => this.interceptClick(),
-			dblclick: e => this.onAdd(new L.marker(e.latlng)),
+			click: e => { if (!this.interceptClick()) this.onAdd(new L.marker(e.latlng));},
 			"draw:created": ({ layer }) => this.onAdd(layer),
+			"draw:drawstart": () => { this.drawing = true },
+			"draw:drawstop": () => { this.drawing = false },
 			locationfound: this.onLocationFound,
 			locationerror: this.onLocationNotFound,
 			moveend: this.onMapMoveEnd
@@ -174,7 +175,13 @@ export default class LajiMap {
 			},
 
 			_createItem: function(container, glyphName) {
-				return L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, L.DomUtil.create("a", "", container))
+				const elem = L.DomUtil.create("a", "", container);
+				elem.href = "#";
+				const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem)
+				L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
+				L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
+				L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
+				return elem;
 			},
 
 			_createSearch: function(container) {
@@ -290,9 +297,19 @@ export default class LajiMap {
 
 			const drawLocalizations = L.drawLocal.draw;
 
+			this.map.contextmenu.removeAllItems();
+
 			// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
-				drawLocalizations.toolbar.buttons[featureType] = join("Draw", featureType);
+				const text = join("Draw", featureType);
+
+				drawLocalizations.toolbar.buttons[featureType] = text;
+
+				this.map.contextmenu.addItem({
+					text: text,
+					iconCls: "context-menu-draw context-menu-draw-" + featureType,
+					callback: () => this.drawControl._toolbars.draw._modes[featureType].handler.enable()
+				});
 			});
 			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
 
@@ -408,6 +425,7 @@ export default class LajiMap {
 		const { translations } = this;
 		layer.unbindContextMenu();
 		layer.bindContextMenu({
+			contextmenuInheritItems: false,
 			contextmenuItems: [{
 				text: translations ? translations.Edit + " " + translations.featurePartitive : "",
 				callback: () => this.setEditable(id)
@@ -607,6 +625,7 @@ export default class LajiMap {
 	}
 
 	interceptClick() {
+		if (this.drawing) return true;
 		if (this.editId !== undefined) {
 			this.commitEdit();
 			return true;

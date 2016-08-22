@@ -320,7 +320,6 @@ export default class LajiMap {
 
 			[this.drawControl, this.locationControl].forEach(control => {
 				if (!control) return;
-				console.log(control);
 				this.map.removeControl(control);
 				this.map.addControl(control);
 			});
@@ -491,7 +490,7 @@ export default class LajiMap {
 		for (let id in data) {
 			const geoJson = this.enchanceGeoJSON(data[id].toGeoJSON(), data[id]);
 			eventData[this.idsToIdxs[id]] = geoJson;
-			this.data[id] = geoJson;
+			this.data[this.idsToIdxs[id]] = geoJson;
 		}
 
 		this.triggerEvent({

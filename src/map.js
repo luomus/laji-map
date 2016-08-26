@@ -38,8 +38,8 @@ export default class LajiMap {
 		});
 		this.activeIdx = 0;
 
-		["rootElem", "locate", "latitude", "longitude","zoom", "lang",
-		 "onChange", "tileLayerName", "data", "activeIdx"].forEach(prop => {
+		["rootElem", "locate", "latlng","zoom", "lang",
+		 "onChange", "tileLayerName", "data", "activeIdx", "getPopup"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 
@@ -120,10 +120,10 @@ export default class LajiMap {
 	}
 
 	initializeView = () => {
-		this.map.setView([
-			this.longitude || 60.1718699,
-			this.latitude || 24.9419917
-		], this.zoom || 10);
+		this.map.setView(
+			this.latlng || [60.1718699, 24.9419917],
+			this.zoom || 10
+		);
 	}
 
 	initializeMapEvents() {
@@ -135,7 +135,13 @@ export default class LajiMap {
 			locationfound: this.onLocationFound,
 			locationerror: this.onLocationNotFound,
 			moveend: this.onMapMoveEnd,
-			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() }
+			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
+			popupopen: popup => {
+				if (this.layerClicked) {
+					this.getLayerById(this.activeId).closePopup();
+					this.layerClicked = false;
+				}
+			}
 		});
 	}
 
@@ -413,10 +419,24 @@ export default class LajiMap {
 
 		this.updateContextMenuFor(id);
 
-		layer.on("click", () => {
+
+		layer.on("click", (e) => {
+			this.layerClicked = true;
 			if (!this.interceptClick()) this.onActiveChange(id);
 		});
 		layer.on("dblclick", () => this.setEditable(id));
+
+		layer.on("mouseover", () => {
+			layer._mouseover = true;
+			if (this.getPopup) {
+				// Allow either returning content or firing a callback with content.
+				const content = this.getPopup(idx, callbackContent => {
+					layer.bindPopup(callbackContent).openPopup();
+				});
+				if (content) layer.bindPopup(content).openPopup();
+			}
+		});
+		layer.on("mouseout", () => { layer.closePopup(); layer._mouseover = false });
 
 		return layer.toGeoJSON();
 	}

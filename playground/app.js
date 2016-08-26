@@ -26,18 +26,23 @@ class App {
 			rootElem: document.getElementById("root"),
 			data: this.data,
 			activeIdx: this.activeIdx,
-			locate: true,
-			longitude: 60.4353462,
-			latitude: 22.2285623,
+			latlng: [60.4353462, 22.2285623],
 			zoom: 6,
 			onChange: this.onMapChange,
+			getPopup: this.getPopup,
 			lang: "fi"
 		});
+		console.log(this.map);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
 		})
 
+	}
+
+	getPopup = (idx, callback) => {
+		//return "" + idx;
+		callback("" + idx);
 	}
 
 	onMapChange = (events) => {

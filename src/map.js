@@ -428,7 +428,7 @@ export default class LajiMap {
 
 		layer.on("mouseover", () => {
 			layer._mouseover = true;
-			if (this.getPopup) {
+			if (this.getPopup && this.editId !== layer._leaflet_id) {
 				// Allow either returning content or firing a callback with content.
 				const content = this.getPopup(idx, callbackContent => {
 					layer.bindPopup(callbackContent).openPopup();

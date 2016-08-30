@@ -429,7 +429,7 @@ export default class LajiMap {
 	setActive(id) {
 		const prevActiveId = this.activeId;
 		this.activeId = id;
-		if (prevActiveId !== undefined) this.updateDrawLayerStyle(prevActiveId);
+		this.updateDrawLayerStyle(prevActiveId);
 		this.updateDrawLayerStyle(id);
 	}
 
@@ -455,7 +455,6 @@ export default class LajiMap {
 
 		this.data.forEach((dataItem, idx) => {
 			this.updateDataLayerGroupStyle(idx);
-			// dataItem.eachLayer(layer => this.updateDataLayerGroupStyle(dataItem));
 		})
 	}
 
@@ -749,6 +748,7 @@ export default class LajiMap {
 	}
 
 	updateDrawLayerStyle(id) {
+		if (id === undefined) return;
 		const layer = this.getLayerById(id);
 
 		let style = {};

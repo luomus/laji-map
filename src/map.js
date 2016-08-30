@@ -347,7 +347,7 @@ export default class LajiMap {
 
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this.allowDraw) this.map.contextmenu.addItem({
+				if (this.controlIsAllowed(this.drawControl)) this.map.contextmenu.addItem({
 					text: text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
 					callback: () => this.drawControl._toolbars.draw._modes[featureType].handler.enable()

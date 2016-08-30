@@ -476,14 +476,17 @@ export default class LajiMap {
 		});
 		layer.on("dblclick", () => this.setEditable(id));
 
+		function openPopup(content) {
+			if (content === undefined || content === null) return;
+			layer.bindPopup(content).openPopup();
+		}
+
 		layer.on("mouseover", () => {
 			layer._mouseover = true;
 			if (this.getPopup && this.editId !== layer._leaflet_id) {
 				// Allow either returning content or firing a callback with content.
-				const content = this.getPopup(idx, callbackContent => {
-					layer.bindPopup(callbackContent).openPopup();
-				});
-				if (content) layer.bindPopup(content).openPopup();
+				const content = this.getPopup(idx, callbackContent => openPopup(callbackContent));
+				if (content) openPopup(content);
 			}
 		});
 		layer.on("mouseout", () => { layer.closePopup(); layer._mouseover = false });

@@ -143,7 +143,7 @@ export default class LajiMap {
 
 	initializeMapEvents() {
 		this.map.addEventListener({
-			click: e => { if (!this.interceptClick()) this.onAdd(new L.marker(e.latlng));},
+			click: e => { if (this.controlSettings.draw && !this.interceptClick()) this.onAdd(new L.marker(e.latlng));},
 			"draw:created": ({ layer }) => this.onAdd(layer),
 			"draw:drawstart": () => { this.drawing = true },
 			"draw:drawstop": () => { this.drawing = false },
@@ -787,7 +787,7 @@ export default class LajiMap {
 		if (!dataItem) return;
 
 		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
-		
+
 		let i = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
 			this.updateLayerStyle(layer, dataItem.getFeatureStyle ?

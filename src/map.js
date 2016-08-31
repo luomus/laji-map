@@ -34,7 +34,7 @@ export default class LajiMap {
 			location: true
 		};
 
-		["rootElem", "locate", "latlng","zoom", "lang", "onChange",
+		["rootElem", "locate", "center", "zoom", "lang", "onChange",
 		 "tileLayerName", "drawData", "data", "activeIdx", "getPopup",
 		 "controlSettings"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
@@ -136,7 +136,7 @@ export default class LajiMap {
 
 	initializeView = () => {
 		this.map.setView(
-			this.latlng || [60.1718699, 24.9419917],
+			this.center || [60.1718699, 24.9419917],
 			this.zoom || 10
 		);
 	}
@@ -758,9 +758,6 @@ export default class LajiMap {
 	}
 
 	getStyleForLayer(layer, overrideStyles, id) {
-		//console.log(layer);
-		//console.log(layer.toGeoJSON());
-		//console.log(id);
 		return this.getStyleForType(layer.toGeoJSON().geometry.type, overrideStyles, id);
 	}
 

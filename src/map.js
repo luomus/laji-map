@@ -414,6 +414,7 @@ export default class LajiMap {
 			this.dataLayerGroups.push(layer);
 			layer.addTo(this.map);
 		});
+		this.redrawFeatures();
 	}
 
 	setDrawData(data) {

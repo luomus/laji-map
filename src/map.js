@@ -25,7 +25,7 @@ export default class LajiMap {
 		this.locate = false;
 		this.zoom = 4;
 		this.data = [];
-		this.drawData = {data: []};
+		this.drawData = {featureCollection: {type: "featureCollection", features: []}};
 		this.activeIdx = 0;
 		this.controlSettings = {
 			draw: true,
@@ -42,14 +42,14 @@ export default class LajiMap {
 
 
 		this.geoJsonLayerOptions = {
-			pointToLayer: (featureData, latlng) => {
+			pointToLayer: (feature, latlng) => {
 				let layer;
-				if (featureData.geometry.type === "Point") {
-					layer = (featureData.geometry.radius) ?
-						new L.circle(latlng, featureData.geometry.radius) :
+				if (feature.geometry.type === "Point") {
+					layer = (feature.geometry.radius) ?
+						new L.circle(latlng, feature.geometry.radius) :
 						new L.marker(latlng, {icon: this.createIcon()});
 				} else {
-					layer = L.GeoJSON.geometryToLayer(featureData);
+					layer = L.GeoJSON.geometryToLayer(feature);
 				}
 				return layer;
 			}
@@ -62,7 +62,7 @@ export default class LajiMap {
 		this.setDrawData(this.drawData);
 		this.activeId = (this.activeIdx !== undefined) ? this.idxsToIds[this.activeIdx] : undefined;
 		this.setActive(this.activeId);
-		this.map.addLayer(this.drawLayer);
+		this.map.addLayer(this.drawLayerGroup);
 		this.initalizeMapControls();
 		this.initializeMapEvents();
 	}
@@ -92,7 +92,7 @@ export default class LajiMap {
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
-		this.drawLayer = geoJson([], this.geoJsonLayerOptions);
+		this.drawLayerGroup = geoJson([], this.geoJsonLayerOptions);
 
 		this.initializeView();
 
@@ -153,7 +153,7 @@ export default class LajiMap {
 			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
 			popupopen: popup => {
 				if (this.layerClicked) {
-					this.getLayerById(this.activeId).closePopup();
+					this.getDrawLayerById(this.activeId).closePopup();
 					this.layerClicked = false;
 				}
 			}
@@ -193,7 +193,7 @@ export default class LajiMap {
 				}
 			},
 			edit: {
-				featureGroup: this.drawLayer,
+				featureGroup: this.drawLayerGroup,
 				edit: false,
 				remove: false
 			}
@@ -394,28 +394,34 @@ export default class LajiMap {
 			}
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
-				this.updateContextMenuFor(id);
+				this.updateContextMenuForDrawItem(id);
 			}
 		}
 	}
 
 	setData(data) {
-		this.data = (data) ? data.map(item => {return {...item, data: item.data.slice(0)}}) : [];
-		if (this.dataLeafletLayerGroups) {
-			this.dataLeafletLayerGroups.forEach(layer => this.map.removeLayer(layer));
+		this.data = (data) ? data.map(item => {
+			let featureCollection = {type: "featureCollection"};
+			featureCollection.features = item.featureCollection.features.slice(0);
+			return {...item, featureCollection};
+		}) : [];
+		if (this.dataLayerGroups) {
+			this.dataLayerGroups.forEach(layer => this.map.removeLayer(layer));
 		}
-		this.dataLeafletLayerGroups = [];
-		this.data.forEach(dataLayer => {
-			const layer = geoJson(dataLayer.data, this.geoJsonLayerOptions);
-			this.dataLeafletLayerGroups.push(layer);
+		this.dataLayerGroups = [];
+		this.data.forEach(dataItem => {
+			const layer = geoJson(dataItem.featureCollection, this.geoJsonLayerOptions);
+			this.dataLayerGroups.push(layer);
 			layer.addTo(this.map);
 		});
 	}
 
 	setDrawData(data) {
-		this.drawData = (data) ? {...data, data: data.data.slice(0)} : [];
-		this.drawLayer.clearLayers();
-		this.drawLayer.addData(this.drawData.data);
+		const featureCollection = {type: "featureCollection"};
+		featureCollection.features = data.featureCollection.features.slice(0);
+		this.drawData = (data) ? {...data, featureCollection} : [];
+		this.drawLayerGroup.clearLayers();
+		this.drawLayerGroup.addData(this.drawData.featureCollection);
 		this.resetIds();
 		this.redrawFeatures();
 	}
@@ -442,7 +448,7 @@ export default class LajiMap {
 		this.idsToIdxs = {};
 
 		let counter = 0;
-		this.drawLayer.eachLayer(layer => {
+		this.drawLayerGroup.eachLayer(layer => {
 			const id = layer._leaflet_id;
 			this.idxsToIds[counter] = id;
 			this.idsToIdxs[id] = counter;
@@ -452,7 +458,7 @@ export default class LajiMap {
 
 	redrawFeatures() {
 		for (let id in this.idsToIdxs) {
-				this.initializeLayer(this.getLayerById(id), this.idsToIdxs[id]);
+				this.initializeDrawLayer(this.getDrawLayerById(id), this.idsToIdxs[id]);
 		}
 
 		this.data.forEach((dataItem, idx) => {
@@ -460,8 +466,8 @@ export default class LajiMap {
 		})
 	}
 
-	initializeLayer(layer, idx) {
-		this.drawLayer.addLayer(layer);
+	initializeDrawLayer(layer, idx) {
+		this.drawLayerGroup.addLayer(layer);
 
 		const id = layer._leaflet_id;
 		this.idxsToIds[idx] = id;
@@ -469,7 +475,7 @@ export default class LajiMap {
 
 		this.updateDrawLayerStyle(id);
 
-		this.updateContextMenuFor(id);
+		this.updateContextMenuForDrawItem(id);
 
 
 		layer.on("click", (e) => {
@@ -496,8 +502,8 @@ export default class LajiMap {
 		return layer.toGeoJSON();
 	}
 
-	updateContextMenuFor(id) {
-		const layer = this.getLayerById(id);
+	updateContextMenuForDrawItem(id) {
+		const layer = this.getDrawLayerById(id);
 		const { translations } = this;
 		layer.unbindContextMenu();
 		layer.bindContextMenu({
@@ -545,8 +551,8 @@ export default class LajiMap {
 		if (this.initializeViewAfterLocateFail) this.initializeView();
 	}
 
-	getLayerById(id) {
-		return this.drawLayer ? this.drawLayer._layers[id] : undefined;
+	getDrawLayerById(id) {
+		return this.drawLayerGroup ? this.drawLayerGroup._layers[id] : undefined;
 	}
 
 	triggerEvent(e) {
@@ -565,15 +571,17 @@ export default class LajiMap {
 	onAdd(layer) {
 		if (layer instanceof L.Marker) layer.setIcon(this.createIcon());
 
-		const newItem = this.enchanceGeoJSON(this.initializeLayer(layer, this.drawData.data.length), layer);
-		this.drawData.data.push(newItem);
+		const {featureCollection: {features}} = this.drawData;
+
+		const newFeature = this.enchanceGeoJSON(this.initializeDrawLayer(layer, features.length), layer);
+		features.push(newFeature);
 
 		const event = [
 			{
 				type: "create",
-				data: newItem
+				feature: newFeature
 			},
-			this.getOnActiveChangeEvent(this.idxsToIds[this.drawData.data.length - 1])
+			this.getOnActiveChangeEvent(this.idxsToIds[features.length - 1])
 		];
 
 		this.triggerEvent(event);
@@ -584,12 +592,12 @@ export default class LajiMap {
 		for (let id in data) {
 			const geoJson = this.enchanceGeoJSON(data[id].toGeoJSON(), data[id]);
 			eventData[this.idsToIdxs[id]] = geoJson;
-			this.drawData.data[this.idsToIdxs[id]] = geoJson;
+			this.drawData.featureCollection.features[this.idsToIdxs[id]] = geoJson;
 		}
 
 		this.triggerEvent({
 			type: "edit",
-			data: eventData
+			features: eventData
 		});
 	}
 
@@ -602,9 +610,11 @@ export default class LajiMap {
 
 		const activeIdx = this.idsToIdxs[this.activeId];
 
+		const {featureCollection: {features}} = this.drawData;
+
 		let changeActive = false;
 		let newActiveId = undefined;
-		if (this.drawData.data && Object.keys(this.idsToIdxs).filter(id => !deleteIds.includes(id)).length === 0) {
+		if (features && Object.keys(this.idsToIdxs).filter(id => !deleteIds.includes(id)).length === 0) {
 			changeActive = true;
 		} else if (this.activeId !== undefined && deleteIds.includes(this.activeId)) {
 			changeActive = true;
@@ -632,11 +642,10 @@ export default class LajiMap {
 			changeActive = true;
 		}
 
-		const data = this.drawData.data.filter((item, i) => !deleteIdxs.includes(i));
-		this.drawData.data = data;
+		this.drawData.featureCollection.features = features.filter((item, i) => !deleteIdxs.includes(i));
 
 		deleteIds.forEach(id => {
-			this.drawLayer.removeLayer(id);
+			this.drawLayerGroup.removeLayer(id);
 		});
 		this.resetIds();
 
@@ -648,7 +657,6 @@ export default class LajiMap {
 		if (changeActive) event.push(this.getOnActiveChangeEvent(newActiveId));
 
 		this.triggerEvent(event);
-
 	}
 
 	getOnActiveChangeEvent(id) {
@@ -671,7 +679,7 @@ export default class LajiMap {
 			return;
 		}
 
-		let layer = this.getLayerById(id);
+		let layer = this.getDrawLayerById(id);
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
@@ -686,17 +694,17 @@ export default class LajiMap {
 	setEditable(id) {
 		this.clearEditable();
 		this.editId = id;
-		this.getLayerById(this.editId).editing.enable();
+		this.getDrawLayerById(this.editId).editing.enable();
 	}
 
 	clearEditable() {
 		if (this.editId === undefined) return;
-		this.getLayerById(this.editId).editing.disable();
+		this.getDrawLayerById(this.editId).editing.disable();
 		this.editId = undefined;
 	}
 
 	commitEdit() {
-		this.onEdit({[this.editId]: this.getLayerById(this.editId)});
+		this.onEdit({[this.editId]: this.getDrawLayerById(this.editId)});
 		this.clearEditable();
 	}
 
@@ -733,7 +741,7 @@ export default class LajiMap {
 
 	getStyleForType(type, overrideStyles, id) {
 		const idx = this.idsToIdxs[id];
-		if (this.drawData.getFeatureStyle) return this.drawData.getFeatureStyle({layerIdx: idx, geometry: this.drawData.data[idx]});
+		if (this.drawData.getFeatureStyle) return this.drawData.getFeatureStyle({featureIdx: idx, feature: this.drawData.featureCollection.features[idx]});
 
 		const styles = {
 			weight: type.toLowerCase().includes("line") ? 8 : 14,
@@ -750,18 +758,23 @@ export default class LajiMap {
 	}
 
 	getStyleForLayer(layer, overrideStyles, id) {
+		//console.log(layer);
+		//console.log(layer.toGeoJSON());
+		//console.log(id);
 		return this.getStyleForType(layer.toGeoJSON().geometry.type, overrideStyles, id);
 	}
 
 	updateDrawLayerStyle(id) {
 		if (id === undefined) return;
-		const layer = this.getLayerById(id);
+		const layer = this.getDrawLayerById(id);
+
+		if (!layer) return;
 
 		let style = {};
 		if (layer instanceof L.Marker) {
 			style.color = (id === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
 			const idx = this.idsToIdxs[id];
-			if (this.drawData.getFeatureStyle) style = this.drawData.getFeatureStyle({layerIdx: idx, geometry: this.drawData.data[idx]});
+			if (this.drawData.getFeatureStyle) style = this.drawData.getFeatureStyle({featureIdx: idx, feature: this.drawData.featureCollection.features[idx]});
 		} else {
 			const style =  {};
 			if (this.activeId === id) style.color = ACTIVE_COLOR;
@@ -772,13 +785,13 @@ export default class LajiMap {
 	}
 
 	updateDataLayerGroupStyle(idx) {
-		const group = this.data[idx];
-		if (!group) return;
+		const dataItem = this.data[idx];
+		if (!dataItem) return;
 
 		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
-		this.dataLeafletLayerGroups[idx].eachLayer((layer, i) => {
-			this.updateLayerStyle(layer, group.getFeatureStyle ?
-				group.getFeatureStyle({groupIdx: idx, layerIdx: i, geometry: group.data[i]}) :
+		this.dataLayerGroups[idx].eachLayer((layer, i) => {
+			this.updateLayerStyle(layer, dataItem.getFeatureStyle ?
+				dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i, feature: dataItem.featureCollection.features[i]}) :
 				defaultStyle);
 		});
 	}

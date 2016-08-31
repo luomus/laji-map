@@ -401,8 +401,10 @@ export default class LajiMap {
 
 	setData(data) {
 		this.data = (data) ? data.map(item => {return {...item, data: item.data.slice(0)}}) : [];
+		if (this.dataLayers) {
+			this.dataLayers.forEach(layer => this.map.removeLayer(layer));
+		}
 		this.dataLayers = [];
-		this.dataLayers.forEach(layer => this.map.removeLayer(layer));
 		this.data.forEach(dataLayer => {
 			const layer = geoJson(dataLayer.data, this.geoJsonLayerOptions);
 			this.dataLayers.push(layer);

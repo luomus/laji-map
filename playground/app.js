@@ -54,7 +54,9 @@ class App {
 						}
 					]
 				},
-				getFeatureStyle: ({featureIdx}) => {
+				getFeatureStyle: (e) => {
+					console.log(e);
+					const {featureIdx} = e;
 					return {
 						weight: featureIdx,
 						opacity: 1,
@@ -98,8 +100,6 @@ class App {
 			getPopup: this.getPopup,
 			lang: "fi"
 		});
-
-		this.map.setData(this.data);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))

@@ -787,10 +787,13 @@ export default class LajiMap {
 		if (!dataItem) return;
 
 		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
-		this.dataLayerGroups[idx].eachLayer((layer, i) => {
+		
+		let i = 0;
+		this.dataLayerGroups[idx].eachLayer(layer => {
 			this.updateLayerStyle(layer, dataItem.getFeatureStyle ?
 				dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i, feature: dataItem.featureCollection.features[i]}) :
 				defaultStyle);
+			i++;
 		});
 	}
 }

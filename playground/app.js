@@ -76,9 +76,9 @@ class App {
 					}
 				}
 			],
-			getFeatureStyle: idx => {
+			getFeatureStyle: ({layerIdx}) => {
 				return {
-					weight: idx,
+					weight: layerIdx,
 					opacity: 1,
 					fillOpacity: 0.4,
 					color: "#f00"

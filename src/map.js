@@ -401,13 +401,13 @@ export default class LajiMap {
 
 	setData(data) {
 		this.data = (data) ? data.map(item => {return {...item, data: item.data.slice(0)}}) : [];
-		if (this.dataLayers) {
-			this.dataLayers.forEach(layer => this.map.removeLayer(layer));
+		if (this.dataLeafletLayerGroups) {
+			this.dataLeafletLayerGroups.forEach(layer => this.map.removeLayer(layer));
 		}
-		this.dataLayers = [];
+		this.dataLeafletLayerGroups = [];
 		this.data.forEach(dataLayer => {
 			const layer = geoJson(dataLayer.data, this.geoJsonLayerOptions);
-			this.dataLayers.push(layer);
+			this.dataLeafletLayerGroups.push(layer);
 			layer.addTo(this.map);
 		});
 	}
@@ -732,7 +732,8 @@ export default class LajiMap {
 	}
 
 	getStyleForType(type, overrideStyles, id) {
-		if (this.drawData.getFeatureStyle) return this.drawData.getFeatureStyle(this.idsToIdxs[id]);
+		const idx = this.idsToIdxs[id];
+		if (this.drawData.getFeatureStyle) return this.drawData.getFeatureStyle({layerIdx: idx, geometry: this.drawData.data[idx]});
 
 		const styles = {
 			weight: type.toLowerCase().includes("line") ? 8 : 14,
@@ -759,7 +760,8 @@ export default class LajiMap {
 		let style = {};
 		if (layer instanceof L.Marker) {
 			style.color = (id === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
-			if (this.drawData.getFeatureStyle) style = this.drawData.getFeatureStyle(this.idsToIdxs[id]);
+			const idx = this.idsToIdxs[id];
+			if (this.drawData.getFeatureStyle) style = this.drawData.getFeatureStyle({layerIdx: idx, geometry: this.drawData.data[idx]});
 		} else {
 			const style =  {};
 			if (this.activeId === id) style.color = ACTIVE_COLOR;
@@ -774,8 +776,10 @@ export default class LajiMap {
 		if (!group) return;
 
 		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
-		this.dataLayers[idx].eachLayer(layer => {
-			this.updateLayerStyle(layer, group.getFeatureStyle ? group.getFeatureStyle(idx) : defaultStyle);
+		this.dataLeafletLayerGroups[idx].eachLayer((layer, i) => {
+			this.updateLayerStyle(layer, group.getFeatureStyle ?
+				group.getFeatureStyle({groupIdx: idx, layerIdx: i, geometry: group.data[i]}) :
+				defaultStyle);
 		});
 	}
 }

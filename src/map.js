@@ -143,7 +143,7 @@ export default class LajiMap {
 
 	initializeMapEvents() {
 		this.map.addEventListener({
-			click: e => { if (this.controlSettings.draw && !this.interceptClick()) this.onAdd(new L.marker(e.latlng));},
+			dblclick: e => { if (this.controlSettings.draw) this.onAdd(new L.marker(e.latlng));},
 			"draw:created": ({ layer }) => this.onAdd(layer),
 			"draw:drawstart": () => { this.drawing = true },
 			"draw:drawstop": () => { this.drawing = false },

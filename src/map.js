@@ -36,7 +36,7 @@ export default class LajiMap {
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
 		 "tileLayerName", "drawData", "data", "activeIdx", "getPopup",
-		 "controlSettings"].forEach(prop => {
+		 "onInitializeDrawLayer", "controlSettings"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 
@@ -499,6 +499,8 @@ export default class LajiMap {
 			}
 		});
 		layer.on("mouseout", () => { layer.closePopup(); layer._mouseover = false });
+
+		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 
 		return layer.toGeoJSON();
 	}

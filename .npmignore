@@ -1,3 +1,6 @@
 src/
 playground/
 .idea/
+.npmignore
+.babelrc
+webpack*

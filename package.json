@@ -1,6 +1,6 @@
 {
   "name": "laji-map",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A map with drawing functionality",
   "main": "dist/laji-map.js",
   "scripts": {
@@ -8,7 +8,7 @@
 	  "lint": "eslint src playground --ignore-pattern src/lib/*",
     "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
-    "publish-to-npm": "npm run build:dist && npm run build:lib"
+    "publish-to-npm": "npm run build:dist && npm run build:lib & npm publish"
   },
   "repository": {
     "type": "git",
@@ -23,29 +23,29 @@
   "author": "Kalle Myllymaa <kalle.myllymaa@helsinki.fi>, Olli Raitio <olli.raitio@helsinki.fi>",
   "license": "MIT",
   "devDependencies": {
+	  "babel-cli": "*",
+	  "babel-core": "*",
     "babel-eslint": "*",
-    "eslint": "*",
-    "webpack-dev-server": "*"
+	  "babel-loader": "*",
+	  "babel-preset-es2015": "*",
+	  "babel-preset-stage-0": "*",
+	  "css-loader": "*",
+	  "eslint": "*",
+	  "extract-text-webpack-plugin": "^1.0.1",
+	  "file-loader": "*",
+	  "json-loader": "^0.5.4",
+	  "rimraf": "*",
+	  "style-loader": "*",
+	  "svg-url-loader": "*",
+	  "url-loader": "*",
+	  "webpack": "*",
+	  "webpack-dev-server": "*"
   },
   "dependencies": {
     "Leaflet.vector-markers": "git+https://git@github.com/hiasinho/Leaflet.vector-markers.git",
-    "babel-cli": "*",
-    "babel-core": "*",
-    "babel-loader": "*",
-    "babel-preset-es2015": "*",
-    "babel-preset-stage-0": "*",
-    "extract-text-webpack-plugin": "^1.0.1",
-    "json-loader": "^0.5.4",
     "leaflet": "*",
     "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git",
     "leaflet-draw": "*",
-    "proj4leaflet": "*",
-    "rimraf": "*",
-	  "file-loader": "*",
-	  "style-loader": "*",
-	  "svg-url-loader": "*",
-	  "webpack": "*",
-	  "url-loader": "*",
-	  "css-loader": "*"
+    "proj4leaflet": "*"
   }
 }

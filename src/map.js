@@ -1,5 +1,5 @@
-import L, { map, Control, FeatureGroup, geoJson, Path } from "leaflet";
-import draw from "leaflet-draw";
+import "leaflet";
+import "leaflet-draw";
 import "proj4leaflet";
 import "./lib/Leaflet.MML-layers/mmlLayers.js";
 import "leaflet-contextmenu";
@@ -15,7 +15,7 @@ import translations from "./translations.js";
 
 import boundsOfFinland from "./finland_bounds.json";
 
-const finlandPolygon = geoJson(boundsOfFinland);
+const finlandPolygon = L.geoJson(boundsOfFinland);
 
 export default class LajiMap {
 
@@ -73,7 +73,7 @@ export default class LajiMap {
 		this.foreignCRS = L.CRS.EPSG3857;
 		this.mmlCRS = L.TileLayer.MML.get3067Proj();
 
-		this.map = map(this.rootElem, {
+		this.map = L.map(this.rootElem, {
 			crs: L.TileLayer.MML.get3067Proj(),
 			contextmenu: true,
 			contextmenuItems: [],
@@ -92,7 +92,7 @@ export default class LajiMap {
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
-		this.drawLayerGroup = geoJson([], this.geoJsonLayerOptions);
+		this.drawLayerGroup = L.geoJson([], this.geoJsonLayerOptions);
 
 		this.initializeView();
 
@@ -250,7 +250,7 @@ export default class LajiMap {
 		this.locationControl = new LocationControl();
 		this.addControl(this.locationControl);
 
-		this.drawControl = new Control.Draw(drawOptions);
+		this.drawControl = new L.Control.Draw(drawOptions);
 		this.addControl(this.drawControl);
 
 		this.addControl(this.getZoomControl());
@@ -410,7 +410,7 @@ export default class LajiMap {
 		}
 		this.dataLayerGroups = [];
 		this.data.forEach(dataItem => {
-			const layer = geoJson(dataItem.featureCollection, this.geoJsonLayerOptions);
+			const layer = L.geoJson(dataItem.featureCollection, this.geoJsonLayerOptions);
 			this.dataLayerGroups.push(layer);
 			layer.addTo(this.map);
 		});

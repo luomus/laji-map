@@ -220,13 +220,28 @@ export default {
 		sv: "hae nimellä"
 	},
 	taustakartta: {
-		fi: "taustakartta",
-		en: "background map",
-		sv: "taustakartta"
+		fi: "Suomen taustakartta",
+		en: "Finland's background map",
+		sv: "Finskas taustakartta"
 	},
 	maastokartta: {
-		fi: "maastokartta",
-		en: "base map",
-		sv: "base map"
-	}
+		fi: "Suomen maastokartta",
+		en: "Finland's base map",
+		sv: "Finskas base map"
+	},
+	google: {
+		fi: "Google",
+		en: "Google",
+		sv: "Google"
+	},
+	openStreetMap: {
+		fi: "maailmankartta (OpenStreetMap)",
+		en: "world map (OpenStreetMap)",
+		sv: "world map (OpenStreetMap)"
+	},
+	googleSatellite: {
+		fi: "satelliittikartta ($Google)",
+		en: "satellite map ($Google)",
+		sv: "satellite map ($Google)"
+	},
 }

@@ -70,7 +70,7 @@ export default class LajiMap {
 	initializeMap() {
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
-		this.foreignCRS = L.CRS.EPSG3857;
+		this.defaultCRS = L.CRS.EPSG3857;
 		this.mmlCRS = L.TileLayer.MML.get3067Proj();
 
 		this.map = L.map(this.rootElem, {
@@ -86,15 +86,20 @@ export default class LajiMap {
 			});
 		});
 
-		this.foreignTileLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+		this.openStreetMap = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+		this.googleSatellite = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+			subdomains:['mt0','mt1','mt2','mt3']
+		});
 
-		this.switchTileLayer(this[this.tileLayerName]);
+		this.tileLayer = this.maastokartta;
+
+		this.initializeView();
+		this.setTileLayer(this[this.tileLayerName]);
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 		this.drawLayerGroup = L.geoJson([], this.geoJsonLayerOptions);
 
-		this.initializeView();
 
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
@@ -104,40 +109,11 @@ export default class LajiMap {
 		}
 	}
 
-	switchTileLayer(layer) {
-		if (this.tileLayer) {
-			if ([this.maastokartta, this.taustakartta].includes(layer)) {
-				this.interceptMapMoveEnd = true;
-				this.map.setView(this.map.getCenter(), 4, {animate: false});
-				this.addControl(this.layerControl);
-			} else {
-				this.interceptMapMoveEnd = true;
-				this.map.setView(this.map.getCenter(), 6, {animate: false});
-				this.map.removeControl(this.layerControl);
-			}
-
-			this.map.removeLayer(this.tileLayer);
-			const center = this.map.getCenter();
-			this.map.options.crs = (layer === this.foreignTileLayer) ? this.foreignCRS : this.mmlCRS;
-
-			this.interceptMapMoveEnd = true;
-			this.map.setView(center); // Fix shifted center.
-
-			this.interceptMapMoveEnd = true;
-			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
-
-			this.tileLayer = layer;
-			this.map.addLayer(this.tileLayer);
-		} else {
-			this.tileLayer = layer;
-			this.map.addLayer(this.tileLayer);
-		}
-	}
-
 	initializeView = () => {
 		this.map.setView(
 			this.center || [60.1718699, 24.9419917],
-			this.zoom || 10
+			this.zoom || 10,
+			{animate: false}
 		);
 	}
 
@@ -150,15 +126,46 @@ export default class LajiMap {
 			"draw:drawstop": () => { this.drawing = false },
 			locationfound: this.onLocationFound,
 			locationerror: this.onLocationNotFound,
-			moveend: this.onMapMoveEnd,
 			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
 			popupopen: popup => {
 				if (this.layerClicked) {
 					this.getDrawLayerById(this.activeId).closePopup();
 					this.layerClicked = false;
 				}
-			}
+			},
+			baselayerchange: ({layer}) => this.setTileLayer(layer)
 		});
+	}
+
+	setTileLayer(layer) {
+		const defaultCRSLayers = [this.openStreetMap, this.googleSatellite];
+		const mmlCRSLayers = [this.maastokartta, this.taustakartta];
+
+		if (!this.tileLayer) {
+			this.tileLayer = layer;
+			this.map.addLayer(this.tileLayer);
+			this.initializeView();
+			return;
+		}
+
+		const center = this.map.getCenter();
+		this.map.options.crs = (defaultCRSLayers.includes(layer)) ? this.defaultCRS : this.mmlCRS;
+
+		this.map.setView(center); // Fix shifted center.
+
+		// This calculation is based on guessing...
+		let zoom = this.map.getZoom();
+		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
+			zoom = zoom - 3;
+		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
+			zoom = zoom + 3;
+		}
+
+		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+		this.map.setView(this.map.getCenter(), zoom, {animate: false});
+
+		this.tileLayer = layer;
+		this.map.addLayer(this.tileLayer);
 	}
 
 	controlIsAllowed(control) {
@@ -268,11 +275,11 @@ export default class LajiMap {
 	getLayerControl() {
 		const baseMaps = {};
 		const { translations } = this;
-		["taustakartta", "maastokartta"].forEach(tileLayerName => {
-			baseMaps[translations[tileLayerName]] = this[tileLayerName];
+		["taustakartta", "maastokartta", "openStreetMap", "googleSatellite"].forEach(tileLayerName => {
+			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
 		});
 
-		this.layerControl = L.control.layers(baseMaps, {}, {position: "bottomleft"});
+		this.layerControl = L.control.layers(baseMaps, {}, {position: "topleft"});
 		return this.layerControl;
 	}
 
@@ -281,25 +288,6 @@ export default class LajiMap {
 		this.map = null;
 	}
 
-
-	coordinatesAreInFinland(latLng) {
-		return finlandPolygon.getBounds().contains(latLng);
-	}
-
-	onMapMoveEnd = () => {
-		if (this.interceptMapMoveEnd) {
-			this.interceptMapMoveEnd = false;
-			return;
-		}
-		const latLng = this.map.getCenter();
-
-		if ([this.maastokartta, this.taustakartta].includes(this.tileLayer) &&
-			!this.coordinatesAreInFinland(latLng)) {
-			this.switchTileLayer(this.foreignTileLayer);
-		} else if (this.tileLayer === this.foreignTileLayer && this.coordinatesAreInFinland(latLng)) {
-			this.switchTileLayer(this[this.tileLayerName]);
-		}
-	}
 
 	constructDictionary() {
 		function capitalizeFirstLetter(string) {

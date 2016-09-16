@@ -475,8 +475,8 @@ export default class LajiMap {
 		layer.on("dblclick", () => this.setEditable(id));
 
 		function openPopup(content) {
-			if (content === undefined || content === null) return;
-			layer.bindPopup(content).openPopup();
+			if (!layer || content === undefined || content === null) return;
+			 layer.bindPopup(content).openPopup();
 		}
 
 		layer.on("mouseover", () => {

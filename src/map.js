@@ -352,7 +352,7 @@ export default class LajiMap {
 			drawLocalizations.toolbar.undo.text = join("Delete", "last", "point");
 
 			drawLocalizations.handlers.circle.tooltip.start = join("Click", "and", "drag", "toDrawCircle");
-			drawLocalizations.handlers.marker.tooltip.start = join("Click", "mapPartitive", "toPlaceMarker");
+			drawLocalizations.handlers.marker.tooltip.start = join("ClickMapToPlaceMarker");
 
 			drawLocalizations.handlers.polygon.tooltip.start = join("ClickToStartDrawingShape");
 			drawLocalizations.handlers.polygon.tooltip.cont = join("ClickToContinueDrawingShape");
@@ -501,10 +501,10 @@ export default class LajiMap {
 		layer.bindContextMenu({
 			contextmenuInheritItems: false,
 			contextmenuItems: [{
-				text: translations ? translations.Edit + " " + translations.featurePartitive : "",
+				text: translations ? translations.EditFeature : "",
 				callback: () => this.setEditable(id)
 			}, {
-				text: translations ? translations.Delete + " " + translations.feature : "",
+				text: translations ? translations.DeleteFeature : "",
 				callback: () => this.onDelete(id)
 			}]
 		});

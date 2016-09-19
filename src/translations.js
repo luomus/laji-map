@@ -1,9 +1,4 @@
 export default {
-	submit: {
-		fi: "lähetä",
-		en: "submit",
-		sv: "acceptera"
-	},
 	draw: {
 		fi: "piirrä",
 		en: "draw",
@@ -69,30 +64,20 @@ export default {
 		en: "point",
 		sv: "pointen"
 	},
-	feature: {
-		fi: "kuvio",
-		en: "feature",
-		sv: "feature"
+	editFeature: {
+		fi: "muokkaa kuviota",
+		en: "edit feature",
+		sv: "edit feature"
 	},
-	featurePartitive: {
-		fi: "kuviota",
-		en: "feature",
-		sv: "feature"
-	},
-	last: {
-		fi: "viimeinen",
-		en: "last",
-		sv: "last"
-	},
-	first: {
-		fi: "ensimmäinen",
-		en: "first",
-		sv: "först"
+	deleteFeature: {
+		fi: "poista kuvio",
+		en: "delete feature",
+		sv: "delete feature"
 	},
 	lastPointDrawn: {
-		fi: "viimeisin $drawn $point",
-		en: "last $point $drawn",
-		sv: "last $point $drawn"
+		fi: "viimeisin piirretty piste",
+		en: "last point drawn",
+		sv: "last point drawn"
 	},
 	click: {
 		fi: "klikkaa",
@@ -119,60 +104,40 @@ export default {
 		en: "to draw a rectangle",
 		sv: "to draw a rectangle"
 	},
-	toPlaceMarker: {
-		fi: "asettaaksesi nastan",
-		en: "to place a marker",
-		sv: "to place a marker"
-	},
-	mapPartitive: {
-		fi: "karttaa",
-		en: "map",
-		sv: "map"
-	},
-	toStart: {
-		fi: "aloittaaksesi",
-		en: "to start",
-		sv: "to start"
-	},
-	toContinue: {
-		fi: "jatkaaksesi",
-		en: "to continue",
-		sv: "to continue"
-	},
-	toFinish: {
-		fi: "lopettaaksesi",
-		en: "to finish",
-		sv: "to finish"
+	clickMapToPlaceMarker: {
+		fi: "klikkaa karttaa asettaaksesi nastan",
+		en: "click the map to place a marker",
+		sv: "click the map to place a marker"
 	},
 	clickToStartDrawingShape: {
-		fi: "$Click $toStart muodon piirtäminen",
-		en: "$Click $toStart drawing a shape",
-		sv: "$Click $toStart drawing a shape"
+		fi: "klikkaa aloittaaksesi muodon piirtäminen",
+		en: "click to start drawing a shape",
+		sv: "click to start drawing a shape"
 	},
 	clickToContinueDrawingShape: {
-		fi: "$Click $toContinue muodon piirtämistä",
-		en: "$Click $toContinue drawing a shape",
-		sv: "$Click $toContinue drawing a shape"
+		fi: "klikkaa jatkaaksesi muodon piirtämistä",
+		en: "click to continue drawing a shape",
+		sv: "click to continue drawing a shape"
 	},
 	clickToEndDrawingShape: {
-		fi: "$Click ensimmäistä pistettä muodon valmistamiseksi",
-		en: "$Click the $first $point to close this shape",
-		sv: "$Click $first $point to close this shape"
+		fi: "click ensimmäistä pistettä muodon valmistamiseksi",
+		en: "click the first point to close this shape",
+		sv: "click the first point to close this shape"
 	},
 	clickToStartDrawingPolyline: {
-		fi: "$Click $toStart viivan piirtäminen",
-		en: "$Click $toStart drawing a line",
-		sv: "$Click $toStart drawing a line"
+		fi: "click aloittaaksesi viivan piirtäminen",
+		en: "click to start drawing a line",
+		sv: "click to start drawing a line"
 	},
 	clickToContinueDrawingPolyline: {
-		fi: "$Click $toContinue viivan piirtämistä",
-		en: "$Click $toContinue drawing a line",
-		sv: "$Click $toContinue drawing a line"
+		fi: "klikkaa jatkaaksesi viivan piirtämistä",
+		en: "click to continue drawing a line",
+		sv: "click to continue drawing a line"
 	},
 	clickToEndDrawingPolyline: {
-		fi: "$Click viimeistä pistettä viivan valmistamiseksi",
-		en: "$Click the $last $point to $finish this line",
-		sv: "$Click $last $point to $finish this line"
+		fi: "klikkaa viimeistä pistettä viivan valmistamiseksi",
+		en: "click the last point to finish this line",
+		sv: "click the last point to finish this line"
 	},
 	polylineError: {
 		fi: "<strong>Virhe:</strong> Viiva ei saa leikata itseään!",
@@ -180,9 +145,9 @@ export default {
 		sv: "<strong>Error:</strong> shape edges cannot cross!"
 	},
 	simpleShapeEnd: {
-		fi: "päästä irti hiirestä $toFinish piirtämisen",
-		en: "release the mouse $toFinish drawing",
-		sv: "release the mouse $toFinish drawing"
+		fi: "päästä irti hiirestä lopettaaksesi piirtämisen",
+		en: "release the mouse to finish drawing",
+		sv: "release the mouse to finish drawing"
 	},
 	save: {
 		fi: "tallenna",
@@ -240,8 +205,8 @@ export default {
 		sv: "world map (OpenStreetMap)"
 	},
 	googleSatellite: {
-		fi: "satelliittikartta ($Google)",
-		en: "satellite map ($Google)",
-		sv: "satellite map ($Google)"
+		fi: "satelliittikartta (Google)",
+		en: "satellite map (Google)",
+		sv: "satellite map (Google)"
 	},
 }

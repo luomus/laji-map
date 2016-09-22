@@ -28,7 +28,7 @@ export default class LajiMap {
 		this.drawData = {featureCollection: {type: "featureCollection", features: []}};
 		this.activeIdx = 0;
 		this.controlSettings = {
-			draw: true,
+			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
 			zoom: true,
 			location: true
@@ -211,6 +211,10 @@ export default class LajiMap {
 			drawOptions.draw[type] = {shapeOptions: this.getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
+		["polyline", "polygon", "rectangle", "circle", "marker"].forEach(type => {
+			if (this.controlSettings[type] === false) drawOptions.draw[type] = false;
+		});
+
 		const that = this;
 		const LocationControl = L.Control.extend({
 			options: {
@@ -336,7 +340,7 @@ export default class LajiMap {
 
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this.controlIsAllowed(this.drawControl)) this.map.contextmenu.addItem({
+				if (this.controlIsAllowed(this.drawControl) && this.controlSettings[featureType] !== false) this.map.contextmenu.addItem({
 					text: text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
 					callback: () => this.drawControl._toolbars.draw._modes[featureType].handler.enable()

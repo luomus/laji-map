@@ -98,6 +98,7 @@ class App {
 			zoom: 6,
 			onChange: this.onMapChange,
 			getPopup: this.getPopup,
+			controlSettings: {marker: false, polyline: false},
 			lang: "fi"
 		});
 

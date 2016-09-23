@@ -34,6 +34,9 @@ class App {
 							}
 						}
 					]
+				},
+				getPopup: (idx, callback) => {
+					return `gray ${idx}`;
 				}
 			},
 			{
@@ -62,6 +65,9 @@ class App {
 						fillOpacity: 1,
 						color: "#0f0"
 					}
+				},
+				getPopup: (idx, callback) => {
+					return `green ${idx}`;
 				}
 			}
 		]
@@ -84,6 +90,9 @@ class App {
 						}
 					}
 				]
+			},
+			getPopup: (idx, callback) => {
+				return `${idx}`;
 			}
 		}
 		this.activeIdx = 0;
@@ -96,7 +105,6 @@ class App {
 			center: [60.4353462, 22.2285623],
 			zoom: 6,
 			onChange: this.onMapChange,
-			getPopup: this.getPopup,
 			lang: "fi"
 		});
 
@@ -104,10 +112,6 @@ class App {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
 		})
 
-	}
-
-	getPopup = (idx, callback) => {
-		return "" + idx;
 	}
 
 	onMapChange = (events) => {

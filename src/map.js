@@ -36,7 +36,7 @@ export default class LajiMap {
 		this.popupOnHover = false;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
-		 "tileLayerName", "drawData", "data", "activeIdx", "getPopup",
+		 "tileLayerName", "drawData", "data", "activeIdx",
 		 "onInitializeDrawLayer", "controlSettings", "popupOnHover"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
@@ -413,7 +413,7 @@ export default class LajiMap {
 			this.dataLayerGroups.push(layer);
 			layer.addTo(this.map);
 		});
-		this.redrawFeatures();
+		this.redrawDataFeatures();
 	}
 
 	setDrawData(data) {
@@ -423,7 +423,7 @@ export default class LajiMap {
 		this.drawLayerGroup.clearLayers();
 		this.drawLayerGroup.addData(this.drawData.featureCollection);
 		this.resetIds();
-		this.redrawFeatures();
+		this.redrawDrawFeatures();
 	}
 
 	createIcon() {
@@ -456,18 +456,64 @@ export default class LajiMap {
 		});
 	}
 
-	redrawFeatures() {
+	redrawDrawFeatures() {
 		for (let id in this.idsToIdxs) {
-				this.initializeDrawLayer(this.getDrawLayerById(id), this.idsToIdxs[id]);
+			this.initializeDrawLayer(this.getDrawLayerById(id), this.idsToIdxs[id]);
 		}
+	}
 
+	redrawDataFeatures() {
 		this.data.forEach((dataItem, idx) => {
 			this.updateDataLayerGroupStyle(idx);
+
+			let _idx = 0;
+			this.dataLayerGroups[idx].eachLayer((layer) => {
+				this.initializePopups(dataItem, layer, _idx);
+				_idx++;
+			});
 		})
 	}
 
-	initializeDrawLayer(layer, idx) {
+	redrawFeatures() {
+		this.redrawDrawFeatures();
+		this.redrawDataFeatures();
+	}
+
+	initializePopups(data, layer, idx) {
 		const that = this;
+		function openPopup(content) {
+			if (!layer || content === undefined || content === null) return;
+			if (that.popupOnHover !== true) layer.unbindPopup();
+			layer.bindPopup(content).openPopup();
+		}
+
+		function getContentAndOpenPopup() {
+			// Allow either returning content or firing a callback with content.
+			const content = data.getPopup(idx, callbackContent => openPopup(callbackContent));
+			if (content) openPopup(content);
+		}
+
+		if (this.popupOnHover) {
+			layer.on("mouseover", () => {
+				if (data === this.drawData && data.getPopup && this.editId !== layer._leaflet_id) {
+					getContentAndOpenPopup();
+				}
+			});
+			layer.on("mouseout", () => {
+				layer.closePopup();
+			});
+		} else {
+			layer.on("click", () => {
+				if (data.getPopup) {
+					getContentAndOpenPopup();
+				} else if (data === this.drawData && this.editId === layer._leaflet_id) {
+					layer.closePopup();
+				}
+			});
+		}
+	}
+
+	initializeDrawLayer(layer, idx) {
 		this.drawLayerGroup.addLayer(layer);
 
 		const id = layer._leaflet_id;
@@ -484,36 +530,7 @@ export default class LajiMap {
 		});
 		layer.on("dblclick", () => this.setEditable(id));
 
-		function openPopup(content) {
-			if (!layer || content === undefined || content === null) return;
-			if (that.popupOnHover !== true) layer.unbindPopup();
-			layer.bindPopup(content).openPopup();
-		}
-
-		function getContentAndOpenPopup() {
-			// Allow either returning content or firing a callback with content.
-			const content = that.getPopup(idx, callbackContent => openPopup(callbackContent));
-			if (content) openPopup(content);
-		}
-
-		if (this.popupOnHover) {
-			layer.on("mouseover", () => {
-				if (this.getPopup && this.editId !== layer._leaflet_id) {
-					getContentAndOpenPopup();
-				}
-			});
-			layer.on("mouseout", () => {
-				layer.closePopup();
-			});
-		} else {
-			layer.on("click", () => {
-				if (this.getPopup) {
-					getContentAndOpenPopup();
-				} else if (this.editId === layer._leaflet_id) {
-					layer.closePopup();
-				}
-			})
-		}
+		this.initializePopups(this.drawData, layer, idx);
 
 		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 

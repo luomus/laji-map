@@ -200,7 +200,7 @@ export default class LajiMap {
 	}
 
 	_addControl(control) {
-		if (this._controlIsAllowed(control)) this.map._addControl(control);
+		if (this._controlIsAllowed(control)) this.map.addControl(control);
 	}
 
 	_initalizeMapControls() {

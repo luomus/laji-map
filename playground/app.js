@@ -55,7 +55,6 @@ class App {
 					]
 				},
 				getFeatureStyle: (e) => {
-					console.log(e);
 					const {featureIdx} = e;
 					return {
 						weight: featureIdx,

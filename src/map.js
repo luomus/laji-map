@@ -33,13 +33,13 @@ export default class LajiMap {
 			zoom: true,
 			location: true
 		};
+		this.popupOnHover = false;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
 		 "tileLayerName", "drawData", "data", "activeIdx", "getPopup",
-		 "onInitializeDrawLayer", "controlSettings"].forEach(prop => {
+		 "onInitializeDrawLayer", "controlSettings", "popupOnHover"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
-
 
 		this.geoJsonLayerOptions = {
 			pointToLayer: (feature, latlng) => {
@@ -120,7 +120,11 @@ export default class LajiMap {
 	initializeMapEvents() {
 		this.map.addEventListener({
 			click: e => this.interceptClick(),
-			dblclick: e => { if (this.controlSettings.draw && this.controlSettings.marker !== false) this.onAdd(new L.marker(e.latlng));},
+			dblclick: e => {
+				if (this.controlSettings.draw && this.controlSettings.marker !== false) {
+					this.onAdd(new L.marker(e.latlng));
+				}
+			},
 			"draw:created": ({ layer }) => this.onAdd(layer),
 			"draw:drawstart": () => { this.drawing = true },
 			"draw:drawstop": () => { this.drawing = false },
@@ -129,7 +133,9 @@ export default class LajiMap {
 			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
 			popupopen: popup => {
 				if (this.layerClicked) {
-					this.getDrawLayerById(this.activeId).closePopup();
+					if (this.popupOnHover) {
+						this.getDrawLayerById(this.activeId).closePopup();
+					}
 					this.layerClicked = false;
 				}
 			},
@@ -461,6 +467,7 @@ export default class LajiMap {
 	}
 
 	initializeDrawLayer(layer, idx) {
+		const that = this;
 		this.drawLayerGroup.addLayer(layer);
 
 		const id = layer._leaflet_id;
@@ -471,7 +478,6 @@ export default class LajiMap {
 
 		this.updateContextMenuForDrawItem(id);
 
-
 		layer.on("click", (e) => {
 			this.layerClicked = true;
 			if (!this.interceptClick()) this.onActiveChange(id);
@@ -480,18 +486,34 @@ export default class LajiMap {
 
 		function openPopup(content) {
 			if (!layer || content === undefined || content === null) return;
-			 layer.bindPopup(content).openPopup();
+			if (that.popupOnHover !== true) layer.unbindPopup();
+			layer.bindPopup(content).openPopup();
 		}
 
-		layer.on("mouseover", () => {
-			layer._mouseover = true;
-			if (this.getPopup && this.editId !== layer._leaflet_id) {
-				// Allow either returning content or firing a callback with content.
-				const content = this.getPopup(idx, callbackContent => openPopup(callbackContent));
-				if (content) openPopup(content);
-			}
-		});
-		layer.on("mouseout", () => { layer.closePopup(); layer._mouseover = false });
+		function getContentAndOpenPopup() {
+			// Allow either returning content or firing a callback with content.
+			const content = that.getPopup(idx, callbackContent => openPopup(callbackContent));
+			if (content) openPopup(content);
+		}
+
+		if (this.popupOnHover) {
+			layer.on("mouseover", () => {
+				if (this.getPopup && this.editId !== layer._leaflet_id) {
+					getContentAndOpenPopup();
+				}
+			});
+			layer.on("mouseout", () => {
+				layer.closePopup();
+			});
+		} else {
+			layer.on("click", () => {
+				if (this.getPopup) {
+					getContentAndOpenPopup();
+				} else if (this.editId === layer._leaflet_id) {
+					layer.closePopup();
+				}
+			})
+		}
 
 		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 
@@ -691,6 +713,7 @@ export default class LajiMap {
 		this.clearEditable();
 		this.editId = id;
 		this.getDrawLayerById(this.editId).editing.enable();
+		this.getDrawLayerById(id).closePopup();
 	}
 
 	clearEditable() {
@@ -718,7 +741,6 @@ export default class LajiMap {
 		}
 	}
 
-
 	updateLayerStyle(layer, style) {
 		if (!layer) return;
 
@@ -737,7 +759,11 @@ export default class LajiMap {
 
 	getStyleForType(type, overrideStyles, id) {
 		const idx = this.idsToIdxs[id];
-		if (this.drawData.getFeatureStyle) return this.drawData.getFeatureStyle({featureIdx: idx, feature: this.drawData.featureCollection.features[idx]});
+		if (this.drawData.getFeatureStyle) {
+			return this.drawData.getFeatureStyle({
+				featureIdx: idx,
+				feature: this.drawData.featureCollection.features[idx]});
+		}
 
 		const styles = {
 			weight: type.toLowerCase().includes("line") ? 8 : 14,
@@ -767,7 +793,11 @@ export default class LajiMap {
 		if (layer instanceof L.Marker) {
 			style.color = (id === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
 			const idx = this.idsToIdxs[id];
-			if (this.drawData.getFeatureStyle) style = this.drawData.getFeatureStyle({featureIdx: idx, feature: this.drawData.featureCollection.features[idx]});
+			if (this.drawData.getFeatureStyle) {
+				style = this.drawData.getFeatureStyle({
+					featureIdx: idx,
+					feature: this.drawData.featureCollection.features[idx]});
+			}
 		} else {
 			const style =  {};
 			if (this.activeId === id) style.color = ACTIVE_COLOR;

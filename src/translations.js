@@ -1,93 +1,93 @@
-export default {
+﻿export default {
 	draw: {
 		fi: "piirrä",
 		en: "draw",
-		sv: "teckna"
+		sv: "rita"
 	},
 	add: {
 		fi: "lisää",
 		en: "add",
-		sv: "add"
+		sv: "lägg till"
 	},
 	cancel: {
 		fi: "peru",
 		en: "cancel",
-		sv: "cancel"
+		sv: "annullera"
 	},
 	finish: {
 		fi: "lopeta",
 		en: "finish",
-		sv: "finishera"
+		sv: "slut"
 	},
 	delete: {
 		fi: "poista",
 		en: "delete",
-		sv: "deletera"
+		sv: "radera"
 	},
 	edit: {
 		fi: "muokkaa",
 		en: "edit",
-		sv: "edit"
+		sv: "redigera"
 	},
 	drawPassiveVerb: {
 		fi: "piirtäminen",
 		en: "drawing",
-		sv: "tecknarera"
+		sv: "ritning"
 	},
 	polyline: {
 		fi: "viiva",
 		en: "a line",
-		sv: "en line"
+		sv: "en linje"
 	},
 	rectangle: {
 		fi: "suorakulmio",
 		en: "a rectangle",
-		sv: "en rectangle"
+		sv: "en rektangel"
 	},
 	marker: {
 		fi: "nasta",
 		en: "a marker",
-		sv: "en marker"
+		sv: "en markör"
 	},
 	polygon: {
-		fi: "monikuvio",
+		fi: "monikulmio",
 		en: "a polygon",
 		sv: "en polygon"
 	},
 	circle: {
 		fi: "ympyrä",
 		en: "a circle",
-		sv: "en circle"
+		sv: "en cirkel"
 	},
 	point: {
 		fi: "piste",
 		en: "point",
-		sv: "pointen"
+		sv: "en punkt"
 	},
 	editFeature: {
 		fi: "muokkaa kuviota",
 		en: "edit feature",
-		sv: "edit feature"
+		sv: "redigera figuren"
 	},
 	deleteFeature: {
 		fi: "poista kuvio",
 		en: "delete feature",
-		sv: "delete feature"
+		sv: "radera figuren"
 	},
 	lastPointDrawn: {
 		fi: "viimeisin piirretty piste",
 		en: "last point drawn",
-		sv: "last point drawn"
+		sv: "den sista ritade punkten"
 	},
 	click: {
 		fi: "klikkaa",
 		en: "click",
-		sv: "klik"
+		sv: "klick"
 	},
 	drag: {
 		fi: "raahaa",
 		en: "drag",
-		sv: "drag"
+		sv: "dra"
 	},
 	and: {
 		fi: "ja",
@@ -97,102 +97,102 @@ export default {
 	toDrawCircle: {
 		fi: "piirtääksesi ympyrän",
 		en: "to draw a circle",
-		sv: "to draw a circle"
+		sv: "för att rita en cirkel"
 	},
 	toDrawRectangle: {
 		fi: "piirtääksesi suorakulmion",
 		en: "to draw a rectangle",
-		sv: "to draw a rectangle"
+		sv: "för att rita en rektangel"
 	},
 	clickMapToPlaceMarker: {
 		fi: "klikkaa karttaa asettaaksesi nastan",
 		en: "click the map to place a marker",
-		sv: "click the map to place a marker"
+		sv: "klick kartan för att sätta en markör"
 	},
 	clickToStartDrawingShape: {
 		fi: "klikkaa aloittaaksesi muodon piirtäminen",
 		en: "click to start drawing a shape",
-		sv: "click to start drawing a shape"
+		sv: "klick för att börja rita en form"
 	},
 	clickToContinueDrawingShape: {
 		fi: "klikkaa jatkaaksesi muodon piirtämistä",
 		en: "click to continue drawing a shape",
-		sv: "click to continue drawing a shape"
+		sv: "klick för att fortsätta rita formen"
 	},
 	clickToEndDrawingShape: {
-		fi: "click ensimmäistä pistettä muodon valmistamiseksi",
+		fi: "klikkaa ensimmäistä pistettä viimeistelläksesi muodon",
 		en: "click the first point to close this shape",
-		sv: "click the first point to close this shape"
+		sv: "klick den första punkten för att stänga formen"
 	},
 	clickToStartDrawingPolyline: {
 		fi: "click aloittaaksesi viivan piirtäminen",
 		en: "click to start drawing a line",
-		sv: "click to start drawing a line"
+		sv: "klick för att börja rita en linje"
 	},
 	clickToContinueDrawingPolyline: {
 		fi: "klikkaa jatkaaksesi viivan piirtämistä",
 		en: "click to continue drawing a line",
-		sv: "click to continue drawing a line"
+		sv: "klick för att fortsätta rita linjen"
 	},
 	clickToEndDrawingPolyline: {
-		fi: "klikkaa viimeistä pistettä viivan valmistamiseksi",
+		fi: "klikkaa viimeistä pistettä viimeistelläksesi viivan",
 		en: "click the last point to finish this line",
-		sv: "click the last point to finish this line"
+		sv: "klick den sista punkten för att stänga linjen"
 	},
 	polylineError: {
 		fi: "<strong>Virhe:</strong> Viiva ei saa leikata itseään!",
-		en: "<strong>Error:</strong> shape edges cannot cross!",
-		sv: "<strong>Error:</strong> shape edges cannot cross!"
+		en: "<strong>Error:</strong> Shape edges cannot cross!",
+		sv: "<strong>Error:</strong> Linjen får inte korsa sig!"
 	},
 	simpleShapeEnd: {
 		fi: "päästä irti hiirestä lopettaaksesi piirtämisen",
 		en: "release the mouse to finish drawing",
-		sv: "release the mouse to finish drawing"
+		sv: "släpp musen för att avsluta ritning"
 	},
 	save: {
 		fi: "tallenna",
 		en: "save",
-		sv: "save"
+		sv: "lagra"
 	},
 	changes: {
 		fi: "muutokset",
 		en: "changes",
-		sv: "changes"
+		sv: "ändringar"
 	},
 	zoomIn: {
 		fi: "lähennä",
 		en: "zoom in",
-		sv: "zoom in"
+		sv: "zooma in"
 	},
 	zoomOut: {
 		fi: "loitonna",
 		en: "zoom out",
-		sv: "zoom out"
+		sv: "zooma out"
 	},
 	geolocationFailed: {
 		fi: "Paikannus epäonnistui. Laitteesi ei välttämättä tue tätä ominaisuutta.",
 		en: "Geolocation failed. Your device might not support this feature.",
-		sv: "Geolocation failed. Your device might not support this feature."
+		sv: "Positionering misslyckades. Din apparat kanske inte stöder den här funktionen."
 	},
 	geolocate: {
 		fi: "paikanna sijaintisi",
 		en: "locate yourself",
-		sv: "locate yourself"
+		sv: "bestämma positionen"
 	},
 	search: {
 		fi: "hae nimellä",
 		en: "search with name",
-		sv: "hae nimellä"
+		sv: "sök med namn"
 	},
 	taustakartta: {
 		fi: "Suomen taustakartta",
-		en: "Finland's background map",
-		sv: "Finskas taustakartta"
+		en: "background map of Finland",
+		sv: "Finlands bakgrundskarta"
 	},
 	maastokartta: {
 		fi: "Suomen maastokartta",
-		en: "Finland's base map",
-		sv: "Finskas base map"
+		en: "topographic map of Finland",
+		sv: "Finlands terrängkarta"
 	},
 	google: {
 		fi: "Google",
@@ -202,11 +202,11 @@ export default {
 	openStreetMap: {
 		fi: "maailmankartta (OpenStreetMap)",
 		en: "world map (OpenStreetMap)",
-		sv: "world map (OpenStreetMap)"
+		sv: "världskarta (OpenStreetMap)"
 	},
 	googleSatellite: {
 		fi: "satelliittikartta (Google)",
 		en: "satellite map (Google)",
-		sv: "satellite map (Google)"
+		sv: "satellitkarta (Google)"
 	},
 }

@@ -110,10 +110,7 @@ class App {
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
-		})
-
-
-		setInterval(() => console.log(this.map.getNormalizedZoom()), 1000);
+		});
 	}
 
 	onMapChange = (events) => {

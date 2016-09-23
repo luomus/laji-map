@@ -13,10 +13,6 @@ const USER_LOCATION_COLOR = "#FF0000";
 
 import translations from "./translations.js";
 
-import boundsOfFinland from "./finland_bounds.json";
-
-const finlandPolygon = L.geoJson(boundsOfFinland);
-
 export default class LajiMap {
 
 	constructor(props) {

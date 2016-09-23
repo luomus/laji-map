@@ -413,9 +413,6 @@ export default class LajiMap {
 	}
 
 	initializeDataItem = (idx) => {
-		console.log("initializedataitem");
-		console.log(idx);
-		//console.log(dataItem);
 		const layer = L.geoJson(this.data[idx].featureCollection, this.geoJsonLayerOptions);
 		this.dataLayerGroups.push(layer);
 		layer.addTo(this.map);
@@ -490,7 +487,6 @@ export default class LajiMap {
 	redrawDataItem = (idx) => {
 		const dataItem = this.data[idx];
 		let _idx = 0;
-		console.log(this.dataLayerGroups);
 		this.dataLayerGroups[idx].eachLayer((layer) => {
 			this._updateDataLayerGroupStyle(idx);
 			this._initializePopups(dataItem, layer, _idx);
@@ -856,8 +852,6 @@ export default class LajiMap {
 
 	_updateDataLayerGroupStyle = (idx) => {
 		const dataItem = this.data[idx];
-		console.log(idx);
-		console.log(dataItem);
 		if (!dataItem) return;
 
 		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};

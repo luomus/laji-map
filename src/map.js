@@ -63,7 +63,7 @@ export default class LajiMap {
 		this._initializeMapEvents();
 	}
 
-	_initializeMap() {
+	_initializeMap = () => {
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
 		this.defaultCRS = L.CRS.EPSG3857;
@@ -113,7 +113,7 @@ export default class LajiMap {
 		);
 	}
 
-	_initializeMapEvents() {
+	_initializeMapEvents = () => {
 		this.map.addEventListener({
 			click: e => this._interceptClick(),
 			dblclick: e => {
@@ -139,15 +139,15 @@ export default class LajiMap {
 		});
 	}
 
-	_getDefaultCRSLayers() {
+	_getDefaultCRSLayers = () => {
 		return [this.openStreetMap, this.googleSatellite];
 	}
 
-	_getMMLCRSLayers() {
+	_getMMLCRSLayers = () => {
 		return [this.maastokartta, this.taustakartta];
 	}
 
-	_setTileLayer(layer) {
+	_setTileLayer = (layer) => {
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
@@ -178,12 +178,12 @@ export default class LajiMap {
 		this.map.addLayer(this.tileLayer);
 	}
 
-	getNormalizedZoom() {
+	getNormalizedZoom = () => {
 		const zoom = this.map.getZoom();
 		return (this._getMMLCRSLayers().includes(this.tileLayer)) ? zoom : zoom - 3;
 	}
 
-	_controlIsAllowed(control) {
+	_controlIsAllowed = (control) => {
 		const controlNameMap = {
 			draw: this.drawControl,
 			zoom: this.zoomControl,
@@ -199,11 +199,11 @@ export default class LajiMap {
 		}
 	}
 
-	_addControl(control) {
+	_addControl = (control) => {
 		if (this._controlIsAllowed(control)) this.map.addControl(control);
 	}
 
-	_initalizeMapControls() {
+	_initalizeMapControls = () => {
 		const drawOptions = {
 			position: "topright",
 			draw: {
@@ -283,7 +283,7 @@ export default class LajiMap {
 		this._addControl(this._getZoomControl());
 	}
 
-	_getZoomControl() {
+	_getZoomControl = () => {
 		this.zoomControl = L.control.zoom({
 			zoomInTitle: this.translations.ZoomIn,
 			zoomOutTitle: this.translations.ZoomOut
@@ -291,7 +291,7 @@ export default class LajiMap {
 		return this.zoomControl;
 	}
 
-	_getLayerControl() {
+	_getLayerControl = () => {
 		const baseMaps = {};
 		const { translations } = this;
 		["taustakartta", "maastokartta", "openStreetMap", "googleSatellite"].forEach(tileLayerName => {
@@ -302,12 +302,12 @@ export default class LajiMap {
 		return this.layerControl;
 	}
 
-	destroy() {
+	destroy = () => {
 		this.map.off();
 		this.map = null;
 	}
 
-	_constructDictionary() {
+	_constructDictionary = () => {
 		function capitalizeFirstLetter(string) {
 			return string.charAt(0).toUpperCase() + string.slice(1);
 		}
@@ -334,7 +334,7 @@ export default class LajiMap {
 		this.dictionary = dictionaries;
 	}
 
-	setLang(lang) {
+	setLang = (lang) => {
 		if (!this.translations || this.lang !== lang) {
 			this.lang = lang;
 			this.translations = this.dictionary[this.lang];
@@ -406,35 +406,52 @@ export default class LajiMap {
 		}
 	}
 
-	setData(data) {
-		this.data = (data) ? data.map(item => {
-			let featureCollection = {type: "featureCollection"};
-			featureCollection.features = item.featureCollection.features.slice(0);
-			return {...item, featureCollection};
-		}) : [];
+	cloneDataItem = (dataItem) => {
+		let featureCollection = {type: "featureCollection"};
+		featureCollection.features = dataItem.featureCollection.features.slice(0);
+		return {...dataItem, featureCollection};
+	}
+
+	initializeDataItem = (idx) => {
+		console.log("initializedataitem");
+		console.log(idx);
+		//console.log(dataItem);
+		const layer = L.geoJson(this.data[idx].featureCollection, this.geoJsonLayerOptions);
+		this.dataLayerGroups.push(layer);
+		layer.addTo(this.map);
+		this.redrawDataItem(idx)
+	}
+
+	setData = (data) => {
+		this.data = data ? data.map(this.cloneDataItem) : [];
 		if (this.dataLayerGroups) {
 			this.dataLayerGroups.forEach(layer => this.map.removeLayer(layer));
 		}
 		this.dataLayerGroups = [];
-		this.data.forEach(dataItem => {
-			const layer = L.geoJson(dataItem.featureCollection, this.geoJsonLayerOptions);
-			this.dataLayerGroups.push(layer);
-			layer.addTo(this.map);
-		});
-		this.redrawDataFeatures();
+		this.data.forEach((item, idx) => this.initializeDataItem(idx));
 	}
 
-	setDrawData(data) {
+	addData = (data) => {
+		if (!data) return;
+		if (!Array.isArray(data)) data = [data];
+		const newData = data.map(this.cloneDataItem);
+		this.data = this.data.concat(newData);
+		for (let idx = this.data.length - newData.length; idx < this.data.length; idx++) {
+			this.initializeDataItem(idx);
+		}
+	}
+
+	setDrawData = (data) => {
 		const featureCollection = {type: "featureCollection"};
 		featureCollection.features = data.featureCollection.features.slice(0);
 		this.drawData = (data) ? {...data, featureCollection} : [];
 		this.drawLayerGroup.clearLayers();
 		this.drawLayerGroup.addData(this.drawData.featureCollection);
 		this._resetIds();
-		this.redrawDrawFeatures();
+		this.redrawDrawData();
 	}
 
-	_createIcon() {
+ 	_createIcon = () => {
 		return L.VectorMarkers.icon({
 			prefix: "glyphicon",
 			icon: "record",
@@ -442,14 +459,14 @@ export default class LajiMap {
 		});
 	}
 
-	setActive(id) {
+	setActive = (id) => {
 		const prevActiveId = this.activeId;
 		this.activeId = id;
 		this._updateDrawLayerStyle(prevActiveId);
 		this._updateDrawLayerStyle(id);
 	}
 
-	_resetIds() {
+	_resetIds = () => {
 		// Maps item indices to internal ids and the other way around.
 		// We use leaflet ids as internal ids.
 		this.idxsToIds = {};
@@ -464,30 +481,35 @@ export default class LajiMap {
 		});
 	}
 
-	redrawDrawFeatures() {
+	redrawDrawData = () => {
 		for (let id in this.idsToIdxs) {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
 		}
 	}
 
-	redrawDataFeatures() {
-		this.data.forEach((dataItem, idx) => {
+	redrawDataItem = (idx) => {
+		const dataItem = this.data[idx];
+		let _idx = 0;
+		console.log(this.dataLayerGroups);
+		this.dataLayerGroups[idx].eachLayer((layer) => {
 			this._updateDataLayerGroupStyle(idx);
+			this._initializePopups(dataItem, layer, _idx);
+			_idx++;
+		});
+	}
 
-			let _idx = 0;
-			this.dataLayerGroups[idx].eachLayer((layer) => {
-				this._initializePopups(dataItem, layer, _idx);
-				_idx++;
-			});
+	redrawData = () => {
+		this.data.forEach((dataItem, idx) => {
+			this.redrawDataItem(idx);
 		})
 	}
 
-	redrawFeatures() {
-		this.redrawDrawFeatures();
-		this.redrawDataFeatures();
+	redraw = () => {
+		this.redrawDrawData();
+		this.redrawData();
 	}
 
-	_initializePopups(data, layer, idx) {
+	_initializePopups = (data, layer, idx) => {
 		const that = this;
 		function openPopup(content) {
 			if (!layer || content === undefined || content === null) return;
@@ -521,7 +543,7 @@ export default class LajiMap {
 		}
 	}
 
-	_initializeDrawLayer(layer, idx) {
+	_initializeDrawLayer = (layer, idx) => {
 		this.drawLayerGroup.addLayer(layer);
 
 		const id = layer._leaflet_id;
@@ -594,16 +616,16 @@ export default class LajiMap {
 		if (this.initializeViewAfterLocateFail) this._initializeView();
 	}
 
-	_getDrawLayerById(id) {
+	_getDrawLayerById = (id) => {
 		return this.drawLayerGroup ? this.drawLayerGroup._layers[id] : undefined;
 	}
 
-	_triggerEvent(e) {
+	_triggerEvent = (e) => {
 		if (!Array.isArray(e)) e = [e];
 		if (this.onChange) this.onChange(e);
 	}
 
-	_enchanceGeoJSON(geoJSON, layer) {
+	_enchanceGeoJSON = (geoJSON, layer) => {
 		// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 		if (layer instanceof L.Circle) {
 			geoJSON.geometry.radius = layer.getRadius();
@@ -611,7 +633,7 @@ export default class LajiMap {
 		return geoJSON;
 	}
 
-	_onAdd(layer) {
+	_onAdd = (layer) => {
 		if (layer instanceof L.Marker) layer.setIcon(this._createIcon());
 
 		const {featureCollection: {features}} = this.drawData;
@@ -630,7 +652,7 @@ export default class LajiMap {
 		this._triggerEvent(event);
 	};
 
-	_onEdit(data) {
+	_onEdit = (data) => {
 		const eventData = {};
 		for (let id in data) {
 			const geoJson = this._enchanceGeoJSON(data[id].toGeoJSON(), data[id]);
@@ -644,7 +666,7 @@ export default class LajiMap {
 		});
 	}
 
-	_onDelete(deleteIds) {
+	_onDelete = (deleteIds) => {
 		this._clearEditable();
 
 		if (!Array.isArray(deleteIds)) deleteIds = [deleteIds];
@@ -702,7 +724,7 @@ export default class LajiMap {
 		this._triggerEvent(event);
 	}
 
-	_getOnActiveChangeEvent(id) {
+	_getOnActiveChangeEvent = (id) => {
 		this.setActive(id);
 		return {
 			type: "active",
@@ -710,11 +732,11 @@ export default class LajiMap {
 		}
 	}
 
-	_onActiveChange(id) {
+	_onActiveChange = (id) => {
 		this._triggerEvent(this._getOnActiveChangeEvent(id));
 	}
 
-	focusToLayer(idx) {
+	focusToLayer = (idx) => {
 		const id = this.idxsToIds[idx];
 
 		if (idx === undefined) {
@@ -734,25 +756,25 @@ export default class LajiMap {
 		this._onActiveChange(id);
 	}
 
-	_setEditable(id) {
+	_setEditable = (id) => {
 		this._clearEditable();
 		this.editId = id;
 		this._getDrawLayerById(this.editId).editing.enable();
 		this._getDrawLayerById(id).closePopup();
 	}
 
-	_clearEditable() {
+	_clearEditable = () => {
 		if (this.editId === undefined) return;
 		this._getDrawLayerById(this.editId).editing.disable();
 		this.editId = undefined;
 	}
 
-	_commitEdit() {
+	_commitEdit = () => {
 		this._onEdit({[this.editId]: this._getDrawLayerById(this.editId)});
 		this._clearEditable();
 	}
 
-	_interceptClick() {
+	_interceptClick = () => {
 		if (this.contextMenuHideTimestamp !== undefined) {
 			const timestamp = this.contextMenuHideTimestamp;
 			this.contextMenuHideTimestamp = undefined;
@@ -766,7 +788,7 @@ export default class LajiMap {
 		}
 	}
 
-	updateLayerStyle(layer, style) {
+	updateLayerStyle = (layer, style) => {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
@@ -782,7 +804,7 @@ export default class LajiMap {
 		}
 	}
 
-	_getStyleForType(type, overrideStyles, id) {
+	_getStyleForType = (type, overrideStyles, id) => {
 		const idx = this.idsToIdxs[id];
 		if (this.drawData.getFeatureStyle) {
 			return this.drawData.getFeatureStyle({
@@ -804,11 +826,11 @@ export default class LajiMap {
 		return styles;
 	}
 
-	_getStyleForLayer(layer, overrideStyles, id) {
+	_getStyleForLayer = (layer, overrideStyles, id) => {
 		return this._getStyleForType(layer.toGeoJSON().geometry.type, overrideStyles, id);
 	}
 
-	_updateDrawLayerStyle(id) {
+	_updateDrawLayerStyle = (id) => {
 		if (id === undefined) return;
 		const layer = this._getDrawLayerById(id);
 
@@ -832,8 +854,10 @@ export default class LajiMap {
 		this.updateLayerStyle(layer, style);
 	}
 
-	_updateDataLayerGroupStyle(idx) {
+	_updateDataLayerGroupStyle = (idx) => {
 		const dataItem = this.data[idx];
+		console.log(idx);
+		console.log(dataItem);
 		if (!dataItem) return;
 
 		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
@@ -841,7 +865,7 @@ export default class LajiMap {
 		let i = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
 			this.updateLayerStyle(layer, dataItem.getFeatureStyle ?
-				dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i, feature: dataItem.featureCollection.features[i]}) :
+				dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i}) :
 				defaultStyle);
 			i++;
 		});

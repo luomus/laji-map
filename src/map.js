@@ -143,9 +143,17 @@ export default class LajiMap {
 		});
 	}
 
+	getDefaultCRSLayers() {
+		return [this.openStreetMap, this.googleSatellite];
+	}
+
+	getMMLCRSLayers() {
+		return [this.maastokartta, this.taustakartta];
+	}
+
 	setTileLayer(layer) {
-		const defaultCRSLayers = [this.openStreetMap, this.googleSatellite];
-		const mmlCRSLayers = [this.maastokartta, this.taustakartta];
+		const defaultCRSLayers = this.getDefaultCRSLayers();
+		const mmlCRSLayers = this.getMMLCRSLayers();
 
 		if (!this.tileLayer) {
 			this.tileLayer = layer;
@@ -172,6 +180,11 @@ export default class LajiMap {
 
 		this.tileLayer = layer;
 		this.map.addLayer(this.tileLayer);
+	}
+
+	getNormalizedZoom() {
+		const zoom = this.map.getZoom();
+		return (this.getMMLCRSLayers().includes(this.tileLayer)) ? zoom : zoom - 3;
 	}
 
 	controlIsAllowed(control) {
@@ -297,7 +310,6 @@ export default class LajiMap {
 		this.map.off();
 		this.map = null;
 	}
-
 
 	constructDictionary() {
 		function capitalizeFirstLetter(string) {

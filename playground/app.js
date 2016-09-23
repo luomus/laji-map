@@ -112,6 +112,8 @@ class App {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
 		})
 
+
+		setInterval(() => console.log(this.map.getNormalizedZoom()), 1000);
 	}
 
 	onMapChange = (events) => {
@@ -138,3 +140,4 @@ class App {
 }
 
 new App();
+

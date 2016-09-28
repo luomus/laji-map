@@ -1,7 +1,6 @@
 import LajiMap from "../src/map";
 
 import "../src/styles.js";
-
 class App {
 	constructor() {
 		this.data = [

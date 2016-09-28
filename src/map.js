@@ -96,7 +96,6 @@ export default class LajiMap {
 
 		this.drawLayerGroup = L.geoJson([], this.geoJsonLayerOptions);
 
-
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
 			this._onLocate();
@@ -426,6 +425,7 @@ export default class LajiMap {
 		}
 		this.dataLayerGroups = [];
 		this.data.forEach((item, idx) => this.initializeDataItem(idx));
+		this.redrawData();
 	}
 
 	addData = (data) => {
@@ -486,9 +486,11 @@ export default class LajiMap {
 
 	redrawDataItem = (idx) => {
 		const dataItem = this.data[idx];
+
+		this._updateDataLayerGroupStyle(idx);
+
 		let _idx = 0;
 		this.dataLayerGroups[idx].eachLayer((layer) => {
-			this._updateDataLayerGroupStyle(idx);
 			this._initializePopups(dataItem, layer, _idx);
 			_idx++;
 		});

@@ -419,7 +419,8 @@ export default class LajiMap {
 	}
 
 	setData = (data) => {
-		this.data = data ? data.map(this.cloneDataItem) : [];
+		this.data = data ? (Array.isArray(data) ? data : [data]) : [];
+		
 		if (this.dataLayerGroups) {
 			this.dataLayerGroups.forEach(layer => this.map.removeLayer(layer));
 		}

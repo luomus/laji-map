@@ -491,7 +491,7 @@ export default class LajiMap {
 		this._updateDataLayerGroupStyle(idx);
 
 		let _idx = 0;
-		this.dataLayerGroups[idx].eachLayer((layer) => {
+		this.dataLayerGroups[idx].eachLayer(layer => {
 			this._initializePopups(dataItem, layer, _idx);
 			_idx++;
 		});
@@ -524,7 +524,7 @@ export default class LajiMap {
 
 		if (this.popupOnHover) {
 			layer.on("mouseover", () => {
-				if (data === this.drawData && data.getPopup && this.editId !== layer._leaflet_id) {
+				if (data.getPopup && this.editId !== layer._leaflet_id) {
 					getContentAndOpenPopup();
 				}
 			});

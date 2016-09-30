@@ -1,9 +1,10 @@
 import "leaflet";
 import "leaflet-draw";
 import "proj4leaflet";
-import "./lib/Leaflet.MML-layers/mmlLayers.js";
 import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
+import "./lib/Leaflet.MML-layers/mmlLayers.js";
+import "./layerControl.js";
 
 const NORMAL_COLOR = "#257ECA";
 const ACTIVE_COLOR = "#06840A";
@@ -221,11 +222,13 @@ export default class LajiMap {
 			}
 		};
 
-		["polyline", "polygon", "rectangle", "circle"].forEach(type => {
+		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
+
+		featureTypes.slice(0,1).forEach(type => {
 			drawOptions.draw[type] = {shapeOptions: this._getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
-		["polyline", "polygon", "rectangle", "circle", "marker"].forEach(type => {
+		featureTypes.forEach(type => {
 			if (this.controlSettings[type] === false) drawOptions.draw[type] = false;
 		});
 
@@ -244,11 +247,12 @@ export default class LajiMap {
 
 			_createItem: function(container, glyphName) {
 				const elem = L.DomUtil.create("a", "", container);
-				elem.href = "#";
-				const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem)
+				//elem.href = "#";
+				const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
 				L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
 				L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
 				L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
+				L.DomEvent.on(elem, "click", this._refocusOnMap, this);
 				return elem;
 			},
 
@@ -280,6 +284,28 @@ export default class LajiMap {
 		this._addControl(this.drawControl);
 
 		this._addControl(this._getZoomControl());
+
+		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
+
+		function removeHref(className) {
+			const elems = document.getElementsByClassName(className);
+			for (let i = 0; i < elems.length; i++) {
+				const elem = elems[i];
+				elem.removeAttribute("href");
+			}
+		}
+
+		["in", "out"].forEach(zoomType => {
+			removeHref(`leaflet-control-zoom-${zoomType}`);
+		});
+
+		featureTypes.forEach(featureType => {
+			removeHref(`leaflet-draw-draw-${featureType}`);
+		});
+
+		removeHref("leaflet-control-layers-toggle");
+
+		removeHref("leaflet-contextmenu-item");
 	}
 
 	_getZoomControl = () => {

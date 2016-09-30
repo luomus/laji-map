@@ -106,7 +106,6 @@ class App {
 			onChange: this.onMapChange,
 			lang: "fi"
 		});
-		window.map = this.map;
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))

@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "Leaflet.vector-markers": "git+https://git@github.com/hiasinho/Leaflet.vector-markers.git",
-    "leaflet": "*",
+    "leaflet": "0.7.7",
     "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git",
     "leaflet-draw": "*",
     "proj4leaflet": "*"

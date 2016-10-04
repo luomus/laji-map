@@ -228,7 +228,7 @@ export default class LajiMap {
 
 		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
 
-		featureTypes.slice(0,1).forEach(type => {
+		featureTypes.slice(0, -1).forEach(type => {
 			drawOptions.draw[type] = {shapeOptions: this._getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 

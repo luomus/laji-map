@@ -64,36 +64,20 @@ export default class LajiMap {
 		this._initializeMapEvents();
 	}
 
-	_initializeScrollBlocker = () => {
-		this.scrollBlocker = document.createElement("div");
-		this.scrollBlocker.className = "laji-map-scroll-blocker";
-		this.scrollBlocker.style.display = "block";
-		//this.scrollBlocker.addEventListener("click", () => {this.scrollBlocker.style.display = "none"});
-	}
-
-
 	_initializeMap = () => {
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
 		this.defaultCRS = L.CRS.EPSG3857;
 		this.mmlCRS = L.TileLayer.MML.get3067Proj();
 
-		const mapElem = document.createElement("div");
-		mapElem.className = "laji-map";
-		this.rootElem.appendChild(mapElem);
-
-		this.map = L.map(mapElem, {
+		this.map = L.map(this.rootElem, {
 			crs: L.TileLayer.MML.get3067Proj(),
 			contextmenu: true,
 			contextmenuItems: [],
 			zoomControl: false
 		});
 
-		this.scrollBlocker = document.createElement("div");
-		this.scrollBlocker.className = "laji-map-scroll-blocker";
-		this.scrollBlocker.style.display = "block";
-
-		this.rootElem.appendChild(this.scrollBlocker);
+		this.map.scrollWheelZoom.disable();
 
 		["taustakartta", "maastokartta"].forEach(tileLayerName => {
 			this[tileLayerName] = L.tileLayer.mml_wmts({
@@ -154,9 +138,9 @@ export default class LajiMap {
 				}
 			},
 			baselayerchange: ({layer}) => this._setTileLayer(layer),
-			blur: () => {this.scrollBlocker.style.display = "block"}
+			blur: () => this.map.scrollWheelZoom.disable(),
+			focus: () => this.map.scrollWheelZoom.enable()
 		});
-		this.scrollBlocker.addEventListener("click", () => {this.scrollBlocker.style.display = "none"});
 	}
 
 	_getDefaultCRSLayers = () => {

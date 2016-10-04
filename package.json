@@ -8,7 +8,7 @@
     "lint": "eslint src playground --ignore-pattern src/lib/*",
     "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
-    "prepublish": "npm run build:dist && npm run build:lib"
+    "prepublish": "npm version patch && git push && npm run build:dist && npm run build:lib"
   },
   "repository": {
     "type": "git",

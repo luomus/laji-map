@@ -4,7 +4,6 @@ import "proj4leaflet";
 import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "./lib/Leaflet.MML-layers/mmlLayers.js";
-import "./layerControl.js";
 
 const NORMAL_COLOR = "#257ECA";
 const ACTIVE_COLOR = "#06840A";

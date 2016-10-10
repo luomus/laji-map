@@ -92,7 +92,7 @@ export default class LajiMap {
 		this.tileLayer = this.maastokartta;
 
 		this._initializeView();
-		this._setTileLayer(this[this.tileLayerName]);
+		this.setTileLayer(this[this.tileLayerName]);
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
@@ -136,7 +136,7 @@ export default class LajiMap {
 					this.layerClicked = false;
 				}
 			},
-			baselayerchange: ({layer}) => this._setTileLayer(layer),
+			baselayerchange: ({layer}) => this.setTileLayer(layer),
 			blur: () => this.map.scrollWheelZoom.disable(),
 			focus: () => this.map.scrollWheelZoom.enable()
 		});
@@ -150,7 +150,7 @@ export default class LajiMap {
 		return [this.maastokartta, this.taustakartta];
 	}
 
-	_setTileLayer = (layer) => {
+	setTileLayer = (layer) => {
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
@@ -179,6 +179,14 @@ export default class LajiMap {
 
 		this.tileLayer = layer;
 		this.map.addLayer(this.tileLayer);
+	}
+
+	getTileLayers = () => {
+		const tileLayers = {};
+		["maastokartta", "taustakartta", "openStreetMap", "googleSatellite"].forEach(tileLayerName => {
+			tileLayers[tileLayerName] = this[tileLayerName];
+		})
+		return tileLayers;
 	}
 
 	getNormalizedZoom = () => {

@@ -460,14 +460,18 @@ export default class LajiMap {
 	}
 
 	setData = (data) => {
-		this.data = (data ? (Array.isArray(data) ? data : [data]) : []).map(this.cloneDataItem);
 
 		if (this.dataLayerGroups) {
 			this.data.forEach((item ,i) => {
-				if (item.clusterLayer) this.map.removeLayer(item.clusterLayer);
-				else if (this.dataLayerGroups[i]) this.map.removeLayer(this.dataLayerGroups[i]);
+				if (item.clusterLayer) {
+					this.map.removeLayer(item.clusterLayer);
+				}
+				else if (this.dataLayerGroups[i]) {
+					this.map.removeLayer(this.dataLayerGroups[i]);
+				}
 			});
 		}
+		this.data = (data ? (Array.isArray(data) ? data : [data]) : []).map(this.cloneDataItem);
 		this.dataLayerGroups = [];
 		this.data.forEach((item, idx) => this.initializeDataItem(idx));
 		this.redrawData();
@@ -484,14 +488,20 @@ export default class LajiMap {
 	}
 
 	setDrawData = (data) => {
+		if (!data) data = {
+			featureCollection: {features: []}
+		};
+
 		const featureCollection = {type: "featureCollection"};
 		featureCollection.features = data.featureCollection.features.slice(0);
-		this.drawData = (data) ? {getFeatureStyle: this._getDefaultDrawStyle, getClusterStyle: this._getDefaultDrawClusterStyle, ...data, featureCollection} : [];
+		this.drawData = (data) ? {
+			getFeatureStyle: this._getDefaultDrawStyle,
+			getClusterStyle: this._getDefaultDrawClusterStyle,
+			...data,
+			featureCollection} : [];
 
-		const drawLayerGroupContainer = data.cluster ? this.clusterDrawLayer : this.drawLayerGroup;
-		if (drawLayerGroupContainer && this.drawLayerGroup) {
-			drawLayerGroupContainer.clearLayers();
-		}
+		if (this.drawLayerGroup) this.drawLayerGroup.clearLayers();
+		if (this.clusterDrawLayer) this.clusterDrawLayer.clearLayers();
 
 		this.drawLayerGroup = L.geoJson(this.drawData.featureCollection, this.geoJsonLayerOptions);
 		let drawLayerForMap = this.drawLayerGroup;

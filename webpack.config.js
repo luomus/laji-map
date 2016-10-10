@@ -12,7 +12,8 @@ module.exports = {
 	},
 	plugins: [
 		new webpack.HotModuleReplacementPlugin(),
-		new webpack.IgnorePlugin(/^(buffertools)$/) // unwanted "deeper" dependency
+		new webpack.IgnorePlugin(/^(buffertools)$/), // unwanted "deeper" dependency
+		new webpack.DefinePlugin({'process.env.NODE_ENV': '"development"'})
 	],
 	module: {
 		loaders: [

@@ -443,7 +443,7 @@ export default class LajiMap {
 	cloneDataItem = (dataItem) => {
 		let featureCollection = {type: "featureCollection"};
 		featureCollection.features = dataItem.featureCollection.features.slice(0);
-		return {getFeatureStyle: this._getDefaultDataStyle, ...dataItem, featureCollection};
+		return {getFeatureStyle: this._getDefaultDataStyle, getClusterStyle: this._getDefaultDataClusterStyle, ...dataItem, featureCollection};
 	}
 
 	initializeDataItem = (idx) => {
@@ -486,7 +486,7 @@ export default class LajiMap {
 	setDrawData = (data) => {
 		const featureCollection = {type: "featureCollection"};
 		featureCollection.features = data.featureCollection.features.slice(0);
-		this.drawData = (data) ? {getFeatureStyle: this._getDefaultDrawStyle, ...data, featureCollection} : [];
+		this.drawData = (data) ? {getFeatureStyle: this._getDefaultDrawStyle, getClusterStyle: this._getDefaultDrawClusterStyle, ...data, featureCollection} : [];
 
 		const drawLayerGroupContainer = data.cluster ? this.clusterDrawLayer : this.drawLayerGroup;
 		if (drawLayerGroupContainer && this.drawLayerGroup) {
@@ -529,12 +529,10 @@ export default class LajiMap {
 
 		let color =  NORMAL_COLOR;
 		let opacity = 0.5;
-		if (data.getFeatureStyle) try {
-			const featureStyle = data.getFeatureStyle();
+		if (data.getClusterStyle) {
+			const featureStyle = data.getClusterStyle(childCount);
 			if (featureStyle.color) color = featureStyle.color;
 			if (featureStyle.opacity) opacity = featureStyle.opacity;
-		} catch (e) {
-			console.warn("laji-map: data item function getFeatureStyle() should return style for cluster when called with no arguments");
 		}
 
 		const styleObject = {
@@ -975,8 +973,15 @@ export default class LajiMap {
 		return {color: color, fillColor: color, opacity: 1, fillOpacity: 0.7};
 	}
 
+	_getDefaultDrawClusterStyle = () => {
+		return {color: NORMAL_COLOR, opacity: 1};
+	}
+
 	_getDefaultDataStyle = () => {
 		return {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
+	}
+	_getDefaultDataClusterStyle = () => {
+		return {color: DATA_LAYER_COLOR, opacity: 1};
 	}
 
 	_updateDataLayerGroupStyle = (idx) => {

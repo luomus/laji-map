@@ -59,6 +59,7 @@ class App {
 				getPopup: (idx, callback) => {
 					return `gray ${idx}`;
 				},
+				cluster: true
 			},
 			{
 				featureCollection: {
@@ -116,7 +117,7 @@ class App {
 			getPopup: (idx, callback) => {
 				return `${idx}`;
 			},
-			//cluster: true
+			cluster: true
 		}
 
 		this.activeIdx = 0;

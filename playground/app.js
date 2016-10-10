@@ -31,12 +31,35 @@ class App {
 								],
 								"radius": 6000
 							}
+						},
+						{
+							"type": "Feature",
+							"properties": {},
+							"geometry": {
+								"type": "Point",
+								"coordinates": [
+									21.924264017028992,
+									60.40403173483798
+								],
+							}
+						},
+						{
+							"type": "Feature",
+							"properties": {},
+							"geometry": {
+								"type": "Point",
+								"coordinates": [
+									21.924264017028992,
+									60.40403173483798
+								],
+							}
 						}
 					]
 				},
 				getPopup: (idx, callback) => {
 					return `gray ${idx}`;
-				}
+				},
+				cluster: {maxClusterRadius: 380}
 			},
 			{
 				featureCollection: {
@@ -69,7 +92,8 @@ class App {
 					return `green ${idx}`;
 				}
 			}
-		]
+		];
+
 		this.drawData = {
 			featureCollection: {
 				type: "collection",
@@ -85,15 +109,17 @@ class App {
 								22.104264017028992,
 								60.40403173483798
 							],
-							"radius": 1955.2645542879416
+							radius: 4000
 						}
 					}
-				]
+				],
 			},
 			getPopup: (idx, callback) => {
 				return `${idx}`;
-			}
+			},
+			cluster: true
 		}
+
 		this.activeIdx = 0;
 
 		this.map = new LajiMap({

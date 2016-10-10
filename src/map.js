@@ -3,6 +3,7 @@ import "leaflet-draw";
 import "proj4leaflet";
 import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
+import "leaflet.markercluster";
 import "./lib/Leaflet.MML-layers/mmlLayers.js";
 
 const NORMAL_COLOR = "#257ECA";
@@ -58,7 +59,6 @@ export default class LajiMap {
 		this.setDrawData(this.drawData);
 		this.activeId = (this.activeIdx !== undefined) ? this.idxsToIds[this.activeIdx] : undefined;
 		this.setActive(this.activeId);
-		this.map.addLayer(this.drawLayerGroup);
 		this._initalizeMapControls();
 		this._initializeMapEvents();
 	}
@@ -95,8 +95,6 @@ export default class LajiMap {
 		this.setTileLayer(this[this.tileLayerName]);
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
-
-		this.drawLayerGroup = L.geoJson([], this.geoJsonLayerOptions);
 
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
@@ -445,21 +443,30 @@ export default class LajiMap {
 	cloneDataItem = (dataItem) => {
 		let featureCollection = {type: "featureCollection"};
 		featureCollection.features = dataItem.featureCollection.features.slice(0);
-		return {...dataItem, featureCollection};
+		return {getFeatureStyle: this._getDefaultDataStyle, ...dataItem, featureCollection};
 	}
 
 	initializeDataItem = (idx) => {
+		const item = this.data[idx];
 		const layer = L.geoJson(this.data[idx].featureCollection, this.geoJsonLayerOptions);
 		this.dataLayerGroups.push(layer);
-		layer.addTo(this.map);
+		let container = this.map;
+		if (item.cluster) {
+			item.clusterDrawLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(item), ...item.cluster}).addTo(this.map);
+			container = item.clusterDrawLayer;
+		}
+		layer.addTo(container);
 		this.redrawDataItem(idx)
 	}
 
 	setData = (data) => {
-		this.data = data ? (Array.isArray(data) ? data : [data]) : [];
+		this.data = (data ? (Array.isArray(data) ? data : [data]) : []).map(this.cloneDataItem);
 
 		if (this.dataLayerGroups) {
-			this.dataLayerGroups.forEach(layer => this.map.removeLayer(layer));
+			this.data.forEach((item ,i) => {
+				if (item.clusterDrawLayer) this.map.removeLayer(item.clusterDrawLayer);
+				else this.map.removeLayer(this.dataLayerGroups[i]);
+			});
 		}
 		this.dataLayerGroups = [];
 		this.data.forEach((item, idx) => this.initializeDataItem(idx));
@@ -479,9 +486,18 @@ export default class LajiMap {
 	setDrawData = (data) => {
 		const featureCollection = {type: "featureCollection"};
 		featureCollection.features = data.featureCollection.features.slice(0);
-		this.drawData = (data) ? {...data, featureCollection} : [];
-		this.drawLayerGroup.clearLayers();
-		this.drawLayerGroup.addData(this.drawData.featureCollection);
+		this.drawData = (data) ? {getFeatureStyle: this._getDefaultDrawStyle, ...data, featureCollection} : [];
+
+		const drawLayerGroupContainer = data.cluster ? this.map : this.clusterDrawLayer;
+		if (drawLayerGroupContainer && this.drawLayerGroup) drawLayerGroupContainer.removeLayer(this.drawLayerGroup);
+
+		this.drawLayerGroup = L.geoJson(this.drawData.featureCollection, this.geoJsonLayerOptions);
+		let drawLayerForMap = this.drawLayerGroup;
+		if (data.cluster) {
+			this.clusterDrawLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(this.drawData, !!"isDrawData"), ...data.cluster}).addLayer(this.drawLayerGroup);
+			drawLayerForMap = this.clusterDrawLayer;
+		}
+		drawLayerForMap.addTo(this.map);
 		this._resetIds();
 		this.redrawDrawData();
 	}
@@ -491,6 +507,42 @@ export default class LajiMap {
 			prefix: "glyphicon",
 			icon: "record",
 			markerColor: NORMAL_COLOR
+		});
+	}
+
+	_getClusterIcon = (data, isDrawData) => (cluster) => {
+		var childCount = cluster.getChildCount();
+
+		var className = ' marker-cluster-';
+		if (childCount < 10) {
+			className += 'small';
+		} else if (childCount < 100) {
+			className += 'medium';
+		} else {
+			className += 'large';
+		}
+
+		let color =  NORMAL_COLOR;
+		let opacity = 0.5;
+		if (data.getFeatureStyle) try {
+			const featureStyle = data.getFeatureStyle();
+			if (featureStyle.color) color = featureStyle.color;
+			if (featureStyle.opacity) opacity = featureStyle.opacity;
+		} catch (e) {
+			console.warn("laji-map: data item function getFeatureStyle() should return style for cluster when called with no arguments");
+		}
+
+		const styleObject = {
+			"background-color": color,
+			opacity: opacity
+		}
+		const styleString = Object.keys(styleObject)
+			.reduce((style, key) => {style += `${key}:${styleObject[key]};`; return style}, "");
+
+		return L.divIcon({
+			html: `<div style="${styleString}"><span>${childCount}</span></div>`,
+			className: `marker-cluster${className}`,
+			iconSize: new L.Point(40, 40)
 		});
 	}
 
@@ -516,10 +568,18 @@ export default class LajiMap {
 		});
 	}
 
+	_reclusterDrawData = () => {
+		if (this.drawData.cluster) {
+			this.clusterDrawLayer.clearLayers();
+			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
+		}
+	}
+
 	redrawDrawData = () => {
 		for (let id in this.idsToIdxs) {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
 		}
+		this._reclusterDrawData();
 	}
 
 	redrawDataItem = (idx) => {
@@ -653,7 +713,7 @@ export default class LajiMap {
 	}
 
 	_getDrawLayerById = (id) => {
-		return this.drawLayerGroup ? this.drawLayerGroup._layers[id] : undefined;
+		return this.drawLayerGroup._layers ? this.drawLayerGroup._layers[id] : undefined;
 	}
 
 	_triggerEvent = (e) => {
@@ -675,6 +735,10 @@ export default class LajiMap {
 		const {featureCollection: {features}} = this.drawData;
 
 		const newFeature = this._enchanceGeoJSON(this._initializeDrawLayer(layer, features.length), layer);
+		if (this.drawData.cluster) {
+			this.clusterDrawLayer.clearLayers();
+			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
+		}
 		features.push(newFeature);
 
 		const event = [
@@ -713,9 +777,11 @@ export default class LajiMap {
 
 		const {featureCollection: {features}} = this.drawData;
 
+		const survivingIds = Object.keys(this.idsToIdxs).map(id => parseInt(id)).filter(id => !deleteIds.includes(id));
+
 		let changeActive = false;
 		let newActiveId = undefined;
-		if (features && Object.keys(this.idsToIdxs).filter(id => !deleteIds.includes(id)).length === 0) {
+		if (features && survivingIds.length === 0) {
 			changeActive = true;
 		} else if (this.activeId !== undefined && deleteIds.includes(this.activeId)) {
 			changeActive = true;
@@ -725,20 +791,21 @@ export default class LajiMap {
 			let closestDistance = undefined;
 			let closestNegDistance = undefined;
 
-			Object.keys(this.idsToIdxs).forEach(id => {
+			survivingIds.forEach(id => {
 				const dist = activeIdx - this.idsToIdxs[id];
+				console.log(`${id} ${dist}`);
 				if (dist > 0 && (closestDistance === undefined || dist < closestDistance)) {
 					closestDistance = dist;
 					closestSmallerId = id;
-				} else if (dist < 0 && (closestDistance === undefined || dist > closestNegDistance)) {
+				} else if (dist < 0 && (closestNegDistance === undefined || dist > closestNegDistance)) {
 					closestNegDistance = dist;
 					closestGreaterId = id;
 				}
 			});
 
-			if (closestSmallerId !== undefined) newActiveId = closestSmallerId;
-			else if (closestGreaterId !== undefined) newActiveId = closestGreaterId;
-		} else  {
+			if (closestGreaterId !== undefined) newActiveId = closestGreaterId;
+			else if (closestSmallerId !== undefined) newActiveId = closestSmallerId;
+		} else {
 			newActiveId = this.activeId;
 			changeActive = true;
 		}
@@ -749,6 +816,8 @@ export default class LajiMap {
 			this.drawLayerGroup.removeLayer(id);
 		});
 		this._resetIds();
+
+		this._reclusterDrawData();
 
 		const event = [{
 			type: "delete",
@@ -795,13 +864,24 @@ export default class LajiMap {
 	_setEditable = (id) => {
 		this._clearEditable();
 		this.editId = id;
-		this._getDrawLayerById(this.editId).editing.enable();
-		this._getDrawLayerById(id).closePopup();
+		const editLayer = this._getDrawLayerById(this.editId);
+		if (this.drawData.cluster) {
+			this.clusterDrawLayer.removeLayer(editLayer);
+			this.map.addLayer(editLayer);
+		}
+		editLayer.editing.enable();
+		editLayer.closePopup();
 	}
 
 	_clearEditable = () => {
 		if (this.editId === undefined) return;
-		this._getDrawLayerById(this.editId).editing.disable();
+		const editLayer = this._getDrawLayerById(this.editId);
+		editLayer.editing.disable();
+		if (this.drawData.cluster) {
+			this.map.removeLayer(editLayer);
+			this.clusterDrawLayer.addLayer(editLayer);
+		}
+		this._reclusterDrawData();
 		this.editId = undefined;
 	}
 
@@ -842,11 +922,10 @@ export default class LajiMap {
 
 	_getStyleForType = (type, overrideStyles, id) => {
 		const idx = this.idsToIdxs[id];
-		if (this.drawData.getFeatureStyle) {
-			return this.drawData.getFeatureStyle({
-				featureIdx: idx,
-				feature: this.drawData.featureCollection.features[idx]});
-		}
+		return this.drawData.getFeatureStyle({
+			featureIdx: idx,
+			feature: this.drawData.featureCollection.features[idx]
+		});
 
 		const styles = {
 			weight: type.toLowerCase().includes("line") ? 8 : 14,
@@ -874,33 +953,35 @@ export default class LajiMap {
 
 		let style = {};
 		if (layer instanceof L.Marker) {
-			style.color = (id === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
 			const idx = this.idsToIdxs[id];
-			if (this.drawData.getFeatureStyle) {
-				style = this.drawData.getFeatureStyle({
-					featureIdx: idx,
-					feature: this.drawData.featureCollection.features[idx]});
-			}
+			style = this.drawData.getFeatureStyle({
+				featureIdx: idx,
+				feature: this.drawData.featureCollection.features[idx]});
 		} else {
 			const style =  {};
-			if (this.activeId === id) style.color = ACTIVE_COLOR;
 			layer.setStyle(this._getStyleForLayer(layer, style, id));
 		}
 
 		this.updateLayerStyle(layer, style);
 	}
 
+	_getDefaultDrawStyle = (options) => {
+		const featureIdx = options ? options.featureIdx : undefined;
+		const color = (featureIdx !== undefined && this.idxsToIds[featureIdx] === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
+		return {color: color, fillColor: color, opacity: 1, fillOpacity: 0.7};
+	}
+
+	_getDefaultDataStyle = () => {
+		return {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
+	}
+
 	_updateDataLayerGroupStyle = (idx) => {
 		const dataItem = this.data[idx];
 		if (!dataItem) return;
 
-		const defaultStyle = {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
-
 		let i = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
-			this.updateLayerStyle(layer, dataItem.getFeatureStyle ?
-				dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i}) :
-				defaultStyle);
+			this.updateLayerStyle(layer, dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i}));
 			i++;
 		});
 	}

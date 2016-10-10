@@ -465,7 +465,7 @@ export default class LajiMap {
 		if (this.dataLayerGroups) {
 			this.data.forEach((item ,i) => {
 				if (item.clusterLayer) this.map.removeLayer(item.clusterLayer);
-				else this.map.removeLayer(this.dataLayerGroups[i]);
+				else if (this.dataLayerGroups[i]) this.map.removeLayer(this.dataLayerGroups[i]);
 			});
 		}
 		this.dataLayerGroups = [];
@@ -488,7 +488,7 @@ export default class LajiMap {
 		featureCollection.features = data.featureCollection.features.slice(0);
 		this.drawData = (data) ? {getFeatureStyle: this._getDefaultDrawStyle, ...data, featureCollection} : [];
 
-		const drawLayerGroupContainer = data.cluster ? this.map : this.clusterDrawLayer;
+		const drawLayerGroupContainer = data.cluster ? this.clusterDrawLayer : this.drawLayerGroup;
 		if (drawLayerGroupContainer && this.drawLayerGroup) {
 			drawLayerGroupContainer.clearLayers();
 		}
@@ -584,7 +584,7 @@ export default class LajiMap {
 		for (let id in this.idsToIdxs) {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
 		}
-		//this._reclusterDrawData();
+		this._reclusterDrawData();
 	}
 
 	redrawDataItem = (idx) => {
@@ -798,7 +798,6 @@ export default class LajiMap {
 
 			survivingIds.forEach(id => {
 				const dist = activeIdx - this.idsToIdxs[id];
-				console.log(`${id} ${dist}`);
 				if (dist > 0 && (closestDistance === undefined || dist < closestDistance)) {
 					closestDistance = dist;
 					closestSmallerId = id;

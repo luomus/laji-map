@@ -59,7 +59,6 @@ class App {
 				getPopup: (idx, callback) => {
 					return `gray ${idx}`;
 				},
-				cluster: {maxClusterRadius: 380}
 			},
 			{
 				featureCollection: {
@@ -117,7 +116,7 @@ class App {
 			getPopup: (idx, callback) => {
 				return `${idx}`;
 			},
-			cluster: true
+			//cluster: true
 		}
 
 		this.activeIdx = 0;
@@ -132,10 +131,6 @@ class App {
 			onChange: this.onMapChange,
 			lang: "fi"
 		});
-
-		this.map.setDrawData(this.drawData);
-		this.map.setDrawData(this.drawData);
-		this.map.setDrawData(this.drawData);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))

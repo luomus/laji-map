@@ -452,8 +452,8 @@ export default class LajiMap {
 		this.dataLayerGroups.push(layer);
 		let container = this.map;
 		if (item.cluster) {
-			item.clusterDrawLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(item), ...item.cluster}).addTo(this.map);
-			container = item.clusterDrawLayer;
+			item.clusterLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(item), ...item.cluster}).addTo(this.map);
+			container = item.clusterLayer;
 		}
 		layer.addTo(container);
 		this.redrawDataItem(idx)
@@ -464,7 +464,7 @@ export default class LajiMap {
 
 		if (this.dataLayerGroups) {
 			this.data.forEach((item ,i) => {
-				if (item.clusterDrawLayer) this.map.removeLayer(item.clusterDrawLayer);
+				if (item.clusterLayer) this.map.removeLayer(item.clusterLayer);
 				else this.map.removeLayer(this.dataLayerGroups[i]);
 			});
 		}
@@ -489,12 +489,17 @@ export default class LajiMap {
 		this.drawData = (data) ? {getFeatureStyle: this._getDefaultDrawStyle, ...data, featureCollection} : [];
 
 		const drawLayerGroupContainer = data.cluster ? this.map : this.clusterDrawLayer;
-		if (drawLayerGroupContainer && this.drawLayerGroup) drawLayerGroupContainer.removeLayer(this.drawLayerGroup);
+		if (drawLayerGroupContainer && this.drawLayerGroup) {
+			drawLayerGroupContainer.clearLayers();
+		}
 
 		this.drawLayerGroup = L.geoJson(this.drawData.featureCollection, this.geoJsonLayerOptions);
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
-			this.clusterDrawLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(this.drawData, !!"isDrawData"), ...data.cluster}).addLayer(this.drawLayerGroup);
+			this.clusterDrawLayer = L.markerClusterGroup(
+				{iconCreateFunction: this._getClusterIcon(this.drawData, !!"isDrawData"),
+					...data.cluster})
+				.addLayer(this.drawLayerGroup);
 			drawLayerForMap = this.clusterDrawLayer;
 		}
 		drawLayerForMap.addTo(this.map);
@@ -579,7 +584,7 @@ export default class LajiMap {
 		for (let id in this.idsToIdxs) {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
 		}
-		this._reclusterDrawData();
+		//this._reclusterDrawData();
 	}
 
 	redrawDataItem = (idx) => {

@@ -133,6 +133,10 @@ class App {
 			lang: "fi"
 		});
 
+		this.map.setDrawData(this.drawData);
+		this.map.setDrawData(this.drawData);
+		this.map.setDrawData(this.drawData);
+
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
 		});

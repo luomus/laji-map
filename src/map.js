@@ -234,7 +234,7 @@ export default class LajiMap {
 		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
 
 		featureTypes.slice(0, -1).forEach(type => {
-			drawOptions.draw[type] = {shapeOptions: this._getStyleForType(type, {color: INCOMPLETE_COLOR, opacity: 0.8})};
+			drawOptions.draw[type] = {shapeOptions: this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
 		featureTypes.forEach(type => {
@@ -256,7 +256,6 @@ export default class LajiMap {
 
 			_createItem: function(container, glyphName) {
 				const elem = L.DomUtil.create("a", "", container);
-				//elem.href = "#";
 				const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
 				L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
 				L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
@@ -934,10 +933,6 @@ export default class LajiMap {
 
 	_getStyleForType = (type, overrideStyles, id) => {
 		const idx = this.idsToIdxs[id];
-		return this.drawData.getFeatureStyle({
-			featureIdx: idx,
-			feature: this.drawData.featureCollection.features[idx]
-		});
 
 		const styles = {
 			weight: type.toLowerCase().includes("line") ? 8 : 14,
@@ -946,9 +941,16 @@ export default class LajiMap {
 			color: NORMAL_COLOR
 		};
 
-		if (overrideStyles) for (let style in overrideStyles) {
-			styles[style] = overrideStyles[style];
-		}
+		const dataStyles = this.drawData.getFeatureStyle({
+			featureIdx: idx,
+			feature: this.drawData.featureCollection.features[idx]
+		});
+
+		[dataStyles, overrideStyles].forEach(_styles => {
+			if (_styles) for (let style in _styles) {
+				styles[style] = _styles[style];
+			}
+		})
 
 		return styles;
 	}

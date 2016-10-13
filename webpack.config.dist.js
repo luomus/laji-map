@@ -48,7 +48,7 @@ module.exports = {
 			}
 		],
 		noParse: [
-			/dist\/(ol|proj4).js/
+			/node_modules\/proj4leaflet\/lib\/proj4-compressed.js/
 		]
 	}
 };

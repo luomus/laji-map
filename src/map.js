@@ -69,7 +69,16 @@ export default class LajiMap {
 		this.defaultCRS = L.CRS.EPSG3857;
 		this.mmlCRS = L.TileLayer.MML.get3067Proj();
 
-		this.map = L.map(this.rootElem, {
+		this.container = document.createElement("div"); this.container.className += " laji-map";
+		this.rootElem.appendChild(this.container);
+
+		const mapElem = document.createElement("div");
+		this.blockerElem = document.createElement("div");
+		this.blockerElem.className = "blocker";
+
+		[mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
+
+		this.map = L.map(mapElem, {
 			crs: L.TileLayer.MML.get3067Proj(),
 			contextmenu: true,
 			contextmenuItems: [],
@@ -387,12 +396,20 @@ export default class LajiMap {
 
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this._controlIsAllowed(this.drawControl) && this.controlSettings[featureType] !== false) this.map.contextmenu.addItem({
-					text: text,
-					iconCls: "context-menu-draw context-menu-draw-" + featureType,
-					callback: () => this.drawControl._toolbars.draw._modes[featureType].handler.enable()
-				});
+				if (this._controlIsAllowed(this.drawControl) && this.controlSettings[featureType] !== false) {
+					this.map.contextmenu.addItem({
+						text: text,
+						iconCls: "context-menu-draw context-menu-draw-" + featureType,
+						callback: () => this.drawControl._toolbars.draw._modes[featureType].handler.enable()
+					});
+				}
 			});
+
+			this.map.contextmenu.addItem({
+				text: this.translations.addMarkerByCoordinates,
+				callback: this.openCoordinatesDialog
+			})
+
 			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
 
 			drawLocalizations.toolbar.actions.title = join("Cancel", "drawPassiveVerb");
@@ -1005,5 +1022,53 @@ export default class LajiMap {
 			this.updateLayerStyle(layer, dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i}));
 			i++;
 		});
+	}
+
+	openCoordinatesDialog = () => {
+		const container = document.createElement("form");
+		container.className = "laji-map-coordinates well";
+
+		function createTextInput(labelTxt) {
+			const input = document.createElement("input");
+			input.setAttribute("type", "text");
+			input.id = `laji-map-${labelTxt}`;
+			input.className = "form-control";
+
+			const label = document.createElement("label");
+			label.setAttribute("for", input.id)
+			label.innerHTML = labelTxt;
+
+			const container = document.createElement("div");
+			container.className = "form-group";
+
+			[label, input].forEach(elem => {container.appendChild(elem)});
+
+			return container;
+		}
+
+		const latInput = createTextInput("lat");
+		const lngInput = createTextInput("lng");
+
+		const title = document.createElement("h4");
+		title.innerHTML = "Syötä koordinaatit";
+
+		const button = document.createElement("button");
+		button.setAttribute("type", "submit");
+		button.innerHTML = "Syötä";
+
+		container.addEventListener("submit", e => {e.preventDefault(); console.log("submit")});
+
+		container.appendChild(title);
+		container.appendChild(latInput);
+		container.appendChild(lngInput);
+		container.appendChild(button);
+
+
+		this.blockerElem.style.display = "block";
+		this.blockerElem.addEventListener("click", () => {
+			this.blockerElem.style.display = "";
+			container.remove();
+		})
+		this.container.appendChild(container);
 	}
 }

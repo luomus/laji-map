@@ -209,4 +209,9 @@
 		en: "satellite map (Google)",
 		sv: "satellitkarta (Google)"
 	},
+	addMarkerByCoordinates: {
+		fi: "Lisää nasta koordinaattien perusteella",
+		en: "add a marker according to coordinates",
+		sv: "??"
+	},
 }

@@ -130,7 +130,8 @@ class App {
 			center: [60.4353462, 22.2285623],
 			zoom: 6,
 			onChange: this.onMapChange,
-			lang: "fi"
+			lang: "fi",
+			controlSettings: {draw: false}
 		});
 
 		["fi", "en", "sv"].forEach(lang => {

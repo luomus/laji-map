@@ -29,15 +29,19 @@ export default class LajiMap {
 			layer: true,
 			zoom: true,
 			location: true,
-			coordinateEdit: true
+			coordinateInput: true
 		};
 		this.popupOnHover = false;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
 		 "tileLayerName", "drawData", "data", "activeIdx",
-		 "onInitializeDrawLayer", "controlSettings", "popupOnHover"].forEach(prop => {
+		 "onInitializeDrawLayer", "popupOnHover"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
+
+		for (let controlSetting in props.controlSettings) {
+			this.controlSettings[controlSetting] = props.controlSettings[controlSetting];
+		}
 
 		this.geoJsonLayerOptions = {
 			pointToLayer: (feature, latlng) => {
@@ -204,18 +208,21 @@ export default class LajiMap {
 
 	_controlIsAllowed = (control) => {
 		const controlNameMap = {
-			draw: this.drawControl,
-			zoom: this.zoomControl,
-			location: this.locationControl,
-			layer: this.layerControl,
-			coordinateInput: this.coordinateInputControl
+			draw: {control: this.drawControl},
+			zoom: {control: this.zoomControl},
+			location: {control: this.locationControl},
+			layer: {control: this.layerControl},
+			coordinateInput: {control: this.coordinateInputControl, dependencies: ["draw"]}
 		};
 
+		const {controlSettings} = this;
+		function controlIsOk(controlName) {
+			const dependencies = controlNameMap[controlName].dependencies || [];
+			return (controlSettings[controlName] && dependencies.every(dependency => controlIsOk(dependency)));
+		}
+
 		for (let controlName in controlNameMap) {
-			if (controlNameMap[controlName] === control) {
-				if (!this.controlSettings.hasOwnProperty(controlName) || this.controlSettings[controlName]) return true;
-				return false;
-			}
+			if (controlNameMap[controlName].control === control) return controlIsOk(controlName);
 		}
 	}
 

@@ -432,6 +432,7 @@ export default class LajiMap {
 				this.map.contextmenu.addItem("-");
 				this.map.contextmenu.addItem({
 					text: this.translations.addMarkerByCoordinates,
+					iconCls: "glyphicon glyphicon-pencil",
 					callback: this.openCoordinatesDialog
 				})
 			}

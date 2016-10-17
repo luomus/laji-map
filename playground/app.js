@@ -131,7 +131,6 @@ class App {
 			zoom: 6,
 			onChange: this.onMapChange,
 			lang: "fi",
-			controlSettings: {draw: false}
 		});
 
 		["fi", "en", "sv"].forEach(lang => {

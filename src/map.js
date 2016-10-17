@@ -28,7 +28,8 @@ export default class LajiMap {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
 			zoom: true,
-			location: true
+			location: true,
+			coordinateEdit: true
 		};
 		this.popupOnHover = false;
 
@@ -206,7 +207,8 @@ export default class LajiMap {
 			draw: this.drawControl,
 			zoom: this.zoomControl,
 			location: this.locationControl,
-			layer: this.layerControl
+			layer: this.layerControl,
+			coordinateInput: this.coordinateInputControl
 		};
 
 		for (let controlName in controlNameMap) {
@@ -250,6 +252,20 @@ export default class LajiMap {
 			if (this.controlSettings[type] === false) drawOptions.draw[type] = false;
 		});
 
+		function createControlItem(that, container, glyphName, title, fn) {
+			const elem = L.DomUtil.create("a", "", container);
+			const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
+			elem.title = title;
+
+			L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
+			L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
+			L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
+			L.DomEvent.on(elem, "click", that._refocusOnMap, that);
+			L.DomEvent.on(elem, "click", fn);
+
+			return elem;
+		}
+
 		const that = this;
 		const LocationControl = L.Control.extend({
 			options: {
@@ -257,38 +273,35 @@ export default class LajiMap {
 			},
 
 			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-geocontrol");
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
 				this._createSearch(container);
 				this._createLocate(container);
 				return container;
 			},
 
-			_createItem: function(container, glyphName) {
-				const elem = L.DomUtil.create("a", "", container);
-				const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
-				L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
-				L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
-				L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
-				L.DomEvent.on(elem, "click", this._refocusOnMap, this);
-				return elem;
-			},
-
 			_createSearch: function(container) {
-				this._searchElem = this._createItem(container, "search");
-				this._searchElem.title = that.translations.Search;
-				L.DomEvent.on(this._searchElem, "click", this._onSearch, this);
-				return this._searchElem;
+				return createControlItem(this, container, "search", that.translations.Search, () => this._onSearch(this));
 			},
 
 			_createLocate: function(container) {
-				const locateElem = this._createItem(container, "screenshot");
-				locateElem.title = that.translations.Geolocate;
-				L.DomEvent.on(locateElem, "click", that._onLocate);
-				return locateElem;
+				return createControlItem(this, container, "screenshot", that.translations.Geolocate, () => this._onLocate());
 			},
 
 			_onSearch: function() {
 				console.log("search");
+			}
+		});
+
+		const CoordinateInputControl = L.Control.extend({
+			options: {
+				position: "topright"
+			},
+
+			onAdd: function(map) {
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
+				createControlItem(this, container, "pencil",
+					that.translations.AddMarkerByCoordinates, () => that.openCoordinatesDialog());
+				return container;
 			}
 		});
 
@@ -301,6 +314,9 @@ export default class LajiMap {
 		this._addControl(this.drawControl);
 
 		this._addControl(this._getZoomControl());
+
+		this.coordinateInputControl = new CoordinateInputControl();
+		this._addControl(this.coordinateInputControl);
 
 		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
@@ -405,10 +421,13 @@ export default class LajiMap {
 				}
 			});
 
-			this.map.contextmenu.addItem({
-				text: this.translations.addMarkerByCoordinates,
-				callback: this.openCoordinatesDialog
-			})
+			if (this._controlIsAllowed(this.coordinateInputControl)) {
+				this.map.contextmenu.addItem("-");
+				this.map.contextmenu.addItem({
+					text: this.translations.addMarkerByCoordinates,
+					callback: this.openCoordinatesDialog
+				})
+			}
 
 			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
 
@@ -1025,8 +1044,14 @@ export default class LajiMap {
 	}
 
 	openCoordinatesDialog = () => {
-		const container = document.createElement("form");
-		container.className = "laji-map-coordinates well";
+		const that = this;
+		function close(e) {
+			e.preventDefault();
+			that.blockerElem.style.display = "";
+			that.blockerElem.removeEventListener("click", close);
+			document.removeEventListener("keydown", onEscListener);
+			container.remove();
+		}
 
 		function createTextInput(labelTxt) {
 			const input = document.createElement("input");
@@ -1035,7 +1060,7 @@ export default class LajiMap {
 			input.className = "form-control";
 
 			const label = document.createElement("label");
-			label.setAttribute("for", input.id)
+			label.setAttribute("for", input.id);
 			label.innerHTML = labelTxt;
 
 			const container = document.createElement("div");
@@ -1046,29 +1071,97 @@ export default class LajiMap {
 			return container;
 		}
 
-		const latInput = createTextInput("lat");
-		const lngInput = createTextInput("lng");
+		function formatter(input) { return e => {
+			let charCode = (typeof e.which == "undefined") ? e.keyCode : e.which;
 
-		const title = document.createElement("h4");
-		title.innerHTML = "Syötä koordinaatit";
+			// The input cursor isn't necessary at the tail, but this validation works regardless.
+			validate(e, input.value + String.fromCharCode(charCode));
+		}}
 
-		const button = document.createElement("button");
-		button.setAttribute("type", "submit");
-		button.innerHTML = "Syötä";
+		function validate(e, value) {
+			value = value.trim();
+			if (!value.match(/^([(0-9]+(\.|,)?[0-9]*|)$/)) {
+				e.preventDefault();
+				return false;
+			}
+			return true;
+		}
 
-		container.addEventListener("submit", e => {e.preventDefault(); console.log("submit")});
+		const {translations} = this;
+		const container = document.createElement("form");
+		container.className = "laji-map-coordinates well";
 
-		container.appendChild(title);
-		container.appendChild(latInput);
-		container.appendChild(lngInput);
-		container.appendChild(button);
+		const latLabelInput = createTextInput(`${translations.Latitude} (WGS84)`);
+		const lngLabelInput = createTextInput(`${translations.Longitude} (WGS84)`);
+		const latInput = latLabelInput.getElementsByTagName("input")[0];
+		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
 
+		const closeButton = document.createElement("button");
+		closeButton.setAttribute("type", "button");
+		closeButton.className = "close";
+		closeButton.innerHTML = "✖";
+		closeButton.addEventListener("click", close);
+
+		const submitButton = document.createElement("button");
+		submitButton.setAttribute("type", "submit");
+		submitButton.className = "btn btn-block btn-info";
+		submitButton.innerHTML = `${translations.Add} ${translations.marker}`;
+		submitButton.setAttribute("disabled", "disabled");
+
+		const inputValidContainer = [false, false];
+		[latInput, lngInput].forEach((input, i) => {
+			let prevVal = "";
+			input.addEventListener("keypress", formatter(input));
+			input.oninput = (e) => {
+				if (!validate(e, e.target.value)) {
+					e.target.value = prevVal;
+				}
+				e.target.value = e.target.value.replace(",", ".");
+				prevVal = e.target.value;
+
+				inputValidContainer[i] = validate(e, e.target.value);
+				if (inputValidContainer.every(item => item)) {
+					submitButton.removeAttribute("disabled");
+				} else {
+					submitButton.setAttribute("disabled", "disabled");
+				}
+			}
+		});
+
+		container.addEventListener("submit", e => {
+			close(e);
+			const latlng = [latInput.value, lngInput.value];
+			const marker = new L.Marker(latlng);
+			this._onAdd(marker);
+			this.map.setView(latlng);
+			if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(marker);
+		});
+
+		this.blockerElem.addEventListener("click", close);
+
+		function onEscListener(e) {
+			e = e || window.event;
+			var isEscape = false;
+			if ("key" in e) {
+				isEscape = (e.key == "Escape" || e.key == "Esc");
+			} else {
+				isEscape = (e.keyCode == 27);
+			}
+			if (isEscape) {
+				if ([latInput, lngInput].every(input => {return document.activeElement !== input})) close(e);
+			}
+		}
+
+		document.addEventListener("keydown", onEscListener);
+
+		container.appendChild(closeButton);
+		container.appendChild(latLabelInput);
+		container.appendChild(lngLabelInput);
+		container.appendChild(submitButton);
 
 		this.blockerElem.style.display = "block";
-		this.blockerElem.addEventListener("click", () => {
-			this.blockerElem.style.display = "";
-			container.remove();
-		})
 		this.container.appendChild(container);
+
+		latInput.focus();
 	}
 }

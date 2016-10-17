@@ -214,4 +214,14 @@
 		en: "add a marker according to coordinates",
 		sv: "??"
 	},
+	latitude: {
+		fi: "korkeus",
+		en: "latitude",
+		sv: "??"
+	},
+	longitude: {
+		fi: "leveys",
+		en: "longitude",
+		sv: "??"
+	}
 }

@@ -42,6 +42,7 @@ export default class LajiMap {
 		for (let controlSetting in props.controlSettings) {
 			this.controlSettings[controlSetting] = props.controlSettings[controlSetting];
 		}
+		console.log(this.controlSettings);
 
 		this.geoJsonLayerOptions = {
 			pointToLayer: (feature, latlng) => {
@@ -130,7 +131,7 @@ export default class LajiMap {
 		this.map.addEventListener({
 			click: e => this._interceptClick(),
 			dblclick: e => {
-				if (this.controlSettings.draw && this.controlSettings.marker !== false) {
+				if (this.controlSettings.draw === true || (typeof this.controlSettings.draw === "object" && this.controlSettings.draw.marker !== false)) {
 					this._onAdd(new L.marker(e.latlng));
 				}
 			},
@@ -212,13 +213,18 @@ export default class LajiMap {
 			zoom: {control: this.zoomControl},
 			location: {control: this.locationControl},
 			layer: {control: this.layerControl},
-			coordinateInput: {control: this.coordinateInputControl, dependencies: ["draw"]}
+			coordinateInput: {control: this.coordinateInputControl,
+				dependencies: [
+					"draw",
+					() => (this.controlSettings.draw === true ||
+					       (typeof this.controlSettings.draw === "object" &&
+					        this.controlSettings.draw.marker !== false))]}
 		};
 
 		const {controlSettings} = this;
 		function controlIsOk(controlName) {
 			const dependencies = controlNameMap[controlName].dependencies || [];
-			return (controlSettings[controlName] && dependencies.every(dependency => controlIsOk(dependency)));
+			return (controlSettings[controlName] && dependencies.every(dependency => {return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)}));
 		}
 
 		for (let controlName in controlNameMap) {
@@ -256,7 +262,7 @@ export default class LajiMap {
 		});
 
 		featureTypes.forEach(type => {
-			if (this.controlSettings[type] === false) drawOptions.draw[type] = false;
+			if (this.controlSettings.draw === false || this.controlSettings.draw[type] === false) drawOptions.draw[type] = false;
 		});
 
 		function createControlItem(that, container, glyphName, title, fn) {
@@ -419,7 +425,8 @@ export default class LajiMap {
 
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this._controlIsAllowed(this.drawControl) && this.controlSettings[featureType] !== false) {
+				if (this._controlIsAllowed(this.drawControl) &&
+				   (this.controlSettings.draw === true || this.controlSettings.draw[featureType] !== false)) {
 					this.map.contextmenu.addItem({
 						text: text,
 						iconCls: "context-menu-draw context-menu-draw-" + featureType,

@@ -293,6 +293,8 @@ export default class LajiMap {
 			drawOptions.draw[type] = {shapeOptions: this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
+		drawOptions.draw.polygon.allowIntersection = false;
+
 		featureTypes.forEach(type => {
 			if (this.controlSettings.draw === false || this.controlSettings.draw[type] === false) drawOptions.draw[type] = false;
 		});
@@ -498,6 +500,7 @@ export default class LajiMap {
 			drawLocalizations.handlers.polyline.tooltip.start = join("ClickToStartDrawingPolyline");
 			drawLocalizations.handlers.polyline.tooltip.cont = join("ClickToContinueDrawingPolyline");
 			drawLocalizations.handlers.polyline.tooltip.end = join("ClickToEndDrawingPolyline");
+			drawLocalizations.handlers.polyline.error = join("shapeEdgesCannotCross") + "!";
 
 			drawLocalizations.handlers.rectangle.tooltip.start = join("Click", "and", "drag", "toDrawRectangle");
 

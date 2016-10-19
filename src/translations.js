@@ -210,7 +210,7 @@
 		sv: "satellitkarta (Google)"
 	},
 	addMarkerByCoordinates: {
-		fi: "Lisää nasta koordinaattien perusteella",
+		fi: "lisää nasta koordinaattien perusteella",
 		en: "add a marker according to coordinates",
 		sv: "??"
 	},
@@ -237,6 +237,11 @@
 	suokasvillisuusvyohykkeet: {
 		fi: "suokasvillisuusvyohykkeet",
 		en: "???",
+		sv: "???"
+	},
+	shapeEdgesCannotCross: {
+		fi: "<strong>Virhe:</strong> kuvion särmät eivät saa leikata kuviota",
+		en: "<strong>Error:</strong> shape's edges cannot cross the shape",
 		sv: "???"
 	},
 }

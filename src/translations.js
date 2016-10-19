@@ -223,5 +223,20 @@
 		fi: "leveys",
 		en: "longitude",
 		sv: "??"
-	}
+	},
+	geobiologicalProvinces: {
+		fi: "eliömaakunnat",
+		en: "geobiological provinces",
+		sv: "??"
+	},
+	metsakasvillisuusvyohykkeet: {
+		fi: "metsäkasvillisuusvyöhykkeet",
+		en: "??",
+		sv: "??"
+	},
+	suokasvillisuusvyohykkeet: {
+		fi: "suokasvillisuusvyohykkeet",
+		en: "???",
+		sv: "???"
+	},
 }

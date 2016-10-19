@@ -119,6 +119,27 @@ export default class LajiMap {
 		this._initializeView();
 		this.setTileLayer(this[this.tileLayerName]);
 
+		this.overlays = {
+			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
+				layers: 'test:eliomaakunnat',
+				format: 'image/png',
+				transparent: true,
+				version: '1.3.0'
+			}),
+			metsakasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+				layers: 'Metsakasvillisuusvyohykkeet',
+				format: 'image/png',
+				transparent: true,
+				version: '1.3.0'
+			}).setOpacity(0.5),
+			suokasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+				layers: 'Suokasvillisuusvyohykkeet',
+				format: 'image/png',
+				transparent: true,
+				version: '1.3.0'
+			}).setOpacity(0.5)
+		};
+
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 		if (this.locate) {
@@ -374,13 +395,16 @@ export default class LajiMap {
 	}
 
 	_getLayerControl = () => {
-		const baseMaps = {};
+		const baseMaps = {}, overlays = {};
 		const { translations } = this;
 		[TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
 		});
+		Object.keys(this.overlays).forEach(overlayName => {
+			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlays[overlayName];
+		})
 
-		this.layerControl = L.control.layers(baseMaps, {}, {position: "topleft"});
+		this.layerControl = L.control.layers(baseMaps, overlays, {position: "topleft"});
 		return this.layerControl;
 	}
 

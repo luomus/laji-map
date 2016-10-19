@@ -12,15 +12,21 @@ const INCOMPLETE_COLOR = "#36B43A";
 const DATA_LAYER_COLOR = "#AAAAAA";
 const USER_LOCATION_COLOR = "#FF0000";
 
+const MAASTOKARTTA = "maastokartta";
+const TAUSTAKARTTA = "taustakartta";
+const OPEN_STREET = "openStreetMap";
+const GOOGLE_SATELLITE = "googleSatellite";
+
 import translations from "./translations.js";
 
 export default class LajiMap {
 
 	constructor(props) {
-		this.tileLayerName = "taustakartta";
+		this.tileLayerName = TAUSTAKARTTA;
 		this.lang = "en";
 		this.locate = false;
-		this.zoom = 4;
+		this.center =  [65, 26];
+		this.zoom = 2;
 		this.data = [];
 		this.drawData = {featureCollection: {type: "featureCollection", features: []}};
 		this.activeIdx = 0;
@@ -39,10 +45,14 @@ export default class LajiMap {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 
+		const {tileLayerName} = props;
+		if ([GOOGLE_SATELLITE, OPEN_STREET].includes(tileLayerName) && !props.hasOwnProperty("zoom")) {
+			this.zoom += 3;
+		}
+
 		for (let controlSetting in props.controlSettings) {
 			this.controlSettings[controlSetting] = props.controlSettings[controlSetting];
 		}
-		console.log(this.controlSettings);
 
 		this.geoJsonLayerOptions = {
 			pointToLayer: (feature, latlng) => {
@@ -93,7 +103,7 @@ export default class LajiMap {
 
 		this.map.scrollWheelZoom.disable();
 
-		["taustakartta", "maastokartta"].forEach(tileLayerName => {
+		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
 			this[tileLayerName] = L.tileLayer.mml_wmts({
 				layer: tileLayerName
 			});
@@ -120,9 +130,10 @@ export default class LajiMap {
 	}
 
 	_initializeView = () => {
+		window.map = this.map;
 		this.map.setView(
-			this.center || [60.1718699, 24.9419917],
-			this.zoom || 10,
+			this.center,
+			this.zoom,
 			{animate: false}
 		);
 	}
@@ -196,7 +207,7 @@ export default class LajiMap {
 
 	getTileLayers = () => {
 		const tileLayers = {};
-		["maastokartta", "taustakartta", "openStreetMap", "googleSatellite"].forEach(tileLayerName => {
+		[TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
 			tileLayers[tileLayerName] = this[tileLayerName];
 		})
 		return tileLayers;
@@ -365,7 +376,7 @@ export default class LajiMap {
 	_getLayerControl = () => {
 		const baseMaps = {};
 		const { translations } = this;
-		["taustakartta", "maastokartta", "openStreetMap", "googleSatellite"].forEach(tileLayerName => {
+		[TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
 		});
 

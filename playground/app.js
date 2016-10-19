@@ -127,8 +127,6 @@ class App {
 			drawData: this.drawData,
 			data: this.data,
 			activeIdx: this.activeIdx,
-			center: [60.4353462, 22.2285623],
-			zoom: 6,
 			onChange: this.onMapChange,
 			lang: "fi",
 		});

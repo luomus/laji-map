@@ -140,9 +140,9 @@
 		sv: "klick den sista punkten för att stänga linjen"
 	},
 	polylineError: {
-		fi: "<strong>Virhe:</strong> Viiva ei saa leikata itseään!",
-		en: "<strong>Error:</strong> Shape edges cannot cross!",
-		sv: "<strong>Error:</strong> Linjen får inte korsa sig!"
+		fi: "$errorHTML Viiva ei saa leikata itseään",
+		en: "$errorHTML Shape edges cannot cross",
+		sv: "$errorHTML Linjen får inte korsa sig"
 	},
 	simpleShapeEnd: {
 		fi: "päästä irti hiirestä lopettaaksesi piirtämisen",
@@ -215,7 +215,7 @@
 		sv: "??"
 	},
 	latitude: {
-		fi: "korkeus",
+		fi: "pituus",
 		en: "latitude",
 		sv: "??"
 	},
@@ -240,8 +240,18 @@
 		sv: "???"
 	},
 	shapeEdgesCannotCross: {
-		fi: "<strong>Virhe:</strong> kuvion särmät eivät saa leikata kuviota",
-		en: "<strong>Error:</strong> shape's edges cannot cross the shape",
-		sv: "???"
+		fi: "$errorHTML kuvion särmät eivät saa leikata itseään",
+		en: "$errorHTML shape's edges cannot cross",
+		sv: "$errorHTML ???"
 	},
+	errorHTML: {
+		fi: "<strong>Virhe:</strong>",
+		en: "<strong>Error:</strong>",
+		sv: "<strong>Error:</strong>"
+	},
+	errorMsg: {
+		fi: "$errorHTML Sattui virhe. Ole hyvä ja koita myöhemmin uudestaan.",
+		en: "$errorHTML An error occurred. Please try again later.",
+		sv: "$errorHTML ???"
+	}
 }

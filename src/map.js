@@ -5,6 +5,8 @@ import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "./lib/Leaflet.MML-layers/mmlLayers.js";
+import fetch from "isomorphic-fetch";
+import queryString from "querystring";
 
 const NORMAL_COLOR = "#257ECA";
 const ACTIVE_COLOR = "#06840A";
@@ -30,6 +32,8 @@ export default class LajiMap {
 		this.data = [];
 		this.drawData = {featureCollection: {type: "featureCollection", features: []}};
 		this.activeIdx = 0;
+		this.baseUri = "https://beta.laji.fi/api";
+		this.baseQuery = {};
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
@@ -41,7 +45,7 @@ export default class LajiMap {
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
 		 "tileLayerName", "drawData", "data", "activeIdx",
-		 "onInitializeDrawLayer", "popupOnHover"].forEach(prop => {
+		 "onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 
@@ -55,17 +59,7 @@ export default class LajiMap {
 		}
 
 		this.geoJsonLayerOptions = {
-			pointToLayer: (feature, latlng) => {
-				let layer;
-				if (feature.geometry.type === "Point") {
-					layer = (feature.geometry.radius) ?
-						new L.circle(latlng, feature.geometry.radius) :
-						new L.marker(latlng, {icon: this._createIcon()});
-				} else {
-					layer = L.GeoJSON.geometryToLayer(feature);
-				}
-				return layer;
-			}
+			pointToLayer: this._featureToLayer
 		}
 
 		this._constructDictionary();
@@ -151,7 +145,6 @@ export default class LajiMap {
 	}
 
 	_initializeView = () => {
-		window.map = this.map;
 		this.map.setView(
 			this.center,
 			this.zoom,
@@ -237,6 +230,10 @@ export default class LajiMap {
 	getNormalizedZoom = () => {
 		const zoom = this.map.getZoom();
 		return (this._getMMLCRSLayers().includes(this.tileLayer)) ? zoom : zoom - 3;
+	}
+
+	setNormalizedZoom = (zoom) => {
+		this.map.setZoom(this._getMMLCRSLayers().includes(this.tileLayer) ? zoom : zoom + 3);
 	}
 
 	_controlIsAllowed = (control) => {
@@ -1020,6 +1017,18 @@ export default class LajiMap {
 		}
 	}
 
+  _featureToLayer = (feature, latlng) => {
+			let layer;
+			if (feature.geometry.type === "Point") {
+				layer = (feature.geometry.radius) ?
+					new L.circle(latlng, feature.geometry.radius) :
+					new L.marker(latlng, {icon: this._createIcon()});
+			} else {
+				layer = L.GeoJSON.geometryToLayer(feature);
+			}
+			return layer;
+		}
+
 	_getStyleForType = (type, overrideStyles, id) => {
 		const idx = this.idsToIdxs[id];
 
@@ -1128,24 +1137,53 @@ export default class LajiMap {
 			let charCode = (typeof e.which == "undefined") ? e.keyCode : e.which;
 
 			// The input cursor isn't necessary at the tail, but this validation works regardless.
-			validate(e, input.value + String.fromCharCode(charCode));
+			inputValidate(e, input.value + String.fromCharCode(charCode));
 		}}
 
-		function validate(e, value) {
+		const wgs84Check= {
+			regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
+			range: [-180, 180]
+		};
+		const wgs84Validator = [wgs84Check, wgs84Check];
+
+		const ykjRegexp = /^[0-9]{3,7}$/;
+		const ykjFormatter = value => (value.length < 7 ? value + "0".repeat(7 - value.length) : value);
+		const ykjValidator = [
+			{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
+			{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
+		];
+
+		const inputRegexp = /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/;
+
+		function inputValidate(e, value) {
 			value = value.trim();
-			if (!value.match(/^([(0-9]+(\.|,)?[0-9]*|)$/)) {
-				e.preventDefault();
+			if (!value.match(inputRegexp)) {
+				if (e) e.preventDefault();
 				return false;
 			}
 			return true;
+		}
+
+		function validateLatLng(latlng, latLngValidator) {
+			return latlng.every((value, i) => {
+				const validator = latLngValidator[i];
+				return (
+					value !== "" && value.match(validator.regexp) &&
+					(validator.formatter ? validator.formatter(value) : value) >= validator.range[0] && (validator.formatter ? validator.formatter(value) : value) <= validator.range[1]
+				);
+			});
+		}
+
+		function submitValidate(inputValues) {
+			return [wgs84Validator, ykjValidator].some(validator => validateLatLng(inputValues, validator));
 		}
 
 		const {translations} = this;
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates well";
 
-		const latLabelInput = createTextInput(`${translations.Latitude} (WGS84)`);
-		const lngLabelInput = createTextInput(`${translations.Longitude} (WGS84)`);
+		const latLabelInput = createTextInput(translations.Latitude);
+		const lngLabelInput = createTextInput(translations.Longitude);
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
 		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
 
@@ -1158,22 +1196,24 @@ export default class LajiMap {
 		const submitButton = document.createElement("button");
 		submitButton.setAttribute("type", "submit");
 		submitButton.className = "btn btn-block btn-info";
-		submitButton.innerHTML = `${translations.Add} ${translations.marker}`;
+		submitButton.innerHTML = `${translations.Add}`;
 		submitButton.setAttribute("disabled", "disabled");
 
-		const inputValidContainer = [false, false];
+		let errorDiv = undefined;
+
+		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
 			let prevVal = "";
 			input.addEventListener("keypress", formatter(input));
 			input.oninput = (e) => {
-				if (!validate(e, e.target.value)) {
+				if (!inputValidate(e, e.target.value)) {
 					e.target.value = prevVal;
 				}
 				e.target.value = e.target.value.replace(",", ".");
 				prevVal = e.target.value;
 
-				inputValidContainer[i] = validate(e, e.target.value);
-				if (inputValidContainer.every(item => item)) {
+				inputValues[i] = e.target.value;
+				if (submitValidate(inputValues)) {
 					submitButton.removeAttribute("disabled");
 				} else {
 					submitButton.setAttribute("disabled", "disabled");
@@ -1182,12 +1222,38 @@ export default class LajiMap {
 		});
 
 		container.addEventListener("submit", e => {
-			close(e);
+			e.preventDefault();
+
 			const latlng = [latInput.value, lngInput.value];
-			const marker = new L.Marker(latlng);
-			this._onAdd(marker);
-			this.map.setView(latlng);
-			if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(marker);
+			const system = validateLatLng(latlng, wgs84Validator) ? "WGS84" : "YKJ";
+			const coordinates = `${latlng[0]}:${latlng[1]}:${system}`;
+			const query = {...this.baseQuery, coordinates};
+
+			fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
+				return response.json();
+			}).then(feature => {
+				const {geometry} = feature;
+
+				const layer = this._featureToLayer(feature, geometry.coordinates);
+
+				this._onAdd(layer);
+				const center = (geometry.type === "Point") ? geometry.coordinates : layer.getBounds().getCenter();
+				this.map.setView(center);
+				if (geometry.type === "Point") {
+					if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
+					else map.setNormalizedZoom(9);
+				} else {
+					this.map.fitBounds(layer.getBounds());
+				}
+				close(e);
+			}).catch(response => {
+				console.log(response);
+				if (errorDiv) errorDiv.remove();
+				errorDiv = document.createElement("div");
+				errorDiv.className = "alert alert-danger";
+				errorDiv.innerHTML = this.translations.errorMsg;
+				container.insertBefore(errorDiv, latLabelInput);
+			});
 		});
 
 		this.blockerElem.addEventListener("click", close);

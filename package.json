@@ -41,10 +41,12 @@
   },
   "dependencies": {
     "Leaflet.vector-markers": "git+https://git@github.com/hiasinho/Leaflet.vector-markers.git#00a00e64a6ed18b4c96cfced51f27e232ed6b665",
+    "isomorphic-fetch": "^2.2.1",
     "leaflet": "^0.7.7",
     "leaflet-contextmenu": "git+https://git@github.com/aratcliffe/Leaflet.contextmenu.git#1b131076a67e14e5cf48c53ed3315307f27c2d08",
     "leaflet-draw": "^0.3.2",
     "leaflet.markercluster": "^0.5.0",
-    "proj4leaflet": "^0.7.2"
+    "proj4leaflet": "^0.7.2",
+    "querystring": "^0.2.0"
   }
 }

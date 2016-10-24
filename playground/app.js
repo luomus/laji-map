@@ -115,7 +115,8 @@ class App {
 				],
 			},
 			getPopup: (idx, callback) => {
-				return `${idx}`;
+				//return `${idx}`;
+				setTimeout(() => callback(`${idx}`), 1000);
 			},
 			cluster: true
 		}
@@ -129,6 +130,9 @@ class App {
 			activeIdx: this.activeIdx,
 			onChange: this.onMapChange,
 			lang: "fi",
+			popupOnHover: false,
+			zoom: 7,
+			center: [60.40403173483798, 22.104264017028992]
 		});
 
 		["fi", "en", "sv"].forEach(lang => {

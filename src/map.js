@@ -5,6 +5,7 @@ import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "./lib/Leaflet.MML-layers/mmlLayers.js";
+import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import fetch from "isomorphic-fetch";
 import queryString from "querystring";
 
@@ -166,14 +167,6 @@ export default class LajiMap {
 			locationfound: this._onLocationFound,
 			locationerror: this._onLocationNotFound,
 			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
-			popupopen: popup => {
-				if (this.layerClicked) {
-					if (this.popupOnHover) {
-						this._getDrawLayerById(this.activeId).closePopup();
-					}
-					this.layerClicked = false;
-				}
-			},
 			baselayerchange: ({layer}) => this.setTileLayer(layer),
 			blur: () => this.map.scrollWheelZoom.disable(),
 			focus: () => this.map.scrollWheelZoom.enable()
@@ -705,33 +698,55 @@ export default class LajiMap {
 
 	_initializePopups = (data, layer, idx) => {
 		const that = this;
+
+		let latlng = undefined;
+
 		function openPopup(content) {
-			if (!layer || content === undefined || content === null) return;
-			if (that.popupOnHover !== true) layer.unbindPopup();
-			layer.bindPopup(content).openPopup();
+			if (!latlng) return;
+			if (data === that.drawData && that.editId === layer._leaflet_id) return;
+
+			const offset = (layer instanceof L.Marker) ? -45 : -5;
+
+			that.popup = new L.Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
+				.setContent(content)
+				.setLatLng(latlng)
+				.openOn(that.map);
+		}
+		function closePopup() {
+			if (latlng) that.map.closePopup();
+			latlng = undefined;
 		}
 
-		function getContentAndOpenPopup() {
-			// Allow either returning content or firing a callback with content.
-			const content = data.getPopup(idx, callbackContent => openPopup(callbackContent));
+		function getContentAndOpenPopup(_latlng) {
+			if (!that.popupCounter) that.popupCounter = 0;
+			that.popupCounter++;
+
+			latlng = _latlng;
+
+			let {popupCounter} = that;
+
+			//// Allow either returning content or firing a callback with content.
+			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent)});
 			if (content) openPopup(content);
 		}
 
+
 		if (this.popupOnHover) {
-			layer.on("mouseover", () => {
-				if (data.getPopup && this.editId !== layer._leaflet_id) {
-					getContentAndOpenPopup();
-				}
+			layer.on("mousemove", e => {
+				latlng = e.latlng;
+				if (that.popup) that.popup.setLatLng(latlng);
 			});
-			layer.on("mouseout", () => {
-				layer.closePopup();
+			layer.on("mouseover", e => {
+				getContentAndOpenPopup(e.latlng);
+			});
+			layer.on('mouseout', e => {
+				closePopup();
 			});
 		} else {
-			layer.on("click", () => {
+			layer.on("click", e => {
 				if (data.getPopup) {
-					getContentAndOpenPopup();
-				} else if (data === this.drawData && this.editId === layer._leaflet_id) {
-					layer.closePopup();
+					closePopup();
+					getContentAndOpenPopup(e.latlng);
 				}
 			});
 		}
@@ -1247,7 +1262,6 @@ export default class LajiMap {
 				}
 				close(e);
 			}).catch(response => {
-				console.log(response);
 				if (errorDiv) errorDiv.remove();
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";

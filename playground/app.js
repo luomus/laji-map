@@ -115,8 +115,7 @@ class App {
 				],
 			},
 			getPopup: (idx, callback) => {
-				//return `${idx}`;
-				setTimeout(() => callback(`${idx}`), 1000);
+				return `${idx}`;
 			},
 			cluster: true
 		}

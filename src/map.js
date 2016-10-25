@@ -112,7 +112,6 @@ export default class LajiMap {
 		this.tileLayer = this.maastokartta;
 
 		this._initializeView();
-		this.setTileLayer(this[this.tileLayerName]);
 
 		this.overlays = {
 			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
@@ -134,6 +133,8 @@ export default class LajiMap {
 				version: '1.3.0'
 			}).setOpacity(0.5)
 		};
+
+		this.setTileLayer(this[this.tileLayerName]);
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
@@ -197,12 +198,15 @@ export default class LajiMap {
 
 		this.map.setView(center); // Fix shifted center.
 
-		// This calculation is based on guessing...
+		let projectionChanged = false;
+
 		let zoom = this.map.getZoom();
 		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom - 3;
+			projectionChanged = true;
 		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom + 3;
+			projectionChanged = true;
 		}
 
 		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
@@ -210,6 +214,16 @@ export default class LajiMap {
 
 		this.tileLayer = layer;
 		this.map.addLayer(this.tileLayer);
+
+		if (projectionChanged) {
+			for (let overlayName in this.overlays) {
+				const overlay = this.overlays[overlayName];
+				if (overlay._map) {
+					this.map.removeLayer(overlay);
+					this.map.addLayer(overlay);
+				}
+			}
+		}
 	}
 
 	getTileLayers = () => {

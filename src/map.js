@@ -351,7 +351,7 @@ export default class LajiMap {
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
 				createControlItem(this, container, "pencil",
-					that.translations.AddMarkerByCoordinates, () => that.openCoordinatesDialog());
+					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;
 			}
 		});
@@ -479,7 +479,7 @@ export default class LajiMap {
 			if (this._controlIsAllowed(this.coordinateInputControl)) {
 				this.map.contextmenu.addItem("-");
 				this.map.contextmenu.addItem({
-					text: this.translations.addMarkerByCoordinates,
+					text: this.translations.AddFeatureByCoordinates,
 					iconCls: "glyphicon glyphicon-pencil",
 					callback: this.openCoordinatesDialog
 				})

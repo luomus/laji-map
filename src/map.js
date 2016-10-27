@@ -168,9 +168,9 @@ export default class LajiMap {
 			locationfound: this._onLocationFound,
 			locationerror: this._onLocationNotFound,
 			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
-			baselayerchange: ({layer}) => this.setTileLayer(layer),
-			blur: () => this.map.scrollWheelZoom.disable(),
-			focus: () => this.map.scrollWheelZoom.enable()
+			baselayerchange: ({layer}) => this.setTileLayer(layer)
+			// blur: () => this.map.scrollWheelZoom.disable(),
+			// focus: () => this.map.scrollWheelZoom.enable()
 		});
 	}
 

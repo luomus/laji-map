@@ -1155,7 +1155,7 @@ export default class LajiMap {
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
 			document.removeEventListener("keydown", onEscListener);
-			container.remove();
+			that.container.removeChild(container);
 		}
 
 		function createTextInput(labelTxt) {
@@ -1290,7 +1290,7 @@ export default class LajiMap {
 				}
 				close(e);
 			}).catch(response => {
-				if (errorDiv) errorDiv.remove();
+				if (errorDiv) container.removeChild(errorDiv);
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";
 				errorDiv.innerHTML = this.translations.errorMsg;

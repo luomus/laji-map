@@ -4,5 +4,12 @@
 		"transform-object-rest-spread",
 		"transform-class-properties",
 		"array-includes"
-	]
+	],
+	"env": {
+		"production": {
+			"plugins": [
+				["transform-runtime", {"polyfill": true, "regenerator": false}]
+			]
+		}
+	}
 }

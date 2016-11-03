@@ -96,7 +96,7 @@ export default class LajiMap {
 			zoomControl: false
 		});
 
-		this.map.scrollWheelZoom.disable();
+		//this.map.scrollWheelZoom.disable();
 
 		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
 			this[tileLayerName] = L.tileLayer.mml_wmts({

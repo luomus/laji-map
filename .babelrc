@@ -2,8 +2,7 @@
 	"presets": ["es2015"],
 	"plugins": [
 		"transform-object-rest-spread",
-		"transform-class-properties",
-		"array-includes"
+		"transform-class-properties"
 	],
 	"env": {
 		"production": {

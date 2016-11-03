@@ -223,6 +223,7 @@ export default class LajiMap {
 					this.map.addLayer(overlay);
 				}
 			}
+			this.recluster();
 		}
 	}
 
@@ -552,13 +553,11 @@ export default class LajiMap {
 	}
 
 	setData = (data) => {
-
 		if (this.dataLayerGroups) {
 			this.data.forEach((item ,i) => {
 				if (item.clusterLayer) {
 					this.map.removeLayer(item.clusterLayer);
-				}
-				else if (this.dataLayerGroups[i]) {
+				} else if (this.dataLayerGroups[i]) {
 					this.map.removeLayer(this.dataLayerGroups[i]);
 				}
 			});
@@ -673,11 +672,26 @@ export default class LajiMap {
 		});
 	}
 
+	recluster = () => {
+		this._reclusterData();
+		this._reclusterDrawData();
+	}
+
 	_reclusterDrawData = () => {
 		if (this.drawData.cluster) {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
+	}
+
+	_reclusterData = () => {
+		if (this.data) this.data.forEach((dataItem, idx) => {
+			if (dataItem.cluster) {
+				this.map.removeLayer(dataItem.clusterLayer);
+				dataItem.clusterLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(dataItem), ...dataItem.cluster}).addTo(this.map);
+				dataItem.clusterLayer.addLayer(this.dataLayerGroups[idx]);
+			}
+		});
 	}
 
 	redrawDrawData = () => {

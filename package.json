@@ -3,6 +3,7 @@
   "version": "1.0.49",
   "description": "A map with drawing functionality",
   "main": "dist/laji-map.js",
+  "types": "src/map.d.js",
   "scripts": {
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
     "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",

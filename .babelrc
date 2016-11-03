@@ -7,7 +7,8 @@
 	"env": {
 		"production": {
 			"plugins": [
-				["transform-runtime", {"polyfill": true, "regenerator": false}]
+				["transform-runtime", {"polyfill": true, "regenerator": false}],
+				"array-includes"
 			]
 		}
 	}

@@ -95,6 +95,8 @@ export default class LajiMap {
 			contextmenuItems: [],
 			zoomControl: false
 		});
+		
+		if (process.env.NODE_ENV !== "production") window.map = this.map;
 
 		this.map.scrollWheelZoom.enable();
 

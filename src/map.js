@@ -678,7 +678,7 @@ export default class LajiMap {
 	}
 
 	_reclusterDrawData = () => {
-		if (this.drawData.cluster) {
+		if (this.clusterDrawLayer) {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
@@ -686,7 +686,7 @@ export default class LajiMap {
 
 	_reclusterData = () => {
 		if (this.data) this.data.forEach((dataItem, idx) => {
-			if (dataItem.cluster) {
+			if (dataItem.clusterLayer) {
 				this.map.removeLayer(dataItem.clusterLayer);
 				dataItem.clusterLayer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(dataItem), ...dataItem.cluster}).addTo(this.map);
 				dataItem.clusterLayer.addLayer(this.dataLayerGroups[idx]);

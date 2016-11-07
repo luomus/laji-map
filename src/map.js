@@ -4,7 +4,7 @@ import "proj4leaflet";
 import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
-import "./lib/Leaflet.MML-layers/mmlLayers.js";
+import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import fetch from "isomorphic-fetch";
 import queryString from "querystring";

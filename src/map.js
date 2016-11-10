@@ -338,7 +338,7 @@ export default class LajiMap {
 			},
 
 			_createLocate: function(container) {
-				return createControlItem(this, container, "screenshot", that.translations.Geolocate, () => this._onLocate());
+				return createControlItem(this, container, "screenshot", that.translations.Geolocate, () => that._onLocate());
 			},
 
 			_onSearch: function() {

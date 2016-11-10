@@ -1179,13 +1179,15 @@ export default class LajiMap {
 		}
 
 		function formatter(input) { return e => {
-			let charCode = (typeof e.which == "undefined") ? e.keyCode : e.which;
+			let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
 
-			// The input cursor isn't necessary at the tail, but this validation works regardless.
-			inputValidate(e, input.value + String.fromCharCode(charCode));
+			if (charCode >= 48 && charCode <= 57) { // is a number
+				// The input cursor isn't necessary at the tail, but this validation works regardless.
+				inputValidate(e, input.value + String.fromCharCode(charCode));
+			}
 		}}
 
-		const wgs84Check= {
+		const wgs84Check = {
 			regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
 			range: [-180, 180]
 		};
@@ -1201,7 +1203,6 @@ export default class LajiMap {
 		const inputRegexp = /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/;
 
 		function inputValidate(e, value) {
-			value = value.trim();
 			if (!value.match(inputRegexp)) {
 				if (e) e.preventDefault();
 				return false;
@@ -1212,9 +1213,10 @@ export default class LajiMap {
 		function validateLatLng(latlng, latLngValidator) {
 			return latlng.every((value, i) => {
 				const validator = latLngValidator[i];
+				const formatted = validator.formatter ? validator.formatter(value) : value;
 				return (
 					value !== "" && value.match(validator.regexp) &&
-					(validator.formatter ? validator.formatter(value) : value) >= validator.range[0] && (validator.formatter ? validator.formatter(value) : value) <= validator.range[1]
+					formatted >= validator.range[0] && formatted <= validator.range[1]
 				);
 			});
 		}

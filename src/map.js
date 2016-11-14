@@ -45,7 +45,7 @@ export default class LajiMap {
 		this.popupOnHover = false;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
-		 "tileLayerName", "drawData", "data", "activeIdx",
+		 "tileLayerName", "drawData", "data", "activeIdx", "popupOffset",
 		 "onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
@@ -735,7 +735,8 @@ export default class LajiMap {
 			if (!latlng) return;
 			if (data === that.drawData && that.editId === layer._leaflet_id) return;
 
-			const offset = (layer instanceof L.Marker) ? -45 : -5;
+			const offsetParam = that.popupOffset || 0;
+			const offset = (layer instanceof L.Marker) ? offsetParam - 40 : offsetParam;
 
 			that.popup = new L.Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
 				.setContent(content)

@@ -474,7 +474,7 @@ export default class LajiMap {
 					this.map.contextmenu.addItem({
 						text: text,
 						iconCls: "context-menu-draw context-menu-draw-" + featureType,
-						callback: () => this.drawControl._toolbars.draw._modes[featureType].handler.enable()
+						callback: () => this.triggerDrawing(featureType)
 					});
 				}
 			});
@@ -1329,4 +1329,6 @@ export default class LajiMap {
 
 		latInput.focus();
 	}
+
+	triggerDrawing = (featureType) => this.drawControl._toolbars.draw._modes[featureType].handler.enable()
 }

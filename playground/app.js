@@ -162,5 +162,6 @@ class App {
 	}
 }
 
-new App();
+const app = new App();
+if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
 

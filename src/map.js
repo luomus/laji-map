@@ -35,13 +35,6 @@ export default class LajiMap {
 		this.activeIdx = 0;
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
-		this.controlSettings = {
-			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
-			layer: true,
-			zoom: true,
-			location: true,
-			coordinateInput: true
-		};
 		this.popupOnHover = false;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange",
@@ -55,10 +48,6 @@ export default class LajiMap {
 			this.zoom += 3;
 		}
 
-		for (let controlSetting in props.controlSettings) {
-			this.controlSettings[controlSetting] = props.controlSettings[controlSetting];
-		}
-
 		this.geoJsonLayerOptions = {
 			pointToLayer: this._featureToLayer
 		}
@@ -70,8 +59,9 @@ export default class LajiMap {
 		this.setDrawData(this.drawData);
 		this.activeId = (this.activeIdx !== undefined) ? this.idxsToIds[this.activeIdx] : undefined;
 		this.setActive(this.activeId);
-		this._initalizeMapControls();
 		this._initializeMapEvents();
+
+		this.setControlSettings(props.controlSettings)
 	}
 
 	_initializeMap = () => {
@@ -246,6 +236,20 @@ export default class LajiMap {
 		this.map.setZoom(this._getMMLCRSLayers().includes(this.tileLayer) ? zoom : zoom + 3);
 	}
 
+	setControlSettings = (controlSettings) => {
+		this.controlSettings = {
+			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
+			layer: true,
+			zoom: true,
+			location: true,
+			coordinateInput: true
+		};
+		for (let controlSetting in controlSettings) {
+			this.controlSettings[controlSetting] = controlSettings[controlSetting];
+		}
+		this._initalizeMapControls();
+	}
+
 	_controlIsAllowed = (control) => {
 		const controlNameMap = {
 			draw: {control: this.drawControl},
@@ -263,7 +267,7 @@ export default class LajiMap {
 		const {controlSettings} = this;
 		function controlIsOk(controlName) {
 			const dependencies = controlNameMap[controlName].dependencies || [];
-			return (controlSettings[controlName] && dependencies.every(dependency => {return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)}));
+			return (controlSettings && controlSettings[controlName] && dependencies.every(dependency => {return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)}));
 		}
 
 		for (let controlName in controlNameMap) {
@@ -357,6 +361,11 @@ export default class LajiMap {
 					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;
 			}
+		});
+
+		["layerControl", "drawControl", "zoomControl",
+		 "coordinateInputControl", "locationControl"].forEach(control => {
+			if (this[control]) this.map.removeControl(this[control]);
 		});
 
 		this._addControl(this._getLayerControl());

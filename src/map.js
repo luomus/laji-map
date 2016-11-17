@@ -331,7 +331,7 @@ export default class LajiMap {
 			},
 
 			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
 				this._createSearch(container);
 				this._createLocate(container);
 				return container;
@@ -356,7 +356,7 @@ export default class LajiMap {
 			},
 
 			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
 				createControlItem(this, container, "pencil",
 					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;

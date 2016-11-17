@@ -1304,7 +1304,7 @@ export default class LajiMap {
 				this.map.setView(center);
 				if (geometry.type === "Point") {
 					if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
-					else map.setNormalizedZoom(9);
+					else this.map.setNormalizedZoom(9);
 				} else {
 					this.map.fitBounds(layer.getBounds());
 				}

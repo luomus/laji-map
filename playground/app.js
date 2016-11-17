@@ -136,8 +136,12 @@ class App {
 			featurePopupOffset: 5,
 			controlSettings: {
 				draw: {
-					rectangle: false
-				}
+								marker: true,
+								polyline: false,
+								rectangle: false,
+								polygon: false,
+								circle: false
+							}
 			}
 		});
 

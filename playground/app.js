@@ -133,11 +133,12 @@ class App {
 			zoom: 7,
 			center: [60.40403173483798, 22.104264017028992],
 			markerPopupOffset: 40,
-			featurePopupOffset: 5
-		});
-
-		this.map.setControlSettings({
-			draw: false, coordinateInput: false
+			featurePopupOffset: 5,
+			controlSettings: {
+				draw: {
+					rectangle: false
+				}
+			}
 		});
 
 		["fi", "en", "sv"].forEach(lang => {

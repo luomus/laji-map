@@ -244,8 +244,12 @@ export default class LajiMap {
 			location: true,
 			coordinateInput: true
 		};
-		for (let controlSetting in controlSettings) {
-			this.controlSettings[controlSetting] = controlSettings[controlSetting];
+		for (let setting in controlSettings) {
+			const oldSetting = this.controlSettings[setting];
+			const newSetting = controlSettings[setting];
+			this.controlSettings[setting] = (typeof newSetting === "object") ?
+				{...oldSetting, ...newSetting} :
+				newSetting;
 		}
 		this._initalizeMapControls();
 	}
@@ -261,7 +265,7 @@ export default class LajiMap {
 					"draw",
 					() => (this.controlSettings.draw === true ||
 					       (typeof this.controlSettings.draw === "object" &&
-					        this.controlSettings.draw.marker !== false))]}
+					        ["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})) )]}
 		};
 
 		const {controlSettings} = this;
@@ -1231,7 +1235,10 @@ export default class LajiMap {
 		}
 
 		function submitValidate(inputValues) {
-			return [wgs84Validator, ykjValidator].some(validator => validateLatLng(inputValues, validator));
+			const validators = [];
+			if (that.controlSettings.draw.marker) validators.push(wgs84Validator);
+			if (that.controlSettings.draw.rectangle) validators.push(ykjValidator);
+			return validators.some(validator => validateLatLng(inputValues, validator));
 		}
 
 		const {translations} = this;

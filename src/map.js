@@ -1303,7 +1303,6 @@ export default class LajiMap {
 				const center = (geometry.type === "Point") ? geometry.coordinates : layer.getBounds().getCenter();
 				this.map.setView(center);
 				if (geometry.type === "Point") {
-					console.log(this.map);
 					if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
 					else this.setNormalizedZoom(9);
 				} else {

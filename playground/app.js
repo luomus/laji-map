@@ -117,6 +117,13 @@ class App {
 			getPopup: (idx, callback) => {
 				return `${idx}`;
 			},
+			getTooltip: (idx, callback) => {
+				setTimeout(() => callback(`${idx}`), 2000);
+				// return `${idx}`;
+			},
+			tooltipOptions: {
+				permanent: true
+			},
 			cluster: true
 		}
 

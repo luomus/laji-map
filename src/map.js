@@ -4,7 +4,7 @@ import "proj4leaflet";
 import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
-import "./lib/Leaflet.MML-layers/mmlLayers.js";
+import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import fetch from "isomorphic-fetch";
 import queryString from "querystring";
@@ -723,7 +723,8 @@ export default class LajiMap {
 
 		let _idx = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
-			this._initializePopups(dataItem, layer, _idx);
+			this._initializePopup(dataItem, layer, _idx);
+			this._initializeTooltip(dataItem, layer, _idx);
 			_idx++;
 		});
 	}
@@ -739,7 +740,9 @@ export default class LajiMap {
 		this.redrawData();
 	}
 
-	_initializePopups = (data, layer, idx) => {
+	_initializePopup = (data, layer, idx) => {
+		if (!data.getPopup) return;
+
 		const that = this;
 
 		let latlng = undefined;
@@ -770,7 +773,7 @@ export default class LajiMap {
 
 			let {popupCounter} = that;
 
-			//// Allow either returning content or firing a callback with content.
+			// Allow either returning content or firing a callback with content.
 			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent)});
 			if (content) openPopup(content);
 		}
@@ -797,6 +800,18 @@ export default class LajiMap {
 		}
 	}
 
+	_initializeTooltip = (data, layer, idx) => {
+		if (!data.getTooltip) return;
+
+		function openTooltip(content) {
+			layer.bindTooltip(content, data.tooltipOptions)
+		}
+
+		// Allow either returning content or firing a callback with content.
+		const content = data.getTooltip(idx, callbackContent => openTooltip(callbackContent));
+		if (content) openTooltip(content);
+	}
+
 	_initializeDrawLayer = (layer, idx) => {
 		this.drawLayerGroup.addLayer(layer);
 
@@ -809,12 +824,12 @@ export default class LajiMap {
 		this._updateContextMenuForDrawItem(id);
 
 		layer.on("click", (e) => {
-			this.layerClicked = true;
 			if (!this._interceptClick()) this._onActiveChange(id);
 		});
 		layer.on("dblclick", () => this._setEditable(id));
 
-		this._initializePopups(this.drawData, layer, idx);
+		this._initializePopup(this.drawData, layer, idx);
+		this._initializeTooltip(this.drawData, layer, idx);
 
 		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 

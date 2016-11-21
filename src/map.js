@@ -37,7 +37,7 @@ export default class LajiMap {
 		this.baseQuery = {};
 		this.popupOnHover = false;
 
-		["rootElem", "locate", "center", "zoom", "lang", "onChange",
+		["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose",
 		 "tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
 		 "onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
@@ -755,8 +755,10 @@ export default class LajiMap {
 				.setLatLng(latlng)
 				.openOn(that.map);
 		}
+
 		function closePopup() {
 			if (latlng) that.map.closePopup();
+			if (that.onPopupClose) that.onPopupClose();
 			latlng = undefined;
 		}
 

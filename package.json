@@ -43,7 +43,7 @@
     "webpack-dev-server": "^1.16.2"
   },
   "dependencies": {
-    "Leaflet.vector-markers": "git+https://git@github.com/hiasinho/Leaflet.vector-markers.git#00a00e64a6ed18b4c96cfced51f27e232ed6b665",
+    "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git",
     "babel-runtime": "^6.18.0",
     "isomorphic-fetch": "^2.2.1",
     "leaflet": "^1.0.1",

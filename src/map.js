@@ -1058,8 +1058,9 @@ export default class LajiMap {
 	}
 
 	_commitEdit = () => {
-		this._onEdit({[this.editId]: this._getDrawLayerById(this.editId)});
+		const {editId} = this;
 		this._clearEditable();
+		this._onEdit({[editId]: this._getDrawLayerById(editId)});
 	}
 
 	_interceptClick = () => {

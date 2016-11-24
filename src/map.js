@@ -1087,6 +1087,9 @@ export default class LajiMap {
 			if (layer._icon) {
 				// Color must also be changed directly through DOM manipulation.
 				layer._icon.firstChild.firstChild.style.fill = style.color;
+				if (style.opacity !== undefined) {
+					layer._icon.firstChild.firstChild.style.opacity = style.opacity;
+				}
 			}
 		} else {
 			layer.setStyle(style);

@@ -37,7 +37,7 @@ export default class LajiMap {
 		this.baseQuery = {};
 		this.popupOnHover = false;
 
-		["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose",
+		["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
 		 "tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
 		 "onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
@@ -284,6 +284,7 @@ export default class LajiMap {
 	}
 
 	_initalizeMapControls = () => {
+		const customMarkerStyles = this.getDrawingDraftStyle ? this.getDrawingDraftStyle("marker") : {};
 		const drawOptions = {
 			position: "topright",
 			draw: {
@@ -291,7 +292,8 @@ export default class LajiMap {
 					icon: L.VectorMarkers.icon({
 						prefix: "glyphicon",
 						icon: "record",
-						markerColor: INCOMPLETE_COLOR
+						markerColor: customMarkerStyles.color ? customMarkerStyles.color : INCOMPLETE_COLOR,
+						opacity: customMarkerStyles.opacity ? customMarkerStyles.opacity : 1,
 					})
 				}
 			},
@@ -305,7 +307,7 @@ export default class LajiMap {
 		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
 
 		featureTypes.slice(0, -1).forEach(type => {
-			drawOptions.draw[type] = {shapeOptions: this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})};
+			drawOptions.draw[type] = {shapeOptions: this.getDrawingDraftStyle ? this.getDrawingDraftStyle(type) : this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})};
 		});
 
 		drawOptions.draw.polygon.allowIntersection = false;

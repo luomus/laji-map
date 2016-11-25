@@ -726,7 +726,6 @@ export default class LajiMap {
 		let _idx = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
 			this._initializePopup(dataItem, layer, _idx);
-			this._initializeTooltip(dataItem, layer, _idx);
 			_idx++;
 		});
 	}
@@ -802,18 +801,6 @@ export default class LajiMap {
 		}
 	}
 
-	_initializeTooltip = (data, layer, idx) => {
-		if (!data.getTooltip) return;
-
-		function openTooltip(content) {
-			layer.bindTooltip(content, data.tooltipOptions)
-		}
-
-		// Allow either returning content or firing a callback with content.
-		const content = data.getTooltip(idx, callbackContent => openTooltip(callbackContent));
-		if (content) openTooltip(content);
-	}
-
 	_initializeDrawLayer = (layer, idx) => {
 		this.drawLayerGroup.addLayer(layer);
 
@@ -831,7 +818,6 @@ export default class LajiMap {
 		layer.on("dblclick", () => this._setEditable(id));
 
 		this._initializePopup(this.drawData, layer, idx);
-		this._initializeTooltip(this.drawData, layer, idx);
 
 		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 

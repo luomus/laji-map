@@ -48,10 +48,6 @@ export default class LajiMap {
 			this.zoom += 3;
 		}
 
-		this.geoJsonLayerOptions = {
-			pointToLayer: this._featureToLayer
-		}
-
 		this._constructDictionary();
 		this._initializeMap();
 		this.setLang(this.lang);
@@ -307,7 +303,11 @@ export default class LajiMap {
 		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
 
 		featureTypes.slice(0, -1).forEach(type => {
-			drawOptions.draw[type] = {shapeOptions: this.getDrawingDraftStyle ? this.getDrawingDraftStyle(type) : this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})};
+			drawOptions.draw[type] = {
+				shapeOptions: this.getDrawingDraftStyle ?
+					this.getDrawingDraftStyle(type) :
+					this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})
+			};
 		});
 
 		drawOptions.draw.polygon.allowIntersection = false;
@@ -550,15 +550,29 @@ export default class LajiMap {
 		}
 	}
 
+
+	cloneFeatures = (features) => {
+		return features.slice(0).map((feature, idx) => {
+			feature.properties.lajiMapIdx = idx;
+			return feature;
+		});
+	}
+
 	cloneDataItem = (dataItem) => {
 		let featureCollection = {type: "featureCollection"};
-		featureCollection.features = dataItem.featureCollection.features.slice(0);
+		featureCollection.features = this.cloneFeatures(dataItem.featureCollection.features);
 		return {getFeatureStyle: this._getDefaultDataStyle, getClusterStyle: this._getDefaultDataClusterStyle, ...dataItem, featureCollection};
 	}
 
 	initializeDataItem = (idx) => {
 		const item = this.data[idx];
-		const layer = L.geoJson(this.data[idx].featureCollection, this.geoJsonLayerOptions);
+		const layer = L.geoJson(
+			this.data[idx].featureCollection,
+			{
+				pointToLayer: this._featureToLayer(this.data[idx].getFeatureStyle),
+				style: feature => {item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature})}
+			}
+		);
 		this.dataLayerGroups.push(layer);
 		let container = this.map;
 		if (item.cluster) {
@@ -601,7 +615,7 @@ export default class LajiMap {
 		};
 
 		const featureCollection = {type: "featureCollection"};
-		featureCollection.features = data.featureCollection.features.slice(0);
+		featureCollection.features = this.cloneFeatures(data.featureCollection.features);
 		this.drawData = (data) ? {
 			getFeatureStyle: this._getDefaultDrawStyle,
 			getClusterStyle: this._getDefaultDrawClusterStyle,
@@ -611,7 +625,14 @@ export default class LajiMap {
 		if (this.drawLayerGroup) this.drawLayerGroup.clearLayers();
 		if (this.clusterDrawLayer) this.clusterDrawLayer.clearLayers();
 
-		this.drawLayerGroup = L.geoJson(this.drawData.featureCollection, this.geoJsonLayerOptions);
+		this.drawLayerGroup = L.geoJson(
+			this.drawData.featureCollection,
+			{
+				pointToLayer: this._featureToLayer(this.drawData.getFeatureStyle),
+				style: feature => {
+					return this.drawData.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, feature})
+				}
+		});
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
 			this.clusterDrawLayer = L.markerClusterGroup(
@@ -625,11 +646,14 @@ export default class LajiMap {
 		this.redrawDrawData();
 	}
 
- 	_createIcon = () => {
+ 	_createIcon = (options = {}) => {
+		const markerColor = options.color || NORMAL_COLOR;
+		const opacity = options.opacity || 1;
 		return L.VectorMarkers.icon({
 			prefix: "glyphicon",
 			icon: "record",
-			markerColor: NORMAL_COLOR
+			markerColor,
+			opacity
 		});
 	}
 
@@ -820,8 +844,6 @@ export default class LajiMap {
 		const id = layer._leaflet_id;
 		this.idxsToIds[idx] = id;
 		this.idsToIdxs[id] = idx;
-
-		this._updateDrawLayerStyle(id);
 
 		this._updateContextMenuForDrawItem(id);
 
@@ -1098,12 +1120,12 @@ export default class LajiMap {
 		}
 	}
 
-  _featureToLayer = (feature, latlng) => {
+  _featureToLayer = (getFeatureStyle) => (feature, latlng) => {
 			let layer;
 			if (feature.geometry.type === "Point") {
 				layer = (feature.geometry.radius) ?
 					new L.circle(latlng, feature.geometry.radius) :
-					new L.marker(latlng, {icon: this._createIcon()});
+					new L.marker(latlng, {icon: this._createIcon(getFeatureStyle({}))});
 			} else {
 				layer = L.GeoJSON.geometryToLayer(feature);
 			}
@@ -1114,7 +1136,6 @@ export default class LajiMap {
 		const idx = this.idsToIdxs[id];
 
 		const styles = {
-			weight: type.toLowerCase().includes("line") ? 8 : 14,
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR
@@ -1160,7 +1181,7 @@ export default class LajiMap {
 
 	_getDefaultDrawStyle = (options) => {
 		const featureIdx = options ? options.featureIdx : undefined;
-		const color = (featureIdx !== undefined && this.idxsToIds[featureIdx] === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
+		const color = (this.idxsToIds && featureIdx !== undefined && this.idxsToIds[featureIdx] === this.activeId) ? ACTIVE_COLOR : NORMAL_COLOR;
 		return {color: color, fillColor: color, opacity: 1, fillOpacity: 0.7};
 	}
 
@@ -1181,7 +1202,7 @@ export default class LajiMap {
 
 		let i = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
-			this.updateLayerStyle(layer, dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i}));
+			this.updateLayerStyle(layer, dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i, feature: this.data[idx][i]}));
 			i++;
 		});
 	}
@@ -1320,7 +1341,7 @@ export default class LajiMap {
 			}).then(feature => {
 				const {geometry} = feature;
 
-				const layer = this._featureToLayer(feature, geometry.coordinates);
+				const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature, geometry.coordinates);
 
 				this._onAdd(layer);
 				const center = (geometry.type === "Point") ? geometry.coordinates : layer.getBounds().getCenter();

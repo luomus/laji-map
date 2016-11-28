@@ -145,10 +145,6 @@ class App {
 			featurePopupOffset: 5,
 		});
 
-		setTimeout(() => {
-			this.map.setDrawData(this.drawData);
-		}, 2000);
-
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
 		});

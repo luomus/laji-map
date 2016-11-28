@@ -64,7 +64,10 @@ export default class LajiMap {
 		this.defaultCRS = L.CRS.EPSG3857;
 		this.mmlCRS = L.TileLayer.MML.get3067Proj();
 
-		this.container = document.createElement("div"); this.container.className += " laji-map";
+		this.container = document.createElement("div");
+		const {className} = this.container;
+		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
+			+ "laji-map";
 		this.rootElem.appendChild(this.container);
 
 		const mapElem = document.createElement("div");
@@ -1230,7 +1233,13 @@ export default class LajiMap {
 
 		let i = 0;
 		this.dataLayerGroups[idx].eachLayer(layer => {
-			this.updateLayerStyle(layer, dataItem.getFeatureStyle({dataIdx: idx, featureIdx: i, feature: this.data[idx][i]}));
+			this.updateLayerStyle(layer,
+				dataItem.getFeatureStyle({
+					dataIdx: idx,
+					featureIdx: i,
+					feature: this.data[idx].featureCollection.features[i]
+				})
+			);
 			i++;
 		});
 	}

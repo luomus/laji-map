@@ -934,7 +934,7 @@ export default class LajiMap {
 
 		const {featureCollection: {features}} = this.drawData;
 
-		const idx = features.length - 1;
+		const idx = features.length;
 		const newFeature = this._enchanceGeoJSON(this._initializeDrawLayer(layer, features.length), layer);
 		newFeature.properties.lajiMapIdx = idx;
 		if (this.drawData.cluster) {

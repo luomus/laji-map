@@ -548,6 +548,15 @@ export default class LajiMap {
 		}
 	}
 
+	formatFeatureOut = (feature) => {
+		const {lajiMapIdx, ...properties} = feature.properties;
+		return {feature: {...feature, properties}};
+	}
+
+	formatFeatureIn = (feature, idx) => {
+		feature.properties.lajiMapIdx = idx;
+		return feature;
+	}
 
 	cloneFeatures = (features) => {
 		return features.slice(0).map((feature, idx) => {
@@ -954,7 +963,7 @@ export default class LajiMap {
 		const event = [
 			{
 				type: "create",
-				feature: newFeature
+				feature: this.formatFeatureOut(newFeature)
 			},
 			this._getOnActiveChangeEvent(features.length - 1)
 		];
@@ -966,8 +975,9 @@ export default class LajiMap {
 		const eventData = {};
 		for (let id in data) {
 			const geoJson = this._enchanceGeoJSON(data[id].toGeoJSON(), data[id]);
-			eventData[this.idsToIdxs[id]] = geoJson;
-			this.drawData.featureCollection.features[this.idsToIdxs[id]] = geoJson;
+			const idx = this.idsToIdxs[id];
+			eventData[idx] = this.formatFeatureOut(geoJson);
+			this.drawData.featureCollection.features[idx] = this.formatFeatureIn(geoJson, idx);
 		}
 
 		this._triggerEvent({

@@ -553,6 +553,7 @@ export default class LajiMap {
 
 	cloneFeatures = (features) => {
 		return features.slice(0).map((feature, idx) => {
+			if (!feature.properties) feature.properties = {};
 			feature.properties.lajiMapIdx = idx;
 			return feature;
 		});

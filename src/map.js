@@ -934,7 +934,9 @@ export default class LajiMap {
 
 		const {featureCollection: {features}} = this.drawData;
 
+		const idx = features.length - 1;
 		const newFeature = this._enchanceGeoJSON(this._initializeDrawLayer(layer, features.length), layer);
+		newFeature.properties.lajiMapIdx = idx;
 		if (this.drawData.cluster) {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
@@ -946,7 +948,7 @@ export default class LajiMap {
 				type: "create",
 				feature: newFeature
 			},
-			this._getOnActiveChangeEvent(this.idxsToIds[features.length - 1])
+			this._getOnActiveChangeEvent(this.idxsToIds[idx])
 		];
 
 		this._triggerEvent(event);

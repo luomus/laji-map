@@ -556,7 +556,7 @@ export default class LajiMap {
 
 	formatFeatureOut = (feature) => {
 		const {lajiMapIdx, ...properties} = feature.properties;
-		return {feature: {...feature, properties}};
+		return {...feature, properties};
 	}
 
 	formatFeatureIn = (feature, idx) => {

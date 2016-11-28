@@ -144,7 +144,10 @@ export default class LajiMap {
 		this.map.addEventListener({
 			click: e => this._interceptClick(),
 			dblclick: e => {
-				if (this.controlSettings.draw === true || (typeof this.controlSettings.draw === "object" && this.controlSettings.draw.marker !== false)) {
+				if (this.editIdx !== undefined) return;
+				if (this.controlSettings.draw === true ||
+				    (typeof this.controlSettings.draw === "object" && this.controlSettings.draw.marker !== false)
+				) {
 					this._onAdd(new L.marker(e.latlng));
 				}
 			},

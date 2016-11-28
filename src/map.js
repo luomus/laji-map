@@ -554,7 +554,7 @@ export default class LajiMap {
 	cloneFeatures = (features) => {
 		return features.slice(0).map((feature, idx) => {
 			["geometry", "properties"].forEach(prop => {
-				if (!feature.hasOwnProperty(prop)) throw new Error(`Feature at ${idx} doesn't have a '${prop}' property`);
+				if (!feature.hasOwnProperty(prop)) throw new Error(`Feature at ${idx} doesn't have a '${prop}' property. Features: ${JSON.stringify(features)}`);
 			});
 			feature.properties.lajiMapIdx = idx;
 			return feature;

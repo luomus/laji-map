@@ -253,5 +253,20 @@
 		fi: "$errorHTML Sattui virhe. Ole hyvä ja koita myöhemmin uudestaan.",
 		en: "$errorHTML An error occurred. Please try again later.",
 		sv: "$errorHTML ???"
+	},
+	enterWgs84Coordinates: {
+		fi: "syötä pisteen koordinaatit WGS84-muodossa",
+		en: "enter a marker's coordinates in WGS84 format",
+		sv: "??"
+	},
+	enterYKJRectangle: {
+		fi: "syötä YKJ-ruudun koordinaatit",
+		en: "enter a rectangles coordinates in YKJ format",
+		sv: "??"
+	},
+	or: {
+		fi: "tai",
+		en: "or",
+		sv: "eller"
 	}
 }

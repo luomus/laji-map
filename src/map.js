@@ -1373,6 +1373,9 @@ export default class LajiMap {
 			}
 		}}
 
+		const ykjAllowed = that.controlSettings.draw.rectangle;
+		const wgs84Allowed = that.controlSettings.draw.marker;
+
 		const wgs84Check = {
 			regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
 			range: [-180, 180]
@@ -1386,7 +1389,7 @@ export default class LajiMap {
 			{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
 		];
 
-		const inputRegexp = /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/;
+		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
 
 		function inputValidate(e, value) {
 			if (!value.match(inputRegexp)) {
@@ -1409,8 +1412,8 @@ export default class LajiMap {
 
 		function submitValidate(inputValues) {
 			const validators = [];
-			if (that.controlSettings.draw.marker) validators.push(wgs84Validator);
-			if (that.controlSettings.draw.rectangle) validators.push(ykjValidator);
+			if (wgs84Allowed) validators.push(wgs84Validator);
+			if (ykjAllowed) validators.push(ykjValidator);
 			return validators.some(validator => validateLatLng(inputValues, validator));
 		}
 
@@ -1432,8 +1435,17 @@ export default class LajiMap {
 		const submitButton = document.createElement("button");
 		submitButton.setAttribute("type", "submit");
 		submitButton.className = "btn btn-block btn-info";
-		submitButton.innerHTML = `${translations.Add}`;
+		submitButton.innerHTML = translations.Add;
 		submitButton.setAttribute("disabled", "disabled");
+
+		let helpDiv = document.createElement("span");
+		helpDiv.className = "help-block";
+		const markerAllowed = that.controlSettings.draw.marker;
+		if (markerAllowed) helpDiv.innerHTML = that.translations.EnterWgs84Coordinates;
+		if (that.controlSettings.draw.rectangle) {
+			if (markerAllowed) helpDiv.innerHTML += ` ${that.translations.or} ${that.translations.enterYKJRectangle}`;
+			else helpDiv.innerText = that.translations.EnterYKJRectangle;
+		}
 
 		let errorDiv = undefined;
 
@@ -1509,6 +1521,7 @@ export default class LajiMap {
 		document.addEventListener("keydown", onEscListener);
 
 		container.appendChild(closeButton);
+		container.appendChild(helpDiv);
 		container.appendChild(latLabelInput);
 		container.appendChild(lngLabelInput);
 		container.appendChild(submitButton);

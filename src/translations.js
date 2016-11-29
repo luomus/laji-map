@@ -209,6 +209,11 @@
 		en: "satellite map (Google)",
 		sv: "satellitkarta (Google)"
 	},
+	errorHTML: {
+		fi: "<strong>Virhe:</strong>",
+		en: "<strong>Error:</strong>",
+		sv: "<strong>Error:</strong>"
+	},
 	addFeatureByCoordinates: {
 		fi: "lisää kuvio koordinaattien perusteella",
 		en: "add a feature according to coordinates",
@@ -243,11 +248,6 @@
 		fi: "$errorHTML kuvion särmät eivät saa leikata itseään",
 		en: "$errorHTML shape's edges cannot cross",
 		sv: "$errorHTML ???"
-	},
-	errorHTML: {
-		fi: "<strong>Virhe:</strong>",
-		en: "<strong>Error:</strong>",
-		sv: "<strong>Error:</strong>"
 	},
 	errorMsg: {
 		fi: "$errorHTML Sattui virhe. Ole hyvä ja koita myöhemmin uudestaan.",

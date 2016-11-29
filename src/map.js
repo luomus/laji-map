@@ -421,7 +421,7 @@ export default class LajiMap {
 
 	_createControlItem = (that, container, glyphName, title, fn) => {
 		const elem = L.DomUtil.create("a", "", container);
-		const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
+		const glyph = L.DomUtil.create("span", glyphName, elem);
 		elem.title = title;
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
@@ -448,11 +448,11 @@ export default class LajiMap {
 			},
 
 			_createSearch: function(container) {
-				return that._createControlItem(this, container, "search", that.translations.Search, () => this._onSearch(this));
+				return that._createControlItem(this, container, "glyphicon glyphicon-search", that.translations.Search, () => this._onSearch(this));
 			},
 
 			_createLocate: function(container) {
-				return that._createControlItem(this, container, "screenshot", that.translations.Geolocate, () => that._onLocate());
+				return that._createControlItem(this, container, "glyphicon glyphicon-screenshot", that.translations.Geolocate, () => that._onLocate());
 			},
 
 			_onSearch: function() {
@@ -472,7 +472,7 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				that._createControlItem(this, container, "pencil",
+				that._createControlItem(this, container, "laji-map-coordinate-input-glyph",
 					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;
 			}
@@ -606,7 +606,7 @@ export default class LajiMap {
 				this.map.contextmenu.addItem("-");
 				this.map.contextmenu.addItem({
 					text: this.translations.AddFeatureByCoordinates,
-					iconCls: "glyphicon glyphicon-pencil",
+					iconCls: "laji-map-coordinate-input-glyph",
 					callback: this.openCoordinatesDialog
 				})
 			}
@@ -1419,7 +1419,7 @@ export default class LajiMap {
 
 		const {translations} = this;
 		const container = document.createElement("form");
-		container.className = "laji-map-coordinates well";
+		container.className = "laji-map-coordinates panel panel-default panel-body";
 
 		const latLabelInput = createTextInput(translations.Latitude);
 		const lngLabelInput = createTextInput(translations.Longitude);
@@ -1438,14 +1438,15 @@ export default class LajiMap {
 		submitButton.innerHTML = translations.Add;
 		submitButton.setAttribute("disabled", "disabled");
 
-		let helpDiv = document.createElement("span");
-		helpDiv.className = "help-block";
+		let helpSpan = document.createElement("span");
+		helpSpan.className = "help-block";
 		const markerAllowed = that.controlSettings.draw.marker;
-		if (markerAllowed) helpDiv.innerHTML = that.translations.EnterWgs84Coordinates;
+		if (markerAllowed) helpSpan.innerHTML = that.translations.EnterWgs84Coordinates;
 		if (that.controlSettings.draw.rectangle) {
-			if (markerAllowed) helpDiv.innerHTML += ` ${that.translations.or} ${that.translations.enterYKJRectangle}`;
-			else helpDiv.innerText = that.translations.EnterYKJRectangle;
+			if (markerAllowed) helpSpan.innerHTML += ` ${that.translations.or} ${that.translations.enterYKJRectangle}`;
+			else helpSpan.innerHTML = that.translations.EnterYKJRectangle;
 		}
+		helpSpan.innerHTML += ".";
 
 		let errorDiv = undefined;
 
@@ -1521,7 +1522,7 @@ export default class LajiMap {
 		document.addEventListener("keydown", onEscListener);
 
 		container.appendChild(closeButton);
-		container.appendChild(helpDiv);
+		container.appendChild(helpSpan);
 		container.appendChild(latLabelInput);
 		container.appendChild(lngLabelInput);
 		container.appendChild(submitButton);

@@ -23,7 +23,6 @@ const GOOGLE_SATELLITE = "googleSatellite";
 import translations from "./translations.js";
 
 export default class LajiMap {
-
 	constructor(props) {
 		this.tileLayerName = TAUSTAKARTTA;
 		this.lang = "en";
@@ -82,9 +81,15 @@ export default class LajiMap {
 			continuousWorld: false,
 		}
 
+		const mmlProj = L.TileLayer.MML.get3067Proj();
+
+		// scale controller won't work without this hack.
+		mmlProj.distance =  L.CRS.Earth.distance;
+		mmlProj.R = 6378137;
+
 		this.finnishMap = L.map(this.finnishMapElem, {
 			...mapOptions,
-			crs: L.TileLayer.MML.get3067Proj(),
+			crs: mmlProj,
 			maxBounds: [[52, 10], [72, 140]],
 		});
 		this.foreignMap = L.map(this.foreignMapElem, {
@@ -205,8 +210,8 @@ export default class LajiMap {
 		this.setData(this.data);
 		this.setDrawData(this.drawData);
 
-		[this.layerControl, this.drawControl, this.locationControl,
-		 this.zoomControl, this.coordinateInputControl].forEach(control => {
+		Object.keys(this.controls).forEach(controlName => {
+			const control = this.controls[controlName];
 			if  (control) {
 				otherMap.removeControl(control);
 				this.map.addControl(control);
@@ -285,7 +290,8 @@ export default class LajiMap {
 			layer: true,
 			zoom: true,
 			location: true,
-			coordinateInput: true
+			coordinateInput: true,
+			scale: true
 		};
 		for (let setting in controlSettings) {
 			const oldSetting = this.controlSettings[setting];
@@ -297,36 +303,83 @@ export default class LajiMap {
 		this._initalizeMapControls();
 	}
 
-	_controlIsAllowed = (control) => {
-		const controlNameMap = {
-			draw: {control: this.drawControl},
-			zoom: {control: this.zoomControl},
-			location: {control: this.locationControl},
-			layer: {control: this.layerControl},
-			coordinateInput: {control: this.coordinateInputControl,
-				dependencies: [
-					"draw",
-					() => (this.controlSettings.draw === true ||
-					       (typeof this.controlSettings.draw === "object" &&
-					        ["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})) )]}
-		};
-
-		const {controlSettings} = this;
-		function controlIsOk(controlName) {
-			const dependencies = controlNameMap[controlName].dependencies || [];
-			return (controlSettings && controlSettings[controlName] && dependencies.every(dependency => {return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)}));
+	_controlIsAllowed = (name) => {
+		const dependencies = {
+				coordinateInput: [
+						"draw",
+						() => (this.controlSettings.draw === true ||
+						       (typeof this.controlSettings.draw === "object" &&
+						        ["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})))
+				]
 		}
 
-		for (let controlName in controlNameMap) {
-			if (controlNameMap[controlName].control === control) return controlIsOk(controlName);
+		const {controlSettings} = this;
+
+		function controlIsOk(controlName) {
+			return (
+				controlSettings &&
+				controlSettings[controlName] &&
+				(dependencies[controlName] || []).every(dependency => {
+					return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)})
+			);
+		}
+
+		return controlIsOk(name);
+	}
+
+	_addControl = (name, control) => {
+		if (this._controlIsAllowed(name)) {
+			this.controls[name] = control;
+			this.map.addControl(control);
 		}
 	}
 
-	_addControl = (control) => {
-		if (this._controlIsAllowed(control)) this.map.addControl(control);
+	controls = {
+		layer: undefined,
+		draw: undefined,
+		zoom: undefined,
+		coordinateInput: undefined,
+		location: undefined,
+		scale: undefined
 	}
 
 	_initalizeMapControls = () => {
+		Object.keys(this.controls).forEach(controlName => {
+			const control = this.controls[controlName];
+			if (control) this.map.removeControl(control);
+		});
+
+		this._addControl("layer", this._getLayerControl());
+		this._addControl("location", this._getLocationControl());
+		this._addControl("draw", this._getDrawControl());
+		this._addControl("coordinateInput", this._getCoordinateInputControl());
+		this._addControl("zoom", this._getZoomControl());
+		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
+
+		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
+
+		function removeHref(className) {
+			const elems = document.getElementsByClassName(className);
+			for (let i = 0; i < elems.length; i++) {
+				const elem = elems[i];
+				elem.removeAttribute("href");
+			}
+		}
+
+		["in", "out"].forEach(zoomType => {
+			removeHref(`leaflet-control-zoom-${zoomType}`);
+		});
+
+		["polyline", "polygon", "rectangle", "circle", "marker"].forEach(featureType => {
+			removeHref(`leaflet-draw-draw-${featureType}`);
+		});
+
+		removeHref("leaflet-control-layers-toggle");
+
+		removeHref("leaflet-contextmenu-item");
+	}
+
+	_getDrawControl = () => {
 		const customMarkerStyles = this.getDrawingDraftStyle ? this.getDrawingDraftStyle("marker") : {};
 		const drawOptions = {
 			position: "topright",
@@ -363,20 +416,24 @@ export default class LajiMap {
 			if (this.controlSettings.draw === false || this.controlSettings.draw[type] === false) drawOptions.draw[type] = false;
 		});
 
-		function createControlItem(that, container, glyphName, title, fn) {
-			const elem = L.DomUtil.create("a", "", container);
-			const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
-			elem.title = title;
+		return new L.Control.Draw(drawOptions);
+	}
 
-			L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
-			L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
-			L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
-			L.DomEvent.on(elem, "click", that._refocusOnMap, that);
-			L.DomEvent.on(elem, "click", fn);
+	_createControlItem = (that, container, glyphName, title, fn) => {
+		const elem = L.DomUtil.create("a", "", container);
+		const glyph = L.DomUtil.create("span", "glyphicon glyphicon-" + glyphName, elem);
+		elem.title = title;
 
-			return elem;
-		}
+		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
+		L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
+		L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
+		L.DomEvent.on(elem, "click", that._refocusOnMap, that);
+		L.DomEvent.on(elem, "click", fn);
 
+		return elem;
+	}
+
+	_getLocationControl = () => {
 		const that = this;
 		const LocationControl = L.Control.extend({
 			options: {
@@ -391,11 +448,11 @@ export default class LajiMap {
 			},
 
 			_createSearch: function(container) {
-				return createControlItem(this, container, "search", that.translations.Search, () => this._onSearch(this));
+				return that._createControlItem(this, container, "search", that.translations.Search, () => this._onSearch(this));
 			},
 
 			_createLocate: function(container) {
-				return createControlItem(this, container, "screenshot", that.translations.Geolocate, () => that._onLocate());
+				return that._createControlItem(this, container, "screenshot", that.translations.Geolocate, () => that._onLocate());
 			},
 
 			_onSearch: function() {
@@ -403,6 +460,11 @@ export default class LajiMap {
 			}
 		});
 
+		return new LocationControl();
+	}
+
+	_getCoordinateInputControl = () => {
+		const that = this;
 		const CoordinateInputControl = L.Control.extend({
 			options: {
 				position: "topright"
@@ -410,59 +472,13 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				createControlItem(this, container, "pencil",
+				that._createControlItem(this, container, "pencil",
 					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;
 			}
 		});
 
-		["layerControl", "drawControl", "zoomControl",
-		 "coordinateInputControl", "locationControl"].forEach(control => {
-			if (this[control]) this.map.removeControl(this[control]);
-		});
-
-		this._addControl(this._getLayerControl());
-
-		this.locationControl = new LocationControl();
-		this._addControl(this.locationControl);
-
-		this.drawControl = new L.Control.Draw(drawOptions);
-		this._addControl(this.drawControl);
-
-		this._addControl(this._getZoomControl());
-
-		this.coordinateInputControl = new CoordinateInputControl();
-		this._addControl(this.coordinateInputControl);
-
-		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
-
-		function removeHref(className) {
-			const elems = document.getElementsByClassName(className);
-			for (let i = 0; i < elems.length; i++) {
-				const elem = elems[i];
-				elem.removeAttribute("href");
-			}
-		}
-
-		["in", "out"].forEach(zoomType => {
-			removeHref(`leaflet-control-zoom-${zoomType}`);
-		});
-
-		featureTypes.forEach(featureType => {
-			removeHref(`leaflet-draw-draw-${featureType}`);
-		});
-
-		removeHref("leaflet-control-layers-toggle");
-
-		removeHref("leaflet-contextmenu-item");
-	}
-
-	_getZoomControl = () => {
-		this.zoomControl = L.control.zoom({
-			zoomInTitle: this.translations.ZoomIn,
-			zoomOutTitle: this.translations.ZoomOut
-		});
-		return this.zoomControl;
+		return new CoordinateInputControl();
 	}
 
 	_getLayerControl = () => {
@@ -508,12 +524,18 @@ export default class LajiMap {
 						this.map.removeLayer(overlay);
 					}
 				}
-				this.layerControl.expand();
+				this.controls.layer.expand();
 			}
 		});
 
-		this.layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
-		return this.layerControl;
+		return new LayerControl(baseMaps, overlays, {position: "topleft"});
+	}
+
+	_getZoomControl = () => {
+		return L.control.zoom({
+			zoomInTitle: this.translations.ZoomIn,
+			zoomOutTitle: this.translations.ZoomOut
+		});
 	}
 
 	destroy = () => {
@@ -570,7 +592,7 @@ export default class LajiMap {
 
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this._controlIsAllowed(this.drawControl) &&
+				if (this._controlIsAllowed("draw") &&
 				   (this.controlSettings.draw === true || this.controlSettings.draw[featureType] !== false)) {
 					this.map.contextmenu.addItem({
 						text: text,
@@ -580,7 +602,7 @@ export default class LajiMap {
 				}
 			});
 
-			if (this._controlIsAllowed(this.coordinateInputControl)) {
+			if (this._controlIsAllowed("coordinateInput")) {
 				this.map.contextmenu.addItem("-");
 				this.map.contextmenu.addItem({
 					text: this.translations.AddFeatureByCoordinates,
@@ -614,21 +636,8 @@ export default class LajiMap {
 
 			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
 
-			[this.drawControl, this.locationControl].forEach(control => {
-				if (!control) return;
-				this.maps.forEach(map => map.removeControl(control));
-				this._addControl(control);
-			});
 
-			if (this.zoomControl) {
-				this.map.removeControl(this.zoomControl);
-				this._addControl(this._getZoomControl());
-			}
-
-			if (this.layerControl) {
-				this.map.removeControl(this.layerControl);
-				this._addControl(this._getLayerControl());
-			}
+			this.setControlSettings(this.controlSettings);
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
 				this._updateContextMenuForLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
@@ -1510,5 +1519,5 @@ export default class LajiMap {
 		latInput.focus();
 	}
 
-	triggerDrawing = (featureType) => this.drawControl._toolbars.draw._modes[featureType].handler.enable()
+	triggerDrawing = (featureType) => this.controls.draw._toolbars.draw._modes[featureType].handler.enable()
 }

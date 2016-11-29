@@ -77,14 +77,20 @@ export default class LajiMap {
 		const mapOptions = {
 			contextmenu: true,
 			contextmenuItems: [],
-			zoomControl: false
+			zoomControl: false,
+			noWrap: true,
+			continuousWorld: false,
 		}
 
 		this.finnishMap = L.map(this.finnishMapElem, {
 			...mapOptions,
-			crs: L.TileLayer.MML.get3067Proj()
+			crs: L.TileLayer.MML.get3067Proj(),
+			maxBounds: [[52, 10], [72, 140]],
 		});
-		this.foreignMap = L.map(this.foreignMapElem, mapOptions);
+		this.foreignMap = L.map(this.foreignMapElem, {
+			...mapOptions,
+			maxBounds: [[89.45016124669523, 180], [-87.71179927260242, -180]]
+		});
 		this.maps = [this.finnishMap, this.foreignMap];
 
 		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {

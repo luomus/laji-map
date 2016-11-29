@@ -41,6 +41,7 @@ export default class LajiMap {
 		 "onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
+		this._initControlSettings(props.controlSettings);
 
 		const {tileLayerName} = props;
 		if ([GOOGLE_SATELLITE, OPEN_STREET].includes(tileLayerName) && !props.hasOwnProperty("zoom")) {
@@ -53,8 +54,7 @@ export default class LajiMap {
 		this.setData(this.data);
 		this.setDrawData(this.drawData);
 		this._initializeMapEvents();
-
-		this.setControlSettings(props.controlSettings)
+		this._initalizeMapControls();
 	}
 
 	_initializeMap = () => {
@@ -168,7 +168,6 @@ export default class LajiMap {
 				locationfound: this._onLocationFound,
 				locationerror: this._onLocationNotFound,
 				"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
-				//baselayerchange: ({layer}) => this.setTileLayer(layer)
 			});
 		});
 	}
@@ -284,7 +283,7 @@ export default class LajiMap {
 		this.map.setZoom(this._getMMLCRSLayers().includes(this.tileLayer) ? zoom : zoom + 3);
 	}
 
-	setControlSettings = (controlSettings) => {
+	_initControlSettings = (controlSettings) => {
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
@@ -297,9 +296,13 @@ export default class LajiMap {
 			const oldSetting = this.controlSettings[setting];
 			const newSetting = controlSettings[setting];
 			this.controlSettings[setting] = (typeof newSetting === "object") ?
-				{...oldSetting, ...newSetting} :
+			{...oldSetting, ...newSetting} :
 				newSetting;
 		}
+	}
+
+	setControlSettings = (controlSettings) => {
+		this._initControlSettings(controlSettings);
 		this._initalizeMapControls();
 	}
 
@@ -336,10 +339,10 @@ export default class LajiMap {
 
 	controls = {
 		layer: undefined,
-		draw: undefined,
-		zoom: undefined,
-		coordinateInput: undefined,
 		location: undefined,
+		zoom: undefined,
+		draw: undefined,
+		coordinateInput: undefined,
 		scale: undefined
 	}
 
@@ -369,13 +372,10 @@ export default class LajiMap {
 		["in", "out"].forEach(zoomType => {
 			removeHref(`leaflet-control-zoom-${zoomType}`);
 		});
-
 		["polyline", "polygon", "rectangle", "circle", "marker"].forEach(featureType => {
 			removeHref(`leaflet-draw-draw-${featureType}`);
 		});
-
 		removeHref("leaflet-control-layers-toggle");
-
 		removeHref("leaflet-contextmenu-item");
 	}
 
@@ -635,9 +635,6 @@ export default class LajiMap {
 			drawLocalizations.handlers.rectangle.tooltip.start = join("Click", "and", "drag", "toDrawRectangle");
 
 			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
-
-
-			this.setControlSettings(this.controlSettings);
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
 				this._updateContextMenuForLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
@@ -982,10 +979,12 @@ export default class LajiMap {
 			contextmenuInheritItems: false,
 			contextmenuItems: [{
 				text: translations ? translations.EditFeature : "",
-				callback: () => this._setEditable(idx)
+				callback: () => this._setEditable(idx),
+				iconCls: "glyphicon glyphicon-pencil"
 			}, {
 				text: translations ? translations.DeleteFeature : "",
-				callback: () => this._onDelete(this.idxsToIds[idx])
+				callback: () => this._onDelete(this.idxsToIds[idx]),
+				iconCls: "glyphicon glyphicon-trash"
 			}]
 		});
 	}

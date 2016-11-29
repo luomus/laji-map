@@ -54,7 +54,7 @@ export default class LajiMap {
 		this.setData(this.data);
 		this.setDrawData(this.drawData);
 		this._initializeMapEvents();
-		this._initalizeMapControls();
+		this._initializeMapControls();
 	}
 
 	_initializeMap = () => {
@@ -83,7 +83,8 @@ export default class LajiMap {
 
 		const mmlProj = L.TileLayer.MML.get3067Proj();
 
-		// scale controller won't work without this hack.
+		// Scale controller won't work without this hack.
+		// Fixes also circle projection.
 		mmlProj.distance =  L.CRS.Earth.distance;
 		mmlProj.R = 6378137;
 
@@ -152,7 +153,7 @@ export default class LajiMap {
 
 	_initializeMapEvents = () => {
 		this.maps.forEach(map => {
-			this.map.addEventListener({
+			map.addEventListener({
 				click: e => this._interceptClick(),
 				dblclick: e => {
 					if (this.editIdx !== undefined) return;
@@ -193,7 +194,7 @@ export default class LajiMap {
 		mapElem.style.display = "block";
 		otherMapElem.style.display = "none";
 
-		const swapLayer =(layer) => {
+		const swapLayer = layer => {
 			if (layer) {
 				if (otherMap.hasLayer(layer)) otherMap.removeLayer(layer);
 				this.map.addLayer(layer);
@@ -206,8 +207,15 @@ export default class LajiMap {
 			swapLayer(this.userLocationLayer);
 		}
 
-		this.setData(this.data);
-		this.setDrawData(this.drawData);
+		(this.data || []).forEach((item, i) => {
+			if (item.clusterLayer) swapLayer(item.clusterLayer);
+			else if (this.dataLayerGroups && this.dataLayerGroups[i]) swapLayer(this.dataLayerGroups[i]);
+		});
+
+		if (this.clusterDrawLayer) swapLayer(this.clusterDrawLayer);
+		else if (this.drawLayerGroup) swapLayer(this.drawLayerGroup);
+
+		this.recluster();
 
 		Object.keys(this.controls).forEach(controlName => {
 			const control = this.controls[controlName];
@@ -216,7 +224,7 @@ export default class LajiMap {
 				this.map.addControl(control);
 			}
 		});
-
+		
 		this.map.invalidateSize();
 	}
 
@@ -303,7 +311,7 @@ export default class LajiMap {
 
 	setControlSettings = (controlSettings) => {
 		this._initControlSettings(controlSettings);
-		this._initalizeMapControls();
+		this._initializeMapControls();
 	}
 
 	_controlIsAllowed = (name) => {
@@ -346,7 +354,7 @@ export default class LajiMap {
 		scale: undefined
 	}
 
-	_initalizeMapControls = () => {
+	_initializeMapControls = () => {
 		Object.keys(this.controls).forEach(controlName => {
 			const control = this.controls[controlName];
 			if (control) this.map.removeControl(control);
@@ -391,6 +399,9 @@ export default class LajiMap {
 						markerColor: customMarkerStyles.color ? customMarkerStyles.color : INCOMPLETE_COLOR,
 						opacity: customMarkerStyles.opacity ? customMarkerStyles.opacity : 1,
 					})
+				},
+				polygon: {
+					allowIntersection: false
 				}
 			},
 			edit: {
@@ -409,8 +420,6 @@ export default class LajiMap {
 					this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})
 			};
 		});
-
-		drawOptions.draw.polygon.allowIntersection = false;
 
 		featureTypes.forEach(type => {
 			if (this.controlSettings.draw === false || this.controlSettings.draw[type] === false) drawOptions.draw[type] = false;
@@ -584,32 +593,34 @@ export default class LajiMap {
 
 			const drawLocalizations = L.drawLocal.draw;
 
-			this.map.contextmenu.removeAllItems();
+			this.maps.forEach(map => {
+				map.contextmenu.removeAllItems();
 
-			// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
-			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
-				const text = join("Draw", featureType);
+				// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
+				["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
+					const text = join("Draw", featureType);
 
-				drawLocalizations.toolbar.buttons[featureType] = text;
+					drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this._controlIsAllowed("draw") &&
-				   (this.controlSettings.draw === true || this.controlSettings.draw[featureType] !== false)) {
-					this.map.contextmenu.addItem({
-						text: text,
-						iconCls: "context-menu-draw context-menu-draw-" + featureType,
-						callback: () => this.triggerDrawing(featureType)
-					});
+					if (this._controlIsAllowed("draw") &&
+						(this.controlSettings.draw === true || this.controlSettings.draw[featureType] !== false)) {
+						map.contextmenu.addItem({
+							text: text,
+							iconCls: "context-menu-draw context-menu-draw-" + featureType,
+							callback: () => this.triggerDrawing(featureType)
+						});
+					}
+				});
+
+				if (this._controlIsAllowed("coordinateInput")) {
+					map.contextmenu.addItem("-");
+					map.contextmenu.addItem({
+						text: this.translations.AddFeatureByCoordinates,
+						iconCls: "laji-map-coordinate-input-glyph",
+						callback: this.openCoordinatesDialog
+					})
 				}
 			});
-
-			if (this._controlIsAllowed("coordinateInput")) {
-				this.map.contextmenu.addItem("-");
-				this.map.contextmenu.addItem({
-					text: this.translations.AddFeatureByCoordinates,
-					iconCls: "laji-map-coordinate-input-glyph",
-					callback: this.openCoordinatesDialog
-				})
-			}
 
 			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
 

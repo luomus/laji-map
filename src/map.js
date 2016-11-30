@@ -659,18 +659,16 @@ export default class LajiMap {
 	}
 
 	formatFeatureIn = (feature, idx) => {
-		feature.properties.lajiMapIdx = idx;
-		return feature;
+		return {...feature, properties: {...feature.properties, lajiMapIdx: idx}};
 	}
 
 	cloneFeatures = (features) => {
-		return features.slice(0).map((feature, idx) => {
-			["geometry", "properties"].forEach(prop => {
-				if (!feature.hasOwnProperty(prop)) throw new Error(`Feature at ${idx} doesn't have a '${prop}' property. Features: ${JSON.stringify(features)}`);
-			});
-			feature.properties.lajiMapIdx = idx;
-			return feature;
-		});
+		const featuresClone = [];
+		for (let i = 0; i < features.length; i++) {
+			const feature = features[i];
+			featuresClone[i] = this.formatFeatureIn(feature, i);
+		}
+		return featuresClone;
 	}
 
 	cloneDataItem = (dataItem) => {
@@ -682,9 +680,9 @@ export default class LajiMap {
 	initializeDataItem = (idx) => {
 		const item = this.data[idx];
 		const layer = L.geoJson(
-			this.data[idx].featureCollection,
+			item.featureCollection,
 			{
-				pointToLayer: this._featureToLayer(this.data[idx].getFeatureStyle),
+				pointToLayer: this._featureToLayer(item.getFeatureStyle, idx),
 				style: feature => {return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature})},
 				onEachFeature: (feature, layer) => {
 					this._initializePopup(item, layer, feature.properties.lajiMapIdx);
@@ -1253,17 +1251,21 @@ export default class LajiMap {
 		}
 	}
 
-  _featureToLayer = (getFeatureStyle) => (feature, latlng) => {
-			let layer;
-			if (feature.geometry.type === "Point") {
-				layer = (feature.geometry.radius) ?
-					new L.Circle(latlng, feature.geometry.radius) :
-					new L.marker(latlng, {icon: this._createIcon(getFeatureStyle({}))});
-			} else {
-				layer = L.GeoJSON.geometryToLayer(feature);
-			}
-			return layer;
+  _featureToLayer = (getFeatureStyle, dataIdx) => (feature, latlng) => {
+		let layer;
+		if (feature.geometry.type === "Point") {
+			const params = {feature, featureIdx: feature.properties.lajiMapIdx};
+			if (dataIdx !== undefined) params[dataIdx] = dataIdx;
+			layer = (feature.geometry.radius) ?
+				new L.Circle(latlng, feature.geometry.radius) :
+				new L.marker(latlng, {
+					icon: this._createIcon(getFeatureStyle(params))
+				});
+		} else {
+			layer = L.GeoJSON.geometryToLayer(feature);
 		}
+		return layer;
+	}
 
 	_getStyleForType = (type, overrideStyles, id) => {
 		const idx = this.idsToIdxs[id];

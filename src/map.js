@@ -35,11 +35,11 @@ export default class LajiMap {
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
 		this.popupOnHover = false;
-		this.enableDblClickEdit = true;
+		this.enableDrawEditing = true;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
 		 "tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
-		 "onInitializeDrawLayer", "enableDblClickEdit", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
+		 "onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 		this._initControlSettings(props.controlSettings);
@@ -972,9 +972,7 @@ export default class LajiMap {
 		layer.on("click", (e) => {
 			if (!this._interceptClick()) this._onActiveChange(this.idsToIdxs[layer._leaflet_id]);
 		});
-		if (this.enableDblClickEdit) {
-      layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
-    }
+		layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
 
 		this._initializePopup(this.drawData, layer, idx);
 		this._initializeTooltip(this.drawData, layer, idx);
@@ -987,17 +985,26 @@ export default class LajiMap {
 	_updateContextMenuForLayer(layer, idx) {
 		const { translations } = this;
 		layer.unbindContextMenu();
+
+		let contextmenuItems = [{
+			text: translations ? translations.DeleteFeature : "",
+			callback: () => this._onDelete(this.idxsToIds[idx]),
+			iconCls: "glyphicon glyphicon-trash"
+		}];
+
+		if (this.enableDrawEditing) {
+			contextmenuItems = [{
+					text: translations ? translations.EditFeature : "",
+					callback: () => this._setEditable(idx),
+					iconCls: "glyphicon glyphicon-pencil"
+				},
+				...contextmenuItems
+			]
+		}
+
 		layer.bindContextMenu({
 			contextmenuInheritItems: false,
-			contextmenuItems: [{
-				text: translations ? translations.EditFeature : "",
-				callback: () => this._setEditable(idx),
-				iconCls: "glyphicon glyphicon-pencil"
-			}, {
-				text: translations ? translations.DeleteFeature : "",
-				callback: () => this._onDelete(this.idxsToIds[idx]),
-				iconCls: "glyphicon glyphicon-trash"
-			}]
+			contextmenuItems
 		});
 	}
 
@@ -1191,6 +1198,7 @@ export default class LajiMap {
 	}
 
 	_setEditable = (idx) => {
+		if (!this.enableDrawEditing) return;
 		this._clearEditable();
 		this.editIdx = idx;
 		const editLayer = this._getDrawLayerById(this.idxsToIds[this.editIdx]);

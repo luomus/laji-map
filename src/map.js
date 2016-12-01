@@ -35,10 +35,11 @@ export default class LajiMap {
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
 		this.popupOnHover = false;
+		this.enableDblClickEdit = true;
 
 		["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
 		 "tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
-		 "onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
+		 "onInitializeDrawLayer", "enableDblClickEdit", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
 			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
 		});
 		this._initControlSettings(props.controlSettings);
@@ -971,7 +972,9 @@ export default class LajiMap {
 		layer.on("click", (e) => {
 			if (!this._interceptClick()) this._onActiveChange(this.idsToIdxs[layer._leaflet_id]);
 		});
-		layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
+		if (this.enableDblClickEdit) {
+      layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
+    }
 
 		this._initializePopup(this.drawData, layer, idx);
 		this._initializeTooltip(this.drawData, layer, idx);

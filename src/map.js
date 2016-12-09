@@ -92,7 +92,7 @@ export default class LajiMap {
 		this.finnishMap = L.map(this.finnishMapElem, {
 			...mapOptions,
 			crs: mmlProj,
-			maxBounds: [[52, 10], [72, 140]],
+			maxBounds: [[40, 0], [60, 120]],
 		});
 		this.foreignMap = L.map(this.foreignMapElem, {
 			...mapOptions,

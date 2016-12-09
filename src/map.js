@@ -559,12 +559,16 @@ export default class LajiMap {
 		function capitalizeFirstLetter(string) {
 			return string.charAt(0).toUpperCase() + string.slice(1);
 		}
+		function decapitalizeFirstLetter(string) {
+			return string.charAt(0).toLowerCase() + string.slice(1);
+		}
+
 		let dictionaries = {};
 		for (let word in translations) {
 			for (let lang in translations[word]) {
 				const translation = translations[word][lang];
 				if (!dictionaries.hasOwnProperty(lang)) dictionaries[lang] = {};
-				dictionaries[lang][word] = translation;
+				dictionaries[lang][word] = decapitalizeFirstLetter(translation);
 				dictionaries[lang][capitalizeFirstLetter(word)] = capitalizeFirstLetter(translation);
 			}
 		}

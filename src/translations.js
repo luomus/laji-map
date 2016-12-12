@@ -125,7 +125,7 @@
 		sv: "Klick den första punkten för att stänga formen"
 	},
 	clickToStartDrawingPolyline: {
-		fi: "Click aloittaaksesi viivan piirtäminen",
+		fi: "Klikkaa aloittaaksesi viivan piirtäminen",
 		en: "Click to start drawing a line",
 		sv: "Klick för att börja rita en linje"
 	},

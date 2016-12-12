@@ -12,7 +12,7 @@
 	cancel: {
 		fi: "Peru",
 		en: "Cancel",
-		sv: "Annullera"
+		sv: "Avbryt"
 	},
 	finish: {
 		fi: "Lopeta",
@@ -137,7 +137,7 @@
 	clickToEndDrawingPolyline: {
 		fi: "Klikkaa viimeistä pistettä viimeistelläksesi viivan",
 		en: "Click the last point to finish this line",
-		sv: "Klick den sista punkten för att stänga linjen"
+		sv: "Klick den senaste punkten för att stänga linjen"
 	},
 	polylineError: {
 		fi: "$errorHTML Viiva ei saa leikata itseään",
@@ -212,57 +212,57 @@
 	errorHTML: {
 		fi: "<strong>Virhe:</strong>",
 		en: "<strong>Error:</strong>",
-		sv: "<strong>Error:</strong>"
+		sv: "<strong>Fel:</strong>"
 	},
 	addFeatureByCoordinates: {
 		fi: "Lisää kuvio koordinaattien perusteella",
 		en: "Add a feature according to coordinates",
-		sv: "??"
+		sv: "Lägg till en figur på basis av koordinater"
 	},
 	latitude: {
 		fi: "Pituus",
 		en: "Latitude",
-		sv: "??"
+		sv: "Latitud"
 	},
 	longitude: {
 		fi: "Leveys",
 		en: "Longitude",
-		sv: "??"
+		sv: "Longitud"
 	},
 	geobiologicalProvinces: {
 		fi: "Eliömaakunnat",
-		en: "Geobiological provinces",
-		sv: "??"
+		en: "Biogeographical provinces",
+		sv: "Biogeografiska provinser"
 	},
 	metsakasvillisuusvyohykkeet: {
 		fi: "Metsäkasvillisuusvyöhykkeet",
-		en: "??",
-		sv: "??"
+		en: "Forest vegetation zones",
+		sv: "Skogvegetationszoner"
 	},
 	suokasvillisuusvyohykkeet: {
 		fi: "Suokasvillisuusvyohykkeet",
-		en: "???",
-		sv: "???"
+		en: "Mire vegetation zones",
+		sv: "Myrvegetationszoner"
 	},
 	shapeEdgesCannotCross: {
 		fi: "$errorHTML kuvion särmät eivät saa leikata itseään",
 		en: "$errorHTML shape's edges cannot cross",
-		sv: "$errorHTML ???"
+		sv: "$errorHTML formens kanter kan inte korsa"
 	},
 	errorMsg: {
 		fi: "$errorHTML Sattui virhe. Ole hyvä ja koita myöhemmin uudestaan.",
 		en: "$errorHTML An error occurred. Please try again later.",
-		sv: "$errorHTML ???"
+		sv: "$errorHTML Ett fel uppstod. Försök igen senare."
 	},
 	enterWgs84Coordinates: {
 		fi: "Syötä pisteen koordinaatit WGS84-muodossa",
 		en: "Enter a marker's coordinates in WGS84 format",
-		sv: "??"
+		sv: "Ange markörens koordinater i WGS84 format"
 	},
 	enterYKJRectangle: {
 		fi: "Syötä YKJ-ruudun koordinaatit",
 		en: "Enter a rectangles coordinates in YKJ format",
-		sv: "??"
+		sv: "Ange rektangelns koordinater i YKJ format"
 	},
 	or: {
 		fi: "Tai",

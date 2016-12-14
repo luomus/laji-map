@@ -423,7 +423,9 @@ export default class LajiMap {
 		});
 
 		featureTypes.forEach(type => {
-			if (this.controlSettings.draw === false || this.controlSettings.draw[type] === false) drawOptions.draw[type] = false;
+			if (this.controlSettings.draw === false || this.controlSettings.draw[type] !== true) {
+				drawOptions.draw[type] = false;
+			}
 		});
 
 		return new L.Control.Draw(drawOptions);

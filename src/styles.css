@@ -88,6 +88,11 @@
 	font-size: 14px;
 }
 
+.laji-map-coordinate-input-ykj-glyph:before {
+	content: "YKJ";
+	font-weight: bold;
+	font-size: 11px;
+}
 .laji-map-coordinate-input-glyph:before {
 	content: "123";
 	font-weight: bold;

@@ -219,16 +219,6 @@
 		en: "Add a feature according to coordinates",
 		sv: "Lägg till en figur på basis av koordinater"
 	},
-	latitude: {
-		fi: "Pituus",
-		en: "Latitude",
-		sv: "Latitud"
-	},
-	longitude: {
-		fi: "Leveys",
-		en: "Longitude",
-		sv: "Longitud"
-	},
 	geobiologicalProvinces: {
 		fi: "Eliömaakunnat",
 		en: "Biogeographical provinces",
@@ -255,18 +245,28 @@
 		sv: "$errorHTML Ett fel uppstod. Försök igen senare."
 	},
 	enterWgs84Coordinates: {
-		fi: "Syötä pisteen koordinaatit WGS84-muodossa",
+		fi: "Anna pisteen koordinaatit WGS84-muodossa",
 		en: "Enter a marker's coordinates in WGS84 format",
 		sv: "Ange markörens koordinater i WGS84 format"
-	},
-	enterYKJRectangle: {
-		fi: "Syötä YKJ-ruudun koordinaatit",
-		en: "Enter a rectangles coordinates in YKJ format",
-		sv: "Ange rektangelns koordinater i YKJ format"
 	},
 	or: {
 		fi: "Tai",
 		en: "Or",
 		sv: "Eller"
-	}
+	},
+	enterYKJRectangle: {
+		fi: "Anna yhtenäiskoordinaatit",
+		en: "Give Finnish Uniform Grid coordinates",
+		sv: "??"
+	},
+	latitude: {
+		fi: "Pohjoiskoordinaatti",
+		en: "Northing",
+		sv: "??"
+	},
+	longitude: {
+		fi: "Itäkoordinaatti",
+		en: "Easting",
+		sv: "??"
+	},
 }

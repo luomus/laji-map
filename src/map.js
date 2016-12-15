@@ -513,7 +513,8 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				that._createControlItem(this, container, "laji-map-coordinate-input-glyph",
+				const rectangleAllowed = that.controlSettings.draw.rectangle === true;
+				that._createControlItem(this, container, `laji-map-coordinate-input-${rectangleAllowed ? "ykj-" : ""}glyph`,
 					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;
 			}
@@ -1479,6 +1480,8 @@ export default class LajiMap {
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates panel panel-default panel-body";
 
+		const onlyYkjAllowed = ykjAllowed && !wgs84Allowed;
+
 		const latLabelInput = createTextInput(translations.Latitude);
 		const lngLabelInput = createTextInput(translations.Longitude);
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
@@ -1558,7 +1561,7 @@ export default class LajiMap {
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";
 				errorDiv.innerHTML = this.translations.errorMsg;
-				container.insertBefore(errorDiv, latLabelInput);
+				container.insertBefore(errorDiv, lngLabelInput);
 			});
 		});
 
@@ -1581,14 +1584,14 @@ export default class LajiMap {
 
 		container.appendChild(closeButton);
 		container.appendChild(helpSpan);
-		container.appendChild(latLabelInput);
 		container.appendChild(lngLabelInput);
+		container.appendChild(latLabelInput);
 		container.appendChild(submitButton);
 
 		this.blockerElem.style.display = "block";
 		this.container.appendChild(container);
 
-		latInput.focus();
+		lngInput.focus();
 	}
 
 	triggerDrawing = (featureType) => this.controls.draw._toolbars.draw._modes[featureType].handler.enable()

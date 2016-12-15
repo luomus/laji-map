@@ -22,8 +22,16 @@ const GOOGLE_SATELLITE = "googleSatellite";
 
 import translations from "./translations.js";
 
+const options = ["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
+	"tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
+	"onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"];
+
+const optionKeys = options.reduce((o, i) => {o[i] = true; return o;}, {});
+
 export default class LajiMap {
 	constructor(props) {
+		this._constructDictionary();
+
 		this.tileLayerName = TAUSTAKARTTA;
 		this.lang = "en";
 		this.locate = false;
@@ -37,11 +45,10 @@ export default class LajiMap {
 		this.popupOnHover = false;
 		this.enableDrawEditing = true;
 
-		["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
-		 "tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
-		 "onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"].forEach(prop => {
-			if (props.hasOwnProperty(prop)) this[prop] = props[prop];
+		Object.keys(props).forEach(prop => {
+			if (optionKeys[prop]) this[prop] =props[prop];
 		});
+
 		this._initControlSettings(props.controlSettings);
 
 		const {tileLayerName} = props;
@@ -49,13 +56,35 @@ export default class LajiMap {
 			this.zoom += 3;
 		}
 
-		this._constructDictionary();
 		this._initializeMap();
 		this.setLang(this.lang);
 		this.setData(this.data);
 		this.setDrawData(this.drawData);
 		this._initializeMapEvents();
 		this._initializeMapControls();
+	}
+
+	setOptions = (options) => {
+		Object.keys(options || {}).forEach(option => {
+			this.setOption(option, options[option]);
+		});
+	}
+
+	setOption = (option, value) => {
+		if (option === "lang") this.setLang(value);
+		else if (option === "data") this.setData(value);
+		else if (option === "drawData") this.setDrawData(value);
+		else if (option === "activeIdx") this.setActive(value);
+		else if (option === "controlSettings") this.setControlSettings(value);
+		else if (option === "tileLayerName") this.setTileLayer(this[value]);
+		else if (option === "center") this.map.setView(value, this.getNormalizedZoom(this.zoom));
+		else if (option === "zoom") {
+			this.zoom = value;
+			this.setNormalizedZoom(this.zoom);
+		}
+		else if (optionKeys[option]) {
+			this[option] = value;
+		}
 	}
 
 	_initializeMap = () => {

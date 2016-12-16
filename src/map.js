@@ -187,7 +187,7 @@ export default class LajiMap {
 				click: e => this._interceptClick(),
 				dblclick: e => {
 					//TODO Remove this hack once leaflet fixes the issue.
-					if (Date.now() - this.dblClickTimestamp < 100) {
+					if (Date.now() - this.dblClickTimestamp < 500) {
 						return;
 					}
 					this.dblClickTimestamp = Date.now();

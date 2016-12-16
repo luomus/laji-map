@@ -331,7 +331,10 @@ export default class LajiMap {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
 			zoom: true,
-			location: true,
+			location: {
+				userLocation: true,
+				search: true
+			},
 			coordinateInput: true,
 			scale: true
 		};
@@ -488,8 +491,17 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
-				this._createSearch(container);
-				this._createLocate(container);
+
+				function isAllowed(control) {
+					return (
+						that.controlSettings.location === true ||
+						(that.controlSettings.location.constructor === Object && that.controlSettings.location[control])
+					);
+				}
+
+				//TODO disabled until implemented.
+				// if (isAllowed("search")) this._createSearch(container);
+				if (isAllowed("userLocation")) this._createLocate(container);
 				return container;
 			},
 

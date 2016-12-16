@@ -1497,8 +1497,6 @@ export default class LajiMap {
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates panel panel-default panel-body";
 
-		const onlyYkjAllowed = ykjAllowed && !wgs84Allowed;
-
 		const latLabelInput = createTextInput(translations.Latitude);
 		const lngLabelInput = createTextInput(translations.Longitude);
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
@@ -1518,11 +1516,11 @@ export default class LajiMap {
 
 		let helpSpan = document.createElement("span");
 		helpSpan.className = "help-block";
-		const markerAllowed = that.controlSettings.draw.marker;
-		if (markerAllowed) helpSpan.innerHTML = that.translations.EnterWgs84Coordinates;
-		if (that.controlSettings.draw.rectangle) {
-			if (markerAllowed) helpSpan.innerHTML += ` ${that.translations.or} ${that.translations.enterYKJRectangle}`;
-			else helpSpan.innerHTML = that.translations.EnterYKJRectangle;
+		const rectangleAllowed = that.controlSettings.draw.rectangle;
+		if (rectangleAllowed) helpSpan.innerHTML = that.translations.EnterYKJRectangle;
+		if (that.controlSettings.draw.marker) {
+			if (rectangleAllowed) helpSpan.innerHTML += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
+			else helpSpan.innerHTML = that.translations.EnterWgs84Coordinates;
 		}
 		helpSpan.innerHTML += ".";
 
@@ -1578,7 +1576,7 @@ export default class LajiMap {
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";
 				errorDiv.innerHTML = this.translations.errorMsg;
-				container.insertBefore(errorDiv, lngLabelInput);
+				container.insertBefore(errorDiv, latLabelInput);
 			});
 		});
 
@@ -1601,8 +1599,8 @@ export default class LajiMap {
 
 		container.appendChild(closeButton);
 		container.appendChild(helpSpan);
-		container.appendChild(lngLabelInput);
 		container.appendChild(latLabelInput);
+		container.appendChild(lngLabelInput);
 		container.appendChild(submitButton);
 
 		this.blockerElem.style.display = "block";

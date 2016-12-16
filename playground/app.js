@@ -142,7 +142,8 @@ class App {
 			zoom: 7,
 			center: [60.40403173483798, 22.104264017028992],
 			markerPopupOffset: 40,
-			featurePopupOffset: 5
+			featurePopupOffset: 5,
+
 		});
 
 		["fi", "en", "sv"].forEach(lang => {

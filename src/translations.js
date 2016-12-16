@@ -257,16 +257,16 @@
 	enterYKJRectangle: {
 		fi: "Anna yhtenäiskoordinaatit",
 		en: "Give Finnish Uniform Grid coordinates",
-		sv: "??"
+		sv: "Ge enhetskoordinaterna"
 	},
 	latitude: {
 		fi: "Pohjoiskoordinaatti",
 		en: "Northing",
-		sv: "??"
+		sv: "Nordkoordinaten"
 	},
 	longitude: {
 		fi: "Itäkoordinaatti",
 		en: "Easting",
-		sv: "??"
+		sv: "Östkoordinaten"
 	},
 }

@@ -186,6 +186,11 @@ export default class LajiMap {
 			map.addEventListener({
 				click: e => this._interceptClick(),
 				dblclick: e => {
+					//TODO Remove this hack once leaflet fixes the issue.
+					if (Date.now() - this.dblClickTimestamp < 100) {
+						return;
+					}
+					this.dblClickTimestamp = Date.now();
 					if (this.editIdx !== undefined) return;
 					if (this.controlSettings.draw === true ||
 							(typeof this.controlSettings.draw === "object" && this.controlSettings.draw.marker !== false)

@@ -186,6 +186,11 @@ export default class LajiMap {
 			map.addEventListener({
 				click: e => this._interceptClick(),
 				dblclick: e => {
+					//TODO Remove this hack once leaflet fixes the issue.
+					if (Date.now() - this.dblClickTimestamp < 500) {
+						return;
+					}
+					this.dblClickTimestamp = Date.now();
 					if (this.editIdx !== undefined) return;
 					if (this.controlSettings.draw === true ||
 							(typeof this.controlSettings.draw === "object" && this.controlSettings.draw.marker !== false)
@@ -326,7 +331,10 @@ export default class LajiMap {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
 			zoom: true,
-			location: true,
+			location: {
+				userLocation: true,
+				search: true
+			},
 			coordinateInput: true,
 			scale: true
 		};
@@ -483,8 +491,17 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
-				this._createSearch(container);
-				this._createLocate(container);
+
+				function isAllowed(control) {
+					return (
+						that.controlSettings.location === true ||
+						(that.controlSettings.location.constructor === Object && that.controlSettings.location[control])
+					);
+				}
+
+				//TODO disabled until implemented.
+				// if (isAllowed("search")) this._createSearch(container);
+				if (isAllowed("userLocation")) this._createLocate(container);
 				return container;
 			},
 
@@ -1486,8 +1503,6 @@ export default class LajiMap {
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates panel panel-default panel-body";
 
-		const onlyYkjAllowed = ykjAllowed && !wgs84Allowed;
-
 		const latLabelInput = createTextInput(translations.Latitude);
 		const lngLabelInput = createTextInput(translations.Longitude);
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
@@ -1507,11 +1522,11 @@ export default class LajiMap {
 
 		let helpSpan = document.createElement("span");
 		helpSpan.className = "help-block";
-		const markerAllowed = that.controlSettings.draw.marker;
-		if (markerAllowed) helpSpan.innerHTML = that.translations.EnterWgs84Coordinates;
-		if (that.controlSettings.draw.rectangle) {
-			if (markerAllowed) helpSpan.innerHTML += ` ${that.translations.or} ${that.translations.enterYKJRectangle}`;
-			else helpSpan.innerHTML = that.translations.EnterYKJRectangle;
+		const rectangleAllowed = that.controlSettings.draw.rectangle;
+		if (rectangleAllowed) helpSpan.innerHTML = that.translations.EnterYKJRectangle;
+		if (that.controlSettings.draw.marker) {
+			if (rectangleAllowed) helpSpan.innerHTML += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
+			else helpSpan.innerHTML = that.translations.EnterWgs84Coordinates;
 		}
 		helpSpan.innerHTML += ".";
 
@@ -1567,7 +1582,7 @@ export default class LajiMap {
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";
 				errorDiv.innerHTML = this.translations.errorMsg;
-				container.insertBefore(errorDiv, lngLabelInput);
+				container.insertBefore(errorDiv, latLabelInput);
 			});
 		});
 
@@ -1590,8 +1605,8 @@ export default class LajiMap {
 
 		container.appendChild(closeButton);
 		container.appendChild(helpSpan);
-		container.appendChild(lngLabelInput);
 		container.appendChild(latLabelInput);
+		container.appendChild(lngLabelInput);
 		container.appendChild(submitButton);
 
 		this.blockerElem.style.display = "block";

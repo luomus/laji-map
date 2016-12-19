@@ -5,11 +5,31 @@
 .leaflet-mouse-marker {
 	opacity: 0.5;
 }
+
+
+.leaflet-left .leaflet-control {
+    margin-left: 2px;
+}
+
+.leaflet-top .leaflet-control {
+    margin-top: 2px;
+}
+.leaflet-right .leaflet-control {
+	margin-right: 2px;
+}
+
+.leaflet-top .leaflet-control {
+	margin-top: 2px;
+}
+
 .laji-map-control {
 	background: white;
-	width: 26px;
 	font-size: 14px;
 	text-align: center;
+}
+
+.laji-map .leaflet-right .leaflet-control {
+	float: none;
 }
 
 .leaflet-contextmenu a.leaflet-contextmenu-item:hover {

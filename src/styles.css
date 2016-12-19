@@ -6,10 +6,14 @@
 	opacity: 0.5;
 }
 
-
-.laji-map .leaflet-left .leaflet-control, .laji-map .leaflet-top .leaflet-control,
-.laji-map .leaflet-right .leaflet-control, .laji-map .leaflet-top .leaflet-control {
-    margin-left: 4px;
+.laji-map .leaflet-left .leaflet-control {
+	margin-left: 4px;
+}
+.laji-map .leaflet-top .leaflet-control {
+	margin-top: 4px;
+}
+.laji-map .leaflet-right .leaflet-control {
+	margin-right: 4px;
 }
 
 .laji-map .laji-map-control {

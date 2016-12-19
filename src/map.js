@@ -1090,6 +1090,12 @@ export default class LajiMap {
 		// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 		if (layer instanceof L.Circle) {
 			geoJSON.geometry.radius = layer.getRadius();
+		} else if  (layer instanceof L.Rectangle) {
+			const coordinates = geoJSON.geometry.coordinates[0];
+			//If the coordinates are ordered counterclockwise, reverse them.
+			if (coordinates[0][0] < coordinates[1][0] || coordinates[0][1] < coordinates[1][1]) {
+				coordinates.reverse();
+			}
 		}
 		return geoJSON;
 	}

@@ -1615,7 +1615,7 @@ export default class LajiMap {
 		this.blockerElem.style.display = "block";
 		this.container.appendChild(container);
 
-		lngInput.focus();
+		latInput.focus();
 	}
 
 	triggerDrawing = (featureType) => this.controls.draw._toolbars.draw._modes[featureType].handler.enable()

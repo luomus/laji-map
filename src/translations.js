@@ -269,4 +269,9 @@
 		en: "Easting",
 		sv: "Östkoordinaten"
 	},
+	chromeWarning: {
+		fi: "Varoitus: Karttakirjasto toimii epävakaasti Chromen uusimmalla versiolla 55.",
+		en: "Warning: The map library is unstable with the newest Chrome version 55.",
+		sv: "Warning: The map library is unstable with the newest Chrome version 55."
+	},
 }

@@ -8,6 +8,7 @@ import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import fetch from "isomorphic-fetch";
 import queryString from "querystring";
+import browser from "detect-browser";
 
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";
@@ -62,6 +63,26 @@ export default class LajiMap {
 		this.setDrawData(this.drawData);
 		this._initializeMapEvents();
 		this._initializeMapControls();
+
+
+		if (browser && browser.name === "chrome" && browser.version &&
+			browser.version.split(".").length && browser.version.split(".")[0] >= 55) {
+			const warning = document.createElement("div");
+			warning.className = "alert alert-warning laji-map-warning";
+			warning.innerHTML = this.translations.ChromeWarning;
+
+
+			const closeButton = document.createElement("button");
+			closeButton.setAttribute("type", "button");
+			closeButton.className = "close";
+			closeButton.innerHTML = "✖";
+			closeButton.addEventListener("click", () => {
+				this.container.removeChild(warning);
+			});
+
+			warning.appendChild(closeButton);
+			this.container.appendChild(warning);
+		}
 	}
 
 	setOptions = (options) => {

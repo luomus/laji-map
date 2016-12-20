@@ -1,6 +1,6 @@
 {
   "name": "laji-map",
-  "version": "1.0.110",
+  "version": "1.0.111",
   "description": "A map with drawing functionality",
   "main": "dist/laji-map.js",
   "types": "src/map.d.js",

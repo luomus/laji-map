@@ -530,8 +530,7 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				const rectangleAllowed = that.controlSettings.draw.rectangle === true;
-				that._createControlItem(this, container, `laji-map-coordinate-input-${rectangleAllowed ? "ykj-" : ""}glyph`,
+				that._createControlItem(this, container, `laji-map-coordinate-input-glyph`,
 					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
 				return container;
 			}

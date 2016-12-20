@@ -272,6 +272,6 @@
 	chromeWarning: {
 		fi: "Varoitus: Karttakirjasto toimii epävakaasti Chromen uusimmalla versiolla 55. Asia korjaantuu lähiaikoina kirjaston kehittäjien toimesta.",
 		en: "Warning: The map library is unstable with the newest Chrome version 55. The problem will be resolved in the near future by the developers of the library.",
-		sv: "Warning: The map library is unstable with the newest Chrome version 55. The problem will be resolved in the near future by the developers of the library."
+		sv: "Varning: Kartbibliotek är instabil med den nyaste Chrome version 55. Problemet kommer att lösas inom en snar framtid av utvecklarna av biblioteket."
 	},
 }

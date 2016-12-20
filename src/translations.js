@@ -270,8 +270,8 @@
 		sv: "Östkoordinaten"
 	},
 	chromeWarning: {
-		fi: "Varoitus: Karttakirjasto toimii epävakaasti Chromen uusimmalla versiolla 55.",
-		en: "Warning: The map library is unstable with the newest Chrome version 55.",
-		sv: "Warning: The map library is unstable with the newest Chrome version 55."
+		fi: "Varoitus: Karttakirjasto toimii epävakaasti Chromen uusimmalla versiolla 55. Asia korjaantuu lähiaikoina kirjaston kehittäjien toimesta.",
+		en: "Warning: The map library is unstable with the newest Chrome version 55. The problem will be resolved in the near future by the developers of the library.",
+		sv: "Warning: The map library is unstable with the newest Chrome version 55. The problem will be resolved in the near future by the developers of the library."
 	},
 }

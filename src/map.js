@@ -371,6 +371,7 @@ export default class LajiMap {
 	setControlSettings = (controlSettings) => {
 		this._initControlSettings(controlSettings);
 		this._initializeMapControls();
+		this._updateContextMenu();
 	}
 
 	_controlIsAllowed = (name) => {
@@ -655,46 +656,59 @@ export default class LajiMap {
 		this.dictionary = dictionaries;
 	}
 
+
+	_joinTranslations = (...words)  => {
+		const { translations } = this;
+		return words.map(word => translations[word]).join(" ");
+	}
+
+	_updateContextMenu = () => {
+		const drawLocalizations = L.drawLocal.draw;
+
+		const join = this._joinTranslations;
+
+		this.maps.forEach(map => {
+			map.contextmenu.removeAllItems();
+
+			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
+				const text = join("Draw", featureType);
+
+				drawLocalizations.toolbar.buttons[featureType] = text;
+
+				if (this._controlIsAllowed("draw") &&
+					(this.controlSettings.draw || this.controlSettings.draw[featureType] !== false)) {
+					map.contextmenu.addItem({
+						text: text,
+						iconCls: "context-menu-draw context-menu-draw-" + featureType,
+						callback: () => this.triggerDrawing(featureType)
+					});
+				}
+			});
+
+			if (this._controlIsAllowed("coordinateInput")) {
+				map.contextmenu.addItem("-");
+				map.contextmenu.addItem({
+					text: this.translations.AddFeatureByCoordinates,
+					iconCls: "laji-map-coordinate-input-glyph",
+					callback: this.openCoordinatesDialog
+				})
+			}
+		});
+	}
+
 	setLang = (lang) => {
 		if (!this.translations || this.lang !== lang) {
 			this.lang = lang;
 			this.translations = this.dictionary[this.lang];
 
-			const { translations } = this;
-			function join(...words) {
-				return words.map(word => translations[word]).join(" ");
-			}
 
 			const drawLocalizations = L.drawLocal.draw;
 
-			this.maps.forEach(map => {
-				map.contextmenu.removeAllItems();
+			const join = this._joinTranslations;
 
-				// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
-				["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
-					const text = join("Draw", featureType);
+			this._updateContextMenu();
 
-					drawLocalizations.toolbar.buttons[featureType] = text;
-
-					if (this._controlIsAllowed("draw") &&
-						(this.controlSettings.draw === true || this.controlSettings.draw[featureType] !== false)) {
-						map.contextmenu.addItem({
-							text: text,
-							iconCls: "context-menu-draw context-menu-draw-" + featureType,
-							callback: () => this.triggerDrawing(featureType)
-						});
-					}
-				});
-
-				if (this._controlIsAllowed("coordinateInput")) {
-					map.contextmenu.addItem("-");
-					map.contextmenu.addItem({
-						text: this.translations.AddFeatureByCoordinates,
-						iconCls: "laji-map-coordinate-input-glyph",
-						callback: this.openCoordinatesDialog
-					})
-				}
-			});
+			// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 
 			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
 

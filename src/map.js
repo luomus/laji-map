@@ -1437,12 +1437,16 @@ export default class LajiMap {
 			label.setAttribute("for", input.id);
 			label.innerHTML = labelTxt;
 
-			const container = document.createElement("div");
-			container.className = "form-group";
+			const row = document.createElement("div");
+			row.className = "form-group row";
 
-			[label, input].forEach(elem => {container.appendChild(elem)});
+			const col = document.createElement("div");
+			col.className = "col-xs-12";
 
-			return container;
+			[label, input].forEach(elem => {col.appendChild(elem)});
+			row.appendChild(col);
+
+			return row;
 		}
 
 		function formatter(input) { return e => {

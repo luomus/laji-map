@@ -64,8 +64,11 @@ export default class LajiMap {
 		this._initializeMapEvents();
 		this._initializeMapControls();
 
+		this.browserWarnings();
+	}
 
-		if (browser && browser.name === "chrome" && browser.version &&
+	browserWarnings = () => {
+		if ((this.controlSettings.draw.polygon ||this.controlSettings.draw.polyline) && browser && browser.name === "chrome" && browser.version &&
 			browser.version.split(".").length && browser.version.split(".")[0] >= 55) {
 			const warning = document.createElement("div");
 			warning.className = "alert alert-warning laji-map-warning";
@@ -372,6 +375,8 @@ export default class LajiMap {
 		this._initControlSettings(controlSettings);
 		this._initializeMapControls();
 		this._updateContextMenu();
+
+		this.browserWarnings();
 	}
 
 	_controlIsAllowed = (name) => {

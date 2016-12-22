@@ -143,9 +143,8 @@ class App {
 			center: [60.40403173483798, 22.104264017028992],
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			controlSettings: {draw: {polygon: false, marker: false, circle: false, polyline: false, rectangle: "hidden"}}
+			controlSettings: {draw: {polygon: true, marker: false, circle: false, polyline: false, rectangle: "hidden"}}
 		});
-		// this.map.setControlSettings({draw: {marker: false, polygon: false}});
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))

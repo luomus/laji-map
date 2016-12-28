@@ -487,7 +487,8 @@ export default class LajiMap {
 		});
 
 		featureTypes.forEach(type => {
-			if (this.controlSettings.draw === false || this.controlSettings.draw[type] !== true) {
+			if (this.controlSettings.draw === false ||
+			    (this.controlSettings.draw.constructor === Object && this.controlSettings.draw[type] !== true)) {
 				drawOptions.draw[type] = false;
 			}
 		});
@@ -681,7 +682,7 @@ export default class LajiMap {
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
 				if (this._controlIsAllowed("draw") &&
-					(this.controlSettings.draw || this.controlSettings.draw[featureType] !== false)) {
+				    (this.controlSettings.draw.constructor !== Object || this.controlSettings.draw[featureType] !== false)) {
 					map.contextmenu.addItem({
 						text: text,
 						iconCls: "context-menu-draw context-menu-draw-" + featureType,

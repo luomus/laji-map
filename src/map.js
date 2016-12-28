@@ -1600,13 +1600,21 @@ export default class LajiMap {
 			e.preventDefault();
 
 			const latlng = [latInput.value, lngInput.value];
-			const system = validateLatLng(latlng, wgs84Validator) ? "WGS84" : "YKJ";
-			const coordinates = `${latlng[0]}:${latlng[1]}:${system}`;
-			const query = {...this.baseQuery, coordinates};
 
-			fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
-				return response.json();
-			}).then(feature => {
+			const convertCoordinates = validateLatLng(latlng, wgs84Validator) ?
+					new Promise(resolve =>
+						resolve({type: "Feature", geometry: {type: "Point", coordinates: latlng.map(parseFloat)}, properties: {}})
+				) : (
+					() => {
+						const system = validateLatLng(latlng, wgs84Validator) ? "WGS84" : "YKJ";
+						const coordinates = `${latlng[0]}:${latlng[1]}:${system}`;
+						const query = {...this.baseQuery, coordinates};
+						return fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
+							return response.json();
+						})}
+				)();
+
+			convertCoordinates.then(feature => {
 				const {geometry} = feature;
 
 				const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature, geometry.coordinates);

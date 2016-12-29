@@ -95,6 +95,7 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 	max-width: 230px;
+	max-height: 290px;
 }
 .laji-map .close {
 	margin-top: -10px;

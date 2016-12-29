@@ -32,6 +32,7 @@ const optionKeys = options.reduce((o, i) => {o[i] = true; return o;}, {});
 export default class LajiMap {
 	constructor(props) {
 		this._constructDictionary();
+		this.onSetLangHooks = [];
 
 		this.tileLayerName = TAUSTAKARTTA;
 		this.lang = "en";
@@ -450,6 +451,8 @@ export default class LajiMap {
 		});
 		removeHref("leaflet-control-layers-toggle");
 		removeHref("leaflet-contextmenu-item");
+
+		this.controlsInitialized = true;
 	}
 
 	_getDrawControl = () => {
@@ -741,9 +744,15 @@ export default class LajiMap {
 
 			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
 
+			if (this.controlsInitialized) {
+				this.setControlSettings(this.controlSettings);
+			}
+
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
 				this._updateContextMenuForLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
 			}
+
+			this.onSetLangHooks.forEach(hook => hook());
 		}
 	}
 
@@ -1458,25 +1467,55 @@ export default class LajiMap {
 		});
 	}
 
+	addTranslationHook = (elem, attr, translationKey) => {
+		const that = this;
+
+		function translate() {
+			const translation = (typeof translationKey === "function") ? translationKey() : that.translations[translationKey];
+
+			if (typeof elem[attr] === "function") {
+				elem[attr](translation);
+			} else {
+				elem[attr] = translation;
+			}
+		}
+
+		translate();
+		this.onSetLangHooks.push(translate);
+		return translate;
+	}
+
+	removeTranslationHook = (hook) => {
+		const index = this.onSetLangHooks.indexOf(hook);
+		if (index >= 0) {
+			this.onSetLangHooks.splice(index, 1);
+		}
+	}
+
 	openCoordinatesDialog = () => {
 		const that = this;
+		const translateHooks = [];
+
 		function close(e) {
 			e.preventDefault();
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
 			document.removeEventListener("keydown", onEscListener);
 			that.container.removeChild(container);
+			translateHooks.forEach(hook => {
+				that.removeTranslationHook(hook);
+			})
 		}
 
-		function createTextInput(labelTxt) {
+		function createTextInput(id, translationKey) {
 			const input = document.createElement("input");
 			input.setAttribute("type", "text");
-			input.id = `laji-map-${labelTxt}`;
+			input.id = `laji-map-${id}`;
 			input.className = "form-control";
 
 			const label = document.createElement("label");
 			label.setAttribute("for", input.id);
-			label.innerHTML = labelTxt;
+			translateHooks.push(that.addTranslationHook(label, "innerHTML", translationKey));
 
 			const row = document.createElement("div");
 			row.className = "form-group row";
@@ -1547,8 +1586,8 @@ export default class LajiMap {
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates panel panel-default panel-body";
 
-		const latLabelInput = createTextInput(translations.Latitude);
-		const lngLabelInput = createTextInput(translations.Longitude);
+		const latLabelInput = createTextInput("coordinate-input-lat", "Latitude");
+		const lngLabelInput = createTextInput("coordinate-input-lat", "Longitude");
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
 		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
 
@@ -1561,18 +1600,24 @@ export default class LajiMap {
 		const submitButton = document.createElement("button");
 		submitButton.setAttribute("type", "submit");
 		submitButton.className = "btn btn-block btn-info";
-		submitButton.innerHTML = translations.Add;
+		translateHooks.push(this.addTranslationHook(submitButton, "innerHTML", "Add"));
 		submitButton.setAttribute("disabled", "disabled");
 
 		let helpSpan = document.createElement("span");
 		helpSpan.className = "help-block";
-		const rectangleAllowed = that.controlSettings.draw.rectangle;
-		if (rectangleAllowed) helpSpan.innerHTML = that.translations.EnterYKJRectangle;
-		if (that.controlSettings.draw.marker) {
-			if (rectangleAllowed) helpSpan.innerHTML += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
-			else helpSpan.innerHTML = that.translations.EnterWgs84Coordinates;
+
+		function getHelpTxt() {
+			let help = "";
+			const rectangleAllowed = that.controlSettings.draw.rectangle;
+			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
+			if (that.controlSettings.draw.marker) {
+				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
+				else help = that.translations.EnterWgs84Coordinates;
+			}
+			help += ".";
+			return help;
 		}
-		helpSpan.innerHTML += ".";
+		translateHooks.push(this.addTranslationHook(helpSpan, "innerHTML", getHelpTxt));
 
 		let errorDiv = undefined;
 

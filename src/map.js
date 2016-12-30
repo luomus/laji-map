@@ -69,11 +69,12 @@ export default class LajiMap {
 	}
 
 	browserWarnings = () => {
+		if (this.browserWarned) return;
 		if ((this.controlSettings.draw.polygon ||this.controlSettings.draw.polyline) && browser && browser.name === "chrome" && browser.version &&
 			browser.version.split(".").length && browser.version.split(".")[0] >= 55) {
 			const warning = document.createElement("div");
 			warning.className = "alert alert-warning laji-map-warning";
-			warning.innerHTML = this.translations.ChromeWarning;
+			const hook = this.addTranslationHook(warning, "innerHTML", "ChromeWarning");
 
 
 			const closeButton = document.createElement("button");
@@ -82,11 +83,13 @@ export default class LajiMap {
 			closeButton.innerHTML = "✖";
 			closeButton.addEventListener("click", () => {
 				this.container.removeChild(warning);
+				this.removeTranslationHook(hook);
 			});
 
 			warning.appendChild(closeButton);
 			this.container.appendChild(warning);
 		}
+		this.browserWarned = true;
 	}
 
 	setOptions = (options) => {

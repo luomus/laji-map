@@ -1370,9 +1370,10 @@ export default class LajiMap {
 		}
 	}
 
-  _featureToLayer = (getFeatureStyle, dataIdx) => (feature, latlng) => {
+  _featureToLayer = (getFeatureStyle, dataIdx) => (feature) => {
 		let layer;
 		if (feature.geometry.type === "Point") {
+			const latlng = feature.geometry.coordinates.reverse();
 			const params = {feature, featureIdx: feature.properties.lajiMapIdx};
 			if (dataIdx !== undefined) params[dataIdx] = dataIdx;
 			layer = (feature.geometry.radius) ?
@@ -1644,15 +1645,14 @@ export default class LajiMap {
 		container.addEventListener("submit", e => {
 			e.preventDefault();
 
-			const latlng = [latInput.value, lngInput.value];
+			const latlng = [lngInput.value, latInput.value];
 
-			const convertCoordinates = validateLatLng(latlng, wgs84Validator) ?
+			const convertCoordinates = validateLatLng(latlng.reverse(), wgs84Validator) ?
 					new Promise(resolve =>
 						resolve({type: "Feature", geometry: {type: "Point", coordinates: latlng.map(parseFloat)}, properties: {}})
 				) : (
 					() => {
-						const system = validateLatLng(latlng, wgs84Validator) ? "WGS84" : "YKJ";
-						const coordinates = `${latlng[0]}:${latlng[1]}:${system}`;
+						const coordinates = `${latlng[0]}:${latlng[1]}:YKJ`;
 						const query = {...this.baseQuery, coordinates};
 						return fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
 							return response.json();
@@ -1662,10 +1662,10 @@ export default class LajiMap {
 			convertCoordinates.then(feature => {
 				const {geometry} = feature;
 
-				const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature, geometry.coordinates);
+				const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature);
 
 				this._onAdd(layer);
-				const center = (geometry.type === "Point") ? geometry.coordinates : layer.getBounds().getCenter();
+				const center = (geometry.type === "Point") ? geometry.coordinates.reverse() : layer.getBounds().getCenter();
 				this.map.setView(center);
 				if (geometry.type === "Point") {
 					if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);

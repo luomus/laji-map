@@ -1156,14 +1156,24 @@ export default class LajiMap {
 	}
 
 	_enchanceGeoJSON = (geoJSON, layer) => {
-		// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 		if (layer instanceof L.Circle) {
+			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
+
 			geoJSON.geometry.radius = layer.getRadius();
-		} else if  (layer instanceof L.Rectangle) {
-			const coordinates = geoJSON.geometry.coordinates[0];
+		} else if  (geoJSON.geometry.type === "Polygon") {
 			//If the coordinates are ordered counterclockwise, reverse them.
-			if (coordinates[0][0] < coordinates[1][0] || coordinates[0][1] < coordinates[1][1]) {
-				coordinates.reverse();
+
+			const coordinates = geoJSON.geometry.coordinates[0].slice(0);
+			coordinates.pop();
+
+			const isClockwise = coordinates.map((c, i) => {
+				const next = coordinates[i + 1];
+				if (next) return [c, next];
+			}).filter(c => c)
+				.reduce((sum, c) => sum + (c[1][0] + c[0][0]) * (c[1][1] - c[0][1]), 0) >= 0;
+
+			if (!isClockwise) {
+				geoJSON.geometry.coordinates[0].reverse();
 			}
 		}
 		return geoJSON;
@@ -1677,7 +1687,6 @@ export default class LajiMap {
 				}
 				close(e);
 			}).catch(response => {
-				console.error(response);
 				if (errorDiv) container.removeChild(errorDiv);
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";

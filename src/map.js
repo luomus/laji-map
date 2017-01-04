@@ -1373,10 +1373,15 @@ export default class LajiMap {
 		}
 	}
 
+	_reversePointCoords = (coords) => {
+		if (!coords || coords.length !== 2) throw new Error("Invalid point coordinates");
+		return [coords[1], coords[0]];
+	}
+
   _featureToLayer = (getFeatureStyle, dataIdx) => (feature) => {
 		let layer;
 		if (feature.geometry.type === "Point") {
-			const latlng = feature.geometry.coordinates.reverse();
+			const latlng = this._reversePointCoords(feature.geometry.coordinates);
 			const params = {feature, featureIdx: feature.properties.lajiMapIdx};
 			if (dataIdx !== undefined) params[dataIdx] = dataIdx;
 			layer = (feature.geometry.radius) ?
@@ -1648,36 +1653,31 @@ export default class LajiMap {
 		container.addEventListener("submit", e => {
 			e.preventDefault();
 
-			const latlng = [lngInput.value, latInput.value];
+			const latlng = [latInput.value, lngInput.value];
 
-			const convertCoordinates = validateLatLng(latlng.reverse(), wgs84Validator) ?
-					new Promise(resolve =>
-						resolve({type: "Feature", geometry: {type: "Point", coordinates: latlng.map(parseFloat)}, properties: {}})
-				) : (
-					() => {
-						const coordinates = `${latlng[0]}:${latlng[1]}:YKJ`;
-						const query = {...this.baseQuery, coordinates};
-						return fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
-							return response.json();
-						})}
-				)();
-
-			convertCoordinates.then(feature => {
-				const {geometry} = feature;
-
+			const system = validateLatLng(latlng, wgs84Validator) ? "WGS84" : "YKJ";
+			const coordinates = `${latlng[0]}:${latlng[1]}:${system}`;
+			const query = {...this.baseQuery, coordinates};
+			fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
+				return response.json();
+			}).then(feature => {
 				const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature);
+				const isMarker = layer instanceof L.Marker;
 
 				this._onAdd(layer);
-				const center = (geometry.type === "Point") ? geometry.coordinates.reverse() : layer.getBounds().getCenter();
+				const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
 				this.map.setView(center);
-				if (geometry.type === "Point") {
-					if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
-					else this.setNormalizedZoom(9);
+				if (isMarker) {
+					this.setNormalizedZoom(9);
+					//TODO: The thing below is crashing for some reason. I'm blaming leaflet 1 without further investigation.
+					// if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
+					// else this.setNormalizedZoom(9);
 				} else {
 					this.map.fitBounds(layer.getBounds());
 				}
 				close(e);
 			}).catch(response => {
+				console.error(response);
 				if (errorDiv) container.removeChild(errorDiv);
 				errorDiv = document.createElement("div");
 				errorDiv.className = "alert alert-danger";

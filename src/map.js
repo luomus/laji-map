@@ -6,9 +6,8 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import fetch from "isomorphic-fetch";
-import queryString from "querystring";
 import browser from "detect-browser";
+import proj4 from "proj4"
 
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";
@@ -57,6 +56,8 @@ export default class LajiMap {
 		if ([GOOGLE_SATELLITE, OPEN_STREET].includes(tileLayerName) && !props.hasOwnProperty("zoom")) {
 			this.zoom += 3;
 		}
+
+		proj4.defs("EPSG:2393", "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=3500000 +y_0=0 +ellps=intl +towgs84=-96.0617,-82.4278,-121.7535,4.80107,0.34543,-1.37646,1.4964 +units=m +no_defs");
 
 		this._initializeMap();
 		this.setLang(this.lang);
@@ -1559,7 +1560,7 @@ export default class LajiMap {
 			let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
 
 			if (charCode >= 48 && charCode <= 57) { // is a number
-				// The input cursor isn't necessary at the tail, but this validation works regardless.
+				// The input cursor isn't necessary at the EOL, but this validation works regardless.
 				inputValidate(e, input.value + String.fromCharCode(charCode));
 			}
 		}}
@@ -1613,7 +1614,7 @@ export default class LajiMap {
 		container.className = "laji-map-coordinates panel panel-default panel-body";
 
 		const latLabelInput = createTextInput("coordinate-input-lat", "Latitude");
-		const lngLabelInput = createTextInput("coordinate-input-lat", "Longitude");
+		const lngLabelInput = createTextInput("coordinate-input-lng", "Longitude");
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
 		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
 
@@ -1645,8 +1646,6 @@ export default class LajiMap {
 		}
 		translateHooks.push(this.addTranslationHook(helpSpan, "innerHTML", getHelpTxt));
 
-		let errorDiv = undefined;
-
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
 			let prevVal = "";
@@ -1667,39 +1666,66 @@ export default class LajiMap {
 			}
 		});
 
+		function toYKJFormat(coords) {
+			let strFormat = "" + coords;
+			while (strFormat.length < 7) {
+				strFormat = strFormat += "0";
+			}
+			return +strFormat;
+		}
+
+		function convert(latlng) {
+			return proj4("EPSG:2393", "WGS84", latlng.slice(0).reverse());
+		}
+
+
 		container.addEventListener("submit", e => {
 			e.preventDefault();
 
-			const latlng = [latInput.value, lngInput.value];
+			const latlngStr = [latInput.value, lngInput.value];
+			const latlng = latlngStr.map(parseFloat);
 
-			const system = validateLatLng(latlng, wgs84Validator) ? "WGS84" : "YKJ";
-			const coordinates = `${latlng[0]}:${latlng[1]}:${system}`;
-			const query = {...this.baseQuery, coordinates};
-			fetch(`${this.baseUri}/coordinates/toGeoJson?${queryString.stringify(query)}`).then(response => {
-				return response.json();
-			}).then(feature => {
-				const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature);
-				const isMarker = layer instanceof L.Marker;
+			const isYKJ = !validateLatLng(latlngStr, wgs84Validator);
 
-				this._onAdd(layer);
-				const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
-				this.map.setView(center);
-				if (isMarker) {
-					this.setNormalizedZoom(9);
-					//TODO: The thing below is crashing for some reason. I'm blaming leaflet 1 without further investigation.
-					// if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
-					// else this.setNormalizedZoom(9);
-				} else {
-					this.map.fitBounds(layer.getBounds());
-				}
-				close(e);
-			}).catch(response => {
-				if (errorDiv) container.removeChild(errorDiv);
-				errorDiv = document.createElement("div");
-				errorDiv.className = "alert alert-danger";
-				errorDiv.innerHTML = this.translations.errorMsg;
-				container.insertBefore(errorDiv, latLabelInput);
-			});
+			let geometry = { type: "Point",
+				coordinates: (isYKJ ? convert(latlng.map(toYKJFormat)) : latlng.reverse())
+			};
+			const feature = {
+				type: "Feature",
+				geometry: geometry,
+				properties: {}
+			};
+
+			if (isYKJ && latlngStr[0].length < 7) {
+				const latStart = toYKJFormat(latlng[0]);
+				const latEnd = toYKJFormat(latlng[0] + 1);
+
+				const lonStart = toYKJFormat(latlng[1]);
+				const lonEnd = toYKJFormat(latlng[1] + 1);
+
+				geometry.type = 'Polygon';
+				geometry.coordinates = [[
+					[latStart, lonStart],
+					[latStart, lonEnd],
+					[latEnd, lonEnd],
+					[latEnd, lonStart],
+					[latStart, lonStart]
+				].map(convert)];
+			}
+
+			const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature);
+			const isMarker = layer instanceof L.Marker;
+
+			this._onAdd(layer);
+			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
+			this.map.setView(center, this.map.zoom, {animate: false});
+			if (isMarker) {
+				if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
+				else this.setNormalizedZoom(9);
+			} else {
+				this.map.fitBounds(layer.getBounds());
+			}
+			close(e);
 		});
 
 		this.blockerElem.addEventListener("click", close);

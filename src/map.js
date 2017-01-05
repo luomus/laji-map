@@ -8,6 +8,7 @@ import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import browser from "detect-browser";
 import proj4 from "proj4"
+import { reproject, reverse } from "reproject";
 
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";
@@ -39,7 +40,7 @@ export default class LajiMap {
 		this.center =  [65, 26];
 		this.zoom = 2;
 		this.data = [];
-		this.drawData = {featureCollection: {type: "featureCollection", features: []}};
+		this.drawData = {featureCollection: {type: "FeatureCollection", features: []}};
 		this.activeIdx = 0;
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
@@ -372,6 +373,7 @@ export default class LajiMap {
 				search: true
 			},
 			coordinateInput: true,
+			drawCopy: true,
 			scale: true
 		};
 		for (let setting in controlSettings) {
@@ -398,8 +400,11 @@ export default class LajiMap {
 						() => (this.controlSettings.draw === true ||
 						       (typeof this.controlSettings.draw === "object" &&
 						        ["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})))
+				],
+				drawCopy: [
+					"draw"
 				]
-		}
+		};
 
 		const {controlSettings} = this;
 
@@ -428,6 +433,7 @@ export default class LajiMap {
 		zoom: undefined,
 		draw: undefined,
 		coordinateInput: undefined,
+		drawCopy: undefined,
 		scale: undefined
 	}
 
@@ -441,6 +447,7 @@ export default class LajiMap {
 		this._addControl("location", this._getLocationControl());
 		this._addControl("draw", this._getDrawControl());
 		this._addControl("coordinateInput", this._getCoordinateInputControl());
+		this._addControl("drawCopy", this._getDrawCopyControl());
 		this._addControl("zoom", this._getZoomControl());
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
 
@@ -572,13 +579,102 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				that._createControlItem(this, container, `laji-map-coordinate-input-glyph`,
-					that.translations.AddFeatureByCoordinates, () => that.openCoordinatesDialog());
+				that._createControlItem(this, container, "laji-map-coordinate-input-glyph",
+					that.translations.AddFeatureByCoordinates, that.openCoordinatesDialog);
 				return container;
 			}
 		});
 
 		return new CoordinateInputControl();
+	}
+
+	_getDrawCopyControl = () => {
+		const that = this;
+		const DrawOutControl = L.Control.extend({
+			options: {
+				position: "topright"
+			},
+
+			onAdd: function(map) {
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
+				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
+					that.translations.CopyCoordinates, () => {
+						const container = document.createElement("div");
+
+						const input = document.createElement("textarea");
+						input.setAttribute("rows", 10);
+						input.setAttribute("cols", 50);
+						input.className = "form-control";
+						input.addEventListener("focus", input.select);
+
+						const features = that.drawData.featureCollection.features.map(that.formatFeatureOut);
+						const originalGeoJSON = {...that.drawData.featureCollection, features};
+
+						function updateGeoJSON(geoJSON) {
+							input.value = JSON.stringify(geoJSON, undefined, 2);
+							input.focus();
+							input.select();
+						}
+
+						function convertRecursively(obj, from, to) {
+							if (typeof obj === "object" && obj !== null) {
+								Object.keys(obj).forEach(key => {
+									if (key === "coordinates") {
+										obj[key] = Array.isArray(obj[key][0]) ?
+											[obj[key][0].map(coords => that.convert(coords, from, to))] :
+											that.convert(obj[key], from, to);
+									}
+									else convertRecursively(obj[key], from, to);
+								})
+							}
+							return obj;
+						}
+
+						let activeProj = "WGS84";
+						let activeTab = undefined;
+
+						const tabs = document.createElement("ul");
+						tabs.className = "nav nav-tabs";
+
+						[
+							{name: "WGS84", proj: "WGS84"},
+							{name: "YKJ", proj: "EPSG:2393"},
+							{name: "EUREF", proj: "EPSG:3067"}
+						].map(({name, proj}) => {
+							const tab = document.createElement("li");
+							const text = document.createElement("a");
+							if (proj === activeProj) {
+								activeTab = tab;
+								tab.className = "active";
+							}
+							text.innerHTML = name;
+							tab.appendChild(text);
+							tab.addEventListener("click", () => {
+								const reprojected = convertRecursively(originalGeoJSON, "WGS84", proj);
+								console.log(reprojected);
+
+								updateGeoJSON(reprojected);
+
+								activeProj = proj;
+								activeTab.className = "";
+								activeTab = tab;
+								tab.className = "active";
+							});
+							return tab;
+						}).forEach(tab => tabs.appendChild(tab));
+
+						container.appendChild(tabs);
+						container.appendChild(input);
+
+						that._showDialog(container);
+						updateGeoJSON(originalGeoJSON);
+					});
+				return container;
+			}
+		});
+
+		return new DrawOutControl();
+
 	}
 
 	_getLayerControl = () => {
@@ -767,7 +863,29 @@ export default class LajiMap {
 		}
 	}
 
-	formatFeatureOut = (feature) => {
+	formatFeatureOut = (feature, layer) => {
+
+		if (layer && layer instanceof L.Circle) {
+			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
+
+			feature.geometry.radius = layer.getRadius();
+		} else if  (feature.geometry.type === "Polygon") {
+			//If the coordinates are ordered counterclockwise, reverse them.
+
+			const coordinates = feature.geometry.coordinates[0].slice(0);
+			coordinates.pop();
+
+			const isClockwise = coordinates.map((c, i) => {
+					const next = coordinates[i + 1];
+					if (next) return [c, next];
+				}).filter(c => c)
+					.reduce((sum, c) => sum + (c[1][0] + c[0][0]) * (c[1][1] - c[0][1]), 0) >= 0;
+
+			if (!isClockwise) {
+				feature.geometry.coordinates[0].reverse();
+			}
+		}
+
 		const {lajiMapIdx, ...properties} = feature.properties;
 		return {...feature, properties};
 	}
@@ -786,7 +904,7 @@ export default class LajiMap {
 	}
 
 	cloneDataItem = (dataItem) => {
-		let featureCollection = {type: "featureCollection"};
+		let featureCollection = {type: "FeatureCollection"};
 		featureCollection.features = this.cloneFeatures(dataItem.featureCollection.features);
 		return {getFeatureStyle: this._getDefaultDataStyle, getClusterStyle: this._getDefaultDataClusterStyle, ...dataItem, featureCollection};
 	}
@@ -844,7 +962,7 @@ export default class LajiMap {
 			featureCollection: {features: []}
 		};
 
-		const featureCollection = {type: "featureCollection"};
+		const featureCollection = {type: "FeatureCollection"};
 		featureCollection.features = this.cloneFeatures(data.featureCollection.features);
 		this.drawData = (data) ? {
 			getFeatureStyle: this._getDefaultDrawStyle,
@@ -1101,7 +1219,7 @@ export default class LajiMap {
 
 		let contextmenuItems = [{
 			text: translations ? translations.DeleteFeature : "",
-			callback: () => this._onDelete(this.idxsToIds[idx]),
+			callback: () => {this._onDelete(this.idxsToIds[idx])},
 			iconCls: "glyphicon glyphicon-trash"
 		}];
 
@@ -1163,38 +1281,14 @@ export default class LajiMap {
 		if (this.onChange) this.onChange(e);
 	}
 
-	_enchanceGeoJSON = (geoJSON, layer) => {
-		if (layer instanceof L.Circle) {
-			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
-
-			geoJSON.geometry.radius = layer.getRadius();
-		} else if  (geoJSON.geometry.type === "Polygon") {
-			//If the coordinates are ordered counterclockwise, reverse them.
-
-			const coordinates = geoJSON.geometry.coordinates[0].slice(0);
-			coordinates.pop();
-
-			const isClockwise = coordinates.map((c, i) => {
-				const next = coordinates[i + 1];
-				if (next) return [c, next];
-			}).filter(c => c)
-				.reduce((sum, c) => sum + (c[1][0] + c[0][0]) * (c[1][1] - c[0][1]), 0) >= 0;
-
-			if (!isClockwise) {
-				geoJSON.geometry.coordinates[0].reverse();
-			}
-		}
-		return geoJSON;
-	}
-
 	_onAdd = (layer) => {
 		if (layer instanceof L.Marker) layer.setIcon(this._createIcon());
 
 		const {featureCollection: {features}} = this.drawData;
 
 		const idx = features.length;
-		const newFeature = this._enchanceGeoJSON(this._initializeDrawLayer(layer, features.length).toGeoJSON(), layer);
-		newFeature.properties.lajiMapIdx = idx;
+		const feature = this.formatFeatureOut(this._initializeDrawLayer(layer, features.length).toGeoJSON(), layer);
+		feature.properties.lajiMapIdx = idx;
 		const id = layer._leaflet_id;
 		this.idsToIdxs[id] = idx;
 		this.idxsToIds[idx] = id;
@@ -1203,12 +1297,12 @@ export default class LajiMap {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
-		features.push(newFeature);
+		features.push(feature);
 
 		const event = [
 			{
 				type: "create",
-				feature: this.formatFeatureOut(newFeature)
+				feature
 			},
 			this._getOnActiveChangeEvent(features.length - 1)
 		];
@@ -1219,10 +1313,10 @@ export default class LajiMap {
 	_onEdit = (data) => {
 		const eventData = {};
 		for (let id in data) {
-			const geoJson = this._enchanceGeoJSON(data[id].toGeoJSON(), data[id]);
+			const feature = this.formatFeatureOut(data[id].toGeoJSON(), data[id]);
 			const idx = this.idsToIdxs[id];
-			eventData[idx] = this.formatFeatureOut(geoJson);
-			this.drawData.featureCollection.features[idx] = this.formatFeatureIn(geoJson, idx);
+			eventData[idx] = feature;
+			this.drawData.featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
 		}
 
 		this._triggerEvent({
@@ -1519,20 +1613,15 @@ export default class LajiMap {
 		}
 	}
 
+	convert = (latlng, from, to) => {
+		const converted = proj4(from, to, latlng.map(c => +c).slice(0).reverse());
+		return (to === "WGS84") ? converted :  converted.map(c => parseInt(c));
+	}
+
+
 	openCoordinatesDialog = () => {
 		const that = this;
 		const translateHooks = [];
-
-		function close(e) {
-			e.preventDefault();
-			that.blockerElem.style.display = "";
-			that.blockerElem.removeEventListener("click", close);
-			document.removeEventListener("keydown", onEscListener);
-			that.container.removeChild(container);
-			translateHooks.forEach(hook => {
-				that.removeTranslationHook(hook);
-			})
-		}
 
 		function createTextInput(id, translationKey) {
 			const input = document.createElement("input");
@@ -1611,18 +1700,12 @@ export default class LajiMap {
 
 		const {translations} = this;
 		const container = document.createElement("form");
-		container.className = "laji-map-coordinates panel panel-default panel-body";
+		container.className = "laji-map-coordinates";
 
 		const latLabelInput = createTextInput("coordinate-input-lat", "Latitude");
 		const lngLabelInput = createTextInput("coordinate-input-lng", "Longitude");
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
 		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
-
-		const closeButton = document.createElement("button");
-		closeButton.setAttribute("type", "button");
-		closeButton.className = "close";
-		closeButton.innerHTML = "✖";
-		closeButton.addEventListener("click", close);
 
 		const submitButton = document.createElement("button");
 		submitButton.setAttribute("type", "submit");
@@ -1674,10 +1757,9 @@ export default class LajiMap {
 			return +strFormat;
 		}
 
-		function convert(latlng) {
-			return proj4("EPSG:2393", "WGS84", latlng.slice(0).reverse());
+		function convert(coords) {
+			return that.convert(coords, "EPSG:2393", "WGS84");
 		}
-
 
 		container.addEventListener("submit", e => {
 			e.preventDefault();
@@ -1725,10 +1807,44 @@ export default class LajiMap {
 			} else {
 				this.map.fitBounds(layer.getBounds());
 			}
-			close(e);
+			this._closeDialog(e);
 		});
 
-		this.blockerElem.addEventListener("click", close);
+		container.appendChild(helpSpan);
+		container.appendChild(latLabelInput);
+		container.appendChild(lngLabelInput);
+		container.appendChild(submitButton);
+
+		this._showDialog(container, () => {
+				translateHooks.forEach(hook => {
+					that.removeTranslationHook(hook);
+				})
+		});
+
+		latInput.focus();
+	}
+
+	_showDialog = (container, onClose) => {
+		const closeButton = document.createElement("button");
+		closeButton.setAttribute("type", "button");
+		closeButton.className = "close";
+		closeButton.innerHTML = "✖";
+		closeButton.addEventListener("click", close);
+
+		const _container = document.createElement("div");
+		_container.className = "laji-map-dialog panel panel-default panel-body";
+		_container.appendChild(closeButton);
+		_container.appendChild(container);
+
+		const that = this;
+		function close(e) {
+			if (e) e.preventDefault();
+			that.blockerElem.style.display = "";
+			that.blockerElem.removeEventListener("click", close);
+			document.removeEventListener("keydown", onEscListener);
+			that.container.removeChild(_container);
+			if (onClose) onClose();
+		}
 
 		function onEscListener(e) {
 			e = e || window.event;
@@ -1739,22 +1855,18 @@ export default class LajiMap {
 				isEscape = (e.keyCode == 27);
 			}
 			if (isEscape) {
-				if ([latInput, lngInput].every(input => {return document.activeElement !== input})) close(e);
+				close(e);
+				// if ([latInput, lngInput].every(input => {return document.activeElement !== input})) close(e);
 			}
 		}
 
+		this.blockerElem.addEventListener("click", close);
 		document.addEventListener("keydown", onEscListener);
 
-		container.appendChild(closeButton);
-		container.appendChild(helpSpan);
-		container.appendChild(latLabelInput);
-		container.appendChild(lngLabelInput);
-		container.appendChild(submitButton);
-
 		this.blockerElem.style.display = "block";
-		this.container.appendChild(container);
+		this.container.appendChild(_container);
 
-		latInput.focus();
+		this._closeDialog = close;
 	}
 
 	triggerDrawing = (featureType) => this.controls.draw._toolbars.draw._modes[featureType].handler.enable()

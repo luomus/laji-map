@@ -279,4 +279,9 @@
 		en: "Finnish Uniform Grid",
 		sv: "YKJ ruudukko (odottaa käännöstä)"
 	},
+	copyCoordinates: {
+		fi: "Kopioi koordinaatit",
+		en: "Copy coordinates",
+		sv: "??"
+	},
 }

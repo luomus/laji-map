@@ -52,6 +52,7 @@
     "leaflet-mml-layers": "^2.0.1",
     "leaflet.markercluster": "^1.0.0",
     "proj4": "^2.3.15",
-    "proj4leaflet": "git+https://git@github.com/kartena/Proj4Leaflet.git#3019d278b5d3e42a72b65142db2d5f0b06039b53"
+    "proj4leaflet": "git+https://git@github.com/kartena/Proj4Leaflet.git#3019d278b5d3e42a72b65142db2d5f0b06039b53",
+    "reproject": "^1.1.1"
   }
 }

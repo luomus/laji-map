@@ -88,14 +88,12 @@
 	opacity: 0.3;
 	z-index: 1000;
 }
-.laji-map .laji-map-coordinates {
+.laji-map .laji-map-dialog {
 	position: absolute;
 	z-index: 1001;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	max-width: 230px;
-	max-height: 290px;
 }
 .laji-map .close {
 	margin-top: -10px;
@@ -103,6 +101,9 @@
 	font-size: 14px;
 }
 
+.laji-map .laji-map-coordinates {
+	max-width: 230px;
+}
 .laji-map .laji-map-coordinate-input-glyph:before {
 	content: "XY";
 	font-weight: bold;

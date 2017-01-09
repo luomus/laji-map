@@ -126,7 +126,7 @@ class App {
 			tooltipOptions: {
 				permanent: true
 			},
-			cluster: true
+			cluster: true,
 		}
 
 		this.activeIdx = 0;
@@ -147,6 +147,9 @@ class App {
 				drawCopy: true,
 				drawClear: true,
 				coordinates: true
+			},
+			getDrawingDraftStyle: () => {
+				return {color: "#ff00ff", fillColor: '#00ff00', opacity: 0.8, fillOpacity: 0.5}
 			}
 		});
 

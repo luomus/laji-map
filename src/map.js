@@ -1622,7 +1622,7 @@ export default class LajiMap {
 	}
 
 	_getDefaultDrawClusterStyle = () => {
-		return {color: NORMAL_COLOR, opacity: 1};
+		return {color: (this.drawData.getFeatureStyle || this._getDefaultDrawStyle)({}).color, opacity: 1};
 	}
 
 	_getDefaultDataStyle = () => {

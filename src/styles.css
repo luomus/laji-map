@@ -22,6 +22,10 @@
 	text-align: center;
 }
 
+.laji-map .leaflet-control a {
+	color: #464646;
+}
+
 .laji-map .leaflet-right .leaflet-control {
 	float: none;
 }

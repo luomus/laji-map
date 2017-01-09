@@ -134,8 +134,8 @@ class App {
 		this.map = new LajiMap({
 			rootElem: document.getElementById("root"),
 			drawData: this.drawData,
-			data: this.data,
-			activeIdx: this.activeIdx,
+			// data: this.data,
+			// activeIdx: this.activeIdx,
 			onChange: this.onMapChange,
 			lang: "fi",
 			popupOnHover: true,
@@ -145,7 +145,8 @@ class App {
 			featurePopupOffset: 5,
 			controlSettings: {
 				drawCopy: true,
-				drawClear: true
+				drawClear: true,
+				coordinates: true
 			}
 		});
 

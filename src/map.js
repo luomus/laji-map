@@ -377,6 +377,7 @@ export default class LajiMap {
 			coordinateInput: true,
 			drawCopy: false,
 			drawClear: false,
+			coordinates: false,
 			scale: true
 		};
 		for (let setting in controlSettings) {
@@ -441,6 +442,7 @@ export default class LajiMap {
 		coordinateInput: undefined,
 		drawCopy: undefined,
 		drawClear: undefined,
+		coordinates: undefined,
 		scale: undefined
 	}
 
@@ -456,8 +458,9 @@ export default class LajiMap {
 		this._addControl("coordinateInput", this._getCoordinateInputControl());
 		this._addControl("drawCopy", this._getDrawCopyControl());
 		this._addControl("drawClear", this._getDrawClearControl());
-		this._addControl("zoom", this._getZoomControl());
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
+		this._addControl("coordinates", this._getCoordinatesControl());
+		this._addControl("zoom", this._getZoomControl());
 
 		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
@@ -655,7 +658,7 @@ export default class LajiMap {
 						[
 							{name: "WGS84", proj: "WGS84"},
 							{name: "YKJ", proj: "EPSG:2393"},
-							{name: "EUREF", proj: "EPSG:3067"}
+							{name: "ETRS", proj: "EPSG:3067"}
 						].map(({name, proj}) => {
 							const tab = document.createElement("li");
 							const text = document.createElement("a");
@@ -733,6 +736,67 @@ export default class LajiMap {
 
 		return new DrawClearControl();
 
+	}
+
+	_getCoordinatesControl = () => {
+		const that = this;
+		const CoordinateControl = L.Control.extend({
+			options: {
+				position: "bottomleft"
+			},
+
+			onAdd: function(map) {
+				const container = L.DomUtil.create(
+					"div",
+					"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
+				);
+
+				const table = L.DomUtil.create("table", undefined, container);
+				let visible = false;
+				container.style.display = "none";
+
+				const coordinateTypes = [
+					{name: "WGS84"},
+					{name: "YKJ"},
+					{name: "ETRS"}
+				];
+
+				coordinateTypes.forEach(coordinateType => {
+					const row = L.DomUtil.create("tr", undefined, table);
+					coordinateType.nameCell = L.DomUtil.create("td", undefined, row);
+					coordinateType.coordsCell = L.DomUtil.create("td", undefined, row);
+				});
+
+				that.maps.forEach(map => {
+					map.on("mousemove", ({latlng}) => {
+						if (!visible) {
+							container.style.display = "block";
+							visible = true;
+						}
+
+						const {lat, lng} = latlng;
+						const wgs84 = [lat, lng].map(c => c.toFixed(6));
+						const ykj = that.convert([lat, lng], "WGS84", "EPSG:2393").reverse();
+						const euref = that.convert([lat, lng], "WGS84", "EPSG:3067").reverse();
+
+						coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
+							let coords = wgs84;
+							if (name === "YKJ") coords = ykj;
+							else if (name === "ETRS") coords = euref;
+							nameCell.innerHTML = `<strong>${name}:</strong>`;
+							coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
+						});
+					}).on("mouseout", () => {
+						container.style.display = "none";
+						visible = false;
+					})
+				});
+
+				return container;
+			}
+		});
+
+		return new CoordinateControl();
 	}
 
 	_getLayerControl = () => {

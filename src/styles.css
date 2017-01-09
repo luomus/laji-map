@@ -19,7 +19,6 @@
 .laji-map .laji-map-control {
 	background: white;
 	font-size: 14px;
-	text-align: center;
 }
 
 .laji-map .leaflet-control a {
@@ -125,4 +124,12 @@
 	top: -2.25em;
 	position: relative;
 	margin-top: 0px;
+}
+
+.laji-map .laji-map-coordinates-control {
+	padding: 4px;
+	font-size: 11px;
+}
+.laji-map .laji-map-coordinates-control table tr td:first-child {
+	padding-right: 4px;
 }

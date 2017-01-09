@@ -8,7 +8,6 @@ import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import browser from "detect-browser";
 import proj4 from "proj4"
-import { reproject, reverse } from "reproject";
 
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";
@@ -28,6 +27,9 @@ const options = ["rootElem", "locate", "center", "zoom", "lang", "onChange", "on
 	"onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"];
 
 const optionKeys = options.reduce((o, i) => {o[i] = true; return o;}, {});
+
+const EPSG3067String = "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
+const EPSG2393String = "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=3500000 +y_0=0 +ellps=intl +towgs84=-96.0617,-82.4278,-121.7535,4.80107,0.34543,-1.37646,1.4964 +units=m +no_defs";
 
 export default class LajiMap {
 	constructor(props) {
@@ -58,7 +60,7 @@ export default class LajiMap {
 			this.zoom += 3;
 		}
 
-		proj4.defs("EPSG:2393", "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=3500000 +y_0=0 +ellps=intl +towgs84=-96.0617,-82.4278,-121.7535,4.80107,0.34543,-1.37646,1.4964 +units=m +no_defs");
+		proj4.defs("EPSG:2393", EPSG2393String);
 
 		this._initializeMap();
 		this.setLang(this.lang);
@@ -373,16 +375,19 @@ export default class LajiMap {
 				search: true
 			},
 			coordinateInput: true,
-			drawCopy: true,
+			drawCopy: false,
 			scale: true
 		};
 		for (let setting in controlSettings) {
 			const oldSetting = this.controlSettings[setting];
 			const newSetting = controlSettings[setting];
+			console.log(setting);
+			console.log(newSetting);
 			this.controlSettings[setting] = (typeof newSetting === "object") ?
 			{...oldSetting, ...newSetting} :
 				newSetting;
 		}
+		console.log(this.controlSettings);
 	}
 
 	setControlSettings = (controlSettings) => {
@@ -590,6 +595,8 @@ export default class LajiMap {
 
 	_getDrawCopyControl = () => {
 		const that = this;
+
+
 		const DrawOutControl = L.Control.extend({
 			options: {
 				position: "topright"
@@ -597,13 +604,18 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
-					that.translations.CopyCoordinates, () => {
+				that._createControlItem(
+					this,
+					container,
+					"glyphicon glyphicon-floppy-save",
+					that.translations.CopyCoordinates,
+					() => {
 						const container = document.createElement("div");
 
 						const input = document.createElement("textarea");
 						input.setAttribute("rows", 10);
 						input.setAttribute("cols", 50);
+						input.setAttribute("readonly", "readonly");
 						input.className = "form-control";
 						input.addEventListener("focus", input.select);
 
@@ -616,13 +628,14 @@ export default class LajiMap {
 							input.select();
 						}
 
+						// Must be called with cloned object, since this modifies the given object!
 						function convertRecursively(obj, from, to) {
 							if (typeof obj === "object" && obj !== null) {
 								Object.keys(obj).forEach(key => {
 									if (key === "coordinates") {
 										obj[key] = Array.isArray(obj[key][0]) ?
-											[obj[key][0].map(coords => that.convert(coords, from, to))] :
-											that.convert(obj[key], from, to);
+											[obj[key][0].map(coords => that.convert(coords.slice(0).reverse(), from, to))] :
+											that.convert(obj[key].slice(0).reverse(), from, to);
 									}
 									else convertRecursively(obj[key], from, to);
 								})
@@ -643,17 +656,34 @@ export default class LajiMap {
 						].map(({name, proj}) => {
 							const tab = document.createElement("li");
 							const text = document.createElement("a");
+
 							if (proj === activeProj) {
 								activeTab = tab;
 								tab.className = "active";
 							}
+
 							text.innerHTML = name;
 							tab.appendChild(text);
-							tab.addEventListener("click", () => {
-								const reprojected = convertRecursively(originalGeoJSON, "WGS84", proj);
-								console.log(reprojected);
 
+							const isWGS84 = proj === "WGS84";
+
+							tab.addEventListener("click", () => {
+								const reprojected = isWGS84 ?
+									originalGeoJSON :
+									convertRecursively(JSON.parse(JSON.stringify(originalGeoJSON)), "WGS84", proj);
+
+								if (!isWGS84) {
+									reprojected.crs = {
+										type: proj,
+										properties: {
+											[proj]: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
+										}
+									}
+								}
+
+								const {scrollTop} = input;
 								updateGeoJSON(reprojected);
+								input.scrollTop = scrollTop;
 
 								activeProj = proj;
 								activeTab.className = "";
@@ -668,13 +698,13 @@ export default class LajiMap {
 
 						that._showDialog(container);
 						updateGeoJSON(originalGeoJSON);
-					});
+					}
+				);
 				return container;
 			}
 		});
 
 		return new DrawOutControl();
-
 	}
 
 	_getLayerControl = () => {
@@ -1615,7 +1645,7 @@ export default class LajiMap {
 
 	convert = (latlng, from, to) => {
 		const converted = proj4(from, to, latlng.map(c => +c).slice(0).reverse());
-		return (to === "WGS84") ? converted :  converted.map(c => parseInt(c));
+		return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 	}
 
 

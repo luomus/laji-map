@@ -68,6 +68,7 @@ export default class LajiMap {
 		this.setDrawData(this.drawData);
 		this._initializeMapEvents();
 		this._initializeMapControls();
+		this._updateContextMenu();
 
 		this.browserWarnings();
 	}
@@ -452,6 +453,27 @@ export default class LajiMap {
 			if (control) this.map.removeControl(control);
 		});
 
+		this.controlItems = {
+			coordinateInput: {
+				name: "coordinateInput",
+				text: this.translations.AddFeatureByCoordinates,
+				iconCls: "laji-map-coordinate-input-glyph",
+				callback: this.openCoordinatesDialog
+			},
+			drawCopy: {
+				name: "drawCopy",
+				text: this.translations.CopyDrawnFeatures,
+				iconCls: "glyphicon glyphicon-floppy-save",
+				callback: this.openDrawCopyDialog
+			},
+			drawClear: {
+				name: "drawClear",
+				text: this.translations.ClearMap,
+				iconCls: "glyphicon glyphicon-trash",
+				callback: this.clearDrawData
+			}
+		}
+
 		this._addControl("layer", this._getLayerControl());
 		this._addControl("location", this._getLocationControl());
 		this._addControl("draw", this._getDrawControl());
@@ -587,11 +609,10 @@ export default class LajiMap {
 			options: {
 				position: "topright"
 			},
-
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				that._createControlItem(this, container, "laji-map-coordinate-input-glyph",
-					that.translations.AddFeatureByCoordinates, that.openCoordinatesDialog);
+				const {iconCls, text, callback} = that.controlItems.coordinateInput;
+				that._createControlItem(this, container, iconCls, text, callback);
 				return container;
 			}
 		});
@@ -610,102 +631,8 @@ export default class LajiMap {
 
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-				that._createControlItem(
-					this,
-					container,
-					"glyphicon glyphicon-floppy-save",
-					that.translations.CopyCoordinates,
-					() => {
-						const container = document.createElement("div");
-
-						const input = document.createElement("textarea");
-						input.setAttribute("rows", 10);
-						input.setAttribute("cols", 50);
-						input.setAttribute("readonly", "readonly");
-						input.className = "form-control";
-						input.addEventListener("focus", input.select);
-
-						const features = that.drawData.featureCollection.features.map(that.formatFeatureOut);
-						const originalGeoJSON = {...that.drawData.featureCollection, features};
-
-						function updateGeoJSON(geoJSON) {
-							input.value = JSON.stringify(geoJSON, undefined, 2);
-							input.focus();
-							input.select();
-						}
-
-						// Must be called with cloned object, since this modifies the given object!
-						function convertRecursively(obj, from, to) {
-							if (typeof obj === "object" && obj !== null) {
-								Object.keys(obj).forEach(key => {
-									if (key === "coordinates") {
-										obj[key] = Array.isArray(obj[key][0]) ?
-											[obj[key][0].map(coords => that.convert(coords.slice(0).reverse(), from, to))] :
-											that.convert(obj[key].slice(0).reverse(), from, to);
-									}
-									else convertRecursively(obj[key], from, to);
-								})
-							}
-							return obj;
-						}
-
-						let activeProj = "WGS84";
-						let activeTab = undefined;
-
-						const tabs = document.createElement("ul");
-						tabs.className = "nav nav-tabs";
-
-						[
-							{name: "WGS84", proj: "WGS84"},
-							{name: "YKJ", proj: "EPSG:2393"},
-							{name: "ETRS", proj: "EPSG:3067"}
-						].map(({name, proj}) => {
-							const tab = document.createElement("li");
-							const text = document.createElement("a");
-
-							if (proj === activeProj) {
-								activeTab = tab;
-								tab.className = "active";
-							}
-
-							text.innerHTML = name;
-							tab.appendChild(text);
-
-							const isWGS84 = proj === "WGS84";
-
-							tab.addEventListener("click", () => {
-								const reprojected = isWGS84 ?
-									originalGeoJSON :
-									convertRecursively(JSON.parse(JSON.stringify(originalGeoJSON)), "WGS84", proj);
-
-								if (!isWGS84) {
-									reprojected.crs = {
-										type: proj,
-										properties: {
-											[proj]: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
-										}
-									}
-								}
-
-								const {scrollTop} = input;
-								updateGeoJSON(reprojected);
-								input.scrollTop = scrollTop;
-
-								activeProj = proj;
-								activeTab.className = "";
-								activeTab = tab;
-								tab.className = "active";
-							});
-							return tab;
-						}).forEach(tab => tabs.appendChild(tab));
-
-						container.appendChild(tabs);
-						container.appendChild(input);
-
-						that._showDialog(container);
-						updateGeoJSON(originalGeoJSON);
-					}
-				);
+				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
+					that.translations.CopyDrawnFeatures, that.openDrawCopyDialog);
 				return container;
 			}
 		});
@@ -728,7 +655,7 @@ export default class LajiMap {
 					container,
 					"glyphicon glyphicon-trash",
 					that.translations.ClearMap,
-					() => {that.setDrawData({...this.drawData, featureCollection: {type: "FeatureCollection", features: []}})}
+					that.clearDrawData
 				);
 				return container;
 			}
@@ -923,14 +850,22 @@ export default class LajiMap {
 				}
 			});
 
-			if (this._controlIsAllowed("coordinateInput")) {
-				map.contextmenu.addItem("-");
-				map.contextmenu.addItem({
-					text: this.translations.AddFeatureByCoordinates,
-					iconCls: "laji-map-coordinate-input-glyph",
-					callback: this.openCoordinatesDialog
-				})
-			}
+			if (!this.controlItems) return;
+
+			let lineAdded = false;
+			[
+				this.controlItems.coordinateInput,
+				this.controlItems.drawCopy,
+				this.controlItems.drawClear
+			].forEach(control => {
+					if (this._controlIsAllowed(control.name)) {
+						if (!lineAdded) {
+							map.contextmenu.addItem("-");
+							lineAdded = true;
+						}
+						map.contextmenu.addItem(control);
+					}
+			});
 		});
 	}
 
@@ -1117,6 +1052,10 @@ export default class LajiMap {
 		drawLayerForMap.addTo(this.map);
 		this._resetIds();
 		this.setActive(this.activeIdx);
+	}
+
+	clearDrawData = () => {
+		this.setDrawData({...this.drawData, featureCollection: {type: "FeatureCollection", features: []}});
 	}
 
  	_createIcon = (options = {}) => {
@@ -1944,6 +1883,99 @@ export default class LajiMap {
 		});
 
 		latInput.focus();
+	}
+
+	openDrawCopyDialog = () => {
+		const container = document.createElement("div");
+
+		const input = document.createElement("textarea");
+		input.setAttribute("rows", 10);
+		input.setAttribute("cols", 50);
+		input.setAttribute("readonly", "readonly");
+		input.className = "form-control";
+		input.addEventListener("focus", input.select);
+
+		const features = this.drawData.featureCollection.features.map(this.formatFeatureOut);
+		const originalGeoJSON = {...this.drawData.featureCollection, features};
+
+		function updateGeoJSON(geoJSON) {
+			input.value = JSON.stringify(geoJSON, undefined, 2);
+			input.focus();
+			input.select();
+		}
+
+		const that = this;
+
+		// Must be called with cloned object, since this modifies the given object!
+		function convertRecursively(obj, from, to) {
+			if (typeof obj === "object" && obj !== null) {
+				Object.keys(obj).forEach(key => {
+					if (key === "coordinates") {
+						obj[key] = Array.isArray(obj[key][0]) ?
+							[obj[key][0].map(coords => that.convert(coords.slice(0).reverse(), from, to))] :
+							that.convert(obj[key].slice(0).reverse(), from, to);
+					}
+					else convertRecursively(obj[key], from, to);
+				})
+			}
+			return obj;
+		}
+
+		let activeProj = "WGS84";
+		let activeTab = undefined;
+
+		const tabs = document.createElement("ul");
+		tabs.className = "nav nav-tabs";
+
+		[
+			{name: "WGS84", proj: "WGS84"},
+			{name: "YKJ", proj: "EPSG:2393"},
+			{name: "ETRS", proj: "EPSG:3067"}
+		].map(({name, proj}) => {
+			const tab = document.createElement("li");
+			const text = document.createElement("a");
+
+			if (proj === activeProj) {
+				activeTab = tab;
+				tab.className = "active";
+			}
+
+			text.innerHTML = name;
+			tab.appendChild(text);
+
+			const isWGS84 = proj === "WGS84";
+
+			tab.addEventListener("click", () => {
+				const reprojected = isWGS84 ?
+					originalGeoJSON :
+					convertRecursively(JSON.parse(JSON.stringify(originalGeoJSON)), "WGS84", proj);
+
+				if (!isWGS84) {
+					reprojected.crs = {
+						type: proj,
+						properties: {
+							[proj]: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
+						}
+					}
+				}
+
+				const {scrollTop} = input;
+				updateGeoJSON(reprojected);
+				input.scrollTop = scrollTop;
+
+				activeProj = proj;
+				activeTab.className = "";
+				activeTab = tab;
+				tab.className = "active";
+			});
+			return tab;
+		}).forEach(tab => tabs.appendChild(tab));
+
+		container.appendChild(tabs);
+		container.appendChild(input);
+
+		that._showDialog(container);
+		updateGeoJSON(originalGeoJSON);
 	}
 
 	_showDialog = (container, onClose) => {

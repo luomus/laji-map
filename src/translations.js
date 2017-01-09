@@ -279,14 +279,14 @@
 		en: "Finnish Uniform Grid",
 		sv: "YKJ ruudukko (odottaa käännöstä)"
 	},
-	copyCoordinates: {
-		fi: "Kopioi koordinaatit",
-		en: "Copy coordinates",
+	copyDrawnFeatures: {
+		fi: "Kopioi piirrettyjen kuvioiden koordinaatit",
+		en: "Copy the coordinates of the drawn features",
 		sv: "??"
 	},
 	clearMap: {
 		fi: "Tyhjennä kartta",
-		en: "Empty map",
+		en: "Clear map",
 		sv: "??"
 	},
 }

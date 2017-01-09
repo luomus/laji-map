@@ -376,18 +376,16 @@ export default class LajiMap {
 			},
 			coordinateInput: true,
 			drawCopy: false,
+			drawClear: false,
 			scale: true
 		};
 		for (let setting in controlSettings) {
 			const oldSetting = this.controlSettings[setting];
 			const newSetting = controlSettings[setting];
-			console.log(setting);
-			console.log(newSetting);
 			this.controlSettings[setting] = (typeof newSetting === "object") ?
 			{...oldSetting, ...newSetting} :
 				newSetting;
 		}
-		console.log(this.controlSettings);
 	}
 
 	setControlSettings = (controlSettings) => {
@@ -407,6 +405,9 @@ export default class LajiMap {
 						        ["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})))
 				],
 				drawCopy: [
+					"draw"
+				],
+				drawClear: [
 					"draw"
 				]
 		};
@@ -439,6 +440,7 @@ export default class LajiMap {
 		draw: undefined,
 		coordinateInput: undefined,
 		drawCopy: undefined,
+		drawClear: undefined,
 		scale: undefined
 	}
 
@@ -453,6 +455,7 @@ export default class LajiMap {
 		this._addControl("draw", this._getDrawControl());
 		this._addControl("coordinateInput", this._getCoordinateInputControl());
 		this._addControl("drawCopy", this._getDrawCopyControl());
+		this._addControl("drawClear", this._getDrawClearControl());
 		this._addControl("zoom", this._getZoomControl());
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
 
@@ -597,7 +600,7 @@ export default class LajiMap {
 		const that = this;
 
 
-		const DrawOutControl = L.Control.extend({
+		const DrawCopyControl = L.Control.extend({
 			options: {
 				position: "topright"
 			},
@@ -704,7 +707,32 @@ export default class LajiMap {
 			}
 		});
 
-		return new DrawOutControl();
+		return new DrawCopyControl();
+	}
+
+	_getDrawClearControl = () => {
+		const that = this;
+
+		const DrawClearControl = L.Control.extend({
+			options: {
+				position: "topright"
+			},
+
+			onAdd: function(map) {
+				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
+				that._createControlItem(
+					this,
+					container,
+					"glyphicon glyphicon-trash",
+					that.translations.ClearMap,
+					() => {that.setDrawData({...this.drawData, featureCollection: {type: "FeatureCollection", features: []}})}
+				);
+				return container;
+			}
+		});
+
+		return new DrawClearControl();
+
 	}
 
 	_getLayerControl = () => {

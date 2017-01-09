@@ -95,57 +95,27 @@ class App {
 		];
 
 		this.drawData = {
-		featureCollection: {
-			"type": "FeatureCollection",
-			"features": [
-				{
-					"type": "Feature",
-					"properties": {
-						"lajiMapIdx": 1
-					},
-					"geometry": {
-						"type": "Point",
-						"coordinates": [
-							27.687709570136153,
-							67.13762227828875
-						]
+			featureCollection: {
+				type: "FeatureCollection",
+				features: [
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,61.43453495634962]}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[23.311658377997933,61.43453495634962], "radius": 2000}},
+					{
+						"type": "Feature",
+						"properties": {},
+						"geometry": {
+							"type": "Point",
+							"coordinates": [
+								22.104264017028992,
+								60.40403173483798
+							],
+							radius: 4000
+						}
 					}
-				},
-				{
-					"type": "Feature",
-					"properties": {
-						"lajiMapIdx": 1
-					},
-					"geometry": {
-						"type": "Polygon",
-						"coordinates": [
-							[
-								[
-									27.687709570136153,
-									67.13762227828875
-								],
-								[
-									27.91823825475282,
-									67.13646459838557
-								],
-								[
-									27.92165590170173,
-									67.22611933998317
-								],
-								[
-									27.69026926490938,
-									67.22728208461676
-								],
-								[
-									27.687709570136153,
-									67.13762227828875
-								]
-							]
-						]
-					}
-				}
-		]
-		},
+				],
+			},
 			getPopup: (idx, callback) => {
 				return `${idx}`;
 			},
@@ -174,7 +144,8 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				drawCopy: true
+				drawCopy: true,
+				drawClear: true
 			}
 		});
 

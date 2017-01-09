@@ -284,4 +284,9 @@
 		en: "Copy coordinates",
 		sv: "??"
 	},
+	clearMap: {
+		fi: "Tyhjennä kartta",
+		en: "Empty map",
+		sv: "??"
+	},
 }

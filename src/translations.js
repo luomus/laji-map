@@ -277,16 +277,16 @@
 	ykjGrid: {
 		fi: "YKJ ruudukko",
 		en: "Finnish Uniform Grid",
-		sv: "YKJ ruudukko (odottaa käännöstä)"
+		sv: "EKS rutnät"
 	},
 	copyDrawnFeatures: {
 		fi: "Kopioi piirrettyjen kuvioiden koordinaatit",
 		en: "Copy the coordinates of the drawn features",
-		sv: "??"
+		sv: "Kopiera koordinaterna för de dragna funktioner"
 	},
 	clearMap: {
 		fi: "Tyhjennä kartta",
 		en: "Clear map",
-		sv: "??"
+		sv: "Töm kartan"
 	},
 }

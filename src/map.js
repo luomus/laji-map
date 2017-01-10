@@ -192,13 +192,13 @@ export default class LajiMap {
 				transparent: true,
 				version: '1.3.0'
 			}).setOpacity(0.5),
-			ykjGrid: new L.LayerGroup([100, 1000, 10000, 100000].map(meters =>
-				L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", { 
-				layers: `atlas:YKJ_ETRS_LINE${meters}`,
+			peninkulmaGrid:
+				L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
+				layers: `YKJ:ykj10km_grid`,
 				format: "image/png",
 				transparent: true,
 				version: "1.1.0",
-			})))
+			})
 		};
 
 		this.setTileLayer(this[this.tileLayerName]);

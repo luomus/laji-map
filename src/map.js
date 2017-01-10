@@ -8,29 +8,34 @@ import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import browser from "detect-browser";
 import proj4 from "proj4"
-
-export const NORMAL_COLOR = "#257ECA";
-export const ACTIVE_COLOR = "#06840A";
-export const INCOMPLETE_COLOR = "#36B43A";
-export const DATA_LAYER_COLOR = "#AAAAAA";
-export const USER_LOCATION_COLOR = "#FF0000";
-
-const MAASTOKARTTA = "maastokartta";
-const TAUSTAKARTTA = "taustakartta";
-const OPEN_STREET = "openStreetMap";
-const GOOGLE_SATELLITE = "googleSatellite";
+import HasControls from "./controls";
+import {
+	INCOMPLETE_COLOR,
+	NORMAL_COLOR,
+	ACTIVE_COLOR,
+	DATA_LAYER_COLOR,
+	USER_LOCATION_COLOR,
+	MAASTOKARTTA,
+	TAUSTAKARTTA,
+	OPEN_STREET,
+	GOOGLE_SATELLITE,
+	EPSG3067String,
+	EPSG2393String
+} from "./globals";
 
 import translations from "./translations.js";
 
 const options = ["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
-	"tileLayerName", "drawData", "data", "activeIdx", "markerPopupOffset", "featurePopupOffset",
+	"tileLayerName", "draw", "data", "markerPopupOffset", "featurePopupOffset",
 	"onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"];
 
 const optionKeys = options.reduce((o, i) => {o[i] = true; return o;}, {});
 
-const EPSG3067String = "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
-const EPSG2393String = "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=3500000 +y_0=0 +ellps=intl +towgs84=-96.0617,-82.4278,-121.7535,4.80107,0.34543,-1.37646,1.4964 +units=m +no_defs";
+function capitalizeFirstLetter(string) {
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
+@HasControls
 export default class LajiMap {
 	constructor(props) {
 		this._constructDictionary();
@@ -42,18 +47,25 @@ export default class LajiMap {
 		this.center =  [65, 26];
 		this.zoom = 2;
 		this.data = [];
-		this.drawData = {featureCollection: {type: "FeatureCollection", features: []}};
-		this.activeIdx = 0;
+		// this.drawData = {featureCollection: {type: "FeatureCollection", features: []}};
+		this.draw = {
+			data: {featureCollection: {type: "FeatureCollection", features: []}},
+			activeIdx: 0,
+			marker: true,
+			circle: true,
+			rectangle: true,
+			polygon: true,
+			polyline: true,
+		}
+		// this.activeIdx = 0;
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
 		this.popupOnHover = false;
 		this.enableDrawEditing = true;
 
 		Object.keys(props).forEach(prop => {
-			if (optionKeys[prop]) this[prop] =props[prop];
+			if (optionKeys[prop]) this[prop] = props[prop];
 		});
-
-		this._initControlSettings(props.controlSettings);
 
 		const {tileLayerName} = props;
 		if ([GOOGLE_SATELLITE, OPEN_STREET].includes(tileLayerName) && !props.hasOwnProperty("zoom")) {
@@ -65,17 +77,15 @@ export default class LajiMap {
 		this._initializeMap();
 		this.setLang(this.lang);
 		this.setData(this.data);
-		this.setDrawData(this.drawData);
+		this.setDrawData(this.draw.data);
 		this._initializeMapEvents();
-		this._initializeMapControls();
 		this._updateContextMenu();
-
 		this.browserWarnings();
 	}
 
 	browserWarnings = () => {
 		if (this.browserWarned) return;
-		if ((this.controlSettings.draw.polygon ||this.controlSettings.draw.polyline) && browser && browser.name === "chrome" && browser.version &&
+		if (this.draw && (this.draw.polygon ||this.draw.polyline) && browser && browser.name === "chrome" && browser.version &&
 			browser.version.split(".").length && browser.version.split(".")[0] >= 55) {
 			const warning = document.createElement("div");
 			warning.className = "alert alert-warning laji-map-warning";
@@ -103,12 +113,11 @@ export default class LajiMap {
 		});
 	}
 
-	setOption = (option, value) => {
+	setOption(option, value) {
 		if (option === "lang") this.setLang(value);
 		else if (option === "data") this.setData(value);
 		else if (option === "drawData") this.setDrawData(value);
 		else if (option === "activeIdx") this.setActive(value);
-		else if (option === "controlSettings") this.setControlSettings(value);
 		else if (option === "tileLayerName") this.setTileLayer(this[value]);
 		else if (option === "center") this.map.setView(value, this.getNormalizedZoom(this.zoom));
 		else if (option === "zoom") {
@@ -232,8 +241,7 @@ export default class LajiMap {
 					}
 					this.dblClickTimestamp = Date.now();
 					if (this.editIdx !== undefined) return;
-					if (this.controlSettings.draw === true ||
-							(typeof this.controlSettings.draw === "object" && this.controlSettings.draw.marker !== false)
+					if ((typeof this.draw === "object" && this.draw.marker !== false)
 					) {
 						this._onAdd(new L.marker(e.latlng));
 					}
@@ -256,7 +264,7 @@ export default class LajiMap {
 		return [this.maastokartta, this.taustakartta];
 	}
 
-	swapMap = () => {
+	swapMap() {
 		let mapElem = this.finnishMapElem;
 		let otherMapElem = this.foreignMapElem;
 		let otherMap = this.foreignMap;
@@ -292,14 +300,6 @@ export default class LajiMap {
 
 		this.recluster();
 
-		Object.keys(this.controls).forEach(controlName => {
-			const control = this.controls[controlName];
-			if  (control) {
-				otherMap.removeControl(control);
-				this.map.addControl(control);
-			}
-		});
-		
 		this.map.invalidateSize();
 	}
 
@@ -366,423 +366,6 @@ export default class LajiMap {
 		this.map.setZoom(this._getMMLCRSLayers().includes(this.tileLayer) ? zoom : zoom + 3);
 	}
 
-	_initControlSettings = (controlSettings) => {
-		this.controlSettings = {
-			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
-			layer: true,
-			zoom: true,
-			location: {
-				userLocation: true,
-				search: true
-			},
-			coordinateInput: true,
-			drawCopy: false,
-			drawClear: false,
-			coordinates: false,
-			scale: true
-		};
-		for (let setting in controlSettings) {
-			const oldSetting = this.controlSettings[setting];
-			const newSetting = controlSettings[setting];
-			this.controlSettings[setting] = (typeof newSetting === "object") ?
-			{...oldSetting, ...newSetting} :
-				newSetting;
-		}
-	}
-
-	setControlSettings = (controlSettings) => {
-		this._initControlSettings(controlSettings);
-		this._initializeMapControls();
-		this._updateContextMenu();
-
-		this.browserWarnings();
-	}
-
-	_controlIsAllowed = (name) => {
-		const dependencies = {
-				coordinateInput: [
-						"draw",
-						() => (this.controlSettings.draw === true ||
-						       (typeof this.controlSettings.draw === "object" &&
-						        ["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})))
-				],
-				drawCopy: [
-					"draw"
-				],
-				drawClear: [
-					"draw"
-				]
-		};
-
-		const {controlSettings} = this;
-
-		function controlIsOk(controlName) {
-			return (
-				controlSettings &&
-				controlSettings[controlName] &&
-				(dependencies[controlName] || []).every(dependency => {
-					return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)})
-			);
-		}
-
-		return controlIsOk(name);
-	}
-
-	_addControl = (name, control) => {
-		if (this._controlIsAllowed(name)) {
-			this.controls[name] = control;
-			this.map.addControl(control);
-		}
-	}
-
-	controls = {
-		layer: undefined,
-		location: undefined,
-		zoom: undefined,
-		draw: undefined,
-		coordinateInput: undefined,
-		drawCopy: undefined,
-		drawClear: undefined,
-		coordinates: undefined,
-		scale: undefined
-	}
-
-	_initializeMapControls = () => {
-		Object.keys(this.controls).forEach(controlName => {
-			const control = this.controls[controlName];
-			if (control) this.map.removeControl(control);
-		});
-
-		this.controlItems = {
-			coordinateInput: {
-				name: "coordinateInput",
-				text: this.translations.AddFeatureByCoordinates,
-				iconCls: "laji-map-coordinate-input-glyph",
-				callback: this.openCoordinatesDialog
-			},
-			drawCopy: {
-				name: "drawCopy",
-				text: this.translations.CopyDrawnFeatures,
-				iconCls: "glyphicon glyphicon-floppy-save",
-				callback: this.openDrawCopyDialog
-			},
-			drawClear: {
-				name: "drawClear",
-				text: this.translations.ClearMap,
-				iconCls: "glyphicon glyphicon-trash",
-				callback: this.clearDrawData
-			}
-		}
-
-		this._addControl("layer", this._getLayerControl());
-		this._addControl("location", this._getLocationControl());
-		this._addControl("draw", this._getDrawControl());
-		this._addControl("coordinateInput", this._getCoordinateInputControl());
-		this._addControl("drawCopy", this._getDrawCopyControl());
-		this._addControl("drawClear", this._getDrawClearControl());
-		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
-		this._addControl("coordinates", this._getCoordinatesControl());
-		this._addControl("zoom", this._getZoomControl());
-
-		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
-
-		function removeHref(className) {
-			const elems = document.getElementsByClassName(className);
-			for (let i = 0; i < elems.length; i++) {
-				const elem = elems[i];
-				elem.removeAttribute("href");
-			}
-		}
-
-		["in", "out"].forEach(zoomType => {
-			removeHref(`leaflet-control-zoom-${zoomType}`);
-		});
-		["polyline", "polygon", "rectangle", "circle", "marker"].forEach(featureType => {
-			removeHref(`leaflet-draw-draw-${featureType}`);
-		});
-		removeHref("leaflet-control-layers-toggle");
-		removeHref("leaflet-contextmenu-item");
-
-		this.controlsInitialized = true;
-	}
-
-	_getDrawControl = () => {
-		const customMarkerStyles = this.getDrawingDraftStyle ? this.getDrawingDraftStyle("marker") : {};
-		const drawOptions = {
-			position: "topright",
-			draw: {
-				marker: {
-					icon: L.VectorMarkers.icon({
-						prefix: "glyphicon",
-						icon: "record",
-						markerColor: customMarkerStyles.color ? customMarkerStyles.color : INCOMPLETE_COLOR,
-						opacity: customMarkerStyles.opacity ? customMarkerStyles.opacity : 1,
-					})
-				},
-				polygon: {
-					allowIntersection: false
-				}
-			},
-			edit: {
-				featureGroup: this.drawLayerGroup,
-				edit: false,
-				remove: false
-			}
-		};
-
-		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
-
-		featureTypes.slice(0, -1).forEach(type => {
-			drawOptions.draw[type] = {
-				shapeOptions: this.getDrawingDraftStyle ?
-					this.getDrawingDraftStyle(type) :
-					this._getStyleForType(type, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8})
-			};
-		});
-
-		featureTypes.forEach(type => {
-			if (this.controlSettings.draw === false ||
-			    (this.controlSettings.draw.constructor === Object && this.controlSettings.draw[type] !== true)) {
-				drawOptions.draw[type] = false;
-			}
-		});
-
-		return new L.Control.Draw(drawOptions);
-	}
-
-	_createControlItem = (that, container, glyphName, title, fn) => {
-		const elem = L.DomUtil.create("a", "", container);
-		const glyph = L.DomUtil.create("span", glyphName, elem);
-		elem.title = title;
-
-		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
-		L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
-		L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
-		L.DomEvent.on(elem, "click", that._refocusOnMap, that);
-		L.DomEvent.on(elem, "click", fn);
-
-		return elem;
-	}
-
-	_getLocationControl = () => {
-		const that = this;
-		const LocationControl = L.Control.extend({
-			options: {
-				position: "topleft"
-			},
-
-			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
-
-				function isAllowed(control) {
-					return (
-						that.controlSettings.location === true ||
-						(that.controlSettings.location.constructor === Object && that.controlSettings.location[control])
-					);
-				}
-
-				//TODO disabled until implemented.
-				// if (isAllowed("search")) this._createSearch(container);
-				if (isAllowed("userLocation")) this._createLocate(container);
-				return container;
-			},
-
-			_createSearch: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-search", that.translations.Search, () => this._onSearch(this));
-			},
-
-			_createLocate: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-screenshot", that.translations.Geolocate, () => that._onLocate());
-			},
-
-			_onSearch: function() {
-				console.log("search");
-			}
-		});
-
-		return new LocationControl();
-	}
-
-	_getCoordinateInputControl = () => {
-		const that = this;
-		const CoordinateInputControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
-			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				const {iconCls, text, callback} = that.controlItems.coordinateInput;
-				that._createControlItem(this, container, iconCls, text, callback);
-				return container;
-			}
-		});
-
-		return new CoordinateInputControl();
-	}
-
-	_getDrawCopyControl = () => {
-		const that = this;
-
-
-		const DrawCopyControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
-
-			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
-					that.translations.CopyDrawnFeatures, that.openDrawCopyDialog);
-				return container;
-			}
-		});
-
-		return new DrawCopyControl();
-	}
-
-	_getDrawClearControl = () => {
-		const that = this;
-
-		const DrawClearControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
-
-			onAdd: function(map) {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-				that._createControlItem(
-					this,
-					container,
-					"glyphicon glyphicon-trash",
-					that.translations.ClearMap,
-					that.clearDrawData
-				);
-				return container;
-			}
-		});
-
-		return new DrawClearControl();
-
-	}
-
-	_getCoordinatesControl = () => {
-		const that = this;
-		const CoordinateControl = L.Control.extend({
-			options: {
-				position: "bottomleft"
-			},
-
-			onAdd: function(map) {
-				const container = L.DomUtil.create(
-					"div",
-					"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
-				);
-
-				const table = L.DomUtil.create("table", undefined, container);
-				let visible = false;
-				container.style.display = "none";
-
-				const coordinateTypes = [
-					{name: "WGS84"},
-					{name: "YKJ"},
-					{name: "ETRS"}
-				];
-
-				coordinateTypes.forEach(coordinateType => {
-					const row = L.DomUtil.create("tr", undefined, table);
-					coordinateType.nameCell = L.DomUtil.create("td", undefined, row);
-					coordinateType.coordsCell = L.DomUtil.create("td", undefined, row);
-				});
-
-				that.maps.forEach(map => {
-					map.on("mousemove", ({latlng}) => {
-						if (!visible) {
-							container.style.display = "block";
-							visible = true;
-						}
-
-						const {lat, lng} = latlng;
-						const wgs84 = [lat, lng].map(c => c.toFixed(6));
-						const ykj = that.convert([lat, lng], "WGS84", "EPSG:2393").reverse();
-						const euref = that.convert([lat, lng], "WGS84", "EPSG:3067").reverse();
-
-						coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
-							let coords = wgs84;
-							if (name === "YKJ") coords = ykj;
-							else if (name === "ETRS") coords = euref;
-							nameCell.innerHTML = `<strong>${name}:</strong>`;
-							coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
-						});
-					}).on("mouseout", () => {
-						container.style.display = "none";
-						visible = false;
-					})
-				});
-
-				return container;
-			}
-		});
-
-		return new CoordinateControl();
-	}
-
-	_getLayerControl = () => {
-		const baseMaps = {}, overlays = {};
-		const { translations } = this;
-
-		const tileLayersNames = [TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET];
-
-		tileLayersNames.forEach(tileLayerName => {
-			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
-		});
-		Object.keys(this.overlays).forEach(overlayName => {
-			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlays[overlayName];
-		})
-
-		const LayerControl = L.Control.Layers.include({
-			_onInputClick: () => {
-				const inputs = document.querySelectorAll(".laji-map .leaflet-control-layers-list input");
-
-				const overlayIdsToAdd = {};
-				for (let i = 0; i < inputs.length; i++) {
-					const input = inputs[i];
-					if (input.checked) {
-						for (let tileLayerName of tileLayersNames) {
-							if (this[tileLayerName]._leaflet_id === input.layerId) {
-								this.setTileLayer(this[tileLayerName]);
-								break;
-							}
-						}
-						for (let overlayName of Object.keys(this.overlays)) {
-							const overlay = this.overlays[overlayName];
-							if (overlay._leaflet_id === input.layerId) {
-								overlayIdsToAdd[input.layerId] = true;
-							}
-						}
-					}
-				}
-				for (let overlayName of Object.keys(this.overlays)) {
-					const overlay = this.overlays[overlayName];
-					if (overlayIdsToAdd[overlay._leaflet_id] && !this.map.hasLayer(overlay)) {
-						this.map.addLayer(overlay);
-					} else if (!overlayIdsToAdd[overlay._leaflet_id] && this.map.hasLayer(overlay)) {
-						this.map.removeLayer(overlay);
-					}
-				}
-				this.controls.layer.expand();
-			}
-		});
-
-		return new LayerControl(baseMaps, overlays, {position: "topleft"});
-	}
-
-	_getZoomControl = () => {
-		return L.control.zoom({
-			zoomInTitle: this.translations.ZoomIn,
-			zoomOutTitle: this.translations.ZoomOut
-		});
-	}
-
 	destroy = () => {
 		this.maps.forEach(map => {
 			map.off();
@@ -791,9 +374,6 @@ export default class LajiMap {
 	}
 
 	_constructDictionary = () => {
-		function capitalizeFirstLetter(string) {
-			return string.charAt(0).toUpperCase() + string.slice(1);
-		}
 		function decapitalizeFirstLetter(string) {
 			return string.charAt(0).toLowerCase() + string.slice(1);
 		}
@@ -840,8 +420,8 @@ export default class LajiMap {
 
 				drawLocalizations.toolbar.buttons[featureType] = text;
 
-				if (this._controlIsAllowed("draw") &&
-				    (this.controlSettings.draw.constructor !== Object || this.controlSettings.draw[featureType] !== false)) {
+				if (this.draw &&
+				    (this.draw[featureType] !== false)) {
 					map.contextmenu.addItem({
 						text: text,
 						iconCls: "context-menu-draw context-menu-draw-" + featureType,
@@ -869,48 +449,12 @@ export default class LajiMap {
 		});
 	}
 
-	setLang = (lang) => {
+	setLang(lang) {
 		if (!this.translations || this.lang !== lang) {
 			this.lang = lang;
 			this.translations = this.dictionary[this.lang];
 
-
-			const drawLocalizations = L.drawLocal.draw;
-
-			const join = this._joinTranslations;
-
 			this._updateContextMenu();
-
-			// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
-
-			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
-
-			drawLocalizations.toolbar.actions.title = join("Cancel", "drawPassiveVerb");
-			drawLocalizations.toolbar.actions.text = join("Cancel");
-			drawLocalizations.toolbar.finish.title = join("Finish", "drawPassiveVerb");
-			drawLocalizations.toolbar.finish.text = join("Finish");
-			drawLocalizations.toolbar.undo.title = join("Delete", "lastPointDrawn");
-			drawLocalizations.toolbar.undo.text = join("Delete", "last", "point");
-
-			drawLocalizations.handlers.circle.tooltip.start = join("Click", "and", "drag", "toDrawCircle");
-			drawLocalizations.handlers.marker.tooltip.start = join("ClickMapToPlaceMarker");
-
-			drawLocalizations.handlers.polygon.tooltip.start = join("ClickToStartDrawingShape");
-			drawLocalizations.handlers.polygon.tooltip.cont = join("ClickToContinueDrawingShape");
-			drawLocalizations.handlers.polygon.tooltip.end = join("ClickToEndDrawingShape");
-
-			drawLocalizations.handlers.polyline.tooltip.start = join("ClickToStartDrawingPolyline");
-			drawLocalizations.handlers.polyline.tooltip.cont = join("ClickToContinueDrawingPolyline");
-			drawLocalizations.handlers.polyline.tooltip.end = join("ClickToEndDrawingPolyline");
-			drawLocalizations.handlers.polyline.error = join("shapeEdgesCannotCross") + "!";
-
-			drawLocalizations.handlers.rectangle.tooltip.start = join("Click", "and", "drag", "toDrawRectangle");
-
-			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
-
-			if (this.controlsInitialized) {
-				this.setControlSettings(this.controlSettings);
-			}
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
 				this._updateContextMenuForLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
@@ -921,7 +465,6 @@ export default class LajiMap {
 	}
 
 	formatFeatureOut = (feature, layer) => {
-
 		if (layer && layer instanceof L.Circle) {
 			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 
@@ -1021,7 +564,7 @@ export default class LajiMap {
 
 		const featureCollection = {type: "FeatureCollection"};
 		featureCollection.features = this.cloneFeatures(data.featureCollection.features);
-		this.drawData = (data) ? {
+		this.draw.data = (data) ? {
 			getFeatureStyle: this._getDefaultDrawStyle,
 			getClusterStyle: this._getDefaultDrawClusterStyle,
 			...data,
@@ -1031,11 +574,11 @@ export default class LajiMap {
 		if (this.clusterDrawLayer) this.clusterDrawLayer.clearLayers();
 
 		this.drawLayerGroup = L.geoJson(
-			this.drawData.featureCollection,
+			this.draw.data.featureCollection,
 			{
-				pointToLayer: this._featureToLayer(this.drawData.getFeatureStyle),
+				pointToLayer: this._featureToLayer(this.draw.data.getFeatureStyle),
 				style: feature => {
-					return this.drawData.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, feature})
+					return this.draw.data.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, feature})
 				},
 				onEachFeature: (feature, layer) => {
 					this._initializeDrawLayer(layer, feature.properties.lajiMapIdx);
@@ -1044,18 +587,18 @@ export default class LajiMap {
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
 			this.clusterDrawLayer = L.markerClusterGroup(
-				{iconCreateFunction: this._getClusterIcon(this.drawData, !!"isDrawData"),
+				{iconCreateFunction: this._getClusterIcon(this.draw.data, !!"isDrawData"),
 					...data.cluster})
 				.addLayer(this.drawLayerGroup);
 			drawLayerForMap = this.clusterDrawLayer;
 		}
 		drawLayerForMap.addTo(this.map);
 		this._resetIds();
-		this.setActive(this.activeIdx);
+		this.setActive(this.draw.activeIdx);
 	}
 
 	clearDrawData = () => {
-		this.setDrawData({...this.drawData, featureCollection: {type: "FeatureCollection", features: []}});
+		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}
 
  	_createIcon = (options = {}) => {
@@ -1105,8 +648,8 @@ export default class LajiMap {
 
 	setActive = (idx) => {
 		const id = this.idxsToIds[idx];
-		const prevActiveIdx = this.activeIdx;
-		this.activeIdx = idx;
+		const prevActiveIdx = this.draw.activeIdx;
+		this.draw.activeIdx = idx;
 		this._updateDrawLayerStyle(this.idxsToIds[prevActiveIdx]);
 		this._updateDrawLayerStyle(id);
 	}
@@ -1190,7 +733,7 @@ export default class LajiMap {
 
 		function openPopup(content) {
 			if (!latlng) return;
-			if (data === that.drawData && that.editIdx === idx) return;
+			if (data === that.draw.data && that.editIdx === idx) return;
 
 			const offset = (layer instanceof L.Marker) ? (-that.markerPopupOffset  || 0) : (-that.featurePopupOffset || 0);
 
@@ -1266,8 +809,8 @@ export default class LajiMap {
 		});
 		layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
 
-		this._initializePopup(this.drawData, layer, idx);
-		this._initializeTooltip(this.drawData, layer, idx);
+		this._initializePopup(this.draw.data, layer, idx);
+		this._initializeTooltip(this.draw.data, layer, idx);
 
 		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 
@@ -1345,7 +888,7 @@ export default class LajiMap {
 	_onAdd = (layer) => {
 		if (layer instanceof L.Marker) layer.setIcon(this._createIcon());
 
-		const {featureCollection: {features}} = this.drawData;
+		const {featureCollection: {features}} = this.draw.data;
 
 		const idx = features.length;
 		const feature = this.formatFeatureOut(this._initializeDrawLayer(layer, features.length).toGeoJSON(), layer);
@@ -1354,7 +897,7 @@ export default class LajiMap {
 		this.idsToIdxs[id] = idx;
 		this.idxsToIds[idx] = id;
 
-		if (this.drawData.cluster) {
+		if (this.draw.data.cluster) {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
@@ -1377,7 +920,7 @@ export default class LajiMap {
 			const feature = this.formatFeatureOut(data[id].toGeoJSON(), data[id]);
 			const idx = this.idsToIdxs[id];
 			eventData[idx] = feature;
-			this.drawData.featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
+			this.draw.data.featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
 		}
 
 		this._triggerEvent({
@@ -1393,18 +936,18 @@ export default class LajiMap {
 
 		const deleteIdxs = deleteIds.map(id => this.idsToIdxs[id]);
 
-		const activeIdx = this.activeIdx;
+		const activeIdx = this.draw.activeIdx;
 
-		const {featureCollection: {features}} = this.drawData;
+		const {featureCollection: {features}} = this.draw.data;
 
 		const survivingIds = Object.keys(this.idsToIdxs).map(id => parseInt(id)).filter(id => !deleteIds.includes(id));
 
 		let changeActive = false;
 		let newActiveId = undefined;
-		const activeId = this.idxsToIds[this.activeIdx];
+		const activeId = this.idxsToIds[this.draw.activeIdx];
 		if (features && survivingIds.length === 0) {
 			changeActive = true;
-		} else if (this.activeIdx !== undefined && deleteIds.includes(activeId)) {
+		} else if (this.draw.activeIdx !== undefined && deleteIds.includes(activeId)) {
 			changeActive = true;
 
 			let closestSmallerId = undefined;
@@ -1430,7 +973,7 @@ export default class LajiMap {
 			changeActive = true;
 		}
 
-		this.drawData.featureCollection.features = features.filter((item, i) => !deleteIdxs.includes(i));
+		this.draw.data.featureCollection.features = features.filter((item, i) => !deleteIdxs.includes(i));
 
 		deleteIds.forEach(id => {
 			this.drawLayerGroup.removeLayer(id);
@@ -1491,7 +1034,7 @@ export default class LajiMap {
 		this._clearEditable();
 		this.editIdx = idx;
 		const editLayer = this._getDrawLayerById(this.idxsToIds[this.editIdx]);
-		if (this.drawData.cluster) {
+		if (this.draw.data.cluster) {
 			this.clusterDrawLayer.removeLayer(editLayer);
 			this.map.addLayer(editLayer);
 		}
@@ -1503,7 +1046,7 @@ export default class LajiMap {
 		if (this.editIdx === undefined) return;
 		const editLayer = this._getDrawLayerById(this.idxsToIds[this.editIdx]);
 		editLayer.editing.disable();
-		if (this.drawData.cluster) {
+		if (this.draw.data.cluster) {
 			this.map.removeLayer(editLayer);
 			this.clusterDrawLayer.addLayer(editLayer);
 		}
@@ -1573,18 +1116,25 @@ export default class LajiMap {
 		return layer;
 	}
 
-	_getStyleForType = (type, overrideStyles, id) => {
+	_getDrawingDraftStyle = () => {
+		return this.getDrawingDraftStyle ?
+			this.getDrawingDraftStyle() :
+			this._getStyleForType({color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
+	}
+
+	_getStyleForType = (overrideStyles, id) => {
 		const idx = this.idsToIdxs[id];
 
 		const styles = {
 			opacity: 1,
 			fillOpacity: 0.4,
-			color: NORMAL_COLOR
+			color: NORMAL_COLOR,
+			fillColor: NORMAL_COLOR
 		};
 
-		const dataStyles = this.drawData.getFeatureStyle({
+		const dataStyles = this.draw.data.getFeatureStyle({
 			featureIdx: idx,
-			feature: this.drawData.featureCollection.features[idx]
+			feature: this.draw.data.featureCollection.features[idx]
 		});
 
 		[dataStyles, overrideStyles].forEach(_styles => {
@@ -1597,7 +1147,7 @@ export default class LajiMap {
 	}
 
 	_getStyleForLayer = (layer, overrideStyles, id) => {
-		return this._getStyleForType(layer.toGeoJSON().geometry.type, overrideStyles, id);
+		return this._getStyleForType(overrideStyles, id);
 	}
 
 	_updateDrawLayerStyle = (id) => {
@@ -1609,9 +1159,9 @@ export default class LajiMap {
 		let style = {};
 		if (layer instanceof L.Marker) {
 			const idx = this.idsToIdxs[id];
-			style = this.drawData.getFeatureStyle({
+			style = this.draw.data.getFeatureStyle({
 				featureIdx: idx,
-				feature: this.drawData.featureCollection.features[idx]});
+				feature: this.draw.data.featureCollection.features[idx]});
 		} else {
 			const style =  {};
 			layer.setStyle(this._getStyleForLayer(layer, style, id));
@@ -1622,17 +1172,18 @@ export default class LajiMap {
 
 	_getDefaultDrawStyle = (options) => {
 		const featureIdx = options ? options.featureIdx : undefined;
-		const color = (this.idxsToIds && featureIdx !== undefined && featureIdx === this.activeIdx) ? ACTIVE_COLOR : NORMAL_COLOR;
+		const color = (this.idxsToIds && featureIdx !== undefined && featureIdx === this.draw.activeIdx) ? ACTIVE_COLOR : NORMAL_COLOR;
 		return {color: color, fillColor: color, opacity: 1, fillOpacity: 0.7};
 	}
 
 	_getDefaultDrawClusterStyle = () => {
-		return {color: (this.drawData.getFeatureStyle || this._getDefaultDrawStyle)({}).color, opacity: 1};
+		return {color: (this.draw.data.getFeatureStyle || this._getDefaultDrawStyle)({}).color, opacity: 1};
 	}
 
 	_getDefaultDataStyle = () => {
 		return {color: DATA_LAYER_COLOR, fillColor: DATA_LAYER_COLOR, opacity: 1, fillOpacity: 0.7};
 	}
+
 	_getDefaultDataClusterStyle = () => {
 		return {color: DATA_LAYER_COLOR, opacity: 1};
 	}
@@ -1684,349 +1235,13 @@ export default class LajiMap {
 		return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 	}
 
-
-	openCoordinatesDialog = () => {
-		const that = this;
-		const translateHooks = [];
-
-		function createTextInput(id, translationKey) {
-			const input = document.createElement("input");
-			input.setAttribute("type", "text");
-			input.id = `laji-map-${id}`;
-			input.className = "form-control";
-
-			const label = document.createElement("label");
-			label.setAttribute("for", input.id);
-			translateHooks.push(that.addTranslationHook(label, "innerHTML", translationKey));
-
-			const row = document.createElement("div");
-			row.className = "form-group row";
-
-			const col = document.createElement("div");
-			col.className = "col-xs-12";
-
-			[label, input].forEach(elem => {col.appendChild(elem)});
-			row.appendChild(col);
-
-			return row;
-		}
-
-		function formatter(input) { return e => {
-			let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
-
-			if (charCode >= 48 && charCode <= 57) { // is a number
-				// The input cursor isn't necessary at the EOL, but this validation works regardless.
-				inputValidate(e, input.value + String.fromCharCode(charCode));
-			}
-		}}
-
-		const ykjAllowed = that.controlSettings.draw.rectangle;
-		const wgs84Allowed = that.controlSettings.draw.marker;
-
-		const wgs84Check = {
-			regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
-			range: [-180, 180]
+	triggerDrawing = (featureType) => {
+		const options = this._getDrawingDraftStyle(featureType.toLowerCase());
+		const optionsToPass = featureType.toLowerCase() !== "marker" ? {
+			shapeOptions: options
+		} : {
+			icon: this._createIcon(options)
 		};
-		const wgs84Validator = [wgs84Check, wgs84Check];
-
-		const ykjRegexp = /^[0-9]{3,7}$/;
-		const ykjFormatter = value => (value.length < 7 ? value + "0".repeat(7 - value.length) : value);
-		const ykjValidator = [
-			{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
-			{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
-		];
-
-		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
-
-		function inputValidate(e, value) {
-			if (!value.match(inputRegexp)) {
-				if (e) e.preventDefault();
-				return false;
-			}
-			return true;
-		}
-
-		function validateLatLng(latlng, latLngValidator) {
-			return latlng.every((value, i) => {
-				const validator = latLngValidator[i];
-				const formatted = validator.formatter ? validator.formatter(value) : value;
-				return (
-					value !== "" && value.match(validator.regexp) &&
-					formatted >= validator.range[0] && formatted <= validator.range[1]
-				);
-			});
-		}
-
-		function submitValidate(inputValues) {
-			const validators = [];
-			if (wgs84Allowed) validators.push(wgs84Validator);
-			if (ykjAllowed) validators.push(ykjValidator);
-			return validators.some(validator => validateLatLng(inputValues, validator));
-		}
-
-		const {translations} = this;
-		const container = document.createElement("form");
-		container.className = "laji-map-coordinates";
-
-		const latLabelInput = createTextInput("coordinate-input-lat", "Latitude");
-		const lngLabelInput = createTextInput("coordinate-input-lng", "Longitude");
-		const latInput = latLabelInput.getElementsByTagName("input")[0];
-		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
-
-		const submitButton = document.createElement("button");
-		submitButton.setAttribute("type", "submit");
-		submitButton.className = "btn btn-block btn-info";
-		translateHooks.push(this.addTranslationHook(submitButton, "innerHTML", "Add"));
-		submitButton.setAttribute("disabled", "disabled");
-
-		let helpSpan = document.createElement("span");
-		helpSpan.className = "help-block";
-
-		function getHelpTxt() {
-			let help = "";
-			const rectangleAllowed = that.controlSettings.draw.rectangle;
-			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
-			if (that.controlSettings.draw.marker) {
-				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
-				else help = that.translations.EnterWgs84Coordinates;
-			}
-			help += ".";
-			return help;
-		}
-		translateHooks.push(this.addTranslationHook(helpSpan, "innerHTML", getHelpTxt));
-
-		const inputValues = ["", ""];
-		[latInput, lngInput].forEach((input, i) => {
-			let prevVal = "";
-			input.addEventListener("keypress", formatter(input));
-			input.oninput = (e) => {
-				if (!inputValidate(e, e.target.value)) {
-					e.target.value = prevVal;
-				}
-				e.target.value = e.target.value.replace(",", ".");
-				prevVal = e.target.value;
-
-				inputValues[i] = e.target.value;
-				if (submitValidate(inputValues)) {
-					submitButton.removeAttribute("disabled");
-				} else {
-					submitButton.setAttribute("disabled", "disabled");
-				}
-			}
-		});
-
-		function toYKJFormat(coords) {
-			let strFormat = "" + coords;
-			while (strFormat.length < 7) {
-				strFormat = strFormat += "0";
-			}
-			return +strFormat;
-		}
-
-		function convert(coords) {
-			return that.convert(coords, "EPSG:2393", "WGS84");
-		}
-
-		container.addEventListener("submit", e => {
-			e.preventDefault();
-
-			const latlngStr = [latInput.value, lngInput.value];
-			const latlng = latlngStr.map(parseFloat);
-
-			const isYKJ = !validateLatLng(latlngStr, wgs84Validator);
-
-			let geometry = { type: "Point",
-				coordinates: (isYKJ ? convert(latlng.map(toYKJFormat)) : latlng.reverse())
-			};
-			const feature = {
-				type: "Feature",
-				geometry: geometry,
-				properties: {}
-			};
-
-			if (isYKJ && latlngStr[0].length < 7) {
-				const latStart = toYKJFormat(latlng[0]);
-				const latEnd = toYKJFormat(latlng[0] + 1);
-
-				const lonStart = toYKJFormat(latlng[1]);
-				const lonEnd = toYKJFormat(latlng[1] + 1);
-
-				geometry.type = 'Polygon';
-				geometry.coordinates = [[
-					[latStart, lonStart],
-					[latStart, lonEnd],
-					[latEnd, lonEnd],
-					[latEnd, lonStart],
-					[latStart, lonStart]
-				].map(convert)];
-			}
-
-			const layer = this._featureToLayer(this.drawData.getFeatureStyle)(feature);
-			const isMarker = layer instanceof L.Marker;
-
-			this._onAdd(layer);
-			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
-			this.map.setView(center, this.map.zoom, {animate: false});
-			if (isMarker) {
-				if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
-				else this.setNormalizedZoom(9);
-			} else {
-				this.map.fitBounds(layer.getBounds());
-			}
-			this._closeDialog(e);
-		});
-
-		container.appendChild(helpSpan);
-		container.appendChild(latLabelInput);
-		container.appendChild(lngLabelInput);
-		container.appendChild(submitButton);
-
-		this._showDialog(container, () => {
-				translateHooks.forEach(hook => {
-					that.removeTranslationHook(hook);
-				})
-		});
-
-		latInput.focus();
+		new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass).enable();
 	}
-
-	openDrawCopyDialog = () => {
-		const container = document.createElement("div");
-
-		const input = document.createElement("textarea");
-		input.setAttribute("rows", 10);
-		input.setAttribute("cols", 50);
-		input.setAttribute("readonly", "readonly");
-		input.className = "form-control";
-		input.addEventListener("focus", input.select);
-
-		const features = this.drawData.featureCollection.features.map(this.formatFeatureOut);
-		const originalGeoJSON = {...this.drawData.featureCollection, features};
-
-		function updateGeoJSON(geoJSON) {
-			input.value = JSON.stringify(geoJSON, undefined, 2);
-			input.focus();
-			input.select();
-		}
-
-		const that = this;
-
-		// Must be called with cloned object, since this modifies the given object!
-		function convertRecursively(obj, from, to) {
-			if (typeof obj === "object" && obj !== null) {
-				Object.keys(obj).forEach(key => {
-					if (key === "coordinates") {
-						obj[key] = Array.isArray(obj[key][0]) ?
-							[obj[key][0].map(coords => that.convert(coords.slice(0).reverse(), from, to))] :
-							that.convert(obj[key].slice(0).reverse(), from, to);
-					}
-					else convertRecursively(obj[key], from, to);
-				})
-			}
-			return obj;
-		}
-
-		let activeProj = "WGS84";
-		let activeTab = undefined;
-
-		const tabs = document.createElement("ul");
-		tabs.className = "nav nav-tabs";
-
-		[
-			{name: "WGS84", proj: "WGS84"},
-			{name: "YKJ", proj: "EPSG:2393"},
-			{name: "ETRS", proj: "EPSG:3067"}
-		].map(({name, proj}) => {
-			const tab = document.createElement("li");
-			const text = document.createElement("a");
-
-			if (proj === activeProj) {
-				activeTab = tab;
-				tab.className = "active";
-			}
-
-			text.innerHTML = name;
-			tab.appendChild(text);
-
-			const isWGS84 = proj === "WGS84";
-
-			tab.addEventListener("click", () => {
-				const reprojected = isWGS84 ?
-					originalGeoJSON :
-					convertRecursively(JSON.parse(JSON.stringify(originalGeoJSON)), "WGS84", proj);
-
-				if (!isWGS84) {
-					reprojected.crs = {
-						type: proj,
-						properties: {
-							[proj]: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
-						}
-					}
-				}
-
-				const {scrollTop} = input;
-				updateGeoJSON(reprojected);
-				input.scrollTop = scrollTop;
-
-				activeProj = proj;
-				activeTab.className = "";
-				activeTab = tab;
-				tab.className = "active";
-			});
-			return tab;
-		}).forEach(tab => tabs.appendChild(tab));
-
-		container.appendChild(tabs);
-		container.appendChild(input);
-
-		that._showDialog(container);
-		updateGeoJSON(originalGeoJSON);
-	}
-
-	_showDialog = (container, onClose) => {
-		const closeButton = document.createElement("button");
-		closeButton.setAttribute("type", "button");
-		closeButton.className = "close";
-		closeButton.innerHTML = "✖";
-		closeButton.addEventListener("click", close);
-
-		const _container = document.createElement("div");
-		_container.className = "laji-map-dialog panel panel-default panel-body";
-		_container.appendChild(closeButton);
-		_container.appendChild(container);
-
-		const that = this;
-		function close(e) {
-			if (e) e.preventDefault();
-			that.blockerElem.style.display = "";
-			that.blockerElem.removeEventListener("click", close);
-			document.removeEventListener("keydown", onEscListener);
-			that.container.removeChild(_container);
-			if (onClose) onClose();
-		}
-
-		function onEscListener(e) {
-			e = e || window.event;
-			var isEscape = false;
-			if ("key" in e) {
-				isEscape = (e.key == "Escape" || e.key == "Esc");
-			} else {
-				isEscape = (e.keyCode == 27);
-			}
-			if (isEscape) {
-				close(e);
-				// if ([latInput, lngInput].every(input => {return document.activeElement !== input})) close(e);
-			}
-		}
-
-		this.blockerElem.addEventListener("click", close);
-		document.addEventListener("keydown", onEscListener);
-
-		this.blockerElem.style.display = "block";
-		this.container.appendChild(_container);
-
-		this._closeDialog = close;
-	}
-
-	triggerDrawing = (featureType) => this.controls.draw._toolbars.draw._modes[featureType].handler.enable()
 }

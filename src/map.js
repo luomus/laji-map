@@ -1280,7 +1280,7 @@ export default class LajiMap {
 
 		let contextmenuItems = [{
 			text: translations ? translations.DeleteFeature : "",
-			callback: () => {this._onDelete(this.idxsToIds[idx])},
+			callback: () => this._onDelete(this.idxsToIds[idx]),
 			iconCls: "glyphicon glyphicon-trash"
 		}];
 
@@ -1435,7 +1435,12 @@ export default class LajiMap {
 		deleteIds.forEach(id => {
 			this.drawLayerGroup.removeLayer(id);
 		});
+
 		this._resetIds();
+
+		this.drawLayerGroup.eachLayer(layer => {
+			this._updateContextMenuForLayer(layer, this.idsToIdxs[layer._leaflet_id]);
+		});
 
 		this._reclusterDrawData();
 

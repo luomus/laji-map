@@ -133,13 +133,11 @@ class App {
 
 		this.map = new LajiMap({
 			rootElem: document.getElementById("root"),
-			// drawData: this.drawData,
 			draw: {
 				data: this.drawData,
-				activeIdx: this.activeIdx
+				activeIdx: this.activeIdx,
+				getDraftStyle: () => {return {color: "#ff00ff"}}
 			},
-			// data: this.data,
-			// activeIdx: this.activeIdx,
 			onChange: this.onMapChange,
 			lang: "fi",
 			popupOnHover: true,

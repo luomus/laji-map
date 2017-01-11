@@ -19,13 +19,12 @@ import {
 	TAUSTAKARTTA,
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
-	EPSG3067String,
 	EPSG2393String
 } from "./globals";
 
 import translations from "./translations.js";
 
-const options = ["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose", "getDrawingDraftStyle",
+const options = ["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose",
 	"tileLayerName", "draw", "data", "markerPopupOffset", "featurePopupOffset",
 	"onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"];
 
@@ -47,7 +46,6 @@ export default class LajiMap {
 		this.center =  [65, 26];
 		this.zoom = 2;
 		this.data = [];
-		// this.drawData = {featureCollection: {type: "FeatureCollection", features: []}};
 		this.draw = {
 			data: {featureCollection: {type: "FeatureCollection", features: []}},
 			activeIdx: 0,
@@ -57,7 +55,6 @@ export default class LajiMap {
 			polygon: true,
 			polyline: true,
 		}
-		// this.activeIdx = 0;
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
 		this.popupOnHover = false;
@@ -1117,8 +1114,8 @@ export default class LajiMap {
 	}
 
 	_getDrawingDraftStyle = () => {
-		return this.getDrawingDraftStyle ?
-			this.getDrawingDraftStyle() :
+		return this.draw && this.draw.getDraftStyle ?
+			this.draw.getDraftStyle() :
 			this._getStyleForType({color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
 	}
 

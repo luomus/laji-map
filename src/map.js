@@ -26,7 +26,7 @@ import translations from "./translations.js";
 
 const options = ["rootElem", "locate", "center", "zoom", "lang", "onChange", "onPopupClose",
 	"tileLayerName", "draw", "data", "markerPopupOffset", "featurePopupOffset",
-	"onInitializeDrawLayer", "enableDrawEditing", "popupOnHover", "baseUri",  "baseQuery"];
+	"onInitializeDrawLayer", "popupOnHover", "baseUri",  "baseQuery"];
 
 const optionKeys = options.reduce((o, i) => {o[i] = true; return o;}, {});
 
@@ -49,6 +49,7 @@ export default class LajiMap {
 		this.draw = {
 			data: {featureCollection: {type: "FeatureCollection", features: []}},
 			activeIdx: 0,
+			enableEditing: true,
 			marker: true,
 			circle: true,
 			rectangle: true,
@@ -58,7 +59,6 @@ export default class LajiMap {
 		this.baseUri = "https://beta.laji.fi/api";
 		this.baseQuery = {};
 		this.popupOnHover = false;
-		this.enableDrawEditing = true;
 
 		Object.keys(props).forEach(prop => {
 			if (optionKeys[prop]) this[prop] = props[prop];
@@ -824,7 +824,7 @@ export default class LajiMap {
 			iconCls: "glyphicon glyphicon-trash"
 		}];
 
-		if (this.enableDrawEditing) {
+		if (this.draw && this.draw.enableEditing) {
 			contextmenuItems = [{
 					text: translations ? translations.EditFeature : "",
 					callback: () => this._setEditable(idx),
@@ -1027,7 +1027,7 @@ export default class LajiMap {
 	}
 
 	_setEditable = (idx) => {
-		if (!this.enableDrawEditing) return;
+		if (!this.draw || this.draw.enableEditing) return;
 		this._clearEditable();
 		this.editIdx = idx;
 		const editLayer = this._getDrawLayerById(this.idxsToIds[this.editIdx]);

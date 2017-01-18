@@ -532,16 +532,19 @@ export default class LajiMap {
 		} else if  (feature.geometry.type === "Polygon") {
 			//If the coordinates are ordered counterclockwise, reverse them.
 			const coordinates = feature.geometry.coordinates[0].slice(0);
-			coordinates.pop();
 
-			const isClockwise = coordinates.map((c, i) => {
+			const sum = coordinates.map((c, i) => {
 					const next = coordinates[i + 1];
 					if (next) return [c, next];
 				}).filter(c => c)
-					.reduce((sum, c) => sum + (c[1][0] + c[0][0]) * (c[1][1] - c[0][1]), 0) >= 0;
+					.reduce((sum, edge) =>
+					(sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
+					0
+				);
+			const isClockwise = sum >= 0;
 
 			if (!isClockwise) {
-				feature.geometry.coordinates[0].reverse();
+				feature = {...feature, geometry: {...feature.geometry, coordinates: [coordinates.reverse()]}};
 			}
 		}
 

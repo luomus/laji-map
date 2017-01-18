@@ -116,6 +116,7 @@ class App {
 					}
 				],
 			},
+			getFeatureStyle: () => {return {weight: 1}},
 			getPopup: (idx, callback) => {
 				return `${idx}`;
 			},
@@ -131,14 +132,14 @@ class App {
 
 		this.activeIdx = 0;
 
-		this.map = new LajiMap({
+		const options = {
 			rootElem: document.getElementById("root"),
 			draw: {
 				data: this.drawData,
 				activeIdx: this.activeIdx,
-				getDraftStyle: () => {return {color: "#ff00ff"}}
+				getDraftStyle: () => {return {color: "#ff00ff"}},
 			},
-			onChange: this.onMapChange,
+			onChange: (...params) => this.onMapChange(...params),
 			lang: "fi",
 			popupOnHover: true,
 			zoom: 7,
@@ -146,11 +147,16 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
+				draw: true,
 				drawCopy: true,
 				drawClear: true,
 				coordinates: true
-			}
-		});
+			},
+			data: this.data,
+			tileLayerName: "openStreetMap",
+		}
+
+		this.map = new LajiMap(options);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))

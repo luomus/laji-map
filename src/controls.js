@@ -1,5 +1,4 @@
 import {
-	INCOMPLETE_COLOR,
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
 	OPEN_STREET,
@@ -8,30 +7,37 @@ import {
 	EPSG2393String
 } from "./globals";
 
+import { dependsOn, isProvided, provide } from "./map";
+
 export default function controls(ComposedComponent) {
 return class BaseComponent extends ComposedComponent {
 
 	constructor(props) {
 		super(props);
-		this._initControlSettings(props.controlSettings);
-		this._initializeMapControls();
+		this._initControls();
+	}
+
+	_initControls() {
+		this.controls = {
+			layer: undefined,
+			location: undefined,
+			zoom: undefined,
+			draw: undefined,
+			coordinateInput: undefined,
+			drawCopy: undefined,
+			drawClear: undefined,
+			coordinates: undefined,
+			scale: undefined
+		};
+
+		provide(this, "controlsConstructed");
 	}
 
 	setOption(option, value) {
 		super.setOption(option, value);
-		if (option === "controlSettings") this.setControlSettings(option, value);
-	}
-
-	controls = {
-		layer: undefined,
-		location: undefined,
-		zoom: undefined,
-		draw: undefined,
-		coordinateInput: undefined,
-		drawCopy: undefined,
-		drawClear: undefined,
-		coordinates: undefined,
-		scale: undefined
+		if (option === "controlSettings") {
+			this.setControlSettings(value);
+		}
 	}
 
 	swapMap() {
@@ -54,51 +60,61 @@ return class BaseComponent extends ComposedComponent {
 		super.swapMap();
 	}
 
+	@dependsOn("controls")
+	_setLang(lang) {
+		if (!isProvided(this, "setLang", arguments)) return;
+
+		// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
+		const drawLocalizations = L.drawLocal.draw;
+
+		const join = (...params) => this._joinTranslations(...params);
+
+		drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
+
+		["polygon", "rectangle", "polyline", "circle"].forEach(featureType => {
+			drawLocalizations.toolbar.buttons[featureType] = join("Draw", featureType);
+		});
+
+		drawLocalizations.toolbar.actions.title = join("Cancel", "drawPassiveVerb");
+		drawLocalizations.toolbar.actions.text = join("Cancel");
+		drawLocalizations.toolbar.finish.title = join("Finish", "drawPassiveVerb");
+		drawLocalizations.toolbar.finish.text = join("Finish");
+		drawLocalizations.toolbar.undo.title = join("Delete", "lastPointDrawn");
+		drawLocalizations.toolbar.undo.text = join("Delete", "last", "point");
+
+		drawLocalizations.handlers.circle.tooltip.start = join("Click", "and", "drag", "toDrawCircle");
+		drawLocalizations.handlers.marker.tooltip.start = join("ClickMapToPlaceMarker");
+
+		drawLocalizations.handlers.polygon.tooltip.start = join("ClickToStartDrawingShape");
+		drawLocalizations.handlers.polygon.tooltip.cont = join("ClickToContinueDrawingShape");
+		drawLocalizations.handlers.polygon.tooltip.end = join("ClickToEndDrawingShape");
+
+		drawLocalizations.handlers.polyline.tooltip.start = join("ClickToStartDrawingPolyline");
+		drawLocalizations.handlers.polyline.tooltip.cont = join("ClickToContinueDrawingPolyline");
+		drawLocalizations.handlers.polyline.tooltip.end = join("ClickToEndDrawingPolyline");
+		drawLocalizations.handlers.polyline.error = join("shapeEdgesCannotCross") + "!";
+
+		drawLocalizations.handlers.rectangle.tooltip.start = join("Click", "and", "drag", "toDrawRectangle");
+
+		drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
+
+		if (this.controlSettings) this.setControlSettings(this.controlSettings);
+	}
+
 	setLang(lang) {
 		super.setLang(lang);
-
-		if (this.controlsInitialized) {
-			// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
-			const drawLocalizations = L.drawLocal.draw;
-
-			const join = this._joinTranslations;
-
-			drawLocalizations.toolbar.buttons.marker = join("Add", "marker");
-
-			drawLocalizations.toolbar.actions.title = join("Cancel", "drawPassiveVerb");
-			drawLocalizations.toolbar.actions.text = join("Cancel");
-			drawLocalizations.toolbar.finish.title = join("Finish", "drawPassiveVerb");
-			drawLocalizations.toolbar.finish.text = join("Finish");
-			drawLocalizations.toolbar.undo.title = join("Delete", "lastPointDrawn");
-			drawLocalizations.toolbar.undo.text = join("Delete", "last", "point");
-
-			drawLocalizations.handlers.circle.tooltip.start = join("Click", "and", "drag", "toDrawCircle");
-			drawLocalizations.handlers.marker.tooltip.start = join("ClickMapToPlaceMarker");
-
-			drawLocalizations.handlers.polygon.tooltip.start = join("ClickToStartDrawingShape");
-			drawLocalizations.handlers.polygon.tooltip.cont = join("ClickToContinueDrawingShape");
-			drawLocalizations.handlers.polygon.tooltip.end = join("ClickToEndDrawingShape");
-
-			drawLocalizations.handlers.polyline.tooltip.start = join("ClickToStartDrawingPolyline");
-			drawLocalizations.handlers.polyline.tooltip.cont = join("ClickToContinueDrawingPolyline");
-			drawLocalizations.handlers.polyline.tooltip.end = join("ClickToEndDrawingPolyline");
-			drawLocalizations.handlers.polyline.error = join("shapeEdgesCannotCross") + "!";
-
-			drawLocalizations.handlers.rectangle.tooltip.start = join("Click", "and", "drag", "toDrawRectangle");
-
-			drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
-
-			this.setControlSettings(this.controlSettings);
-		}
+		this._setLang(lang);
 	}
 
 	setOption(option, value)  {
-		console.log("set option child");
-		if (option === "locate") this[option] = value;
+		if (option === "controlSettings") this.setControlSettings(value);
 		else super.setOption(option, value);
 	}
 
-	_initializeMapControls() {
+	@dependsOn("map", "translations", "draw", "controlSettings")
+	_updateMapControls() {
+		if (!isProvided(this, "_updateMapControls", arguments)) return;
+
 		Object.keys(this.controls).forEach(controlName => {
 			const control = this.controls[controlName];
 			if (control) this.map.removeControl(control);
@@ -109,21 +125,21 @@ return class BaseComponent extends ComposedComponent {
 				name: "coordinateInput",
 				text: this.translations.AddFeatureByCoordinates,
 				iconCls: "laji-map-coordinate-input-glyph",
-				callback: this.openCoordinatesDialog
+				callback: (...params) => this.openCoordinatesDialog(...params)
 			},
 			drawCopy: {
 				name: "drawCopy",
 				text: this.translations.CopyDrawnFeatures,
 				iconCls: "glyphicon glyphicon-floppy-save",
-				callback: this.openDrawCopyDialog
+				callback: (...params) => this.openDrawCopyDialog(...params)
 			},
 			drawClear: {
 				name: "drawClear",
 				text: this.translations.ClearMap,
 				iconCls: "glyphicon glyphicon-trash",
-				callback: this.clearDrawData
+				callback: (...params) => this.clearDrawData(...params)
 			}
-		}
+		};
 
 		this._addControl("layer", this._getLayerControl());
 		this._addControl("location", this._getLocationControl());
@@ -154,10 +170,13 @@ return class BaseComponent extends ComposedComponent {
 		removeHref("leaflet-control-layers-toggle");
 		removeHref("leaflet-contextmenu-item");
 
-		this.controlsInitialized = true;
+		provide(this, "controls");
 	}
 
-	_initControlSettings(controlSettings) {
+	@dependsOn("controlsConstructed")
+	setControlSettings(controlSettings) {
+		if (!isProvided(this, "setControlSettings", arguments)) return;
+
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
@@ -174,35 +193,38 @@ return class BaseComponent extends ComposedComponent {
 		};
 
 		for (let setting in controlSettings) {
-			const oldSetting = this.controlSettings[setting];
-			const newSetting = controlSettings[setting];
-			this.controlSettings[setting] = (typeof newSetting === "object") ?
-				{...oldSetting, ...newSetting} :
-				newSetting;
+			let newSetting = controlSettings[setting];
+			if (this.controlSettings[setting].constructor === Object) {
+				if (controlSettings[setting].constructor === Object) {
+					newSetting = {...this.controlSettings[setting], ...controlSettings[setting]};
+				} else {
+					newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
+						subSettings[subSetting] = controlSettings[setting];
+						return subSettings;
+					}, {});
+				}
+			}
+			this.controlSettings[setting] = newSetting;
 		}
-	}
 
-	setControlSettings(controlSettings) {
-		this._initControlSettings(controlSettings);
-		this._initializeMapControls();
+		this._updateMapControls();
 		this._updateContextMenu();
-
 		this.browserWarnings();
+
+		provide(this, "controlSettings")
 	}
 
 	_controlIsAllowed(name) {
 		const dependencies = {
 			coordinateInput: [
-				"draw",
-				() => (this.controlSettings.draw === true ||
-				(typeof this.controlSettings.draw === "object" &&
-				["marker", "rectangle"].some(type => {return this.controlSettings.draw[type] !== false})))
+				() => !!this.draw,
+				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false}))
 			],
 			drawCopy: [
-				"draw"
+				() => this.draw
 			],
 			drawClear: [
-				"draw"
+				() => this.draw
 			]
 		};
 
@@ -227,7 +249,7 @@ return class BaseComponent extends ComposedComponent {
 		}
 	}
 
-	_createControlItem = (that, container, glyphName, title, fn) => {
+	_createControlItem(that, container, glyphName, title, fn) {
 		const elem = L.DomUtil.create("a", "", container);
 		const glyph = L.DomUtil.create("span", glyphName, elem);
 		elem.title = title;
@@ -241,7 +263,7 @@ return class BaseComponent extends ComposedComponent {
 		return elem;
 	}
 
-	_getDrawControl = () => {
+	_getDrawControl() {
 		const drawOptions = {
 			position: "topright",
 			draw: {
@@ -277,7 +299,7 @@ return class BaseComponent extends ComposedComponent {
 		return new L.Control.Draw(drawOptions);
 	}
 
-	_getLocationControl = () => {
+	_getLocationControl() {
 		const that = this;
 		const LocationControl = L.Control.extend({
 			options: {
@@ -309,14 +331,13 @@ return class BaseComponent extends ComposedComponent {
 			},
 
 			_onSearch: function() {
-				console.log("search");
 			}
 		});
 
 		return new LocationControl();
 	}
 
-	_getCoordinateInputControl = () => {
+	_getCoordinateInputControl() {
 		const that = this;
 		const CoordinateInputControl = L.Control.extend({
 			options: {
@@ -333,9 +354,8 @@ return class BaseComponent extends ComposedComponent {
 		return new CoordinateInputControl();
 	}
 
-	_getDrawCopyControl = () => {
+	_getDrawCopyControl() {
 		const that = this;
-
 
 		const DrawCopyControl = L.Control.extend({
 			options: {
@@ -345,7 +365,7 @@ return class BaseComponent extends ComposedComponent {
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
 				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
-					that.translations.CopyDrawnFeatures, that.openDrawCopyDialog);
+					that.translations.CopyDrawnFeatures, (...params) => that.openDrawCopyDialog(...params));
 				return container;
 			}
 		});
@@ -353,7 +373,7 @@ return class BaseComponent extends ComposedComponent {
 		return new DrawCopyControl();
 	}
 
-	_getDrawClearControl = () => {
+	_getDrawClearControl() {
 		const that = this;
 
 		const DrawClearControl = L.Control.extend({
@@ -368,7 +388,7 @@ return class BaseComponent extends ComposedComponent {
 					container,
 					"glyphicon glyphicon-trash",
 					that.translations.ClearMap,
-					that.clearDrawData
+					(...params) => that.clearDrawData(...params)
 				);
 				return container;
 			}
@@ -378,7 +398,7 @@ return class BaseComponent extends ComposedComponent {
 
 	}
 
-	_getCoordinatesControl = () => {
+	_getCoordinatesControl() {
 		const that = this;
 		const CoordinateControl = L.Control.extend({
 			options: {
@@ -439,7 +459,7 @@ return class BaseComponent extends ComposedComponent {
 		return new CoordinateControl();
 	}
 
-	_getLayerControl = () => {
+	_getLayerControl() {
 		const baseMaps = {}, overlays = {};
 		const { translations } = this;
 
@@ -489,14 +509,14 @@ return class BaseComponent extends ComposedComponent {
 		return new LayerControl(baseMaps, overlays, {position: "topleft"});
 	}
 
-	_getZoomControl = () => {
+	_getZoomControl() {
 		return L.control.zoom({
 			zoomInTitle: this.translations.ZoomIn,
 			zoomOutTitle: this.translations.ZoomOut
 		});
 	}
 
-	_showDialog = (container, onClose) => {
+	_showDialog(container, onClose) {
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
 		closeButton.className = "close";
@@ -541,7 +561,7 @@ return class BaseComponent extends ComposedComponent {
 		this._closeDialog = close;
 	}
 
-	openCoordinatesDialog = () => {
+	openCoordinatesDialog() {
 		const that = this;
 		const translateHooks = [];
 
@@ -576,8 +596,8 @@ return class BaseComponent extends ComposedComponent {
 			}
 		}}
 
-		const ykjAllowed = that.controlSettings.draw.rectangle;
-		const wgs84Allowed = that.controlSettings.draw.marker;
+		const ykjAllowed = that.draw.rectangle;
+		const wgs84Allowed = that.draw.marker;
 
 		const wgs84Check = {
 			regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
@@ -640,9 +660,9 @@ return class BaseComponent extends ComposedComponent {
 
 		function getHelpTxt() {
 			let help = "";
-			const rectangleAllowed = that.controlSettings.draw.rectangle;
+			const rectangleAllowed = that.draw.rectangle;
 			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
-			if (that.controlSettings.draw.marker) {
+			if (that.draw.marker) {
 				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
 				else help = that.translations.EnterWgs84Coordinates;
 			}
@@ -746,7 +766,7 @@ return class BaseComponent extends ComposedComponent {
 		latInput.focus();
 	}
 
-	openDrawCopyDialog = () => {
+	openDrawCopyDialog() {
 		const container = document.createElement("div");
 
 		const input = document.createElement("textarea");
@@ -838,5 +858,52 @@ return class BaseComponent extends ComposedComponent {
 		that._showDialog(container);
 		updateGeoJSON(originalGeoJSON);
 	}
+
+	_joinTranslations(...words) {
+		const { translations } = this;
+		return words.map(word => translations[word]).join(" ");
+	}
+
+	@dependsOn("maps", "translations", "controls")
+	_updateContextMenu() {
+		if (!isProvided(this, "_updateContextMenu", arguments)) return;
+
+		const join = (...params) => this._joinTranslations(...params);
+
+		this.maps.forEach(map => {
+			map.contextmenu.removeAllItems();
+
+			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
+				const text = join("Draw", featureType);
+
+				if (this.draw &&
+					(this.draw[featureType] !== false)) {
+					map.contextmenu.addItem({
+						text: text,
+						iconCls: "context-menu-draw context-menu-draw-" + featureType,
+						callback: () => this.triggerDrawing(featureType)
+					});
+				}
+			});
+
+			if (!this.controlItems) return;
+
+			let lineAdded = false;
+			[
+				this.controlItems.coordinateInput,
+				this.controlItems.drawCopy,
+				this.controlItems.drawClear
+			].forEach(control => {
+				if (this._controlIsAllowed(control.name)) {
+					if (!lineAdded) {
+						map.contextmenu.addItem("-");
+						lineAdded = true;
+					}
+					map.contextmenu.addItem(control);
+				}
+			});
+		});
+	}
+
 }
 }

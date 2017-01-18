@@ -154,12 +154,12 @@ class App {
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
-		}
+		};
 
 		this.map = new LajiMap(options);
 
 		["fi", "en", "sv"].forEach(lang => {
-			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang))
+			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang));
 		});
 	}
 

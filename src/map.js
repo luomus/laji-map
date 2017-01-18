@@ -48,12 +48,12 @@ function capitalizeFirstLetter(string) {
 }
 
 function initDepObject(target) {
-	["provided", "depsExecuted", "providerToDependency", "dependencyToProvider", "params"].forEach(prop => {
+	["provided", "depsExecuted", "providerToDependency", "dependencyToProvider", "params", "reflected"].forEach(prop => {
 		if (!target[prop]) target[prop] = {};
 	});
 }
 
-export function isProvided(target, name, args) {
+export function depsProvided(target, name, args) {
 	initDepObject(target);
 	const {depsExecuted, params} = target;
 	if (!depsExecuted[name] && !depIsProvided(target, name)) {
@@ -63,8 +63,16 @@ export function isProvided(target, name, args) {
 	return true;
 }
 
+export function reflect() {
+	return (target, property) => {
+		initDepObject(target);
+		const {reflected} = target;
+		reflected[property] = true;
+	}
+}
+
 export function dependsOn(...deps) {
-	return (target, property, b) => {
+	return (target, property) => {
 		initDepObject(target);
 		const {providerToDependency, dependencyToProvider} = target;
 		deps.forEach(dep => {
@@ -76,9 +84,9 @@ export function dependsOn(...deps) {
 
 function depIsProvided(target, dep) {
 	let returnValue = false;
-	const {providerToDependency, dependencyToProvider, depsExecuted, provided} = target;
+	const {dependencyToProvider, depsExecuted, provided, reflected} = target;
 	if (dependencyToProvider[dep].every(_prov => provided[_prov])) {
-		if (depsExecuted[dep]) return;
+		if (depsExecuted[dep] && !reflected[dep]) return;
 		returnValue = true;
 	}
 	return returnValue;
@@ -86,10 +94,10 @@ function depIsProvided(target, dep) {
 
 function executeDependencies(target, prov) {
 	initDepObject(target);
-	const {providerToDependency, depsExecuted} = target;
+	const {providerToDependency, depsExecuted, reflected} = target;
 	(providerToDependency[prov] || []).filter(dep => depIsProvided(target, dep)).forEach(dep => {
-		if (!target.params[dep]) return;
-		target[dep](...target.params[dep]);
+		if (!target.params[dep] && !reflected[dep]) return;
+		target[dep](...(target.params[dep] || []));
 		delete target.params[dep];
 		depsExecuted[dep] = true;
 	});
@@ -134,7 +142,6 @@ export default class LajiMap {
 			this.setOption(option, combined[option]);
 		});
 		this._initializeMap();
-		this._initializeMapEvents();
 		this.browserWarnings();
 	}
 
@@ -186,7 +193,7 @@ export default class LajiMap {
 
 	@dependsOn("rootElem")
 	_initializeMap() {
-		if (!isProvided(this, "_initializeMap", arguments)) return;
+		if (!depsProvided(this, "_initializeMap", arguments)) return;
 
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
@@ -279,13 +286,15 @@ export default class LajiMap {
 			this._onLocate();
 		}
 
+		this._initializeMapEvents();
+
 		provide(this, "maps");
 	}
 
 
 	@dependsOn("map", "center", "zoom")
 	_initializeView() {
-		if (!isProvided(this, "_initializeView", arguments)) return;
+		if (!depsProvided(this, "_initializeView", arguments)) return;
 		this.map.setView(
 			this.center,
 			this.getDenormalizedZoom(this.zoom),
@@ -295,7 +304,7 @@ export default class LajiMap {
 
 	@dependsOn("maps")
 	_initializeMapEvents() {
-		if (!isProvided(this, "_initializeMapEvents", arguments)) return;
+		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.maps.forEach(map => {
 			map.addEventListener({
@@ -371,7 +380,7 @@ export default class LajiMap {
 
 	@dependsOn("maps")
 	setTileLayerByName(name) {
-		if (!isProvided(this, "setTileLayerByName", arguments)) return;
+		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
 		this.tileLayerName = name;
 		this.setTileLayer(this[this.tileLayerName]);
 		provide(this, "tileLayerName");
@@ -379,7 +388,7 @@ export default class LajiMap {
 
 	@dependsOn("maps")
 	setTileLayer(layer) {
-		if (!isProvided(this, "setTileLayer", arguments)) return;
+		if (!depsProvided(this, "setTileLayer", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
@@ -448,7 +457,7 @@ export default class LajiMap {
 
 	@dependsOn("map")
 	setNormalizedZoom(zoom) {
-		if (!isProvided(this, "setNormalizedZoom", arguments)) return;
+		if (!depsProvided(this, "setNormalizedZoom", arguments)) return;
 		this.zoom = zoom;
 		if (this.map) this.map.setZoom(this.getDenormalizedZoom());
 		provide(this, "zoom");
@@ -456,7 +465,7 @@ export default class LajiMap {
 
 	@dependsOn("zoom")
 	setCenter(center) {
-		if (!isProvided(this, "setCenter", arguments)) return;
+		if (!depsProvided(this, "setCenter", arguments)) return;
 		this.center = center;
 		if (this.map) this.map.setView(center, this.getDenormalizedZoom(this.zoom));
 		provide(this, "center");
@@ -500,7 +509,7 @@ export default class LajiMap {
 
 	@dependsOn("map")
 	setLang(lang) {
-		if (!isProvided(this, "setLang", arguments)) return;
+		if (!depsProvided(this, "setLang", arguments)) return;
 
 		if (!this.translations || this.lang !== lang) {
 			this.lang = lang;
@@ -511,8 +520,9 @@ export default class LajiMap {
 			}
 
 			this.onSetLangHooks.forEach(hook => hook());
+
+			provide(this, "translations");
 		}
-		provide(this, "translations");
 	}
 
 	formatFeatureOut(feature, layer) {
@@ -587,7 +597,7 @@ export default class LajiMap {
 
 	@dependsOn("map")
 	setData(data) {
-		if (!isProvided(this, "setData", arguments)) return;
+		if (!depsProvided(this, "setData", arguments)) return;
 
 		if (this.dataLayerGroups) {
 			this.data.forEach((item ,i) => {
@@ -615,7 +625,7 @@ export default class LajiMap {
 
 	@dependsOn("map")
 	setDraw(options) {
-		if (!isProvided(this, "setDraw", arguments)) return;
+		if (!depsProvided(this, "setDraw", arguments)) return;
 
 		this.draw = {
 			rectangle: true,
@@ -923,13 +933,13 @@ export default class LajiMap {
 
 	@dependsOn("map")
 	_onLocate() {
-		if (!isProvided(this, "_onLocate", arguments)) return;
+		if (!depsProvided(this, "_onLocate", arguments)) return;
 		this.map.locate();
 	}
 
 	@dependsOn("map")
 	_onLocationFound({latlng, accuracy, bounds}) {
-		if (!isProvided(this, "_onLocationFound", arguments)) return;
+		if (!depsProvided(this, "_onLocationFound", arguments)) return;
 
 		this.map.fitBounds(bounds);
 

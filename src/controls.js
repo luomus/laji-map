@@ -7,7 +7,7 @@ import {
 	EPSG2393String
 } from "./globals";
 
-import { dependsOn, isProvided, provide } from "./map";
+import { dependsOn, depsProvided, provide, reflect } from "./map";
 
 export default function controls(ComposedComponent) {
 return class BaseComponent extends ComposedComponent {
@@ -62,7 +62,7 @@ return class BaseComponent extends ComposedComponent {
 
 	@dependsOn("controls")
 	_setLang(lang) {
-		if (!isProvided(this, "setLang", arguments)) return;
+		if (!depsProvided(this, "setLang", arguments)) return;
 
 		// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 		const drawLocalizations = L.drawLocal.draw;
@@ -98,7 +98,7 @@ return class BaseComponent extends ComposedComponent {
 
 		drawLocalizations.handlers.simpleshape.tooltip.end = join("simpleShapeEnd");
 
-		if (this.controlSettings) this.setControlSettings(this.controlSettings);
+		provide(this, "translations");
 	}
 
 	setLang(lang) {
@@ -111,9 +111,10 @@ return class BaseComponent extends ComposedComponent {
 		else super.setOption(option, value);
 	}
 
+	@reflect()
 	@dependsOn("map", "translations", "draw", "controlSettings")
 	_updateMapControls() {
-		if (!isProvided(this, "_updateMapControls", arguments)) return;
+		if (!depsProvided(this, "_updateMapControls", arguments)) return;
 
 		Object.keys(this.controls).forEach(controlName => {
 			const control = this.controls[controlName];
@@ -175,7 +176,7 @@ return class BaseComponent extends ComposedComponent {
 
 	@dependsOn("controlsConstructed")
 	setControlSettings(controlSettings) {
-		if (!isProvided(this, "setControlSettings", arguments)) return;
+		if (!depsProvided(this, "setControlSettings", arguments)) return;
 
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
@@ -206,10 +207,6 @@ return class BaseComponent extends ComposedComponent {
 			}
 			this.controlSettings[setting] = newSetting;
 		}
-
-		this._updateMapControls();
-		this._updateContextMenu();
-		this.browserWarnings();
 
 		provide(this, "controlSettings")
 	}
@@ -864,9 +861,10 @@ return class BaseComponent extends ComposedComponent {
 		return words.map(word => translations[word]).join(" ");
 	}
 
+	@reflect()
 	@dependsOn("maps", "translations", "controls")
 	_updateContextMenu() {
-		if (!isProvided(this, "_updateContextMenu", arguments)) return;
+		if (!depsProvided(this, "_updateContextMenu", arguments)) return;
 
 		const join = (...params) => this._joinTranslations(...params);
 

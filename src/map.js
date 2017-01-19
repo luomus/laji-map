@@ -35,7 +35,7 @@ const optionKeys = {
 	center: "setCenter",
 	zoom: "setNormalizedZoom",
 	locate: true,
-	onChange: "setDrawOnChange",
+	onChange: "setOnDrawChange",
 	onPopupClose: true,
 	markerPopupOffset: true,
 	featurePopupOffset: true,
@@ -680,7 +680,7 @@ export default class LajiMap {
 		this.setActive(this.draw.activeIdx);
 	}
 
-	setDrawOnChange(onChange) {
+	setOnDrawChange(onChange) {
 		this.draw.onChange = onChange;
 	}
 

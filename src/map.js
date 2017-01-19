@@ -266,11 +266,7 @@ export default class LajiMap {
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
-				}),
-			ykjGrid: new L.LayerGroup([100, 1000, 10000, 100000].map(meters =>
-				L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
-					layers: `atlas:YKJ_ETRS_LINE${meters}`,
-				})))
+				})
 		};
 
 		this._initializeView();

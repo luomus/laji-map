@@ -873,8 +873,7 @@ return class BaseComponent extends ComposedComponent {
 			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
 				const text = join("Draw", featureType);
 
-				if (this.draw &&
-					(this.draw[featureType] !== false)) {
+				if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
 					map.contextmenu.addItem({
 						text: text,
 						iconCls: "context-menu-draw context-menu-draw-" + featureType,

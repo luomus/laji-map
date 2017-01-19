@@ -636,6 +636,8 @@ export default class LajiMap {
 		console.log(this.draw);
 
 		this.setDrawData(this.draw.data);
+		this.setOnDrawChange(this.draw.onChange);
+		this.setActive(options.hasActive ? options.activeIdx : undefined);
 		provide(this, "draw");
 	}
 

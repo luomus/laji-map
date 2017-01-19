@@ -120,16 +120,7 @@ export default class LajiMap {
 			tileLayerName: TAUSTAKARTTA,
 			lang: "en",
 			data: [],
-			draw: {
-				data: {featureCollection: {type: "FeatureCollection", features: []}},
-				activeIdx: 0,
-				editable: true,
-				marker: true,
-				circle: true,
-				rectangle: true,
-				polygon: true,
-				polyline: true,
-			},
+			draw: {}, //default are set at setDraw
 			locate: false,
 			center:  [65, 26],
 			zoom: 2,
@@ -631,6 +622,10 @@ export default class LajiMap {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
 		this.draw = {
+			data: {featureCollection: {type: "FeatureCollection", features: []}},
+			editable: true,
+			hasActive: false,
+			activeIdx: undefined,
 			rectangle: true,
 			polygon: true,
 			polyline: true,
@@ -638,7 +633,7 @@ export default class LajiMap {
 			marker: true,
 			...options
 		};
-		this.setDrawData(options.data);
+		this.setDrawData(this.draw.data);
 		provide(this, "draw");
 	}
 
@@ -735,6 +730,7 @@ export default class LajiMap {
 	}
 
 	setActive(idx) {
+		if (!this.draw.hasActive) return;
 		const id = this.idxsToIds[idx];
 		const prevActiveIdx = this.draw.activeIdx;
 		this.draw.activeIdx = idx;
@@ -1102,7 +1098,7 @@ export default class LajiMap {
 	}
 
 	_onActiveChange(idx) {
-		this._triggerEvent(this._getOnActiveChangeEvent(idx));
+		if (this.draw.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(idx));
 	}
 
 	focusToLayer(idx) {

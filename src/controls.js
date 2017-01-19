@@ -545,7 +545,6 @@ return class BaseComponent extends ComposedComponent {
 			}
 			if (isEscape) {
 				close(e);
-				// if ([latInput, lngInput].every(input => {return document.activeElement !== input})) close(e);
 			}
 		}
 

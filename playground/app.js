@@ -116,7 +116,6 @@ class App {
 					}
 				],
 			},
-			getFeatureStyle: () => {return {weight: 1}},
 			getPopup: (idx, callback) => {
 				return `${idx}`;
 			},
@@ -136,6 +135,7 @@ class App {
 			rootElem: document.getElementById("root"),
 			draw: {
 				data: this.drawData,
+				hasActive: true,
 				activeIdx: this.activeIdx,
 				getDraftStyle: () => {return {color: "#ff00ff"}},
 			},

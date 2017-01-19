@@ -133,6 +133,7 @@ class App {
 
 		const options = {
 			rootElem: document.getElementById("root"),
+			activeIdx: 0,
 			draw: {
 				data: this.drawData,
 				hasActive: true,
@@ -151,16 +152,18 @@ class App {
 				draw: true,
 				drawCopy: true,
 				drawClear: true,
-				coordinates: true
+				coordinates: true,
+				coordinatesInput: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
 		};
 
-		this.map = new LajiMap(options);
+		const map = new LajiMap(options);
+		const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
 
 		["fi", "en", "sv"].forEach(lang => {
-			document.getElementById(lang).addEventListener("click", () => this.map.setLang(lang));
+			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));
 		});
 	}
 
@@ -188,5 +191,5 @@ class App {
 }
 
 const app = new App();
-if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
+// if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
 

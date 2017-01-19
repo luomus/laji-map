@@ -9,8 +9,8 @@ import {
 
 import { dependsOn, depsProvided, provide, reflect } from "./map";
 
-export default function controls(ComposedComponent) {
-return class BaseComponent extends ComposedComponent {
+export default function controls(LajiMap) {
+return class LajiMapWithControls extends LajiMap {
 
 	constructor(props) {
 		super(props);
@@ -194,6 +194,8 @@ return class BaseComponent extends ComposedComponent {
 		};
 
 		for (let setting in controlSettings) {
+			if (!this.controlSettings.hasOwnProperty(setting)) continue;
+
 			let newSetting = controlSettings[setting];
 			if (this.controlSettings[setting].constructor === Object) {
 				if (controlSettings[setting].constructor === Object) {

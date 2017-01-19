@@ -30,7 +30,6 @@ const optionKeys = {
 	lang: "setLang",
 	data: "setData",
 	draw: "setDraw",
-	activeIdx: "setActive",
 	tileLayerName: "setTileLayerByName",
 	center: "setCenter",
 	zoom: "setNormalizedZoom",
@@ -47,14 +46,20 @@ function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function initDepObject(target) {
-	["provided", "depsExecuted", "providerToDependency", "dependencyToProvider", "params", "reflected"].forEach(prop => {
-		if (!target[prop]) target[prop] = {};
+const providerToDependency = {};
+const dependencyToProvider = {};
+const reflected = {};
+
+function initDepContextFor(target) {
+	["provided", "depsExecuted", "params", "reflected"].forEach(prop => {
+		if (!target[prop]) {
+			target[prop] = {};
+		}
 	});
 }
 
 export function depsProvided(target, name, args) {
-	initDepObject(target);
+	initDepContextFor(target);
 	const {depsExecuted, params} = target;
 	if (!depsExecuted[name] && !depIsProvided(target, name)) {
 		params[name] = args;
@@ -65,16 +70,14 @@ export function depsProvided(target, name, args) {
 
 export function reflect() {
 	return (target, property) => {
-		initDepObject(target);
-		const {reflected} = target;
 		reflected[property] = true;
 	}
 }
 
 export function dependsOn(...deps) {
 	return (target, property) => {
-		initDepObject(target);
-		const {providerToDependency, dependencyToProvider} = target;
+		if (dependencyToProvider[property]) return; // dependency tree contructed already
+
 		deps.forEach(dep => {
 			providerToDependency[dep] = [...(providerToDependency[dep] || []), property];
 		});
@@ -84,7 +87,7 @@ export function dependsOn(...deps) {
 
 function depIsProvided(target, dep) {
 	let returnValue = false;
-	const {dependencyToProvider, depsExecuted, provided, reflected} = target;
+	const {depsExecuted, provided} = target;
 	if (dependencyToProvider[dep].every(_prov => provided[_prov])) {
 		if (depsExecuted[dep] && !reflected[dep]) return;
 		returnValue = true;
@@ -93,8 +96,7 @@ function depIsProvided(target, dep) {
 }
 
 function executeDependencies(target, prov) {
-	initDepObject(target);
-	const {providerToDependency, depsExecuted, reflected} = target;
+	const {depsExecuted} = target;
 	(providerToDependency[prov] || []).filter(dep => depIsProvided(target, dep)).forEach(dep => {
 		if (!target.params[dep] && !reflected[dep]) return;
 		target[dep](...(target.params[dep] || []));
@@ -104,6 +106,7 @@ function executeDependencies(target, prov) {
 }
 
 export function provide(target, prov) {
+	initDepContextFor(target);
 	target.provided[prov] = true;
 	executeDependencies(target, prov);
 }
@@ -113,6 +116,7 @@ export default class LajiMap {
 	constructor(props) {
 		this._constructDictionary();
 		this.onSetLangHooks = [];
+
 
 		proj4.defs("EPSG:2393", EPSG2393String);
 
@@ -126,7 +130,6 @@ export default class LajiMap {
 			zoom: 2,
 			popupOnHover: false
 		};
-
 
 		const combined = {...options, ...props};
 		Object.keys(combined).forEach(option => {
@@ -640,7 +643,6 @@ export default class LajiMap {
 		provide(this, "draw");
 	}
 
-	@dependsOn("draw")
 	setDrawData(data) {
 		if (!data) data = {
 			featureCollection: {features: []}
@@ -682,12 +684,10 @@ export default class LajiMap {
 		this.setActive(this.draw.activeIdx);
 	}
 
-	@dependsOn("draw")
 	setOnDrawChange(onChange) {
 		this.draw.onChange = onChange;
 	}
 
-	@dependsOn("draw")
 	clearDrawData() {
 		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}

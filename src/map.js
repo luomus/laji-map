@@ -123,7 +123,7 @@ export default class LajiMap {
 			draw: {
 				data: {featureCollection: {type: "FeatureCollection", features: []}},
 				activeIdx: 0,
-				enableEditing: true,
+				editable: true,
 				marker: true,
 				circle: true,
 				rectangle: true,
@@ -918,7 +918,7 @@ export default class LajiMap {
 			iconCls: "glyphicon glyphicon-trash"
 		}];
 
-		if (this.draw && this.draw.enableEditing) {
+		if (this.draw && this.draw.editable) {
 			contextmenuItems = [{
 					text: translations ? translations.EditFeature : "",
 					callback: () => this._setEditable(idx),
@@ -1126,7 +1126,7 @@ export default class LajiMap {
 	}
 
 	_setEditable(idx) {
-		if (!this.draw || this.draw.enableEditing) return;
+		if (!this.draw || this.draw.editable) return;
 		this._clearEditable();
 		this.editIdx = idx;
 		const editLayer = this._getDrawLayerById(this.idxsToIds[this.editIdx]);

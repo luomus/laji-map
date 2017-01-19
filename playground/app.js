@@ -136,10 +136,11 @@ class App {
 			draw: {
 				data: this.drawData,
 				hasActive: true,
+				editable: false,
 				activeIdx: this.activeIdx,
 				getDraftStyle: () => {return {color: "#ff00ff"}},
+				onChange: (...params) => this.onMapChange(...params),
 			},
-			onChange: (...params) => this.onMapChange(...params),
 			lang: "fi",
 			popupOnHover: true,
 			zoom: 7,

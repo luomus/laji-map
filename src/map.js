@@ -35,7 +35,7 @@ const optionKeys = {
 	center: "setCenter",
 	zoom: "setNormalizedZoom",
 	locate: true,
-	onChange: true,
+	onChange: "setDrawOnChange",
 	onPopupClose: true,
 	markerPopupOffset: true,
 	featurePopupOffset: true,
@@ -633,6 +633,8 @@ export default class LajiMap {
 			marker: true,
 			...options
 		};
+		console.log(this.draw);
+
 		this.setDrawData(this.draw.data);
 		provide(this, "draw");
 	}
@@ -676,6 +678,10 @@ export default class LajiMap {
 		drawLayerForMap.addTo(this.map);
 		this._resetIds();
 		this.setActive(this.draw.activeIdx);
+	}
+
+	setDrawOnChange(onChange) {
+		this.draw.onChange = onChange;
 	}
 
 	clearDrawData() {
@@ -908,20 +914,21 @@ export default class LajiMap {
 		const { translations } = this;
 		layer.unbindContextMenu();
 
-		let contextmenuItems = [{
-			text: translations ? translations.DeleteFeature : "",
-			callback: () => this._onDelete(this.idxsToIds[idx]),
-			iconCls: "glyphicon glyphicon-trash"
-		}];
+		let contextmenuItems = [];
 
 		if (this.draw && this.draw.editable) {
-			contextmenuItems = [{
+			contextmenuItems = [
+				{
 					text: translations ? translations.EditFeature : "",
 					callback: () => this._setEditable(idx),
 					iconCls: "glyphicon glyphicon-pencil"
 				},
-				...contextmenuItems
-			]
+				{
+					text: translations ? translations.DeleteFeature : "",
+					callback: () => this._onDelete(this.idxsToIds[idx]),
+					iconCls: "glyphicon glyphicon-trash"
+				}
+				]
 		}
 
 		layer.bindContextMenu({
@@ -974,7 +981,7 @@ export default class LajiMap {
 
 	_triggerEvent(e) {
 		if (!Array.isArray(e)) e = [e];
-		if (this.onChange) this.onChange(e);
+		if (this.draw.onChange) this.draw.onChange(e);
 	}
 
 	_onAdd(layer) {
@@ -1122,7 +1129,7 @@ export default class LajiMap {
 	}
 
 	_setEditable(idx) {
-		if (!this.draw || this.draw.editable) return;
+		if (!this.draw || !this.draw.editable) return;
 		this._clearEditable();
 		this.editIdx = idx;
 		const editLayer = this._getDrawLayerById(this.idxsToIds[this.editIdx]);

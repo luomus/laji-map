@@ -631,9 +631,8 @@ export default class LajiMap {
 			polyline: true,
 			circle: true,
 			marker: true,
-			...options
+			...(options || {})
 		};
-		console.log(this.draw);
 
 		this.setDrawData(this.draw.data);
 		this.setOnDrawChange(this.draw.onChange);
@@ -641,6 +640,7 @@ export default class LajiMap {
 		provide(this, "draw");
 	}
 
+	@dependsOn("draw")
 	setDrawData(data) {
 		if (!data) data = {
 			featureCollection: {features: []}
@@ -682,10 +682,12 @@ export default class LajiMap {
 		this.setActive(this.draw.activeIdx);
 	}
 
+	@dependsOn("draw")
 	setOnDrawChange(onChange) {
 		this.draw.onChange = onChange;
 	}
 
+	@dependsOn("draw")
 	clearDrawData() {
 		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}
@@ -737,6 +739,7 @@ export default class LajiMap {
 		}
 	}
 
+	@dependsOn("draw")
 	setActive(idx) {
 		if (!this.draw.hasActive) return;
 		const id = this.idxsToIds[idx];
@@ -766,6 +769,7 @@ export default class LajiMap {
 		this._reclusterDrawData();
 	}
 
+	@dependsOn("draw")
 	_reclusterDrawData() {
 		if (this.clusterDrawLayer) {
 			this.clusterDrawLayer.clearLayers();
@@ -786,6 +790,7 @@ export default class LajiMap {
 		});
 	}
 
+	@dependsOn("draw")
 	redrawDrawData() {
 		for (let id in this.idsToIdxs) {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);

@@ -179,23 +179,21 @@ export default class LajiMap {
 		}
 	}
 
-	//TODO doesn't work probably after initial set.
+	@dependsOn("map")
 	setRootElem(rootElem) {
+		if (!depsProvided(this, "setRootElem", arguments)) return;
+
 		this.rootElem = rootElem;
-		provide(this, "rootElem");
+		this.rootElem.appendChild(this.container);
 	}
 
-	@dependsOn("rootElem")
 	_initializeMap() {
-		if (!depsProvided(this, "_initializeMap", arguments)) return;
-
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
 		this.container = document.createElement("div");
 		const {className} = this.container;
 		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
 			+ "laji-map";
-		this.rootElem.appendChild(this.container);
 
 		this.finnishMapElem = document.createElement("div");
 		this.foreignMapElem = document.createElement("div");
@@ -448,6 +446,7 @@ export default class LajiMap {
 	@dependsOn("map")
 	setNormalizedZoom(zoom) {
 		if (!depsProvided(this, "setNormalizedZoom", arguments)) return;
+
 		this.zoom = zoom;
 		if (this.map) this.map.setZoom(this.getDenormalizedZoom());
 		provide(this, "zoom");
@@ -456,6 +455,7 @@ export default class LajiMap {
 	@dependsOn("zoom")
 	setCenter(center) {
 		if (!depsProvided(this, "setCenter", arguments)) return;
+
 		this.center = center;
 		if (this.map) this.map.setView(center, this.getDenormalizedZoom(this.zoom));
 		provide(this, "center");
@@ -735,7 +735,6 @@ export default class LajiMap {
 		}
 	}
 
-	@dependsOn("draw")
 	setActive(idx) {
 		if (!this.draw.hasActive) return;
 		const id = this.idxsToIds[idx];
@@ -765,7 +764,6 @@ export default class LajiMap {
 		this._reclusterDrawData();
 	}
 
-	@dependsOn("draw")
 	_reclusterDrawData() {
 		if (this.clusterDrawLayer) {
 			this.clusterDrawLayer.clearLayers();
@@ -786,7 +784,6 @@ export default class LajiMap {
 		});
 	}
 
-	@dependsOn("draw")
 	redrawDrawData() {
 		for (let id in this.idsToIdxs) {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);

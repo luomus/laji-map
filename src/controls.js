@@ -7,7 +7,7 @@ import {
 	EPSG2393String
 } from "./globals";
 
-import { dependsOn, depsProvided, provide, reflect } from "./map";
+import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
 
 export default function controls(LajiMap) {
 return class LajiMapWithControls extends LajiMap {
@@ -112,7 +112,7 @@ return class LajiMapWithControls extends LajiMap {
 	}
 
 	@reflect()
-	@dependsOn("map", "translations", "draw", "controlSettings")
+	@dependsOn("map", "translations", "controlSettings")
 	_updateMapControls() {
 		if (!depsProvided(this, "_updateMapControls", arguments)) return;
 
@@ -120,6 +120,10 @@ return class LajiMapWithControls extends LajiMap {
 			const control = this.controls[controlName];
 			if (control) this.map.removeControl(control);
 		});
+
+		this._addControl("layer", this._getLayerControl());
+		this._addControl("location", this._getLocationControl());
+		this._addControl("zoom", this._getZoomControl());
 
 		this.controlItems = {
 			coordinateInput: {
@@ -142,15 +146,15 @@ return class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		this._addControl("layer", this._getLayerControl());
-		this._addControl("location", this._getLocationControl());
-		this._addControl("draw", this._getDrawControl());
-		this._addControl("coordinateInput", this._getCoordinateInputControl());
-		this._addControl("drawCopy", this._getDrawCopyControl());
-		this._addControl("drawClear", this._getDrawClearControl());
+		if (isProvided(this, "draw")) {
+			this._addControl("draw", this._getDrawControl());
+			this._addControl("coordinateInput", this._getCoordinateInputControl());
+			this._addControl("drawCopy", this._getDrawCopyControl());
+			this._addControl("drawClear", this._getDrawClearControl());
+		}
+
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
 		this._addControl("coordinates", this._getCoordinatesControl());
-		this._addControl("zoom", this._getZoomControl());
 
 		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
@@ -165,13 +169,19 @@ return class LajiMapWithControls extends LajiMap {
 		["in", "out"].forEach(zoomType => {
 			removeHref(`leaflet-control-zoom-${zoomType}`);
 		});
-		["polyline", "polygon", "rectangle", "circle", "marker"].forEach(featureType => {
+		this.getFeatureTypes().forEach(featureType => {
 			removeHref(`leaflet-draw-draw-${featureType}`);
 		});
 		removeHref("leaflet-control-layers-toggle");
 		removeHref("leaflet-contextmenu-item");
 
 		provide(this, "controls");
+	}
+
+	@reflect()
+	@dependsOn("draw")
+	_updateDrawControls() {
+		this._updateMapControls();
 	}
 
 	@dependsOn("controlsConstructed")
@@ -216,14 +226,16 @@ return class LajiMapWithControls extends LajiMap {
 	_controlIsAllowed(name) {
 		const dependencies = {
 			coordinateInput: [
-				() => !!this.draw,
+				() => this.draw,
 				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false}))
 			],
 			drawCopy: [
-				() => this.draw
+				() => this.draw,
+				() => this.getFeatureTypes().some(type => this.draw[type])
 			],
 			drawClear: [
-				() => this.draw
+				() => this.draw,
+				() => this.getFeatureTypes().some(type => this.draw[type])
 			]
 		};
 
@@ -242,7 +254,7 @@ return class LajiMapWithControls extends LajiMap {
 	}
 
 	_addControl(name, control) {
-		if (this._controlIsAllowed(name)) {
+		if (control && this._controlIsAllowed(name)) {
 			this.controls[name] = control;
 			this.map.addControl(control);
 		}
@@ -280,7 +292,13 @@ return class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		const featureTypes = ["polyline", "polygon", "rectangle", "circle", "marker"];
+		const featureTypes = this.getFeatureTypes();
+
+		featureTypes.forEach(type => {
+			if (this.draw[type] === false || this.controlSettings.draw[type] === false) {
+				drawOptions.draw[type] = false;
+			}
+		});
 
 		featureTypes.slice(0, -1).forEach(type => {
 			drawOptions.draw[type] = {
@@ -863,7 +881,7 @@ return class LajiMapWithControls extends LajiMap {
 	}
 
 	@reflect()
-	@dependsOn("maps", "translations", "controls")
+	@dependsOn("maps", "translations", "controls", "draw")
 	_updateContextMenu() {
 		if (!depsProvided(this, "_updateContextMenu", arguments)) return;
 
@@ -872,7 +890,7 @@ return class LajiMapWithControls extends LajiMap {
 		this.maps.forEach(map => {
 			map.contextmenu.removeAllItems();
 
-			["polyline", "polygon", "rectangle", "circle"].forEach(featureType => {
+			this.getFeatureTypes().filter(type => type !== "circle").forEach(featureType => {
 				const text = join("Draw", featureType);
 
 				if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
@@ -883,8 +901,6 @@ return class LajiMapWithControls extends LajiMap {
 					});
 				}
 			});
-
-			if (!this.controlItems) return;
 
 			let lineAdded = false;
 			[

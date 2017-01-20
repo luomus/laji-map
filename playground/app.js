@@ -134,14 +134,7 @@ class App {
 		const options = {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
-			draw: {
-				data: this.drawData,
-				hasActive: true,
-				editable: false,
-				activeIdx: this.activeIdx,
-				getDraftStyle: () => {return {color: "#ff00ff"}},
-				onChange: (...params) => this.onMapChange(...params),
-			},
+			draw: false,
 			lang: "fi",
 			popupOnHover: true,
 			zoom: 7,
@@ -161,6 +154,8 @@ class App {
 
 		const map = new LajiMap(options);
 		const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
+
+		map.setDraw(true);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

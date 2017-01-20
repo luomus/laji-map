@@ -111,6 +111,11 @@ export function provide(target, prov) {
 	executeDependencies(target, prov);
 }
 
+export function isProvided(target, prov) {
+	return target.provided[prov];
+}
+
+
 @HasControls
 export default class LajiMap {
 	constructor(props) {
@@ -620,7 +625,9 @@ export default class LajiMap {
 	setDraw(options) {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
-		this.draw = {
+		const drawAllowed = (options === true || options.constructor === Object);
+
+		this.draw = drawAllowed ? {
 			data: {featureCollection: {type: "FeatureCollection", features: []}},
 			editable: true,
 			hasActive: false,
@@ -631,12 +638,24 @@ export default class LajiMap {
 			circle: true,
 			marker: true,
 			...(options || {})
+		} : {
+			data: {featureCollection: {type: "FeatureCollection", features: []}},
+			editable: false,
+			hasActive: false,
+			activeIdx: undefined,
+			rectangle: false,
+			polygon: false,
+			polyline: false,
+			circle: false,
+			marker: false,
 		};
 
-		this.setDrawData(this.draw.data);
-		this.setOnDrawChange(this.draw.onChange);
-		this.setActive(options.hasActive ? options.activeIdx : undefined);
-		provide(this, "draw");
+		if (drawAllowed) {
+			this.setDrawData(this.draw.data);
+			this.setOnDrawChange(this.draw.onChange);
+			this.setActive(options.hasActive ? options.activeIdx : undefined);
+			provide(this, "draw");
+		}
 	}
 
 	setDrawData(data) {
@@ -1344,5 +1363,9 @@ export default class LajiMap {
 			icon: this._createIcon(options)
 		};
 		new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass).enable();
+	}
+
+	getFeatureTypes() {
+		return ["rectangle", "polyline", "polygon", "circle", "marker"];
 	}
 }

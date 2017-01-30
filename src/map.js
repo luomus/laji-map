@@ -275,7 +275,7 @@ export default class LajiMap {
 			map.addEventListener({
 				click: e => this._interceptClick(),
 				dblclick: e => {
-					if (this.editIdx !== undefined) return;
+					if (this.editIdx !== undefined || this.drawing) return;
 					if ((typeof this.draw === "object" && this.draw.marker !== false)
 					) {
 						this._onAdd(new L.marker(e.latlng));

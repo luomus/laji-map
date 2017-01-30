@@ -6,7 +6,6 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import browser from "detect-browser";
 import proj4 from "proj4"
 import HasControls from "./controls";
 import {
@@ -141,33 +140,6 @@ export default class LajiMap {
 			this.setOption(option, combined[option]);
 		});
 		this._initializeMap();
-		this.browserWarnings();
-	}
-
-	browserWarnings() {
-		if (this.browserWarned) return;
-		if (this.draw && (this.draw.polygon ||this.draw.polyline) && browser && browser.name === "chrome" && browser.version &&
-			browser.version.split(".").length && browser.version.split(".")[0] >= 55) {
-			const warning = document.createElement("div");
-			warning.className = "alert alert-warning laji-map-warning";
-			const span = document.createElement("span");
-			const hook = this.addTranslationHook(span, "innerHTML", "ChromeWarning");
-
-
-			const closeButton = document.createElement("button");
-			closeButton.setAttribute("type", "button");
-			closeButton.className = "close";
-			closeButton.innerHTML = "✖";
-			closeButton.addEventListener("click", () => {
-				this.container.removeChild(warning);
-				this.removeTranslationHook(hook);
-			});
-
-			warning.appendChild(span);
-			warning.appendChild(closeButton);
-			this.container.appendChild(warning);
-		}
-		this.browserWarned = true;
 	}
 
 	setOptions(options) {
@@ -303,11 +275,6 @@ export default class LajiMap {
 			map.addEventListener({
 				click: e => this._interceptClick(),
 				dblclick: e => {
-					//TODO Remove this hack once leaflet fixes the issue.
-					if (Date.now() - this.dblClickTimestamp < 500) {
-						return;
-					}
-					this.dblClickTimestamp = Date.now();
 					if (this.editIdx !== undefined) return;
 					if ((typeof this.draw === "object" && this.draw.marker !== false)
 					) {

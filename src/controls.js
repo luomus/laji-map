@@ -462,6 +462,7 @@ return class LajiMapWithControls extends LajiMap {
 							else if (name === "ETRS") coords = euref;
 							nameCell.innerHTML = `<strong>${name}:</strong>`;
 							coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
+							coordsCell.className = "monospace";
 						});
 					}).on("mouseout", () => {
 						container.style.display = "none";

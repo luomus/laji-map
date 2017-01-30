@@ -133,3 +133,7 @@
 .laji-map .laji-map-coordinates-control table tr td:first-child {
 	padding-right: 4px;
 }
+
+.laji-map .monospace {
+	font-family: monospace;
+}

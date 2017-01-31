@@ -889,7 +889,7 @@ return class LajiMapWithControls extends LajiMap {
 		this.maps.forEach(map => {
 			map.contextmenu.removeAllItems();
 
-			this.getFeatureTypes().filter(type => type !== "circle").forEach(featureType => {
+			this.getFeatureTypes().forEach(featureType => {
 				const text = join("Draw", featureType);
 
 				if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {

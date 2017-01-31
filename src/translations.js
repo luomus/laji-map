@@ -230,7 +230,7 @@
 		sv: "Skogvegetationszoner"
 	},
 	suokasvillisuusvyohykkeet: {
-		fi: "Suokasvillisuusvyohykkeet",
+		fi: "Suokasvillisuusvyöhykkeet",
 		en: "Mire vegetation zones",
 		sv: "Myrvegetationszoner"
 	},

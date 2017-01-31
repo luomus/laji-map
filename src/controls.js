@@ -292,21 +292,19 @@ return class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		const featureTypes = this.getFeatureTypes();
-
-		featureTypes.forEach(type => {
-			if (this.draw[type] === false || this.controlSettings.draw[type] === false) {
-				drawOptions.draw[type] = false;
-			}
-		});
-
-		featureTypes.slice(0, -1).forEach(type => {
+		this.getFeatureTypes().slice(0, -1).forEach(type => {
 			drawOptions.draw[type] = {
 				shapeOptions: this._getDrawingDraftStyle()
 			};
 		});
 
-		featureTypes.forEach(type => {
+		this.getFeatureTypes().forEach(type => {
+			if (this.draw[type] === false || this.controlSettings.draw[type] === false) {
+				drawOptions.draw[type] = false;
+			}
+		});
+
+		this.getFeatureTypes().forEach(type => {
 			if (this.controlSettings.draw === false ||
 				(this.controlSettings.draw.constructor === Object && this.controlSettings.draw[type] !== true)) {
 				drawOptions.draw[type] = false;

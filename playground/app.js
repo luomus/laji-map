@@ -134,7 +134,7 @@ class App {
 		const options = {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
-			draw: false,
+			draw: {polyline: false, marker: false, rectangle: false},
 			lang: "fi",
 			popupOnHover: true,
 			zoom: 7,
@@ -154,8 +154,6 @@ class App {
 
 		const map = new LajiMap(options);
 		const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
-
-		map.setDraw(true);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

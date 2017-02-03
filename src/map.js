@@ -1329,7 +1329,9 @@ export default class LajiMap {
 		} : {
 			icon: this._createIcon(options)
 		};
-		new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass).enable();
+		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass)
+		layer.enable();
+		return layer;
 	}
 
 	getFeatureTypes() {

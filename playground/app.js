@@ -134,7 +134,7 @@ class App {
 		const options = {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
-			draw: {polyline: false, marker: false, rectangle: false},
+			draw: {data: this.drawData},
 			lang: "fi",
 			popupOnHover: true,
 			zoom: 7,
@@ -153,6 +153,7 @@ class App {
 		};
 
 		const map = new LajiMap(options);
+		this.map = map;
 		const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
 
 		["fi", "en", "sv"].forEach(lang => {
@@ -184,5 +185,5 @@ class App {
 }
 
 const app = new App();
-// if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
+if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
 

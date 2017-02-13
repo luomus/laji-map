@@ -1,7 +1,6 @@
 import "leaflet";
 import "leaflet-draw";
 import "proj4leaflet";
-import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
@@ -164,6 +163,18 @@ export default class LajiMap {
 		this.rootElem.appendChild(this.container);
 	}
 
+	getMMLProj() {
+		const mmlProj = L.TileLayer.MML.get3067Proj();
+
+		// Scale controller won't work without this hack.
+		// Fixes also circle projection.
+		mmlProj.distance =  L.CRS.Earth.distance;
+		mmlProj.R = 6378137;
+
+		return mmlProj;
+
+	}
+
 	_initializeMap() {
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
@@ -179,31 +190,19 @@ export default class LajiMap {
 
 		[this.finnishMapElem, this.foreignMapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
 
-		const mmlProj = L.TileLayer.MML.get3067Proj();
-
-		// Scale controller won't work without this hack.
-		// Fixes also circle projection.
-		mmlProj.distance =  L.CRS.Earth.distance;
-		mmlProj.R = 6378137;
-
 		const mapOptions = {
 			contextmenu: true,
 			contextmenuItems: [],
 			zoomControl: false,
 			noWrap: true,
 			continuousWorld: false,
-		}
+		};
 
 		this.finnishMap = L.map(this.finnishMapElem, {
 			...mapOptions,
-			crs: mmlProj,
-			maxBounds: [[40, 0], [60, 120]],
+			crs: this.getMMLProj(),
+			// maxBounds: [[40, 0], [60, 120]],
 		});
-		this.foreignMap = L.map(this.foreignMapElem, {
-			...mapOptions,
-			maxBounds: [[89.45016124669523, 180], [-87.71179927260242, -180]]
-		});
-		this.maps = [this.finnishMap, this.foreignMap];
 
 		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
 			this[tileLayerName] = L.tileLayer.mml_wmts({
@@ -249,8 +248,6 @@ export default class LajiMap {
 				})
 		};
 
-		this._initializeView();
-
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
 			this._onLocate();
@@ -272,27 +269,25 @@ export default class LajiMap {
 		);
 	}
 
-	@dependsOn("maps")
+	@dependsOn("map")
 	_initializeMapEvents() {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
-		this.maps.forEach(map => {
-			map.addEventListener({
-				click: e => this._interceptClick(),
-				dblclick: e => {
-					if (this.editIdx !== undefined || this.drawing) return;
-					if ((typeof this.draw === "object" && this.draw.marker !== false)
-					) {
-						this._onAdd(new L.marker(e.latlng));
-					}
-				},
-				"draw:created": ({ layer }) => this._onAdd(layer),
-				"draw:drawstart": () => { this.drawing = true },
-				"draw:drawstop": () => { this.drawing = false },
-				locationfound: (...params) => this._onLocationFound(...params),
-				locationerror: (...params) => this._onLocationNotFound(...params),
-				"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
-			});
+		this.map.addEventListener({
+			click: e => this._interceptClick(),
+			dblclick: e => {
+				if (this.editIdx !== undefined || this.drawing) return;
+				if ((typeof this.draw === "object" && this.draw.marker !== false)
+				) {
+					this._onAdd(new L.marker(e.latlng));
+				}
+			},
+			"draw:created": ({ layer }) => this._onAdd(layer),
+			"draw:drawstart": () => { this.drawing = true },
+			"draw:drawstop": () => { this.drawing = false },
+			locationfound: (...params) => this._onLocationFound(...params),
+			locationerror: (...params) => this._onLocationNotFound(...params),
+			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
 		});
 	}
 
@@ -302,45 +297,6 @@ export default class LajiMap {
 
 	_getMMLCRSLayers() {
 		return [this.maastokartta, this.taustakartta];
-	}
-
-	swapMap() {
-		let mapElem = this.finnishMapElem;
-		let otherMapElem = this.foreignMapElem;
-		let otherMap = this.foreignMap;
-
-		if (this.map === this.foreignMap) {
-			mapElem = this.foreignMapElem;
-			otherMapElem = this.finnishMapElem;
-			otherMap = this.finnishMap;
-		}
-		mapElem.style.display = "block";
-		otherMapElem.style.display = "none";
-
-		const swapLayer = layer => {
-			if (layer) {
-				if (otherMap.hasLayer(layer)) otherMap.removeLayer(layer);
-				this.map.addLayer(layer);
-			}
-		}
-
-		if (!this.userLocationLayer) {
-			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
-		} else  {
-			swapLayer(this.userLocationLayer);
-		}
-
-		(this.data || []).forEach((item, i) => {
-			if (item.clusterLayer) swapLayer(item.clusterLayer);
-			else if (this.dataLayerGroups && this.dataLayerGroups[i]) swapLayer(this.dataLayerGroups[i]);
-		});
-
-		if (this.clusterDrawLayer) swapLayer(this.clusterDrawLayer);
-		else if (this.drawLayerGroup) swapLayer(this.drawLayerGroup);
-
-		this.recluster();
-
-		this.map.invalidateSize();
 	}
 
 	@dependsOn("maps")
@@ -360,54 +316,55 @@ export default class LajiMap {
 
 		if (!this.map) {
 			this.tileLayer = layer;
-			this.map = mmlCRSLayers.includes(this.tileLayer) ? this.finnishMap : this.foreignMap;
-			this.swapMap();
+			this.map = this.finnishMap;
 			this.map.addLayer(this.tileLayer);
-
+			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 			provide(this, "map");
-
-			return;
+			this._initializeView();
 		}
 
-		let mapChanged = false;
-		let otherMap = undefined;
+		const center = this.map.getCenter();
+		this.map.options.crs = (defaultCRSLayers.includes(layer)) ? L.CRS.EPSG3857 : this.getMMLProj();
+
+		this.map.setView(center);
+
+		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom - 3;
-			mapChanged = true;
-			this.map = this.finnishMap;
-			otherMap = this.foreignMap;
+			projectionChanged = true;
 		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom + 3;
-			mapChanged = true;
-			this.map = this.foreignMap;
-			otherMap = this.finnishMap;
+			projectionChanged = true;
 		}
 
-		if (!mapChanged) {
-			this.map.removeLayer(this.tileLayer);
-		}
+		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+		this.map.setView(center, zoom, {animate: false});
+
+		this.map.removeLayer(this.tileLayer);
+
 		this.tileLayer = layer;
 
 		this.map.addLayer(this.tileLayer);
-		if (mapChanged) {
-			this.map.setView(otherMap.getCenter(), zoom, {animate: false});
+
+		if (projectionChanged) {
 			for (let overlayName in this.overlays) {
 				const overlay = this.overlays[overlayName];
 				if (overlay._map) {
-					overlay._map.removeLayer(overlay);
+					this.map.removeLayer(overlay);
 					this.map.addLayer(overlay);
 				}
 			}
-			this.swapMap();
 		}
+
+		provide(this, "map");
 	}
 
 	getTileLayers() {
 		const tileLayers = {};
 		[TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
 			tileLayers[tileLayerName] = this[tileLayerName];
-		})
+		});
 		return tileLayers;
 	}
 
@@ -439,10 +396,8 @@ export default class LajiMap {
 	}
 
 	destroy() {
-		this.maps.forEach(map => {
-			map.off();
-			map = null;
-		})
+			this.map.off();
+			this.map = null;
 	}
 
 	_constructDictionary() {

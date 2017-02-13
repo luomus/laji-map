@@ -1,3 +1,5 @@
+import "leaflet-contextmenu";
+
 import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
@@ -38,26 +40,6 @@ return class LajiMapWithControls extends LajiMap {
 		if (option === "controlSettings") {
 			this.setControlSettings(value);
 		}
-	}
-
-	swapMap() {
-		let otherMap = this.foreignMap;
-		let nextMap = this.finnishMap;
-
-		if (this.map === this.foreignMap) {
-			otherMap = this.finnishMap;
-			nextMap = this.foreignMap;
-		}
-
-		if (this.controls) Object.keys(this.controls).forEach(controlName => {
-			const control = this.controls[controlName];
-			if  (control) {
-				otherMap.removeControl(control);
-				nextMap.addControl(control);
-			}
-		});
-
-		super.swapMap();
 	}
 
 	@dependsOn("controls")
@@ -442,31 +424,29 @@ return class LajiMapWithControls extends LajiMap {
 					coordinateType.coordsCell = L.DomUtil.create("td", undefined, row);
 				});
 
-				that.maps.forEach(map => {
-					map.on("mousemove", ({latlng}) => {
-						if (!visible) {
-							container.style.display = "block";
-							visible = true;
-						}
+				that.map.on("mousemove", ({latlng}) => {
+					if (!visible) {
+						container.style.display = "block";
+						visible = true;
+					}
 
-						const {lat, lng} = latlng;
-						const wgs84 = [lat, lng].map(c => c.toFixed(6));
-						const ykj = that.convert([lat, lng], "WGS84", "EPSG:2393").reverse();
-						const euref = that.convert([lat, lng], "WGS84", "EPSG:3067").reverse();
+					const {lat, lng} = latlng;
+					const wgs84 = [lat, lng].map(c => c.toFixed(6));
+					const ykj = that.convert([lat, lng], "WGS84", "EPSG:2393").reverse();
+					const euref = that.convert([lat, lng], "WGS84", "EPSG:3067").reverse();
 
-						coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
-							let coords = wgs84;
-							if (name === "YKJ") coords = ykj;
-							else if (name === "ETRS") coords = euref;
-							nameCell.innerHTML = `<strong>${name}:</strong>`;
-							coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
-							coordsCell.className = "monospace";
-						});
-					}).on("mouseout", () => {
-						container.style.display = "none";
-						visible = false;
-					})
-				});
+					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
+						let coords = wgs84;
+						if (name === "YKJ") coords = ykj;
+						else if (name === "ETRS") coords = euref;
+						nameCell.innerHTML = `<strong>${name}:</strong>`;
+						coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
+						coordsCell.className = "monospace";
+					});
+				}).on("mouseout", () => {
+					container.style.display = "none";
+					visible = false;
+				})
 
 				return container;
 			}
@@ -486,42 +466,44 @@ return class LajiMapWithControls extends LajiMap {
 		});
 		Object.keys(this.overlays).forEach(overlayName => {
 			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlays[overlayName];
-		})
-
-		const LayerControl = L.Control.Layers.include({
-			_onInputClick: () => {
-				const inputs = document.querySelectorAll(".laji-map .leaflet-control-layers-list input");
-
-				const overlayIdsToAdd = {};
-				for (let i = 0; i < inputs.length; i++) {
-					const input = inputs[i];
-					if (input.checked) {
-						for (let tileLayerName of tileLayersNames) {
-							if (this[tileLayerName]._leaflet_id === input.layerId) {
-								this.setTileLayer(this[tileLayerName]);
-								break;
-							}
-						}
-						for (let overlayName of Object.keys(this.overlays)) {
-							const overlay = this.overlays[overlayName];
-							if (overlay._leaflet_id === input.layerId) {
-								overlayIdsToAdd[input.layerId] = true;
-							}
-						}
-					}
-				}
-				for (let overlayName of Object.keys(this.overlays)) {
-					const overlay = this.overlays[overlayName];
-					if (overlayIdsToAdd[overlay._leaflet_id] && !this.map.hasLayer(overlay)) {
-						this.map.addLayer(overlay);
-					} else if (!overlayIdsToAdd[overlay._leaflet_id] && this.map.hasLayer(overlay)) {
-						this.map.removeLayer(overlay);
-					}
-				}
-				this.controls.layer.expand();
-			}
 		});
 
+		const that = this;
+		const LayerControl = L.Control.Layers.extend({
+			_onInputClick: function(e) {
+				if (!e) return;
+
+				const layerId = e.target.layerId;
+
+				if (layerId === undefined) return;
+
+				this._handlingClick = true;
+
+				const overlayIdsToAdd = {};
+				for (let tileLayerName of tileLayersNames) {
+					if (that[tileLayerName]._leaflet_id === layerId) {
+						that.setTileLayer(that[tileLayerName]);
+						break;
+					}
+				}
+				for (let overlayName of Object.keys(that.overlays)) {
+					const overlay = that.overlays[overlayName];
+					if (overlay._leaflet_id === layerId) {
+						overlayIdsToAdd[layerId] = true;
+					}
+				}
+
+				for (let overlayName of Object.keys(that.overlays)) {
+					const overlay = that.overlays[overlayName];
+					if (overlayIdsToAdd[overlay._leaflet_id] && !that.map.hasLayer(overlay)) {
+						that.map.addLayer(overlay);
+					} else if (!overlayIdsToAdd[overlay._leaflet_id] && that.map.hasLayer(overlay)) {
+						that.map.removeLayer(overlay);
+					}
+				}
+				this._handlingClick = false;
+			}
+		});
 		return new LayerControl(baseMaps, overlays, {position: "topleft"});
 	}
 
@@ -886,35 +868,33 @@ return class LajiMapWithControls extends LajiMap {
 
 		const join = (...params) => this._joinTranslations(...params);
 
-		this.maps.forEach(map => {
-			map.contextmenu.removeAllItems();
+		this.map.contextmenu.removeAllItems();
 
-			this.getFeatureTypes().forEach(featureType => {
-				const text = join("Draw", featureType);
+		this.getFeatureTypes().forEach(featureType => {
+			const text = join("Draw", featureType);
 
-				if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
-					map.contextmenu.addItem({
-						text: text,
-						iconCls: "context-menu-draw context-menu-draw-" + featureType,
-						callback: () => this.triggerDrawing(featureType)
-					});
+			if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
+				this.map.contextmenu.addItem({
+					text: text,
+					iconCls: "context-menu-draw context-menu-draw-" + featureType,
+					callback: () => this.triggerDrawing(featureType)
+				});
+			}
+		});
+
+		let lineAdded = false;
+		[
+			this.controlItems.coordinateInput,
+			this.controlItems.drawCopy,
+			this.controlItems.drawClear
+		].forEach(control => {
+			if (this._controlIsAllowed(control.name)) {
+				if (!lineAdded) {
+					this.map.contextmenu.addItem("-");
+					lineAdded = true;
 				}
-			});
-
-			let lineAdded = false;
-			[
-				this.controlItems.coordinateInput,
-				this.controlItems.drawCopy,
-				this.controlItems.drawClear
-			].forEach(control => {
-				if (this._controlIsAllowed(control.name)) {
-					if (!lineAdded) {
-						map.contextmenu.addItem("-");
-						lineAdded = true;
-					}
-					map.contextmenu.addItem(control);
-				}
-			});
+				this.map.contextmenu.addItem(control);
+			}
 		});
 	}
 

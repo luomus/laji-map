@@ -211,32 +211,37 @@ export default class LajiMap {
 			});
 		});
 
-		this.openStreetMap = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-		this.googleSatellite = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-			subdomains:['mt0','mt1','mt2','mt3']
+		this.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+		this.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+			subdomains:["mt0","mt1","mt2","mt3"]
 		});
 
 		this.overlays = {
 			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-				layers: 'test:eliomaakunnat',
-				format: 'image/png',
+				layers: "test:eliomaakunnat",
+				format: "image/png",
 				transparent: true,
-				version: '1.3.0'
+				version: "1.3.0"
 			}),
 			metsakasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-				layers: 'Metsakasvillisuusvyohykkeet',
-				format: 'image/png',
+				layers: "Metsakasvillisuusvyohykkeet",
+				format: "image/png",
 				transparent: true,
-				version: '1.3.0'
+				version: "1.3.0"
 			}).setOpacity(0.5),
 			suokasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-				layers: 'Suokasvillisuusvyohykkeet',
-				format: 'image/png',
+				layers: "Suokasvillisuusvyohykkeet",
+				format: "image/png",
 				transparent: true,
-				version: '1.3.0'
+				version: "1.3.0"
 			}).setOpacity(0.5),
-			peninkulmaGrid:
-				L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
+			uhanalaisuusarviointivyohykkeet: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
+				layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
+				format: "image/png",
+				transparent: true,
+				version: "1.1.0"
+			}),
+			peninkulmaGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
 					layers: `YKJ:ykj10km_grid`,
 					format: "image/png",
 					transparent: true,

@@ -293,5 +293,10 @@
 		fi: "Peninkulmat",
 		en: "Scandinavian miles",
 		sv: "Mil"
-	}
+	},
+	uhanalaisuusarviointivyohykkeet: {
+		fi: "Uhanalaisuusarviointivyöhykkeet",
+		en: "Threatened species evaluation zones",
+		sv: "Hotade arter utvärderingszoner"
+	},
 }

@@ -154,7 +154,7 @@ class App {
 
 		const map = new LajiMap(options);
 		this.map = map;
-		const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
+		// const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

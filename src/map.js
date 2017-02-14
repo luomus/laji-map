@@ -287,7 +287,8 @@ export default class LajiMap {
 			"draw:drawstop": () => { this.drawing = false },
 			locationfound: (...params) => this._onLocationFound(...params),
 			locationerror: (...params) => this._onLocationNotFound(...params),
-			"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
+			"contextmenu.show": () => this._interceptClick(),
+			"blur": () => this._interceptClick(),
 		});
 	}
 
@@ -1107,12 +1108,6 @@ export default class LajiMap {
 	}
 
 	_interceptClick() {
-		if (this.contextMenuHideTimestamp !== undefined) {
-			const timestamp = this.contextMenuHideTimestamp;
-			this.contextMenuHideTimestamp = undefined;
-			if (Date.now() - timestamp < 200) return true;
-		}
-
 		if (this.drawing) return true;
 		if (this.editIdx !== undefined) {
 			this._commitEdit();

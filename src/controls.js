@@ -432,8 +432,8 @@ return class LajiMapWithControls extends LajiMap {
 
 					const {lat, lng} = latlng;
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
-					const ykj = that.convert([lat, lng], "WGS84", "EPSG:2393").reverse();
-					const euref = that.convert([lat, lng], "WGS84", "EPSG:3067").reverse();
+					const ykj = that.convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
+					const euref = that.convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
 
 					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
 						let coords = wgs84;
@@ -697,7 +697,7 @@ return class LajiMapWithControls extends LajiMap {
 		}
 
 		function convert(coords) {
-			return that.convert(coords, "EPSG:2393", "WGS84");
+			return that.convertLatLng(coords, "EPSG:2393", "WGS84");
 		}
 
 		container.addEventListener("submit", e => {
@@ -782,23 +782,6 @@ return class LajiMapWithControls extends LajiMap {
 			input.select();
 		}
 
-		const that = this;
-
-		// Must be called with cloned object, since this modifies the given object!
-		function convertRecursively(obj, from, to) {
-			if (typeof obj === "object" && obj !== null) {
-				Object.keys(obj).forEach(key => {
-					if (key === "coordinates") {
-						obj[key] = Array.isArray(obj[key][0]) ?
-							[obj[key][0].map(coords => that.convert(coords.slice(0).reverse(), from, to))] :
-							that.convert(obj[key].slice(0).reverse(), from, to);
-					}
-					else convertRecursively(obj[key], from, to);
-				})
-			}
-			return obj;
-		}
-
 		let activeProj = "WGS84";
 		let activeTab = undefined;
 
@@ -826,7 +809,7 @@ return class LajiMapWithControls extends LajiMap {
 			tab.addEventListener("click", () => {
 				const reprojected = isWGS84 ?
 					originalGeoJSON :
-					convertRecursively(JSON.parse(JSON.stringify(originalGeoJSON)), "WGS84", proj);
+					this.convertGeoJSON(originalGeoJSON, "WGS84", proj);
 
 				if (!isWGS84) {
 					reprojected.crs = {
@@ -852,7 +835,7 @@ return class LajiMapWithControls extends LajiMap {
 		container.appendChild(tabs);
 		container.appendChild(input);
 
-		that._showDialog(container);
+		this._showDialog(container);
 		updateGeoJSON(originalGeoJSON);
 	}
 

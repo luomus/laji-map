@@ -1272,9 +1272,28 @@ export default class LajiMap {
 		}
 	}
 
-	convert(latlng, from, to) {
+	convertLatLng(latlng, from, to) {
 		const converted = proj4(from, to, latlng.map(c => +c).slice(0).reverse());
 		return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
+	}
+
+	convertGeoJSON(obj, from, to) {
+		const that = this;
+		function _convertGeoJSON(obj, from, to) {
+			if (typeof obj === "object" && obj !== null) {
+				Object.keys(obj).forEach(key => {
+					if (key === "coordinates") {
+						obj[key] = Array.isArray(obj[key][0]) ?
+							[obj[key][0].map(coords => that.convertLatLng(coords.slice(0).reverse(), from, to))] :
+							_convertGeoJSON(obj[key].slice(0).reverse(), from, to);
+					}
+					else _convertGeoJSON(obj[key], from, to);
+				});
+			}
+			return obj;
+		}
+
+		return _convertGeoJSON(JSON.parse(JSON.stringify(obj)), from, to);
 	}
 
 	triggerDrawing(featureType) {

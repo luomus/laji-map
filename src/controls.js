@@ -813,9 +813,9 @@ return class LajiMapWithControls extends LajiMap {
 
 				if (!isWGS84) {
 					reprojected.crs = {
-						type: proj,
+						type: "name",
 						properties: {
-							[proj]: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
+							name: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
 						}
 					}
 				}

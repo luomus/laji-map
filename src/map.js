@@ -1299,7 +1299,7 @@ export default class LajiMap {
 				Object.keys(obj).forEach(key => {
 					if (key === "coordinates") {
 						obj[key] = Array.isArray(obj[key][0]) ?
-							[obj[key][0].map(coords => that.convertLatLng(coords.slice(0).reverse(), from, to))] :
+							[obj[key].map(coords => that.convertLatLng(coords.slice(0).reverse(), from, to))] :
 							_convertGeoJSON(obj[key].slice(0).reverse(), from, to);
 					}
 					else _convertGeoJSON(obj[key], from, to);

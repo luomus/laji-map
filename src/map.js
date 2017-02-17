@@ -291,7 +291,6 @@ export default class LajiMap {
 		});
 
 		this._addDocumentEventListener("click", e => {
-			console.log("click");
 			if (e.target !== this.rootElem && !this.rootElem.contains(e.target)) {
 				this._interceptClick();
 			}

@@ -282,7 +282,7 @@
 	copyDrawnFeatures: {
 		fi: "Kopioi piirrettyjen kuvioiden koordinaatit",
 		en: "Copy the coordinates of the drawn features",
-		sv: "Kopiera koordinaterna för de dragna funktioner"
+		sv: "Kopiera koordinaterna för de dragna figurerna"
 	},
 	clearMap: {
 		fi: "Tyhjennä kartta",
@@ -297,6 +297,6 @@
 	uhanalaisuusarviointivyohykkeet: {
 		fi: "Uhanalaisuusarviointivyöhykkeet",
 		en: "Threatened species evaluation zones",
-		sv: "Hotade arter utvärderingszoner"
+		sv: "Hotbedömningszoner"
 	},
 }

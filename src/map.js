@@ -287,9 +287,21 @@ export default class LajiMap {
 			"draw:drawstop": () => { this.drawing = false },
 			locationfound: (...params) => this._onLocationFound(...params),
 			locationerror: (...params) => this._onLocationNotFound(...params),
-			"contextmenu.show": () => this._interceptClick(),
-			"blur": () => this._interceptClick(),
+			"contextmenu.show": this._interceptClick,
 		});
+
+		this._addDocumentEventListener("click", e => {
+			console.log("click");
+			if (e.target !== this.rootElem && !this.rootElem.contains(e.target)) {
+				this._interceptClick();
+			}
+		});
+	}
+
+	_addDocumentEventListener(type, fn) {
+		if (!this._documentEvents) this._documentEvents = {};
+		this._documentEvents[type] = fn;
+		document.addEventListener(type, fn);
 	}
 
 	_getDefaultCRSLayers() {
@@ -397,8 +409,12 @@ export default class LajiMap {
 	}
 
 	destroy() {
-			this.map.off();
+			this.map.remove();
 			this.map = null;
+
+			if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
+				document.removeEventListener(type, this._documentEvents[type]);
+			});
 	}
 
 	_constructDictionary() {

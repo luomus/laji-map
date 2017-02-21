@@ -721,7 +721,7 @@ return class LajiMapWithControls extends LajiMap {
 				properties: {}
 			};
 
-			if (isYKJ && latlngStr[0].length < 7) {
+			if (isYKJ && (latlngStr[0].length < 7 || this.draw.marker === false)) {
 				const latStart = toYKJFormat(latlng[0]);
 				const latEnd = toYKJFormat(latlng[0] + 1);
 

@@ -473,23 +473,24 @@ return class LajiMapWithControls extends LajiMap {
 			_onInputClick: function(e) {
 				if (!e) return;
 
-				const layerId = e.target.layerId;
-
-				if (layerId === undefined) return;
-
-				this._handlingClick = true;
+				const inputs = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
 
 				const overlayIdsToAdd = {};
-				for (let tileLayerName of tileLayersNames) {
-					if (that[tileLayerName]._leaflet_id === layerId) {
-						that.setTileLayer(that[tileLayerName]);
-						break;
-					}
-				}
-				for (let overlayName of Object.keys(that.overlays)) {
-					const overlay = that.overlays[overlayName];
-					if (overlay._leaflet_id === layerId) {
-						overlayIdsToAdd[layerId] = true;
+				for (let i = 0; i < inputs.length; i++) {
+					const input = inputs[i];
+					if (input.checked) {
+						for (let tileLayerName of tileLayersNames) {
+							if (that[tileLayerName]._leaflet_id === input.layerId) {
+								that.setTileLayer(that[tileLayerName]);
+								break;
+							}
+						}
+						for (let overlayName of Object.keys(that.overlays)) {
+							const overlay = that.overlays[overlayName];
+							if (overlay._leaflet_id === input.layerId) {
+								overlayIdsToAdd[input.layerId] = true;
+							}
+						}
 					}
 				}
 
@@ -501,7 +502,10 @@ return class LajiMapWithControls extends LajiMap {
 						that.map.removeLayer(overlay);
 					}
 				}
+
 				this._handlingClick = false;
+
+				that.controls.layer.expand();
 			}
 		});
 		return new LayerControl(baseMaps, overlays, {position: "topleft"});

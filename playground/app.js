@@ -175,7 +175,7 @@ class App {
 			zoom: 10
 		});
 
-		map.startLTLineSplit();
+		map.startRemoveLTSegmentMode();
 
 		// map.addData(
 		// 	{

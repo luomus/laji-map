@@ -31,6 +31,7 @@ export default function lineTransect(LajiMap) {
 			this._mouseMoveLTLineCutHandler = this._mouseMoveLTLineCutHandler.bind(this);
 			this.startLTLineSplit = this.startLTLineSplit.bind(this);
 			this.stopLTLineCut = this.stopLTLineCut.bind(this);
+			this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
 		}
 
 		setOption(option, value) {
@@ -225,12 +226,29 @@ export default function lineTransect(LajiMap) {
 			corridorLayers.forEach(corridors => corridors.forEach(corridor => {
 				const __i = _i;
 				corridor.on("click", () => {
-					this._allLines[this._activeLTIdx].setStyle(lineStyle);
-					this._allLines[__i].setStyle(activeLineStyle);
-					this._allCorridors[this._activeLTIdx].setStyle(corridorStyle);
-					this._allCorridors[__i].setStyle(activeCorridorStyle);
-					this._activeLTIdx = __i;
-					this._triggerEvent({type: "active", idx: this._activeLTIdx}, this._onLTChange);
+					if (this._removeLTMode) {
+						this._allLines.splice(__i, 1);
+						const feature = this._formatLTFeatureOut();
+						this.setLineTransectGeometry(feature.geometry);
+						this._triggerEvent({type: "edit", feature});
+						this.stopRemoveLTSegmentMode();
+					} else {
+						this._allLines[this._activeLTIdx].setStyle(lineStyle);
+						this._allLines[__i].setStyle(activeLineStyle);
+						this._allCorridors[this._activeLTIdx].setStyle(corridorStyle);
+						this._allCorridors[__i].setStyle(activeCorridorStyle);
+						this._activeLTIdx = __i;
+						this._triggerEvent({type: "active", idx: this._activeLTIdx}, this._onLTChange);
+					}
+				}).on("mouseover", () => {
+					if (this._removeLTMode) {
+						if (this.prevHoveredCorrIdx) {
+							const prevHoveredCorr = this._allCorridors[this.prevHoveredCorrIdx];
+							prevHoveredCorr.setStyle(this._getStyleForLTLayer(prevHoveredCorr, this.prevHoveredCorrIdx));
+						}
+						this.prevHoveredCorrIdx = __i;
+						this._allCorridors[__i].setStyle(editCorridorStyle);
+					}
 				});
 				_i++;
 			}));
@@ -443,6 +461,14 @@ export default function lineTransect(LajiMap) {
 			this._lineCutting = true;
 			this._lineCutIdx = idx;
 			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
+		}
+
+		startRemoveLTSegmentMode() {
+			this._removeLTMode = true;
+		}
+
+		stopRemoveLTSegmentMode() {
+			this._removeLTMode = false;
 		}
 	}
 

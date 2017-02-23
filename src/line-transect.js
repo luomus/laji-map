@@ -391,6 +391,7 @@ export default function lineTransect(LajiMap) {
 			this._lineCutting = false;
 			this._cutLine.removeFrom(this.map);
 			this._cutLine = undefined;
+			this._lineCutIdx = undefined;
 			this.map.off("mousemove", this._mouseMoveLTLineCutHandler);
 		}
 
@@ -399,9 +400,15 @@ export default function lineTransect(LajiMap) {
 			const allCorridors = this._allCorridors;
 			const prevClosestIdx = this._cutIdx;
 
-			const closestLine = L.GeometryUtil.closestLayer(this.map, allLines, latlng).layer;
-			const closestIdx = allLines.indexOf(closestLine);
-			const closestCorridor = flattenMatrix(this._corridorLayers)[closestIdx];
+			let closestLine, closestIdx;
+			if (this._lineCutIdx !== undefined) {
+				closestIdx = this._lineCutIdx;
+				closestLine = allLines[closestIdx];
+			} else {
+				closestLine = L.GeometryUtil.closestLayer(this.map, allLines, latlng).layer;
+				closestIdx = allLines.indexOf(closestLine);
+			}
+			const closestCorridor = allCorridors[closestIdx];
 
 			// Update closest style.
 			if (prevClosestIdx && prevClosestIdx !== closestIdx) {
@@ -429,6 +436,12 @@ export default function lineTransect(LajiMap) {
 
 		startLTLineSplit() {
 			this._lineCutting = true;
+			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
+		}
+
+		startLTLineSplitForIdx(idx) {
+			this._lineCutting = true;
+			this._lineCutIdx = idx;
 			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
 		}
 	}

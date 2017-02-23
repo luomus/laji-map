@@ -2,11 +2,13 @@ import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
 import "leaflet-geometryutil";
 
 const lineStyle = {color: "#000", weight: 1};
+const hoverLineStyle = {...lineStyle, color: "#0ff"};
 const activeLineStyle = {...lineStyle, color: "#f0f"};
 const editLineStyle = {...lineStyle, color: "#f00"};
 const corridorStyle = {...lineStyle, opacity: 0.5, weight: 0, fillColor: lineStyle.color};
 const activeCorridorStyle = {...corridorStyle, fillColor: activeLineStyle.color};
 const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color};
+const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
 const pointStyle = {color: "#fff", radius: 5, fillColor: "#ff0", fillOpacity: 0.7};
 const editablePointStyle = {...pointStyle, fillColor: "#00f", color: "#00f"};
 
@@ -241,14 +243,13 @@ export default function lineTransect(LajiMap) {
 						this._triggerEvent({type: "active", idx: this._activeLTIdx}, this._onLTChange);
 					}
 				}).on("mouseover", () => {
-					if (this._removeLTMode) {
-						if (this.prevHoveredCorrIdx) {
-							const prevHoveredCorr = this._allCorridors[this.prevHoveredCorrIdx];
-							prevHoveredCorr.setStyle(this._getStyleForLTLayer(prevHoveredCorr, this.prevHoveredCorrIdx));
-						}
-						this.prevHoveredCorrIdx = __i;
-						this._allCorridors[__i].setStyle(editCorridorStyle);
-					}
+					const prevHoverIdx = this._hoveredLTLineIdx;
+					this._hoveredLTLineIdx = __i;
+					this._updateStyleForLTIdx(prevHoverIdx);
+					this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+				}).on("mouseout", () => {
+					this._hoveredLTLineIdx = undefined;
+					this._updateStyleForLTIdx(__i);
 				});
 				_i++;
 			}));
@@ -380,20 +381,53 @@ export default function lineTransect(LajiMap) {
 		// Doesn't handle points.
 		_getStyleForLTLayer(layer, idx) {
 			const isActive = idx === this._activeLTIdx;
+			const isEdit = idx === this._cutLTIdx  || (this._removeLTMode && idx === this._hoveredLTLineIdx);
+			const isHover = idx === this._hoveredLTLineIdx;
+
+			const lineStyles = {
+				normal: lineStyle,
+				active: activeLineStyle,
+				edit: editLineStyle,
+				hover: hoverLineStyle,
+			};
+
+			const corridorStyles = {
+				normal: corridorStyle,
+				active: activeCorridorStyle,
+				edit: editCorridorStyle,
+				hover: hoverCorridorStyle,
+			};
+
+			let styleObject = undefined;
 			if (layer instanceof L.Polygon) {
-				return isActive ? activeCorridorStyle : corridorStyle;
+				styleObject = corridorStyles;
 			} else if (layer instanceof L.Polyline) {
-				return isActive ? activeLineStyle : lineStyle;
+				styleObject = lineStyles;
 			}
+
+			if (isEdit) {
+				return styleObject.edit;
+			} else if (isHover) {
+				return styleObject.hover;
+			} else if (isActive) {
+				return styleObject.active;
+			} else {
+				return styleObject.normal;
+			}
+
+		}
+
+		_updateStyleForLTIdx(idx) {
+			if (idx === undefined) return;
+			[this._allLines, this._allCorridors].forEach(layerGroup => {
+				const layer = layerGroup[idx];
+				layer.setStyle(this._getStyleForLTLayer(layer, idx));
+			});
 		}
 
 		_executeLTLineCut() {
+			const cutIdx = this._cutLTIdx;
 			this.stopLTLineCut();
-			const cutIdx = this._cutIdx;
-
-			[this._allLines, this._allCorridors].forEach(layerGroup => {
-				layerGroup[cutIdx].setStyle(this._getStyleForLTLayer(layerGroup[cutIdx], cutIdx));
-			});
 
 			const cutLine = this._allLines[cutIdx];
 			const cutLineLatLng = cutLine.getLatLngs();
@@ -410,13 +444,12 @@ export default function lineTransect(LajiMap) {
 			this._cutLine.removeFrom(this.map);
 			this._cutLine = undefined;
 			this._lineCutIdx = undefined;
+			this._cutLTIdx = undefined;
 			this.map.off("mousemove", this._mouseMoveLTLineCutHandler);
 		}
 
 		_mouseMoveLTLineCutHandler({latlng}) {
 			const allLines = this._allLines;
-			const allCorridors = this._allCorridors;
-			const prevClosestIdx = this._cutIdx;
 
 			let closestLine, closestIdx;
 			if (this._lineCutIdx !== undefined) {
@@ -426,16 +459,11 @@ export default function lineTransect(LajiMap) {
 				closestLine = L.GeometryUtil.closestLayer(this.map, allLines, latlng).layer;
 				closestIdx = allLines.indexOf(closestLine);
 			}
-			const closestCorridor = allCorridors[closestIdx];
 
-			// Update closest style.
-			if (prevClosestIdx && prevClosestIdx !== closestIdx) {
-				allLines[prevClosestIdx].setStyle(this._getStyleForLTLayer(closestLine, prevClosestIdx));
-				allCorridors[prevClosestIdx].setStyle(this._getStyleForLTLayer(closestCorridor, prevClosestIdx));
-			}
-			closestLine.setStyle(editLineStyle);
-			closestCorridor.setStyle(editCorridorStyle);
-			this._cutIdx = closestIdx;
+			const prevCutIdx = this._cutLTIdx;
+			this._cutLTIdx = closestIdx;
+			this._updateStyleForLTIdx(prevCutIdx);
+			this._updateStyleForLTIdx(this._cutLTIdx);
 
 			// Update cut line.
 			const closestLatLngOnLine = L.GeometryUtil.closest(this.map, closestLine, latlng);

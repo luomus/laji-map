@@ -49,112 +49,48 @@ export default function lineTransect(LajiMap) {
 			})();
 		}
 
-		dragLTHandler(e) {
-			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
-			const lineIdx = +idxs[0];
-			const pointIdx = +idxs[1];
+		setLineTransect(data) {
+			let {feature, activeIdx, onChange} = data;
+			this.LTFeature = feature;
+			this._onLTChange = onChange;
+			this._activeLTIdx = activeIdx;
 
-			const pointLayer = this._pointLayers[lineIdx];
-			const lineLayer = this._lineLayers[lineIdx];
-			const corridorLayer = this._corridorLayers[lineIdx];
-
-			const point = pointLayer[pointIdx];
-			point.setLatLng(e.latlng);
-
-			let precedingIdx = pointIdx - 1 >= 0 ? pointIdx - 1 : undefined;
-			let precedingLine, precedingCorridor, precedingPoint;
-			if (precedingIdx !== undefined) {
-				precedingLine = lineLayer[precedingIdx];
-				precedingCorridor = corridorLayer[precedingIdx];
-				precedingPoint = pointLayer[precedingIdx]
-			}
-
-			const followingIdx = pointIdx < pointLayer.length ? pointIdx : undefined;
-			let followingLine, followingCorridor, followingPoint;
-			if (followingIdx !== undefined) {
-				followingLine = lineLayer[followingIdx];
-				followingCorridor = corridorLayer[followingIdx];
-				followingPoint = pointLayer[followingIdx + 1];
-			}
-
-			if (precedingIdx !== undefined) {
-				precedingLine.setLatLngs([precedingLine._latlngs[0], e.latlng]).openTooltip();
-				precedingCorridor.removeFrom(this._corridorLayer);
-				corridorLayer[precedingIdx] = this._getCorridorForLine(precedingLine._latlngs, precedingIdx)
-					.addTo(this._corridorLayer);
-			}
-
-			if (followingIdx !== undefined && followingLine) {
-				followingLine.setLatLngs([e.latlng, followingLine._latlngs[1]]).openTooltip();
-				followingCorridor.removeFrom(this._corridorLayer);
-				corridorLayer[followingIdx] = this._getCorridorForLine(followingLine._latlngs, followingIdx)
-					.addTo(this._corridorLayer);
-			}
-
-			[precedingPoint, point, followingPoint].forEach(p => {
-				if (p) p.bringToFront();
-			})
+			this.setLineTransectGeometry(feature.geometry);
 		}
 
-		startLTDragHandler() {
-			this._LTDragging = true;
-			this.map.dragging.disable();
-			this.map.on("mousemove", this.dragLTHandler);
-		}
-
-		stopLTDragHandler() {
-			// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
-			setTimeout(() => {
-				this._LTDragging = false;
-				this.map.dragging.disable();
-				this.map.dragging.enable();
-				this.map.off("mousemove", this.dragLTHandler);
-			}, 0);
-		}
-
-		_setLTPointEditable(lineIdx, segmentIdx) {
-			if (this.lineTransectEditIdx !== undefined) {
-				const prevIdxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
-				const editableLayer = this._pointLayers[prevIdxs[0]][prevIdxs[1]];
-				editableLayer.setStyle(pointStyle);
+		formatLTFeatureOut() {
+			function getCoordinatesFrom({lat, lng}) {
+				return [lng, lat];
 			}
+			const allLines = flattenMatrix(this._lineLayers);
 
-			this.lineTransectEditIdx = `${lineIdx}-${segmentIdx}`;
-			if (segmentIdx !== undefined) {
-				const layer = this._pointLayers[lineIdx][segmentIdx];
-				layer.setStyle(editablePointStyle)
-				     .on("mousedown", this.startLTDragHandler)
-				     .on("mouseup", this.stopLTDragHandler)
-				     .bringToFront();
+			const layerPairs = allLines.map((layer, i) => {
+				const next = allLines[i + 1];
+				return [layer, next];
+			});
 
-				this._pointLayers.forEach(points => points.forEach(point => {
-					point.closeTooltip()
-					     .unbindTooltip();
-				}));
-			}
-		}
+			const lines = [[]];
+			layerPairs.forEach(pair => {
+				const line = lines[lines.length - 1];
+				line.push(getCoordinatesFrom(pair[0]._latlngs[0]));
+				if (pair[1] && !pair[0]._latlngs[1].equals(pair[1]._latlngs[0])) {
+					line.push(getCoordinatesFrom(pair[0]._latlngs[1]));
+					lines.push([]);
+				} else if (!pair[1]) {
+					line.push(getCoordinatesFrom(pair[0]._latlngs[1]));
+				}
+			});
 
-		_getCorridorForLine(lineCoords, idx) {
-			const latLngs = lineCoords.map(L.latLng);
+			// TODO we aren't checking for length of zero
+			const isMulti = lines.length > 1;
 
-			// Line angle horizontally counter clockwise
-			const lineAngle = L.GeometryUtil.computeAngle(...latLngs.map(
-				latlng => this.map.options.crs.project(latlng)
-			));
+			const geometry = {
+				type: isMulti ? "MultiLineString" : "LineString",
+				coordinates: isMulti ? lines : lines[0]
+			};
 
-			// Line angle clockwise from north
-			const lineAngleFromNorth = 90 - lineAngle;
 
-			// Variables are named as if the line was pointing towards north.
-			const SWCorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth - 90, 50);
-			const NWCorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth - 90, 50);
-			const SECorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth + 90, 50);
-			const NECorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth + 90, 50);
-
-			return L.polygon(
-				[SWCorner, NWCorner, NECorner, SECorner],
-				idx === this._activeLTIdx ? activeCorridorStyle : corridorStyle
-			);
+			return {...this.LTFeature, geometry};
 		}
 
 		@dependsOn("map")
@@ -211,6 +147,8 @@ export default function lineTransect(LajiMap) {
 					i++;
 				});
 
+				const translateHooks = [];
+
 				const __segmentI = _segmentI;
 				pointLayer.push(
 					L.circleMarker(wholeLineAsSegments[wholeLineAsSegments.length - 1][1], pointStyle)
@@ -223,21 +161,21 @@ export default function lineTransect(LajiMap) {
 								popup.className = "text-center";
 
 								const question = document.createElement("span");
-								question.innerHTML = this.translations.FirstOrLastPoint;
+								translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
 
 								const firstButton = document.createElement("button");
 								firstButton.addEventListener("click", () => {
 									this._setLTPointEditable(_j, 0);
 									lastPoint.closePopup();
 								});
-								firstButton.innerHTML = this.translations.FirstPartitive;
+								translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
 
 								const lastButton = document.createElement("button");
 								lastButton.addEventListener("click", () => {
 									this._setLTPointEditable(_j, __segmentI + 1);
 									lastPoint.closePopup();
 								});
-								lastButton.innerHTML = this.translations.LastPartitive;
+								translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
 
 								const buttonContainer = document.createElement("div");
 								buttonContainer.className = "btn-group";
@@ -250,6 +188,9 @@ export default function lineTransect(LajiMap) {
 								popup.appendChild(buttonContainer);
 
 								lastPoint.bindPopup(popup).openPopup();
+								lastPoint.on("popupclose", () => {
+									translateHooks.forEach(hook => this.removeTranslationHook(hook));
+								});
 							} else {
 								this._setLTPointEditable(_j, __segmentI + 1);
 							}
@@ -271,7 +212,6 @@ export default function lineTransect(LajiMap) {
 				line.bindTooltip(`${_i}`, {permanent: true}).openTooltip();
 				_i++;
 			}));
-
 
 			_i = 0;
 			corridorLayers.forEach(corridors => corridors.forEach(corridor => {
@@ -298,49 +238,115 @@ export default function lineTransect(LajiMap) {
 			}));
 		}
 
-		setLineTransect(data) {
-			let {feature, activeIdx, onChange} = data;
-			this.LTFeature = feature;
-			this._onLTChange = onChange;
-			this._activeLTIdx = activeIdx;
-
-			this.setLineTransectGeometry(feature.geometry);
-		}
-
-		formatLTFeatureOut() {
-			function getCoordinatesFrom({lat, lng}) {
-				return [lng, lat];
+		_setLTPointEditable(lineIdx, segmentIdx) {
+			if (this.lineTransectEditIdx !== undefined) {
+				const prevIdxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
+				const editableLayer = this._pointLayers[prevIdxs[0]][prevIdxs[1]];
+				editableLayer.setStyle(pointStyle);
 			}
-			const allLines = flattenMatrix(this._lineLayers);
 
-			const layerPairs = allLines.map((layer, i) => {
-				const next = allLines[i + 1];
-				return [layer, next];
-			});
+			this.lineTransectEditIdx = `${lineIdx}-${segmentIdx}`;
+			if (segmentIdx !== undefined) {
+				const layer = this._pointLayers[lineIdx][segmentIdx];
+				layer.setStyle(editablePointStyle)
+					.on("mousedown", this.startLTDragHandler)
+					.on("mouseup", this.stopLTDragHandler)
+					.bringToFront();
 
-			const lines = [[]];
-			layerPairs.forEach(pair => {
-				const line = lines[lines.length - 1];
-				line.push(getCoordinatesFrom(pair[0]._latlngs[0]));
-				if (pair[1] && !pair[0]._latlngs[1].equals(pair[1]._latlngs[0])) {
-					line.push(getCoordinatesFrom(pair[0]._latlngs[1]));
-					lines.push([]);
-				} else if (!pair[1]) {
-					line.push(getCoordinatesFrom(pair[0]._latlngs[1]));
-				}
-			});
-
-			// TODO we aren't checking for length of zero
-			const isMulti = lines.length > 1;
-
-			const geometry = {
-				type: isMulti ? "MultiLineString" : "LineString",
-				coordinates: isMulti ? lines : lines[0]
-			};
-
-
-			return {...this.LTFeature, geometry};
+				this._pointLayers.forEach(points => points.forEach(point => {
+					point.closeTooltip()
+						.unbindTooltip();
+				}));
+			}
 		}
+
+		startLTDragHandler() {
+			this._LTDragging = true;
+			this.map.dragging.disable();
+			this.map.on("mousemove", this.dragLTHandler);
+		}
+
+		stopLTDragHandler() {
+			// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
+			setTimeout(() => {
+				this._LTDragging = false;
+				this.map.dragging.disable();
+				this.map.dragging.enable();
+				this.map.off("mousemove", this.dragLTHandler);
+			}, 0);
+		}
+
+
+		dragLTHandler(e) {
+			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
+			const lineIdx = +idxs[0];
+			const pointIdx = +idxs[1];
+
+			const pointLayer = this._pointLayers[lineIdx];
+			const lineLayer = this._lineLayers[lineIdx];
+			const corridorLayer = this._corridorLayers[lineIdx];
+
+			const point = pointLayer[pointIdx];
+			point.setLatLng(e.latlng);
+
+			let precedingIdx = pointIdx - 1 >= 0 ? pointIdx - 1 : undefined;
+			let precedingLine, precedingCorridor, precedingPoint;
+			if (precedingIdx !== undefined) {
+				precedingLine = lineLayer[precedingIdx];
+				precedingCorridor = corridorLayer[precedingIdx];
+				precedingPoint = pointLayer[precedingIdx]
+			}
+
+			const followingIdx = pointIdx < pointLayer.length ? pointIdx : undefined;
+			let followingLine, followingCorridor, followingPoint;
+			if (followingIdx !== undefined) {
+				followingLine = lineLayer[followingIdx];
+				followingCorridor = corridorLayer[followingIdx];
+				followingPoint = pointLayer[followingIdx + 1];
+			}
+
+			if (precedingIdx !== undefined) {
+				precedingLine.setLatLngs([precedingLine._latlngs[0], e.latlng]).openTooltip();
+				precedingCorridor.removeFrom(this._corridorLayer);
+				corridorLayer[precedingIdx] = this._getCorridorForLine(precedingLine._latlngs, precedingIdx)
+					.addTo(this._corridorLayer);
+			}
+
+			if (followingIdx !== undefined && followingLine) {
+				followingLine.setLatLngs([e.latlng, followingLine._latlngs[1]]).openTooltip();
+				followingCorridor.removeFrom(this._corridorLayer);
+				corridorLayer[followingIdx] = this._getCorridorForLine(followingLine._latlngs, followingIdx)
+					.addTo(this._corridorLayer);
+			}
+
+			[precedingPoint, point, followingPoint].forEach(p => {
+				if (p) p.bringToFront();
+			})
+		}
+
+		_getCorridorForLine(lineCoords, idx) {
+			const latLngs = lineCoords.map(L.latLng);
+
+			// Line angle horizontally counter clockwise
+			const lineAngle = L.GeometryUtil.computeAngle(...latLngs.map(
+				latlng => this.map.options.crs.project(latlng)
+			));
+
+			// Line angle clockwise from north
+			const lineAngleFromNorth = 90 - lineAngle;
+
+			// Variables are named as if the line was pointing towards north.
+			const SWCorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth - 90, 50);
+			const NWCorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth - 90, 50);
+			const SECorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth + 90, 50);
+			const NECorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth + 90, 50);
+
+			return L.polygon(
+				[SWCorner, NWCorner, NECorner, SECorner],
+				idx === this._activeLTIdx ? activeCorridorStyle : corridorStyle
+			);
+		}
+
 	}
 
 }

@@ -150,13 +150,13 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				// draw: false,
-				draw: {"rectangle": true},
+				draw: false,
+				// draw: {"rectangle": true},
 				// drawCopy: true,
 				// drawClear: true,
 				// coordinates: true,
-				coordinateInput: true
-				// coordinateInput: false
+				coordinateInput: true,
+				coordinateInput: false
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",

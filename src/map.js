@@ -271,7 +271,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
-			click: e => {console.log("map click"); this._interceptClick();},
+			click: e => this._interceptClick(),
 			dblclick: e => {
 				if (this.editIdx !== undefined || this.drawing) return;
 				if ((typeof this.draw === "object" && this.draw.marker !== false)
@@ -1252,7 +1252,7 @@ export default class LajiMap {
 		});
 	}
 
-	addTranslationHook(elem, attr, translationKey) {
+	addTranslationHook(elem, translationKey, attr = "innerHTML") {
 		const that = this;
 
 		function translate() {
@@ -1271,6 +1271,7 @@ export default class LajiMap {
 	}
 
 	removeTranslationHook(hook) {
+		console.log(hook);
 		const index = this.onSetLangHooks.indexOf(hook);
 		if (index >= 0) {
 			this.onSetLangHooks.splice(index, 1);

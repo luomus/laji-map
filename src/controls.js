@@ -574,7 +574,7 @@ return class LajiMapWithControls extends LajiMap {
 
 			const label = document.createElement("label");
 			label.setAttribute("for", input.id);
-			translateHooks.push(that.addTranslationHook(label, "innerHTML", translationKey));
+			translateHooks.push(that.addTranslationHook(label, translationKey));
 
 			const row = document.createElement("div");
 			row.className = "form-group row";
@@ -653,7 +653,7 @@ return class LajiMapWithControls extends LajiMap {
 		const submitButton = document.createElement("button");
 		submitButton.setAttribute("type", "submit");
 		submitButton.className = "btn btn-block btn-primary";
-		translateHooks.push(this.addTranslationHook(submitButton, "innerHTML", "Add"));
+		translateHooks.push(this.addTranslationHook(submitButton, "Add"));
 		submitButton.setAttribute("disabled", "disabled");
 
 		let helpSpan = document.createElement("span");
@@ -670,7 +670,7 @@ return class LajiMapWithControls extends LajiMap {
 			help += ".";
 			return help;
 		}
-		translateHooks.push(this.addTranslationHook(helpSpan, "innerHTML", getHelpTxt));
+		translateHooks.push(this.addTranslationHook(helpSpan, getHelpTxt));
 
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {

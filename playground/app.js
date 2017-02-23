@@ -175,6 +175,8 @@ class App {
 			zoom: 10
 		});
 
+		map.startLTLineSplit();
+
 		// map.addData(
 		// 	{
 		// 		featureCollection: lineTransects,

@@ -652,7 +652,7 @@ return class LajiMapWithControls extends LajiMap {
 
 		const submitButton = document.createElement("button");
 		submitButton.setAttribute("type", "submit");
-		submitButton.className = "btn btn-block btn-info";
+		submitButton.className = "btn btn-block btn-primary";
 		translateHooks.push(this.addTranslationHook(submitButton, "innerHTML", "Add"));
 		submitButton.setAttribute("disabled", "disabled");
 
@@ -849,7 +849,7 @@ return class LajiMapWithControls extends LajiMap {
 	}
 
 	@reflect()
-	@dependsOn("maps", "translations", "controls", "draw")
+	@dependsOn("map", "translations", "controls", "draw")
 	_updateContextMenu() {
 		if (!depsProvided(this, "_updateContextMenu", arguments)) return;
 

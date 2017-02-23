@@ -299,4 +299,19 @@
 		en: "Threatened species evaluation zones",
 		sv: "Hotbedömningszoner"
 	},
+	firstOrLastPoint: {
+		fi: "Haluatko siirtää ensimmäistä vai viimeistä pistettä?",
+		en: "Do you want to move the first or the last point?",
+		sv: "Vill du flytta den första eller den sista punkten?"
+	},
+	firstPartitive: {
+		fi: "Ensimmäistä",
+		en: "The first",
+		sv: "Den första"
+	},
+	lastPartitive: {
+		fi: "Viimeistä",
+		en: "The last",
+		sv: "Den sista"
+	}
 }

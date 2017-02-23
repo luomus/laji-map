@@ -4,9 +4,11 @@ import "proj4leaflet";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
+import "leaflet-path-drag";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import proj4 from "proj4"
 import HasControls from "./controls";
+import HasLineTransect from "./line-transect";
 import {
 	INCOMPLETE_COLOR,
 	NORMAL_COLOR,
@@ -115,6 +117,7 @@ export function isProvided(target, prov) {
 
 
 @HasControls
+@HasLineTransect
 export default class LajiMap {
 	constructor(props) {
 		this._constructDictionary();
@@ -172,7 +175,6 @@ export default class LajiMap {
 		mmlProj.R = 6378137;
 
 		return mmlProj;
-
 	}
 
 	_initializeMap() {
@@ -183,25 +185,18 @@ export default class LajiMap {
 		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
 			+ "laji-map";
 
-		this.finnishMapElem = document.createElement("div");
-		this.foreignMapElem = document.createElement("div");
+		this.mapElem = document.createElement("div");
 		this.blockerElem = document.createElement("div");
 		this.blockerElem.className = "blocker";
 
-		[this.finnishMapElem, this.foreignMapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
+		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
 
-		const mapOptions = {
+		this.map = L.map(this.mapElem, {
 			contextmenu: true,
 			contextmenuItems: [],
 			zoomControl: false,
 			noWrap: true,
 			continuousWorld: false,
-		};
-
-		this.finnishMap = L.map(this.finnishMapElem, {
-			...mapOptions,
-			crs: this.getMMLProj(),
-			// maxBounds: [[40, 0], [60, 120]],
 		});
 
 		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
@@ -241,12 +236,14 @@ export default class LajiMap {
 				version: "1.1.0"
 			}),
 			peninkulmaGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
-					layers: `YKJ:ykj10km_grid`,
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
-				})
+				layers: `YKJ:ykj10km_grid`,
+				format: "image/png",
+				transparent: true,
+				version: "1.1.0",
+			})
 		};
+
+		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
@@ -255,11 +252,11 @@ export default class LajiMap {
 
 		this._initializeMapEvents();
 
-		provide(this, "maps");
+		provide(this, "map");
 	}
 
 
-	@dependsOn("map", "center", "zoom")
+	@dependsOn("map", "tileLayer", "center", "zoom")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
 		this.map.setView(
@@ -274,7 +271,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
-			click: e => this._interceptClick(),
+			click: e => {console.log("map click"); this._interceptClick();},
 			dblclick: e => {
 				if (this.editIdx !== undefined || this.drawing) return;
 				if ((typeof this.draw === "object" && this.draw.marker !== false)
@@ -311,29 +308,19 @@ export default class LajiMap {
 		return [this.maastokartta, this.taustakartta];
 	}
 
-	@dependsOn("maps")
+	@dependsOn("map")
 	setTileLayerByName(name) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
 		this.tileLayerName = name;
 		this.setTileLayer(this[this.tileLayerName]);
-		provide(this, "tileLayerName");
 	}
 
-	@dependsOn("maps")
+	@dependsOn("map", "center", "zoom")
 	setTileLayer(layer) {
 		if (!depsProvided(this, "setTileLayer", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
-
-		if (!this.map) {
-			this.tileLayer = layer;
-			this.map = this.finnishMap;
-			this.map.addLayer(this.tileLayer);
-			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
-			provide(this, "map");
-			this._initializeView();
-		}
 
 		const center = this.map.getCenter();
 		this.map.options.crs = (defaultCRSLayers.includes(layer)) ? L.CRS.EPSG3857 : this.getMMLProj();
@@ -353,7 +340,7 @@ export default class LajiMap {
 		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
 		this.map.setView(center, zoom, {animate: false});
 
-		this.map.removeLayer(this.tileLayer);
+		if (this.tileLayer) this.map.removeLayer(this.tileLayer);
 
 		this.tileLayer = layer;
 
@@ -369,7 +356,7 @@ export default class LajiMap {
 			}
 		}
 
-		provide(this, "map");
+		provide(this, "tileLayer");
 	}
 
 	getTileLayers() {
@@ -519,7 +506,9 @@ export default class LajiMap {
 			item.featureCollection,
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, idx),
-				style: feature => {return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature})},
+				style: feature => {
+					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature});
+				},
 				onEachFeature: (feature, layer) => {
 					this._initializePopup(item, layer, feature.properties.lajiMapIdx);
 					this._initializeTooltip(item, layer, feature.properties.lajiMapIdx);
@@ -649,6 +638,7 @@ export default class LajiMap {
 	clearDrawData() {
 		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}
+
 
  	_createIcon(options = {}) {
 		const markerColor = options.color || NORMAL_COLOR;
@@ -941,9 +931,9 @@ export default class LajiMap {
 		return this.drawLayerGroup._layers ? this.drawLayerGroup._layers[id] : undefined;
 	}
 
-	_triggerEvent(e) {
+	_triggerEvent(e, handler) {
 		if (!Array.isArray(e)) e = [e];
-		if (this.draw.onChange) this.draw.onChange(e);
+		if (handler) handler(e);
 	}
 
 	_onAdd(layer) {
@@ -972,7 +962,7 @@ export default class LajiMap {
 			this._getOnActiveChangeEvent(features.length - 1)
 		];
 
-		this._triggerEvent(event);
+		this._triggerEvent(event, this.draw.onChange);
 	};
 
 	_onEdit(data) {
@@ -987,7 +977,7 @@ export default class LajiMap {
 		this._triggerEvent({
 			type: "edit",
 			features: eventData
-		});
+		}, this.draw.onChange);
 	}
 
 	_onDelete(deleteIds) {
@@ -1055,7 +1045,7 @@ export default class LajiMap {
 
 		if (changeActive) event.push(this._getOnActiveChangeEvent(this.idsToIdxs[newActiveId]));
 
-		this._triggerEvent(event);
+		this._triggerEvent(event, this.draw.onChange);
 	}
 
 	_getOnActiveChangeEvent(idx) {
@@ -1067,7 +1057,7 @@ export default class LajiMap {
 	}
 
 	_onActiveChange(idx) {
-		if (this.draw.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(idx));
+		if (this.draw.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(idx), this.draw.onChange);
 	}
 
 	focusToLayer(idx) {

@@ -14,7 +14,7 @@ const pointStyle = {color: "#fff", radius: 5, fillColor: "#ff0", fillOpacity: 0.
 const editablePointStyle = {...pointStyle, fillColor: "#00f", color: "#00f"};
 const overlappingPointStyle = {...pointStyle, radius: 10, color: "#000"};
 
-const LT_WIDTH_METERS = 50;
+const LT_WIDTH_METERS = 25;
 
 function flattenMatrix(m) {
 	return m.reduce((flattened, array) => [...flattened, ...array], []);

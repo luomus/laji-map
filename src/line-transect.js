@@ -1,5 +1,6 @@
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
 import "leaflet-geometryutil";
+import { ESC } from "./globals";
 
 const lineStyle = {color: "#000", weight: 1};
 const hoverLineStyle = {...lineStyle, color: "#0ff"};
@@ -34,6 +35,19 @@ export default function lineTransect(LajiMap) {
 			this.startLTLineSplit = this.startLTLineSplit.bind(this);
 			this.stopLTLineCut = this.stopLTLineCut.bind(this);
 			this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
+
+			this._addKeyListener(ESC, () => {
+				if (this.lineTransectEditIdx) {
+					this._commitPointDrag();
+					return true;
+				} else if (this._lineCutting) {
+					this.stopLTLineCut();
+					return true;
+				} else if (this._removeLTMode) {
+					this.stopRemoveLTSegmentMode();
+					return true;
+				}
+			});
 		}
 
 		setOption(option, value) {
@@ -46,13 +60,7 @@ export default function lineTransect(LajiMap) {
 		_interceptClick() {
 			return super._interceptClick() || (() => {
 				if (this.lineTransectEditIdx !== undefined && !this._LTDragging) {
-					this._stopLTDragPointHandler();
-					this.lineTransectEditIdx = undefined;
-
-					const feature = this._formatLTFeatureOut();
-					this.setLineTransectGeometry(feature.geometry);
-					this._triggerEvent({type: "edit", feature}, this._onLTChange);
-
+					this._commitPointDrag();
 					return true;
 				} else if (this._lineCutting) {
 					this._executeLTLineCut();
@@ -287,6 +295,16 @@ export default function lineTransect(LajiMap) {
 			}
 		}
 
+		_commitPointDrag() {
+			this._stopLTDragPointHandler();
+			this.lineTransectEditIdx = undefined;
+
+			const feature = this._formatLTFeatureOut();
+			this.setLineTransectGeometry(feature.geometry);
+			this._triggerEvent({type: "edit", feature}, this._onLTChange);
+		}
+
+
 		_startLTDragPointHandler() {
 			this._LTDragging = true;
 			this.map.dragging.disable();
@@ -440,12 +458,14 @@ export default function lineTransect(LajiMap) {
 		}
 
 		stopLTLineCut() {
+			const lastLineCutIdx = this._cutLTIdx;
 			this._lineCutting = false;
 			this._cutLine.removeFrom(this.map);
 			this._cutLine = undefined;
 			this._lineCutIdx = undefined;
 			this._cutLTIdx = undefined;
 			this.map.off("mousemove", this._mouseMoveLTLineCutHandler);
+			this._updateStyleForLTIdx(lastLineCutIdx);
 		}
 
 		_mouseMoveLTLineCutHandler({latlng}) {
@@ -497,6 +517,7 @@ export default function lineTransect(LajiMap) {
 
 		stopRemoveLTSegmentMode() {
 			this._removeLTMode = false;
+			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
 		}
 	}
 

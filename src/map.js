@@ -20,7 +20,8 @@ import {
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
 	EPSG2393String,
-	MAP
+	MAP,
+	ESC
 } from "./globals";
 
 import translations from "./translations.js";
@@ -292,12 +293,52 @@ export default class LajiMap {
 				this._interceptClick();
 			}
 		});
+
+		document.addEventListener("keydown", e => this.keyHandler(e));
 	}
+
+	keyHandler(e) {
+		e = e || window.event;
+		var isEscape = false;
+		if ("key" in e) {
+			isEscape = (e.key == "Escape" || e.key == "Esc");
+		} else {
+			isEscape = (e.keyCode == 27);
+		}
+		if (isEscape) {
+			this._triggerKeyEvent(ESC, e);
+			// close(e);
+		}
+	}
+
 
 	_addDocumentEventListener(type, fn) {
 		if (!this._documentEvents) this._documentEvents = {};
 		this._documentEvents[type] = fn;
 		document.addEventListener(type, fn);
+	}
+
+	_addKeyListener(key, fn) {
+		if (!this._keyListeners) this._keyListeners = {};
+		if (!this._keyListeners[key]) this._keyListeners[key] = [];
+		this._keyListeners[key].push(fn);
+	}
+
+	_removeKeyListener(key, fn) {
+		if (this._keyListeners && this._keyListeners[key]) {
+			const index = this._keyListeners[key].indexOf(fn);
+			if (index >= 0) {
+				this._keyListeners[key].splice(index, 1);
+			}
+		}
+	}
+
+	_triggerKeyEvent(key, e) {
+		if (this._keyListeners && this._keyListeners[key])  {
+			for (let fn of this._keyListeners[key]) {
+				if (fn(e) === true) break;
+			}
+		}
 	}
 
 	_getDefaultCRSLayers() {

@@ -6,7 +6,8 @@ import {
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
 	EPSG3067String,
-	EPSG2393String
+	EPSG2393String,
+	ESC
 } from "./globals";
 
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
@@ -29,7 +30,7 @@ return class LajiMapWithControls extends LajiMap {
 			drawCopy: undefined,
 			drawClear: undefined,
 			coordinates: undefined,
-			scale: undefined
+			scale: undefined,
 		};
 
 		provide(this, "controlsConstructed");
@@ -532,29 +533,19 @@ return class LajiMapWithControls extends LajiMap {
 
 		const that = this;
 		function close(e) {
+			console.log("close");
 			if (e) e.preventDefault();
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
-			document.removeEventListener("keydown", onEscListener);
+			// document.removeEventListener("keydown", onEscListener);
+			that._removeKeyListener(ESC, close);
 			that.container.removeChild(_container);
 			if (onClose) onClose();
 		}
 
-		function onEscListener(e) {
-			e = e || window.event;
-			var isEscape = false;
-			if ("key" in e) {
-				isEscape = (e.key == "Escape" || e.key == "Esc");
-			} else {
-				isEscape = (e.keyCode == 27);
-			}
-			if (isEscape) {
-				close(e);
-			}
-		}
-
 		this.blockerElem.addEventListener("click", close);
-		document.addEventListener("keydown", onEscListener);
+		// document.addEventListener("keydown", onEscListener);
+		this._addKeyListener(ESC, close);
 
 		this.blockerElem.style.display = "block";
 		this.container.appendChild(_container);

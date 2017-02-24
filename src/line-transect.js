@@ -244,10 +244,11 @@ export default function lineTransect(LajiMap) {
 			const distances = [];
 			let distance = 0;
 			let prevLatLng = undefined;
-			pointLayers.forEach(points => points.forEach(point => {
+			pointLayers.forEach(points => points.forEach((point, i) => {
 				distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
 				distances.push(distance);
 				prevLatLng = point._latlng;
+				point.bindTooltip(`${i + 1}. (${parseInt(distances[i])}m)`, {direction: "top"})
 			}));
 
 			let _i = 0;
@@ -265,11 +266,11 @@ export default function lineTransect(LajiMap) {
 					this._hoveredLTLineIdx = __i;
 					this._updateStyleForLTIdx(prevHoverIdx);
 					this._updateStyleForLTIdx(this._hoveredLTLineIdx);
-					this._pointLayers[lineIdx][segmentI + 1].bindTooltip(`${__i + 1}. (${parseInt(distances[__i  + 1])}m)`, {direction: "top"}).openTooltip();
+					this._pointLayers[lineIdx][segmentI + 1].openTooltip();
 				}).on("mouseout", () => {
 					this._hoveredLTLineIdx = undefined;
 					this._updateStyleForLTIdx(__i);
-					this._pointLayers[lineIdx][segmentI + 1].closeTooltip().unbindTooltip();
+					this._pointLayers[lineIdx][segmentI + 1].closeTooltip();
 				});
 				_i++;
 			}));

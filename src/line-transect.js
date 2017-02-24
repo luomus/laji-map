@@ -1,18 +1,23 @@
 import { dependsOn, depsProvided, provide, reflect } from "./map";
 import "leaflet-geometryutil";
-import { ESC } from "./globals";
+import {
+	NORMAL_COLOR,
+	ACTIVE_COLOR,
+	INCOMPLETE_COLOR,
+	ESC
+} from "./globals";
 
-const lineStyle = {color: "#000", weight: 1};
-const hoverLineStyle = {...lineStyle, color: "#0ff"};
-const activeLineStyle = {...lineStyle, color: "#f0f"};
+const lineStyle = {color: NORMAL_COLOR, weight: 2};
+const hoverLineStyle = {...lineStyle, color: INCOMPLETE_COLOR};
+const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
 const editLineStyle = {...lineStyle, color: "#f00"};
-const corridorStyle = {...lineStyle, opacity: 0.5, weight: 0, fillColor: lineStyle.color};
+const corridorStyle = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
 const activeCorridorStyle = {...corridorStyle, fillColor: activeLineStyle.color};
-const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color};
+const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
 const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
-const pointStyle = {color: "#fff", radius: 5, fillColor: "#ff0", fillOpacity: 0.7};
-const editablePointStyle = {...pointStyle, fillColor: "#00f", color: "#00f"};
-const overlappingPointStyle = {...pointStyle, radius: 10, color: "#000"};
+const pointStyle = {weight: 0, radius: 5, fillColor: "#154EAA", fillOpacity: 1};
+const editablePointStyle = {...pointStyle, radius: 7, fillColor: "#f00", fillOpacity: 0.7};
+const overlappingPointStyle = {...pointStyle, radius: 6, weight: 1, color: "#000"};
 
 const LT_WIDTH_METERS = 25;
 

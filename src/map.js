@@ -198,6 +198,7 @@ export default class LajiMap {
 			zoomControl: false,
 			noWrap: true,
 			continuousWorld: false,
+			doubleClickZoom: false
 		});
 
 		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {

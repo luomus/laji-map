@@ -227,14 +227,19 @@ export default function lineTransect(LajiMap) {
 			this._corridorLayer = L.layerGroup(this._allCorridors).addTo(this.map);
 			this._pointLayer = L.layerGroup(this._allPoints).addTo(this.map);
 
-			let _i = 0;
-			lineLayers.forEach(lines => lines.forEach(line => {
-				line.bindTooltip(`${_i}`, {permanent: true}).openTooltip();
-				_i++;
+			/** TODO multiple segments cumulate distance from the first segment (and also add the distance between
+			 segments to the sum distance) - is this the right way? **/
+			const distances = [];
+			let distance = 0;
+			let prevLatLng = undefined;
+			pointLayers.forEach(points => points.forEach(point => {
+				distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
+				distances.push(distance);
+				prevLatLng = point._latlng;
 			}));
 
-			_i = 0;
-			corridorLayers.forEach(corridors => corridors.forEach(corridor => {
+			let _i = 0;
+			corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentI) => {
 				const __i = _i;
 				corridor.on("click", () => {
 					if (this._removeLTMode) {
@@ -248,22 +253,15 @@ export default function lineTransect(LajiMap) {
 					this._hoveredLTLineIdx = __i;
 					this._updateStyleForLTIdx(prevHoverIdx);
 					this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+					this._pointLayers[lineIdx][segmentI + 1].bindTooltip(`${__i + 1}. (${parseInt(distances[__i  + 1])}m)`, {direction: "top"}).openTooltip();
 				}).on("mouseout", () => {
 					this._hoveredLTLineIdx = undefined;
 					this._updateStyleForLTIdx(__i);
+					this._pointLayers[lineIdx][segmentI + 1].closeTooltip().unbindTooltip();
 				});
 				_i++;
 			}));
 
-			/** TODO multiple segments cumulate distance from the first segment (and also add the distance between
-			 segments to the sum distance) - is this the right way? **/
-			let distance = 0;
-			let prevLatLng = undefined;
-			pointLayers.forEach(points => points.forEach(point => {
-				distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
-				if (distance) point.bindTooltip(`${parseInt(distance)}m`, {direction: "top"});
-				prevLatLng = point._latlng;
-			}));
 			provide(this, "lineTransect");
 		}
 

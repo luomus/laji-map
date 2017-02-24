@@ -12,6 +12,7 @@ const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color};
 const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
 const pointStyle = {color: "#fff", radius: 5, fillColor: "#ff0", fillOpacity: 0.7};
 const editablePointStyle = {...pointStyle, fillColor: "#00f", color: "#00f"};
+const overlappingPointStyle = {...pointStyle, radius: 10, color: "#000"};
 
 const LT_WIDTH_METERS = 50;
 
@@ -169,14 +170,19 @@ export default function lineTransect(LajiMap) {
 
 				const translateHooks = [];
 
+				let overlapsFirst = false;
 				const __segmentI = _segmentI;
+
+				if (L.latLng(wholeLineAsSegments[0][0]).distanceTo(wholeLineAsSegments[wholeLineAsSegments.length - 1][1]) <= 2) {
+					overlapsFirst = true;
+				}
+
 				pointLayer.push(
 					L.circleMarker(wholeLineAsSegments[wholeLineAsSegments.length - 1][1], pointStyle)
 						.on("dblclick", () => {
 							const firstPoint = pointLayer[0];
 							const lastPoint = pointLayer[pointLayer.length - 1];
-
-							if (firstPoint.getLatLng().distanceTo(lastPoint.getLatLng()) <= 2) {
+							if (overlapsFirst) {
 								const popup = document.createElement("div");
 								popup.className = "text-center";
 
@@ -185,6 +191,7 @@ export default function lineTransect(LajiMap) {
 
 								const firstButton = document.createElement("button");
 								firstButton.addEventListener("click", () => {
+									lastPoint.setStyle(pointStyle);
 									this._setLTPointEditable(_j, 0);
 									lastPoint.closePopup();
 								});
@@ -192,6 +199,7 @@ export default function lineTransect(LajiMap) {
 
 								const lastButton = document.createElement("button");
 								lastButton.addEventListener("click", () => {
+									firstPoint.setStyle(pointStyle);
 									this._setLTPointEditable(_j, __segmentI + 1);
 									lastPoint.closePopup();
 								});
@@ -210,12 +218,16 @@ export default function lineTransect(LajiMap) {
 								lastPoint.bindPopup(popup).openPopup();
 								lastPoint.on("popupclose", () => {
 									translateHooks.forEach(hook => this.removeTranslationHook(hook));
+									lastPoint.unbindPopup();
 								});
 							} else {
 								this._setLTPointEditable(_j, __segmentI + 1);
 							}
 						})
 				);
+				if (overlapsFirst) {
+					[0, pointLayer.length - 1].forEach(i => pointLayer[i].setStyle(overlappingPointStyle));
+				}
 				j++;
 			});
 

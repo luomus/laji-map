@@ -17,7 +17,7 @@ const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fil
 const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
 const pointStyle = {weight: 0, radius: 5, fillColor: "#154EAA", fillOpacity: 1};
 const editablePointStyle = {...pointStyle, radius: 7, fillColor: "#f00", fillOpacity: 0.7};
-const overlappingPointStyle = {...pointStyle, radius: 6, weight: 1, color: "#000"};
+const overlappingPointStyle = {...pointStyle, radius: 6, weight: 2, color: "#000"};
 
 const LT_WIDTH_METERS = 25;
 
@@ -511,6 +511,7 @@ export default function lineTransect(LajiMap) {
 			this._cutLTIdx = undefined;
 			this.map.off("mousemove", this._mouseMoveLTLineCutHandler);
 			this._updateStyleForLTIdx(lastLineCutIdx);
+			this._disposeTooltip();
 		}
 
 		_mouseMoveLTLineCutHandler({latlng}) {
@@ -548,21 +549,25 @@ export default function lineTransect(LajiMap) {
 		startLTLineSplit() {
 			this._lineCutting = true;
 			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
+			this._createTooltip("SplitLineTooltip");
 		}
 
 		startLTLineSplitForIdx(idx) {
 			this._lineCutting = true;
 			this._lineCutIdx = idx;
 			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
+			this._createTooltip("SplitLineTooltip");
 		}
 
 		startRemoveLTSegmentMode() {
 			this._removeLTMode = true;
+			this._createTooltip("DeleteLineSegmentTooltip");
 		}
 
 		stopRemoveLTSegmentMode() {
 			this._removeLTMode = false;
 			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+			this._disposeTooltip();
 		}
 
 		commitRemoveLTSegment(i) {
@@ -580,6 +585,19 @@ export default function lineTransect(LajiMap) {
 			this._triggerEvent(events, this._onLTChange);
 			this.stopRemoveLTSegmentMode();
 		}
+
+		_createTooltip(translationKey) {
+			this._tooltip = new L.Draw.Tooltip(this.map);
+			this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
+			this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
+			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
+		}
+
+		_disposeTooltip() {
+			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.off(eType, this._onMouseMove));
+			this._tooltip.dispose();
+		}
+
 	}
 
 }

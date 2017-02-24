@@ -1301,16 +1301,22 @@ export default class LajiMap {
 		});
 	}
 
-	addTranslationHook(elem, translationKey, attr = "innerHTML") {
+	addTranslationHook(elemOrFn, translationKey, attr = "innerHTML") {
 		const that = this;
 
 		function translate() {
-			const translation = (typeof translationKey === "function") ? translationKey() : that.translations[translationKey];
-
-			if (typeof elem[attr] === "function") {
-				elem[attr](translation);
+			if (typeof elemOrFn === "function") {
+				const fn = elemOrFn;
+				fn();
 			} else {
-				elem[attr] = translation;
+				const elem = elemOrFn;
+				const translation = (typeof translationKey === "function") ? translationKey() : that.translations[translationKey];
+
+				if (typeof elem[attr] === "function") {
+					elem[attr](translation);
+				} else {
+					elem[attr] = translation;
+				}
 			}
 		}
 
@@ -1357,7 +1363,7 @@ export default class LajiMap {
 		} : {
 			icon: this._createIcon(options)
 		};
-		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass)
+		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass);
 		layer.enable();
 		return layer;
 	}

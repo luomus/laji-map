@@ -324,4 +324,14 @@
 		en: "Delete a segment of the line transect",
 		sv: "Ta bort ett segment av linjen transekt"
 	},
+	splitLineTooltip: {
+		fi: "Klikkaa karttaa pätkäistäksesi linjan",
+		en: "Click the map to split the line",
+		sv: "Klicka på kartan för att dela linjen"
+	},
+	deleteLineSegmentTooltip: {
+		fi: "Klikkaa pätkää jonka haluat poistaa",
+		en: "Click the segment that you want to delete",
+		sv: "Klicka det segment som du vill ta bort"
+	},
 }

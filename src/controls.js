@@ -31,6 +31,7 @@ return class LajiMapWithControls extends LajiMap {
 			drawClear: undefined,
 			coordinates: undefined,
 			scale: undefined,
+			lineTransect: undefined
 		};
 
 		provide(this, "controlsConstructed");
@@ -126,6 +127,18 @@ return class LajiMapWithControls extends LajiMap {
 				text: this.translations.ClearMap,
 				iconCls: "glyphicon glyphicon-trash",
 				callback: (...params) => this.clearDrawData(...params)
+			},
+			lineTransectSplit: {
+				name: "lineTransect.split",
+				text: this.translations.SplitLine,
+				iconCls: "glyphicon glyphicon-scissors",
+				callback: (...params) => this.startLTLineSplit(...params)
+			},
+			lineTransectDelete: {
+				name: "lineTransect.delete",
+				text: this.translations.DeleteLineSegment,
+				iconCls: "glyphicon glyphicon-remove-circle",
+				callback: (...params) => this.startRemoveLTSegmentMode(...params)
 			}
 		};
 
@@ -134,6 +147,13 @@ return class LajiMapWithControls extends LajiMap {
 			this._addControl("coordinateInput", this._getCoordinateInputControl());
 			this._addControl("drawCopy", this._getDrawCopyControl());
 			this._addControl("drawClear", this._getDrawClearControl());
+		}
+
+		if (isProvided(this, "lineTransect")) {
+			this._addControl("lineTransect", this._getLineTransectControl());
+		// 	this._addControl("coordinateInput", this._getCoordinateInputControl());
+		// 	this._addControl("drawCopy", this._getDrawCopyControl());
+		// 	this._addControl("drawClear", this._getDrawClearControl());
 		}
 
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
@@ -183,7 +203,8 @@ return class LajiMapWithControls extends LajiMap {
 			drawCopy: false,
 			drawClear: false,
 			coordinates: false,
-			scale: true
+			scale: true,
+			lineTransect: {split: false, delete: false}
 		};
 
 		for (let setting in controlSettings) {
@@ -207,6 +228,16 @@ return class LajiMapWithControls extends LajiMap {
 	}
 
 	_controlIsAllowed(name) {
+		if (name.includes(".")) {
+			const splitted = name.split(".");
+			const control = splitted[0];
+			const subControl = splitted[1];
+			return (
+				this.controlSettings[control] === true ||
+				(this.controlSettings[control].constructor === Object && this.controlSettings[control][subControl])
+			);
+		}
+
 		const dependencies = {
 			coordinateInput: [
 				() => this.draw,
@@ -225,16 +256,18 @@ return class LajiMapWithControls extends LajiMap {
 		const {controlSettings} = this;
 
 		function controlIsOk(controlName) {
+			const controlItem = controlSettings[controlName];
 			return (
-				controlSettings &&
-				controlSettings[controlName] &&
+				controlItem &&
 				(dependencies[controlName] || []).every(dependency => {
-					return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)})
+					return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)}) &&
+				(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
 			);
 		}
 
 		return controlIsOk(name);
 	}
+
 
 	_addControl(name, control) {
 		if (control && this._controlIsAllowed(name)) {
@@ -243,16 +276,22 @@ return class LajiMapWithControls extends LajiMap {
 		}
 	}
 
-	_createControlItem(that, container, glyphName, title, fn) {
+	_createControlButton(that, container, fn) {
 		const elem = L.DomUtil.create("a", "", container);
-		const glyph = L.DomUtil.create("span", glyphName, elem);
-		elem.title = title;
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
 		L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
 		L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
 		L.DomEvent.on(elem, "click", that._refocusOnMap, that);
 		L.DomEvent.on(elem, "click", fn);
+
+		return elem;
+	}
+
+	_createControlItem(that, container, glyphName, title, fn) {
+		const elem = this._createControlButton(that, container, fn);
+		const glyph = L.DomUtil.create("span", glyphName, elem);
+		elem.title = title;
 
 		return elem;
 	}
@@ -307,16 +346,9 @@ return class LajiMapWithControls extends LajiMap {
 			onAdd: function(map) {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
 
-				function isAllowed(control) {
-					return (
-						that.controlSettings.location === true ||
-						(that.controlSettings.location.constructor === Object && that.controlSettings.location[control])
-					);
-				}
-
 				//TODO disabled until implemented.
 				// if (isAllowed("search")) this._createSearch(container);
-				if (isAllowed("userLocation")) this._createLocate(container);
+				if (that._controlIsAllowed("location", "userLocation")) this._createLocate(container);
 				return container;
 			},
 
@@ -519,6 +551,76 @@ return class LajiMapWithControls extends LajiMap {
 		});
 	}
 
+	_getLineTransectControl() {
+		const that = this;
+		const LineTransectControl = L.Control.extend({
+			options: {
+				position: "topright"
+			},
+
+			onAdd: function(map) {
+				this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
+				this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
+				this.cancelHandlers = {};
+
+				//TODO disabled until implemented.
+				if (that._controlIsAllowed("lineTransect", "split")) this.splitButton = this._createSplit(this.buttonContainer);
+				if (that._controlIsAllowed("lineTransect", "delete")) this.deleteButton = this._createDelete(this.buttonContainer);
+				return this.container;
+			},
+
+			_createSplit: function(container) {
+				return that._createControlItem(this, container, "glyphicon glyphicon-scissors", that.translations.SplitLine, () => this.onSplit());
+			},
+
+			_createDelete: function(container) {
+				return that._createControlItem(this, container, "glyphicon glyphicon-remove-circle", that.translations.DeleteLineSegment, () => this.onDelete());
+			},
+
+			_createCancelHandler(name, parentBtn, fn) {
+				let cont = this.cancelHandlers[name];
+
+				const _that = this;
+				function stop() {
+					fn();
+					that._removeKeyListener(ESC, stop);
+					_that.container.removeChild(cont);
+				}
+
+				if (!cont) {
+					this.cancelHandlers[name] = L.DomUtil.create("ul", "leaflet-draw-actions");
+					cont = this.cancelHandlers[name];
+					const buttonWrapper = L.DomUtil.create("li");
+					const button = that._createControlButton(this, buttonWrapper, stop);
+					that.addTranslationHook(button, "Cancel");
+					cont.appendChild(buttonWrapper);
+				}
+
+				that._addKeyListener(ESC, stop, !!"high priority");
+
+				cont.style.top = `${parentBtn.offsetTop}px`;
+				cont.style.display = "block";
+
+				this.container.appendChild(cont);
+			},
+
+			onSplit: function() {
+				that.startLTLineSplit();
+
+				this._createCancelHandler("split", this.splitButton, that.stopLTLineCut);
+			},
+
+			onDelete: function () {
+				that.startRemoveLTSegmentMode();
+				this._createCancelHandler("delete", this.deleteButton, that.stopRemoveLTSegmentMode);
+			}
+		});
+
+
+		return new LineTransectControl();
+
+	}
+
 	_showDialog(container, onClose) {
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
@@ -533,7 +635,6 @@ return class LajiMapWithControls extends LajiMap {
 
 		const that = this;
 		function close(e) {
-			console.log("close");
 			if (e) e.preventDefault();
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
@@ -860,19 +961,24 @@ return class LajiMapWithControls extends LajiMap {
 			}
 		});
 
-		let lineAdded = false;
 		[
-			this.controlItems.coordinateInput,
-			this.controlItems.drawCopy,
-			this.controlItems.drawClear
-		].forEach(control => {
-			if (this._controlIsAllowed(control.name)) {
-				if (!lineAdded) {
-					this.map.contextmenu.addItem("-");
-					lineAdded = true;
-				}
-				this.map.contextmenu.addItem(control);
+			[
+				this.controlItems.coordinateInput,
+				this.controlItems.drawCopy,
+				this.controlItems.drawClear
+			],
+			[
+				this.controlItems.lineTransectSplit,
+				this.controlItems.lineTransectDelete,
+			]
+		].forEach(controlGroup => {
+			if (controlGroup.some(control => this._controlIsAllowed(control.name))
+			) {
+				this.map.contextmenu.addItem("-");
 			}
+			controlGroup.forEach(control => {
+				this.map.contextmenu.addItem(control);
+			});
 		});
 	}
 

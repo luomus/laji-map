@@ -313,5 +313,15 @@
 		fi: "Viimeistä",
 		en: "The last",
 		sv: "Den sista"
-	}
+	},
+	splitLine: {
+		fi: "Pätkäise linja",
+		en: "Split line transect",
+		sv: "Dela line transekt"
+	},
+	deleteLineSegment: {
+		fi: "Poista linjan pätkä",
+		en: "Delete a segment of the line transect",
+		sv: "Ta bort ett segment av linjen transekt"
+	},
 }

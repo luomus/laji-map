@@ -150,13 +150,14 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				draw: false,
+				draw: true,
 				// draw: {"rectangle": true},
-				// drawCopy: true,
-				// drawClear: true,
+				drawCopy: true,
+				drawClear: true,
 				// coordinates: true,
 				coordinateInput: true,
-				coordinateInput: false
+				// coordinateInput: false
+				lineTransect: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
@@ -175,7 +176,7 @@ class App {
 			zoom: 10
 		});
 
-		map.startLTLineSplit();
+		// map.startLTLineSplit();
 		// map.startRemoveLTSegmentMode();
 
 		// map.addData(

@@ -1,4 +1,4 @@
-import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
+import { dependsOn, depsProvided, provide } from "./map";
 import "leaflet-geometryutil";
 import { ESC } from "./globals";
 
@@ -35,6 +35,7 @@ export default function lineTransect(LajiMap) {
 			this.startLTLineSplit = this.startLTLineSplit.bind(this);
 			this.stopLTLineCut = this.stopLTLineCut.bind(this);
 			this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
+			this.stopRemoveLTSegmentMode = this.stopRemoveLTSegmentMode.bind(this);
 
 			this._addKeyListener(ESC, () => {
 				if (this.lineTransectEditIdx) {
@@ -237,6 +238,7 @@ export default function lineTransect(LajiMap) {
 				const __i = _i;
 				corridor.on("click", () => {
 					if (this._removeLTMode) {
+						this._hoveredLTLineIdx = undefined;
 						this._allLines.splice(__i, 1);
 						const feature = this._formatLTFeatureOut();
 						this.setLineTransectGeometry(feature.geometry);
@@ -271,6 +273,7 @@ export default function lineTransect(LajiMap) {
 				if (distance) point.bindTooltip(`${parseInt(distance)}m`, {direction: "top"});
 				prevLatLng = point._latlng;
 			}));
+			provide(this, "lineTransect");
 		}
 
 		_setLTPointEditable(lineIdx, segmentIdx) {
@@ -460,7 +463,7 @@ export default function lineTransect(LajiMap) {
 		stopLTLineCut() {
 			const lastLineCutIdx = this._cutLTIdx;
 			this._lineCutting = false;
-			this._cutLine.removeFrom(this.map);
+			if (this._cutLine) this._cutLine.removeFrom(this.map);
 			this._cutLine = undefined;
 			this._lineCutIdx = undefined;
 			this._cutLTIdx = undefined;

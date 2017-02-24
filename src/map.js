@@ -318,10 +318,14 @@ export default class LajiMap {
 		document.addEventListener(type, fn);
 	}
 
-	_addKeyListener(key, fn) {
+	_addKeyListener(key, fn, prioritize) {
 		if (!this._keyListeners) this._keyListeners = {};
 		if (!this._keyListeners[key]) this._keyListeners[key] = [];
-		this._keyListeners[key].push(fn);
+		if (prioritize) {
+			this._keyListeners[key] = [fn, ...this._keyListeners[key]];
+		} else {
+			 this._keyListeners[key].push(fn);
+		}
 	}
 
 	_removeKeyListener(key, fn) {
@@ -1312,7 +1316,6 @@ export default class LajiMap {
 	}
 
 	removeTranslationHook(hook) {
-		console.log(hook);
 		const index = this.onSetLangHooks.indexOf(hook);
 		if (index >= 0) {
 			this.onSetLangHooks.splice(index, 1);

@@ -907,7 +907,10 @@ export default class LajiMap {
 		return layer;
 	}
 
+	@dependsOn("translations")
 	_updateContextMenuForLayer(layer, idx) {
+		if (!depsProvided(this, "_updateContextMenuForLayer", arguments)) return;
+
 		const { translations } = this;
 		layer.unbindContextMenu();
 
@@ -916,12 +919,12 @@ export default class LajiMap {
 		if (this.draw && this.draw.editable) {
 			contextmenuItems = [
 				{
-					text: translations ? translations.EditFeature : "",
+					text: translations.EditFeature,
 					callback: () => this._setEditable(idx),
 					iconCls: "glyphicon glyphicon-pencil"
 				},
 				{
-					text: translations ? translations.DeleteFeature : "",
+					text: translations.DeleteFeature,
 					callback: () => this._onDelete(this.idxsToIds[idx]),
 					iconCls: "glyphicon glyphicon-trash"
 				}

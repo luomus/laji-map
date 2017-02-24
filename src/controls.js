@@ -137,7 +137,7 @@ return class LajiMapWithControls extends LajiMap {
 			lineTransectDelete: {
 				name: "lineTransect.delete",
 				text: this.translations.DeleteLineSegment,
-				iconCls: "glyphicon glyphicon-remove-circle",
+				iconCls: "glyphicon glyphicon-remove-sign",
 				callback: (...params) => this.startRemoveLTSegmentMode(...params)
 			}
 		};
@@ -574,7 +574,7 @@ return class LajiMapWithControls extends LajiMap {
 			},
 
 			_createDelete: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-remove-circle", that.translations.DeleteLineSegment, () => this.onDelete());
+				return that._createControlItem(this, container, "glyphicon glyphicon-remove-sign", that.translations.DeleteLineSegment, () => this.onDelete());
 			},
 
 			_createCancelHandler(name, parentBtn, fn) {

@@ -1,4 +1,4 @@
-import { dependsOn, depsProvided, provide } from "./map";
+import { dependsOn, depsProvided, provide, reflect } from "./map";
 import "leaflet-geometryutil";
 import { ESC } from "./globals";
 
@@ -239,11 +239,7 @@ export default function lineTransect(LajiMap) {
 				corridor.on("click", () => {
 					if (this._removeLTMode) {
 						this._hoveredLTLineIdx = undefined;
-						this._allLines.splice(__i, 1);
-						const feature = this._formatLTFeatureOut();
-						this.setLineTransectGeometry(feature.geometry);
-						this._triggerEvent({type: "edit", feature});
-						this.stopRemoveLTSegmentMode();
+						this.commitRemoveLTSegment(__i);
 					} else {
 						this._allLines[this._activeLTIdx].setStyle(lineStyle);
 						this._allLines[__i].setStyle(activeLineStyle);
@@ -274,6 +270,34 @@ export default function lineTransect(LajiMap) {
 				prevLatLng = point._latlng;
 			}));
 			provide(this, "lineTransect");
+		}
+
+		@reflect()
+		@dependsOn("lineTransect", "translations")
+		_updateLTLayerContextMenus() {
+			if (!depsProvided(this, "_updateLTLayerContextMenus", arguments)) return;
+
+			const {translations} = this;
+
+			this._allCorridors.forEach((corridor, idx) => {
+				const contextmenuItems = [
+					{
+						text: translations.SplitLine,
+						callback: () => this.startLTLineSplitForIdx(idx),
+						iconCls: "glyphicon glyphicon-scissors"
+					},
+					{
+						text: translations.DeleteLineSegment,
+						callback: () => this.commitRemoveLTSegment(idx),
+						iconCls: "glyphicon glyphicon-remove-sign"
+					}
+				]
+
+				corridor.bindContextMenu({
+					contextmenuInheritItems: false,
+					contextmenuItems
+				});
+			})
 		}
 
 		_setLTPointEditable(lineIdx, segmentIdx) {
@@ -521,6 +545,14 @@ export default function lineTransect(LajiMap) {
 		stopRemoveLTSegmentMode() {
 			this._removeLTMode = false;
 			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+		}
+
+		commitRemoveLTSegment(i) {
+			this._allLines.splice(i, 1);
+			const feature = this._formatLTFeatureOut();
+			this.setLineTransectGeometry(feature.geometry);
+			this._triggerEvent({type: "edit", feature});
+			this.stopRemoveLTSegmentMode();
 		}
 	}
 

@@ -50,6 +50,7 @@
     "leaflet-contextmenu": "1.1.1",
     "leaflet-draw": "0.4.9",
     "leaflet-mml-layers": "2.0.1",
+    "leaflet-textpath": "git+https://git@github.com/makinacorpus/Leaflet.textPath.git#ad1afd910b387e075989b258d487cd7d6db93b0b",
     "leaflet.markercluster": "1.0.3",
     "proj4": "2.3.15",
     "proj4leaflet": "git+https://git@github.com/kartena/Proj4Leaflet.git#3019d278b5d3e42a72b65142db2d5f0b06039b53"

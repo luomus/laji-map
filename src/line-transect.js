@@ -1,5 +1,6 @@
 import { dependsOn, depsProvided, provide, reflect } from "./map";
 import "leaflet-geometryutil";
+import "leaflet-textpath";
 import {
 	NORMAL_COLOR,
 	ACTIVE_COLOR,
@@ -161,7 +162,10 @@ export default function lineTransect(LajiMap) {
 				wholeLineAsSegments.forEach((segment, segmentI) => {
 					const _i = i;
 
-					lineLayer.push(L.polyline(segment, i === this._activeLTIdx ? activeLineStyle : lineStyle));
+					lineLayer.push(
+						L.polyline(segment, i === this._activeLTIdx ? activeLineStyle : lineStyle)
+							.setText("     →     ", {repeat: true, attributes: {dy: 5, "font-size": 18}})
+					);
 
 					pointLayer.push(
 						L.circleMarker(segment[0], pointStyle)
@@ -253,7 +257,7 @@ export default function lineTransect(LajiMap) {
 				distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
 				distances.push(distance);
 				prevLatLng = point._latlng;
-				point.bindTooltip(`${i + 1}. (${parseInt(distances[i])}m)`, {direction: "top"})
+				point.bindTooltip(`${i + 1}. (${parseInt(distances[i])}m)`, {direction: "top"});
 			}));
 
 			let _i = 0;

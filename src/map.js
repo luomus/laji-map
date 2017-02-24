@@ -1096,7 +1096,7 @@ export default class LajiMap {
 		this._triggerEvent(event, this.draw.onChange);
 	}
 
-	_getOnActiveChangeEvent(idx) {
+	_getOnActiveChangeEvent(idx,) {
 		this.setActive(idx);
 		return {
 			type: "active",

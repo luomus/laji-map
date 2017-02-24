@@ -241,12 +241,7 @@ export default function lineTransect(LajiMap) {
 						this._hoveredLTLineIdx = undefined;
 						this.commitRemoveLTSegment(__i);
 					} else {
-						this._allLines[this._activeLTIdx].setStyle(lineStyle);
-						this._allLines[__i].setStyle(activeLineStyle);
-						this._allCorridors[this._activeLTIdx].setStyle(corridorStyle);
-						this._allCorridors[__i].setStyle(activeCorridorStyle);
-						this._activeLTIdx = __i;
-						this._triggerEvent({type: "active", idx: this._activeLTIdx}, this._onLTChange);
+						this._triggerEvent(this._getOnActiveSegmentChangeEvent(__i), this._onLTChange);
 					}
 				}).on("mouseover", () => {
 					const prevHoverIdx = this._hoveredLTLineIdx;
@@ -423,6 +418,13 @@ export default function lineTransect(LajiMap) {
 			);
 		}
 
+		_getOnActiveSegmentChangeEvent(idx) {
+			const prevIdx = this._activeLTIdx;
+			this._activeLTIdx = idx;
+			[prevIdx, idx].forEach(i => this._updateStyleForLTIdx(i));
+			return {type: "active", idx: this._activeLTIdx};
+		}
+
 		// Doesn't handle points.
 		_getStyleForLTLayer(layer, idx) {
 			const isActive = idx === this._activeLTIdx;
@@ -548,10 +550,18 @@ export default function lineTransect(LajiMap) {
 		}
 
 		commitRemoveLTSegment(i) {
+			const events = [
+				{type: "edit", feature},
+			];
+			if (i - 1 >= 0) {
+				events.push(this._getOnActiveSegmentChangeEvent(i - 1));
+			}
+
 			this._allLines.splice(i, 1);
 			const feature = this._formatLTFeatureOut();
 			this.setLineTransectGeometry(feature.geometry);
-			this._triggerEvent({type: "edit", feature});
+
+			this._triggerEvent(events, this._onLTChange);
 			this.stopRemoveLTSegmentMode();
 		}
 	}

@@ -150,12 +150,12 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				draw: true,
+				draw: false,
 				// draw: {"rectangle": true},
-				drawCopy: true,
-				drawClear: true,
+				drawCopy: false,
+				drawClear: false,
 				// coordinates: true,
-				coordinateInput: true,
+				coordinateInput: false,
 				// coordinateInput: false
 				lineTransect: true
 			},

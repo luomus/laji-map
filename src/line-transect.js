@@ -266,12 +266,24 @@ export default function lineTransect(LajiMap) {
 			const distances = [];
 			let distance = 0;
 			let prevLatLng = undefined;
-			pointLayers.forEach(points => points.forEach((point, i) => {
-				distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
-				distances.push(distance);
-				prevLatLng = point._latlng;
-				point.bindTooltip(`${i + 1}. (${parseInt(distances[i])}m)`, {direction: "top"});
-			}));
+			i = 0;
+			pointLayers.forEach(points => {
+				let startIdx = i;
+				points.forEach((point, pointI) => {
+					distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
+					distances.push(distance);
+					prevLatLng = point._latlng;
+
+					const getTooltipFor = (idx) => `${idx + 1}. (${parseInt(distances[idx])}m)`;
+
+					let tooltip = getTooltipFor(i);
+					if (pointI === points.length - 1 && point.getLatLng().equals(points[0].getLatLng())) {
+						tooltip = `${getTooltipFor(startIdx)}<br/>${tooltip}`;
+					}
+					point.bindTooltip(tooltip, {direction: "top"});
+					i++;
+				})
+			});
 
 			const pointDistTreshold = 100;
 

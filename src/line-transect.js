@@ -158,9 +158,8 @@ export default function lineTransect(LajiMap) {
 			const corridorLayers = this._corridorLayers;
 
 			let i = 0;
-			let j = 0;
 			let _segmentI = undefined;
-			wholeLinesAsSegments.forEach(wholeLineAsSegments => {
+			wholeLinesAsSegments.forEach((wholeLineAsSegments, j) => {
 				const _j = j;
 				[pointLayers, lineLayers, corridorLayers].forEach(layers => {
 					layers.push([]);
@@ -179,78 +178,21 @@ export default function lineTransect(LajiMap) {
 
 					pointLayer.push(
 						L.circleMarker(segment[0], pointStyle)
-							.on("dblclick", () => {this._setLTPointEditable(_j, segmentI)})
+							// .on("dblclick", () => {this._setLTPointEditable(_j, segmentI)})
 					);
 
 					corridorLayer.push(L.polygon(
 						this._getCorridorCoordsForLine(segment),
 						_i === this._activeLTIdx ? activeCorridorStyle : corridorStyle
 					));
+
 					_segmentI = segmentI;
 					i++;
 				});
 
-				const translateHooks = [];
-
-				let overlapsFirst = false;
-				const __segmentI = _segmentI;
-
-				if (L.latLng(wholeLineAsSegments[0][0]).distanceTo(wholeLineAsSegments[wholeLineAsSegments.length - 1][1]) <= 2) {
-					overlapsFirst = true;
-				}
-
 				pointLayer.push(
 					L.circleMarker(wholeLineAsSegments[wholeLineAsSegments.length - 1][1], pointStyle)
-						.on("dblclick", () => {
-							const firstPoint = pointLayer[0];
-							const lastPoint = pointLayer[pointLayer.length - 1];
-							if (overlapsFirst) {
-								const popup = document.createElement("div");
-								popup.className = "text-center";
-
-								const question = document.createElement("span");
-								translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
-
-								const firstButton = document.createElement("button");
-								firstButton.addEventListener("click", () => {
-									lastPoint.setStyle(pointStyle);
-									this._setLTPointEditable(_j, 0);
-									lastPoint.closePopup();
-								});
-								translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
-
-								const lastButton = document.createElement("button");
-								lastButton.addEventListener("click", () => {
-									firstPoint.setStyle(pointStyle);
-									this._setLTPointEditable(_j, __segmentI + 1);
-									lastPoint.closePopup();
-								});
-								translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
-
-								const buttonContainer = document.createElement("div");
-								buttonContainer.className = "btn-group";
-								[firstButton, lastButton].forEach(button => {
-									button.className = "btn btn-primary btn-xs";
-									buttonContainer.appendChild(button);
-								});
-
-								popup.appendChild(question);
-								popup.appendChild(buttonContainer);
-
-								lastPoint.bindPopup(popup).openPopup();
-								lastPoint.on("popupclose", () => {
-									translateHooks.forEach(hook => this.removeTranslationHook(hook));
-									lastPoint.unbindPopup();
-								});
-							} else {
-								this._setLTPointEditable(_j, __segmentI + 1);
-							}
-						})
 				);
-				if (overlapsFirst) {
-					[0, pointLayer.length - 1].forEach(i => pointLayer[i].setStyle(overlappingPointStyle));
-				}
-				j++;
 			});
 
 			this._allLines = flattenMatrix(lineLayers);
@@ -261,18 +203,21 @@ export default function lineTransect(LajiMap) {
 			this._corridorLayer = L.layerGroup(this._allCorridors).addTo(this.map);
 			this._pointLayer = L.layerGroup(this._allPoints).addTo(this.map);
 
+			const overlappingsCoordsToIdxs = {};
+
 			/** TODO multiple segments cumulate distance from the first segment (and also add the distance between
 			 segments to the sum distance) - is this the right way? **/
 			const distances = [];
 			let distance = 0;
 			let prevLatLng = undefined;
 			i = 0;
-			pointLayers.forEach(points => {
+			pointLayers.forEach((points, groupI) => {
 				let startIdx = i;
 				points.forEach((point, pointI) => {
-					distance += prevLatLng ? point._latlng.distanceTo(prevLatLng) : 0;
+					const latlng = point.getLatLng();
+					distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
 					distances.push(distance);
-					prevLatLng = point._latlng;
+					prevLatLng = latlng;
 
 					const getTooltipFor = (idx) => `${idx + 1}. (${parseInt(distances[idx])}m)`;
 
@@ -281,6 +226,61 @@ export default function lineTransect(LajiMap) {
 						tooltip = `${getTooltipFor(startIdx)}<br/>${tooltip}`;
 					}
 					point.bindTooltip(tooltip, {direction: "top"});
+
+					const stringCoords = `${latlng.lat}-${latlng.lng}`;
+					if (overlappingsCoordsToIdxs[stringCoords]) {
+						point.on("dblclick", () => {
+							const idxs = parseIdxsFromLTIdx(overlappingsCoordsToIdxs[stringCoords]);
+							const firstPoint = pointLayers[idxs[0]][idxs[1]];
+							const lastPoint = point;
+
+							const translateHooks = [];
+
+							const popup = document.createElement("div");
+							popup.className = "text-center";
+
+							const question = document.createElement("span");
+							translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
+
+							const firstButton = document.createElement("button");
+							firstButton.addEventListener("click", () => {
+								lastPoint.setStyle(pointStyle);
+								this._setLTPointEditable(idxs[0], idxs[1]);
+								lastPoint.closePopup();
+							});
+							translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
+
+							const lastButton = document.createElement("button");
+							lastButton.addEventListener("click", () => {
+								firstPoint.setStyle(pointStyle);
+								this._setLTPointEditable(groupI, pointI);
+								lastPoint.closePopup();
+							});
+							translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
+
+							const buttonContainer = document.createElement("div");
+							buttonContainer.className = "btn-group";
+							[firstButton, lastButton].forEach(button => {
+								button.className = "btn btn-primary btn-xs";
+								buttonContainer.appendChild(button);
+							});
+
+							popup.appendChild(question);
+							popup.appendChild(buttonContainer);
+
+							lastPoint.bindPopup(popup).openPopup();
+							lastPoint.on("popupclose", () => {
+								translateHooks.forEach(hook => this.removeTranslationHook(hook));
+								lastPoint.unbindPopup();
+							});
+						});
+
+						point.setStyle(overlappingPointStyle);
+					} else {
+						overlappingsCoordsToIdxs[stringCoords] = `${groupI}-${pointI}`;
+						point.on("dblclick", () => {this._setLTPointEditable(groupI, pointI)})
+					}
+
 					i++;
 				})
 			});
@@ -349,24 +349,25 @@ export default function lineTransect(LajiMap) {
 			})
 		}
 
-		_setLTPointEditable(lineIdx, segmentIdx) {
+		_setLTPointEditable(lineIdx, pointIdx) {
 			if (this.lineTransectEditIdx !== undefined) {
 				const prevIdxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
 				const editableLayer = this._pointLayers[prevIdxs[0]][prevIdxs[1]];
 				editableLayer.setStyle(pointStyle);
 			}
 
-			this.lineTransectEditIdx = `${lineIdx}-${segmentIdx}`;
-			if (segmentIdx !== undefined) {
-				const layer = this._pointLayers[lineIdx][segmentIdx];
+			this.lineTransectEditIdx = `${lineIdx}-${pointIdx}`;
+			if (pointIdx !== undefined) {
+				const layer = this._pointLayers[lineIdx][pointIdx];
 				layer.setStyle(editablePointStyle)
 					.on("mousedown", this._startLTDragPointHandler)
 					.on("mouseup", this._stopLTDragPointHandler)
 					.bringToFront();
 
-				[segmentIdx, segmentIdx - 1].filter(i => i >= 0).forEach(idx =>
-					this._corridorLayers[lineIdx][idx]
-						.on("mousedown", this._startLTDragCorridorHandler)
+				[pointIdx, pointIdx - 1].filter(i => i >= 0).forEach(idx => {
+						const corridor = this._corridorLayers[lineIdx][idx];
+						if (corridor) corridor.on("mousedown", this._startLTDragCorridorHandler)
+					}
 				);
 				this.map.on("mouseup", this._stopLTDragCorridorHandler);
 
@@ -406,12 +407,10 @@ export default function lineTransect(LajiMap) {
 		}
 
 		_startLTDragPointHandler() {
-			console.log("start point");
 			this._startLTDragHandler(this._dragLTPointHandler);
 		}
 
 		_stopLTDragPointHandler() {
-			console.log("stop point");
 			this._stopLTDragHandler(this._dragLTPointHandler);
 		}
 
@@ -420,7 +419,6 @@ export default function lineTransect(LajiMap) {
 		}
 
 		_startLTDragCorridorHandler({latlng}) {
-			console.log("start corridor");
 			this._startLTDragHandler(this._dragLTCorridorHandler);
 
 			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
@@ -431,9 +429,7 @@ export default function lineTransect(LajiMap) {
 		}
 
 		_stopLTDragCorridorHandler() {
-			// this.map.off("mouseup", this._stopLTDragCorridorHandler);
 			this._stopLTDragHandler(this._dragLTCorridorHandler);
-			console.log("stop corridor");
 			this._dragPointStart = undefined;
 			this._dragMouseStart = undefined;
 		}

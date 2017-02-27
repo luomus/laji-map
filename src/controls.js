@@ -577,7 +577,7 @@ return class LajiMapWithControls extends LajiMap {
 				return that._createControlItem(this, container, "glyphicon glyphicon-remove-sign", that.translations.DeleteLineSegment, () => this.onDelete());
 			},
 
-			_createCancelHandler(name, parentBtn, fn) {
+			_createCancelHandler(name, parentBtn, fn, eventName) {
 				let cont = this.cancelHandlers[name];
 
 				const _that = this;
@@ -585,6 +585,7 @@ return class LajiMapWithControls extends LajiMap {
 					fn();
 					that._removeKeyListener(ESC, stop);
 					_that.container.removeChild(cont);
+					that.map.off(eventName);
 				}
 
 				if (!cont) {
@@ -597,6 +598,7 @@ return class LajiMapWithControls extends LajiMap {
 				}
 
 				that._addKeyListener(ESC, stop, !!"high priority");
+				that.map.on(eventName, stop);
 
 				cont.style.top = `${parentBtn.offsetTop}px`;
 				cont.style.display = "block";
@@ -607,12 +609,12 @@ return class LajiMapWithControls extends LajiMap {
 			onSplit: function() {
 				that.startLTLineSplit();
 
-				this._createCancelHandler("split", this.splitButton, that.stopLTLineSplit);
+				this._createCancelHandler("split", this.splitButton, that.stopLTLineSplit, "lineTransect:split");
 			},
 
 			onDelete: function () {
 				that.startRemoveLTSegmentMode();
-				this._createCancelHandler("delete", this.deleteButton, that.stopRemoveLTSegmentMode);
+				this._createCancelHandler("delete", this.deleteButton, that.stopRemoveLTSegmentMode, "lineTransect:delete");
 			}
 		});
 

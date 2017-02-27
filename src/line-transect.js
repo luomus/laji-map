@@ -81,7 +81,7 @@ export default function lineTransect(LajiMap) {
 					this._commitPointDrag();
 					return true;
 				} else if (this._lineCutting) {
-					this._executeLTLineCut();
+					this._commitLTLineCut();
 				}
 				return false;
 			})();
@@ -390,6 +390,7 @@ export default function lineTransect(LajiMap) {
 			const feature = this._formatLTFeatureOut();
 			this.setLineTransectGeometry(feature.geometry);
 			this._triggerEvent({type: "edit", feature}, this._onLTChange);
+			this.map.fire("lineTransect:pointdrag")
 		}
 
 		_startLTDragHandler(handler) {
@@ -525,7 +526,7 @@ export default function lineTransect(LajiMap) {
 		// Doesn't handle points.
 		_getStyleForLTLayer(layer, idx) {
 			const isActive = idx === this._activeLTIdx;
-			const isEdit = idx === this._cutLTIdx  || (this._removeLTMode && idx === this._hoveredLTLineIdx);
+			const isEdit = idx === this._splitLTIdx  || (this._removeLTMode && idx === this._hoveredLTLineIdx);
 			const isHover = idx === this._hoveredLTLineIdx;
 
 			const lineStyles = {
@@ -569,27 +570,29 @@ export default function lineTransect(LajiMap) {
 			});
 		}
 
-		_executeLTLineCut() {
-			const cutIdx = this._cutLTIdx;
+		_commitLTLineCut() {
+			const cutIdx = this._splitLTIdx;
 			this.stopLTLineSplit();
 
 			const cutLine = this._allLines[cutIdx];
 			const cutLineLatLng = cutLine.getLatLngs();
-			cutLine.setLatLngs([cutLineLatLng[0], this._cutPoint]);
-			this._allLines.splice(cutIdx + 1, 0, L.polyline([this._cutPoint, cutLineLatLng[1]]));
+			cutLine.setLatLngs([cutLineLatLng[0], this._splitPoint]);
+			this._allLines.splice(cutIdx + 1, 0, L.polyline([this._splitPoint, cutLineLatLng[1]]));
 
 			const feature = this._formatLTFeatureOut();
 			this.setLineTransectGeometry(feature.geometry);
 			this._triggerEvent({type: "edit", feature}, this._onLTChange);
+
+			this.map.fire("lineTransect:split")
 		}
 
 		stopLTLineSplit() {
-			const lastLineCutIdx = this._cutLTIdx;
+			const lastLineCutIdx = this._splitLTIdx;
 			this._lineCutting = false;
 			if (this._cutLine) this._cutLine.removeFrom(this.map);
 			this._cutLine = undefined;
 			this._lineCutIdx = undefined;
-			this._cutLTIdx = undefined;
+			this._splitLTIdx = undefined;
 			this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
 			this._updateStyleForLTIdx(lastLineCutIdx);
 			this._disposeTooltip();
@@ -607,14 +610,14 @@ export default function lineTransect(LajiMap) {
 				closestIdx = allLines.indexOf(closestLine);
 			}
 
-			const prevCutIdx = this._cutLTIdx;
-			this._cutLTIdx = closestIdx;
+			const prevCutIdx = this._splitLTIdx;
+			this._splitLTIdx = closestIdx;
 			this._updateStyleForLTIdx(prevCutIdx);
-			this._updateStyleForLTIdx(this._cutLTIdx);
+			this._updateStyleForLTIdx(this._splitLTIdx);
 
 			// Update cut line.
 			const closestLatLngOnLine = L.GeometryUtil.closest(this.map, closestLine, latlng);
-			this._cutPoint = closestLatLngOnLine;
+			this._splitPoint = closestLatLngOnLine;
 			const lineAngleFromNorth = this._degreesFromNorth(closestLine.getLatLngs());
 
 			const cutLineStart = L.GeometryUtil.destination(closestLatLngOnLine, lineAngleFromNorth - 90, LT_WIDTH_METERS);
@@ -665,6 +668,7 @@ export default function lineTransect(LajiMap) {
 
 			this._triggerEvent(events, this._onLTChange);
 			this.stopRemoveLTSegmentMode();
+			this.map.fire("lineTransect:delete")
 		}
 
 		_createTooltip(translationKey) {

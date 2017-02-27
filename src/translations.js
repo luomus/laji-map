@@ -62,6 +62,11 @@
 	point: {
 		fi: "Piste",
 		en: "Point",
+		sv: "punkten"
+	},
+	aPoint: {
+		fi: "Piste",
+		en: "A point",
 		sv: "En punkt"
 	},
 	editFeature: {
@@ -334,4 +339,19 @@
 		en: "Click the segment that you want to delete",
 		sv: "Klicka det segment som du vill ta bort"
 	},
+	deleteLineSegmentTooltip: {
+		fi: "Klikkaa pätkää jonka haluat poistaa",
+		en: "Click the segment that you want to delete",
+		sv: "Klicka det segment som du vill ta bort"
+	},
+	fromTheBeginningOfTheLine: {
+		fi: "linjan alusta",
+		en: "from the beginning of the line",
+		sv: "Från början av linjen"
+	},
+	overlappingPoints: {
+		fi: "Päällekkäisiä pistettä",
+		en: "Overlapping points",
+		sv: "Överlappande punkter"
+	}
 }

@@ -213,17 +213,20 @@ export default function lineTransect(LajiMap) {
 			i = 0;
 			pointLayers.forEach((points, groupI) => {
 				let startIdx = i;
+				prevLatLng = undefined;
 				points.forEach((point, pointI) => {
 					const latlng = point.getLatLng();
 					distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
 					distances.push(distance);
 					prevLatLng = latlng;
 
-					const getTooltipFor = (idx) => `${idx + 1}. (${parseInt(distances[idx])}m)`;
+					const getTooltipFor = idx =>
+						`${idx + 1}. ${this.translations.point} \
+						(${parseInt(distances[idx])}m ${this.translations.fromTheBeginningOfTheLine})`;
 
 					let tooltip = getTooltipFor(i);
 					if (pointI === points.length - 1 && point.getLatLng().equals(points[0].getLatLng())) {
-						tooltip = `${getTooltipFor(startIdx)}<br/>${tooltip}`;
+						tooltip = `${this.translations.OverlappingPoints}<br/>${getTooltipFor(startIdx)}<br/>${tooltip}`;
 					}
 					point.bindTooltip(tooltip, {direction: "top"});
 

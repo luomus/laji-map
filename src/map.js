@@ -4,7 +4,6 @@ import "proj4leaflet";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
-import "leaflet-path-drag";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import proj4 from "proj4"
 import HasControls from "./controls";

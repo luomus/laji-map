@@ -35,12 +35,22 @@ export default function lineTransect(LajiMap) {
 
 		constructor(props) {
 			super(props);
+			this._startLTDragHandler = this._startLTDragHandler.bind(this);
+			this._stopLTDragHandler = this._stopLTDragHandler.bind(this);
+			this._dragLTHandler = this._dragLTHandler.bind(this);
+
 			this._startLTDragPointHandler = this._startLTDragPointHandler.bind(this);
 			this._stopLTDragPointHandler = this._stopLTDragPointHandler.bind(this);
 			this._dragLTPointHandler = this._dragLTPointHandler.bind(this);
-			this._mouseMoveLTLineCutHandler = this._mouseMoveLTLineCutHandler.bind(this);
+
+			this._startLTDragCorridorHandler = this._startLTDragCorridorHandler.bind(this);
+			this._stopLTDragCorridorHandler = this._stopLTDragCorridorHandler.bind(this);
+			this._dragLTCorridorHandler = this._dragLTCorridorHandler.bind(this);
+
+			this._mouseMoveLTLineSplitHandler = this._mouseMoveLTLineSplitHandler.bind(this);
 			this.startLTLineSplit = this.startLTLineSplit.bind(this);
-			this.stopLTLineCut = this.stopLTLineCut.bind(this);
+			this.stopLTLineSplit = this.stopLTLineSplit.bind(this);
+
 			this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
 			this.stopRemoveLTSegmentMode = this.stopRemoveLTSegmentMode.bind(this);
 
@@ -49,7 +59,7 @@ export default function lineTransect(LajiMap) {
 					this._commitPointDrag();
 					return true;
 				} else if (this._lineCutting) {
-					this.stopLTLineCut();
+					this.stopLTLineSplit();
 					return true;
 				} else if (this._removeLTMode) {
 					this.stopRemoveLTSegmentMode();
@@ -172,7 +182,10 @@ export default function lineTransect(LajiMap) {
 							.on("dblclick", () => {this._setLTPointEditable(_j, segmentI)})
 					);
 
-					corridorLayer.push(this._getCorridorForLine(segment, _i));
+					corridorLayer.push(L.polygon(
+						this._getCorridorCoordsForLine(segment),
+						_i === this._activeLTIdx ? activeCorridorStyle : corridorStyle
+					));
 					_segmentI = segmentI;
 					i++;
 				});
@@ -260,6 +273,8 @@ export default function lineTransect(LajiMap) {
 				point.bindTooltip(`${i + 1}. (${parseInt(distances[i])}m)`, {direction: "top"});
 			}));
 
+			const pointDistTreshold = 100;
+
 			let _i = 0;
 			corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentI) => {
 				const __i = _i;
@@ -280,6 +295,13 @@ export default function lineTransect(LajiMap) {
 					this._hoveredLTLineIdx = undefined;
 					this._updateStyleForLTIdx(__i);
 					this._pointLayers[lineIdx][segmentI + 1].closeTooltip();
+				}).on("dblclick", ({latlng}) => {
+					const points = [segmentI, segmentI + 1].map(idx => this._pointLayers[lineIdx][idx]);
+					const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
+					const closerIdx = closestPoint === points[0] ? segmentI : segmentI + 1;
+					if (closestPoint.getLatLng().distanceTo(latlng) <= pointDistTreshold) {
+						this._setLTPointEditable(lineIdx, closerIdx)
+					}
 				});
 				_i++;
 			}));
@@ -330,6 +352,13 @@ export default function lineTransect(LajiMap) {
 					.on("mouseup", this._stopLTDragPointHandler)
 					.bringToFront();
 
+				[segmentIdx, segmentIdx - 1].filter(i => i >= 0).forEach(idx =>
+					this._corridorLayers[lineIdx][idx]
+						.on("mousedown", this._startLTDragCorridorHandler)
+				);
+				this.map.on("mouseup", this._stopLTDragCorridorHandler);
+
+
 				this._pointLayers.forEach(points => points.forEach(point => {
 					point.closeTooltip()
 						.unbindTooltip();
@@ -338,6 +367,7 @@ export default function lineTransect(LajiMap) {
 		}
 
 		_commitPointDrag() {
+			this.map.off("mouseup", this._stopLTDragCorridorHandler);
 			this._stopLTDragPointHandler();
 			this.lineTransectEditIdx = undefined;
 
@@ -346,24 +376,65 @@ export default function lineTransect(LajiMap) {
 			this._triggerEvent({type: "edit", feature}, this._onLTChange);
 		}
 
-
-		_startLTDragPointHandler() {
+		_startLTDragHandler(handler) {
 			this._LTDragging = true;
 			this.map.dragging.disable();
-			this.map.on("mousemove", this._dragLTPointHandler);
+			L.DomUtil.disableTextSelection();
+			this.map.on("mousemove", handler);
 		}
 
-		_stopLTDragPointHandler() {
+		_stopLTDragHandler(handler) {
 			// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
 			setTimeout(() => {
 				this._LTDragging = false;
-				this.map.dragging.disable();
 				this.map.dragging.enable();
-				this.map.off("mousemove", this._dragLTPointHandler);
+				L.DomUtil.enableTextSelection();
+				this.map.off("mousemove", handler);
 			}, 0);
 		}
 
-		_dragLTPointHandler(e) {
+		_startLTDragPointHandler() {
+			console.log("start point");
+			this._startLTDragHandler(this._dragLTPointHandler);
+		}
+
+		_stopLTDragPointHandler() {
+			console.log("stop point");
+			this._stopLTDragHandler(this._dragLTPointHandler);
+		}
+
+		_dragLTPointHandler({latlng}) {
+			this._dragLTHandler(latlng);
+		}
+
+		_startLTDragCorridorHandler({latlng}) {
+			console.log("start corridor");
+			this._startLTDragHandler(this._dragLTCorridorHandler);
+
+			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
+			const point = this._pointLayers[idxs[0]][idxs[1]];
+
+			this._dragPointStart = point.getLatLng();
+			this._dragMouseStart = latlng;
+		}
+
+		_stopLTDragCorridorHandler() {
+			// this.map.off("mouseup", this._stopLTDragCorridorHandler);
+			this._stopLTDragHandler(this._dragLTCorridorHandler);
+			console.log("stop corridor");
+			this._dragPointStart = undefined;
+			this._dragMouseStart = undefined;
+		}
+
+		_dragLTCorridorHandler({latlng}) {
+			const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
+			const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
+
+			const offsetDragPoint = L.GeometryUtil.destination(this._dragPointStart, mouseRotatedAngle, mouseMovedDistance);
+			this._dragLTHandler(offsetDragPoint)
+		}
+
+		_dragLTHandler(latlng) {
 			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
 			const lineIdx = idxs[0];
 			const pointIdx = idxs[1];
@@ -373,7 +444,7 @@ export default function lineTransect(LajiMap) {
 			const corridorLayer = this._corridorLayers[lineIdx];
 
 			const point = pointLayer[pointIdx];
-			point.setLatLng(e.latlng);
+			point.setLatLng(latlng);
 
 			let precedingIdx = pointIdx - 1 >= 0 ? pointIdx - 1 : undefined;
 			let precedingLine, precedingCorridor, precedingPoint;
@@ -392,17 +463,15 @@ export default function lineTransect(LajiMap) {
 			}
 
 			if (precedingIdx !== undefined) {
-				precedingLine.setLatLngs([precedingLine.getLatLngs()[0], e.latlng]).openTooltip();
-				precedingCorridor.removeFrom(this._corridorLayer);
-				corridorLayer[precedingIdx] = this._getCorridorForLine(precedingLine.getLatLngs(), precedingIdx)
-					.addTo(this._corridorLayer);
+				const lineCoords = [precedingLine.getLatLngs()[0], latlng];
+				precedingLine.setLatLngs(lineCoords).openTooltip();
+				precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
 			}
 
 			if (followingIdx !== undefined && followingLine) {
-				followingLine.setLatLngs([e.latlng, followingLine.getLatLngs()[1]]).openTooltip();
-				followingCorridor.removeFrom(this._corridorLayer);
-				corridorLayer[followingIdx] = this._getCorridorForLine(followingLine.getLatLngs(), followingIdx)
-					.addTo(this._corridorLayer);
+				const lineCoords = [latlng, followingLine.getLatLngs()[1]];
+				followingLine.setLatLngs(lineCoords).openTooltip();
+				followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
 			}
 
 			[precedingPoint, point, followingPoint].forEach(p => {
@@ -422,7 +491,7 @@ export default function lineTransect(LajiMap) {
 			return 90 - lineAngle;
 		}
 
-		_getCorridorForLine(lineCoords, idx) {
+		_getCorridorCoordsForLine(lineCoords) {
 			const latLngs = lineCoords.map(L.latLng);
 			const lineAngleFromNorth = this._degreesFromNorth(lineCoords);
 
@@ -432,10 +501,7 @@ export default function lineTransect(LajiMap) {
 			const SECorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth + 90, LT_WIDTH_METERS);
 			const NECorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth + 90, LT_WIDTH_METERS);
 
-			return L.polygon(
-				[SWCorner, NWCorner, NECorner, SECorner],
-				idx === this._activeLTIdx ? activeCorridorStyle : corridorStyle
-			);
+			return [SWCorner, NWCorner, NECorner, SECorner];
 		}
 
 		_getOnActiveSegmentChangeEvent(idx) {
@@ -494,7 +560,7 @@ export default function lineTransect(LajiMap) {
 
 		_executeLTLineCut() {
 			const cutIdx = this._cutLTIdx;
-			this.stopLTLineCut();
+			this.stopLTLineSplit();
 
 			const cutLine = this._allLines[cutIdx];
 			const cutLineLatLng = cutLine.getLatLngs();
@@ -506,19 +572,19 @@ export default function lineTransect(LajiMap) {
 			this._triggerEvent({type: "edit", feature}, this._onLTChange);
 		}
 
-		stopLTLineCut() {
+		stopLTLineSplit() {
 			const lastLineCutIdx = this._cutLTIdx;
 			this._lineCutting = false;
 			if (this._cutLine) this._cutLine.removeFrom(this.map);
 			this._cutLine = undefined;
 			this._lineCutIdx = undefined;
 			this._cutLTIdx = undefined;
-			this.map.off("mousemove", this._mouseMoveLTLineCutHandler);
+			this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
 			this._updateStyleForLTIdx(lastLineCutIdx);
 			this._disposeTooltip();
 		}
 
-		_mouseMoveLTLineCutHandler({latlng}) {
+		_mouseMoveLTLineSplitHandler({latlng}) {
 			const allLines = this._allLines;
 
 			let closestLine, closestIdx;
@@ -552,14 +618,14 @@ export default function lineTransect(LajiMap) {
 
 		startLTLineSplit() {
 			this._lineCutting = true;
-			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
+			this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 			this._createTooltip("SplitLineTooltip");
 		}
 
 		startLTLineSplitForIdx(idx) {
 			this._lineCutting = true;
 			this._lineCutIdx = idx;
-			this.map.on("mousemove", this._mouseMoveLTLineCutHandler);
+			this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 			this._createTooltip("SplitLineTooltip");
 		}
 

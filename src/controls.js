@@ -607,7 +607,7 @@ return class LajiMapWithControls extends LajiMap {
 			onSplit: function() {
 				that.startLTLineSplit();
 
-				this._createCancelHandler("split", this.splitButton, that.stopLTLineCut);
+				this._createCancelHandler("split", this.splitButton, that.stopLTLineSplit);
 			},
 
 			onDelete: function () {

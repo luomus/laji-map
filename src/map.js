@@ -375,7 +375,6 @@ export default class LajiMap {
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
-			zoom = zoom - 3;
 			projectionChanged = true;
 		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom + 3;

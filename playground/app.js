@@ -142,11 +142,11 @@ class App {
 			popupOnHover: true,
 			// zoom: 7,
 			// center: [60.40403173483798, 22.104264017028992],
-			center: {
-				"lat": 60.3499057749654,
-				"lng": 21.160612106323246
-			},
-			zoom: 11,
+			// center: {
+			// 	"lat": 60.3499057749654,
+			// 	"lng": 21.160612106323246
+			// },
+			// zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
@@ -160,7 +160,7 @@ class App {
 				lineTransect: true
 			},
 			data: this.data,
-			tileLayerName: "openStreetMap",
+			// tileLayerName: "openStreetMap",
 		};
 
 		const map = new LajiMap(options);

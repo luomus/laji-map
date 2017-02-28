@@ -1,4 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./map";
+import { segmentsToGeometry, geometryToLinesAsSegments } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -96,55 +97,17 @@ export default function lineTransect(LajiMap) {
 			this.setLineTransectGeometry(feature.geometry);
 		}
 
-		// Formats this._allLines to a geoJSON feature.
 		_formatLTFeatureOut() {
-			function getCoordinatesFrom({lat, lng}) {
-				return [lng, lat];
-			}
-			const allLines = this._allLines;
+			const segments = this._allLines.map(layer => [...layer._latlngs.map(({lat, lng}) => [lng, lat])]);
 
-			const layerPairs = allLines.map((layer, i) => {
-				const next = allLines[i + 1];
-				return [layer, next];
-			});
-
-			const lines = [[]];
-			layerPairs.forEach(pair => {
-				const line = lines[lines.length - 1];
-				line.push(getCoordinatesFrom(pair[0]._latlngs[0]));
-				if (pair[1] && !pair[0]._latlngs[1].equals(pair[1]._latlngs[0])) {
-					line.push(getCoordinatesFrom(pair[0]._latlngs[1]));
-					lines.push([]);
-				} else if (!pair[1]) {
-					line.push(getCoordinatesFrom(pair[0]._latlngs[1]));
-				}
-			});
-
-			// TODO we aren't checking for length of zero
-			const isMulti = lines.length > 1;
-
-			const geometry = {
-				type: isMulti ? "MultiLineString" : "LineString",
-				coordinates: isMulti ? lines : lines[0]
-			};
-
-
-			return {...this.LTFeature, geometry};
+			return {...this.LTFeature, geometry: segmentsToGeometry(segments)};
 		}
 
 		@dependsOn("map")
 		setLineTransectGeometry(geometry) {
 			if (!depsProvided(this, "setLineTransectGeometry", arguments)) return;
 
-			function lineStringToSegments(lineString) {
-				return lineString.map((c, i) => {
-					const next = lineString[i + 1];
-					if (next) return [c.slice(0).reverse(), next.slice(0).reverse()];
-				}).filter(c => c);
-			}
-
-			const wholeLinesAsSegments = (geometry.type === "MultiLineString" ?
-				geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
+			const wholeLinesAsSegments = geometryToLinesAsSegments(geometry);
 
 			if (this._pointLayer) this.map.removeLayer(this._pointLayer);
 			if (this._lineLayer) this.map.removeLayer(this._lineLayer);
@@ -160,7 +123,6 @@ export default function lineTransect(LajiMap) {
 			let i = 0;
 			let _segmentI = undefined;
 			wholeLinesAsSegments.forEach((wholeLineAsSegments, j) => {
-				const _j = j;
 				[pointLayers, lineLayers, corridorLayers].forEach(layers => {
 					layers.push([]);
 				});
@@ -176,10 +138,7 @@ export default function lineTransect(LajiMap) {
 							.setText("     →     ", {repeat: true, attributes: {dy: 5, "font-size": 18}})
 					);
 
-					pointLayer.push(
-						L.circleMarker(segment[0], pointStyle)
-							// .on("dblclick", () => {this._setLTPointEditable(_j, segmentI)})
-					);
+					pointLayer.push(L.circleMarker(segment[0], pointStyle));
 
 					corridorLayer.push(L.polygon(
 						this._getCorridorCoordsForLine(segment),
@@ -205,8 +164,6 @@ export default function lineTransect(LajiMap) {
 
 			const overlappingsCoordsToIdxs = {};
 
-			/** TODO multiple segments cumulate distance from the first segment (and also add the distance between
-			 segments to the sum distance) - is this the right way? **/
 			const distances = [];
 			let distance = 0;
 			let prevLatLng = undefined;

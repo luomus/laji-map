@@ -31,6 +31,10 @@ function parseIdxsFromLTIdx(idx) {
 	return idx ? idx.split("-").map(i => +i) : undefined;
 }
 
+function coordinatePairToGeoJSONLine(coordinatePair) {
+	return {type: "StringLine", coordinates: coordinatePair.map(({lat, lng}) => [lng, lat])};
+}
+
 export default function lineTransect(LajiMap) {
 	return class LajiMapWithLineTransect extends LajiMap {
 
@@ -342,11 +346,23 @@ export default function lineTransect(LajiMap) {
 		_commitPointDrag() {
 			this.map.off("mouseup", this._stopLTDragCorridorHandler);
 			this._stopLTDragPointHandler();
+			const idx = this.lineTransectEditIdx;
 			this.lineTransectEditIdx = undefined;
 
 			const feature = this._formatLTFeatureOut();
 			this.setLineTransectGeometry(feature.geometry);
-			this._triggerEvent({type: "edit", feature}, this._onLTChange);
+
+			const events = [];
+			[this._precedingLTDragIdx, this._followingLTDragIdx].forEach(idx => {
+				if (idx !== undefined) events.push({
+					type: "edit",
+					feature,
+					idx,
+					geometry: this._allLines[idx].toGeoJSON().geometry
+				})
+			})
+
+			this._triggerEvent(events, this._onLTChange);
 			this.map.fire("lineTransect:pointdrag")
 		}
 
@@ -432,12 +448,14 @@ export default function lineTransect(LajiMap) {
 			}
 
 			if (precedingIdx !== undefined) {
+				this._precedingLTDragIdx = precedingIdx;
 				const lineCoords = [precedingLine.getLatLngs()[0], latlng];
 				precedingLine.setLatLngs(lineCoords).openTooltip();
 				precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
 			}
 
 			if (followingIdx !== undefined && followingLine) {
+				this._followingLTDragIdx = followingIdx;
 				const lineCoords = [latlng, followingLine.getLatLngs()[1]];
 				followingLine.setLatLngs(lineCoords).openTooltip();
 				followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
@@ -528,17 +546,39 @@ export default function lineTransect(LajiMap) {
 		}
 
 		_commitLTLineCut() {
-			const cutIdx = this._splitLTIdx;
+			const splitIdx = this._splitLTIdx;
 			this.stopLTLineSplit();
 
-			const cutLine = this._allLines[cutIdx];
-			const cutLineLatLng = cutLine.getLatLngs();
-			cutLine.setLatLngs([cutLineLatLng[0], this._splitPoint]);
-			this._allLines.splice(cutIdx + 1, 0, L.polyline([this._splitPoint, cutLineLatLng[1]]));
+			const splitLine = this._allLines[splitIdx];
+			const cutLineLatLng = splitLine.getLatLngs();
+			const splittedTail = [cutLineLatLng[0], this._splitPoint];
+			splitLine.setLatLngs(splittedTail);
+
+			const splittedHead = [this._splitPoint, cutLineLatLng[1]];
+			this._allLines.splice(splitIdx + 1, 0, L.polyline(splittedHead));
 
 			const feature = this._formatLTFeatureOut();
 			this.setLineTransectGeometry(feature.geometry);
-			this._triggerEvent({type: "edit", feature}, this._onLTChange);
+
+			const events = [
+				{
+					type: "edit",
+					feature,
+					idx: splitIdx,
+					geometry: coordinatePairToGeoJSONLine(splittedTail)
+				},
+				{
+					type: "create",
+					idx: splitIdx + 1,
+					geometry: coordinatePairToGeoJSONLine(splittedHead)
+				}
+			];
+
+			if (splitIdx < this._activeLTIdx) {
+				events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx + 1))
+			}
+
+			this._triggerEvent(events, this._onLTChange);
 
 			this.map.fire("lineTransect:split")
 		}
@@ -612,19 +652,20 @@ export default function lineTransect(LajiMap) {
 		}
 
 		commitRemoveLTSegment(i) {
+			this._allLines.splice(i, 1);
+			const feature = this._formatLTFeatureOut();
+
 			const events = [
-				{type: "edit", feature},
+				{type: "delete", feature, idx: i},
 			];
 			if (i - 1 >= 0) {
 				events.push(this._getOnActiveSegmentChangeEvent(i - 1));
 			}
 
-			this._allLines.splice(i, 1);
-			const feature = this._formatLTFeatureOut();
-			this.setLineTransectGeometry(feature.geometry);
 
 			this._triggerEvent(events, this._onLTChange);
 			this.stopRemoveLTSegmentMode();
+			this.setLineTransectGeometry(feature.geometry);
 			this.map.fire("lineTransect:delete")
 		}
 
@@ -637,7 +678,7 @@ export default function lineTransect(LajiMap) {
 
 		_disposeTooltip() {
 			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.off(eType, this._onMouseMove));
-			this._tooltip.dispose();
+			if (this._tooltip) this._tooltip.dispose();
 		}
 
 	}

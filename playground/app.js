@@ -141,12 +141,12 @@ class App {
 			lang: "fi",
 			popupOnHover: true,
 			// zoom: 7,
-			// center: [60.40403173483798, 22.104264017028992],
-			// center: {
-			// 	"lat": 60.3499057749654,
-			// 	"lng": 21.160612106323246
-			// },
-			// zoom: 11,
+			center: [60.40403173483798, 22.104264017028992],
+			center: {
+				"lat": 60.3499057749654,
+				"lng": 21.160612106323246
+			},
+			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
@@ -217,22 +217,15 @@ class App {
 
 	onLTChange = (events) => {
 		events.forEach(e => {
-			// console.log(e);
+			console.log(e);
 			switch (e.type) {
 				case "create":
-					// drawData.featureCollection.features.push(e.feature);
 					break;
 				case "delete":
-					// drawData.featureCollection.features = drawData.featureCollection.features.filter((item, i) => !e.idxs.includes(i));
 					break;
 				case "edit":
-					// console.log(e.feature);
-					// for (let idx in e.featureCollection) {
-					// 	this.drawData.featureCollection.features[idx] = e.features[idx];
-					// }
 					break;
 				case "active":
-					// this.activeIdx = e.idx;
 			}
 		});
 	}

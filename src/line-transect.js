@@ -162,9 +162,9 @@ export default function lineTransect(LajiMap) {
 			this._allCorridors = flattenMatrix(corridorLayers);
 			this._allPoints = flattenMatrix(pointLayers);
 
-			this._lineLayer = L.layerGroup(this._allLines).addTo(this.map);
-			this._corridorLayer = L.layerGroup(this._allCorridors).addTo(this.map);
-			this._pointLayer = L.layerGroup(this._allPoints).addTo(this.map);
+			this._lineLayer = L.featureGroup(this._allLines).addTo(this.map);
+			this._corridorLayer = L.featureGroup(this._allCorridors).addTo(this.map);
+			this._pointLayer = L.featureGroup(this._allPoints).addTo(this.map);
 
 			const overlappingsCoordsToIdxs = {};
 

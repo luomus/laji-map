@@ -160,7 +160,8 @@ class App {
 				lineTransect: true
 			},
 			data: this.data,
-			// tileLayerName: "openStreetMap",
+			tileLayerName: "openStreetMap",
+			tileLayerName: "taustakartta",
 		};
 
 		const map = new LajiMap(options);

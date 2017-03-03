@@ -666,7 +666,7 @@ export default class LajiMap {
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
 			this.clusterDrawLayer = L.markerClusterGroup(
-				{iconCreateFunction: this._getClusterIcon(this.draw.data, !!"isDrawData"),
+				{iconCreateFunction: this._getClusterIcon(this.draw.data),
 					...data.cluster})
 				.addLayer(this.drawLayerGroup);
 			drawLayerForMap = this.clusterDrawLayer;
@@ -695,7 +695,7 @@ export default class LajiMap {
 		});
 	}
 
-	_getClusterIcon(data, isDrawData) {
+	_getClusterIcon(data) {
 		return (cluster) => {
 			var childCount = cluster.getChildCount();
 

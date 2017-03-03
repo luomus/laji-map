@@ -3,7 +3,6 @@
   "version": "1.0.159",
   "description": "A map with drawing functionality",
   "main": "dist/laji-map.js",
-  "types": "src/map.d.js",
   "scripts": {
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
     "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
@@ -21,7 +20,7 @@
     "laji-map",
     "luomus"
   ],
-  "author": "Kalle Myllymaa <kalle.myllymaa@helsinki.fi>, Olli Raitio <olli.raitio@helsinki.fi>",
+  "author": "Olli Raitio <olli.raitio@helsinki.fi>",
   "license": "MIT",
   "devDependencies": {
     "babel-cli": "6.16.0",

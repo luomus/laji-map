@@ -53,7 +53,7 @@ export function latLngSegmentsToGeoJSONGeometry(segments) {
 	};
 }
 
-export function geoJSONLineToLLatLngSegmentArrays(geometry) {
+export function geoJSONLineToLatLngSegmentArrays(geometry) {
 	function lineStringToSegments(lineString) {
 		return lineString.map((c, i) => {
 			const next = lineString[i + 1];

@@ -684,7 +684,6 @@ export default class LajiMap {
 		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}
 
-
  	_createIcon(options = {}) {
 		const markerColor = options.color || NORMAL_COLOR;
 		const opacity = options.opacity || 1;
@@ -1329,30 +1328,6 @@ export default class LajiMap {
 		if (index >= 0) {
 			this.onSetLangHooks.splice(index, 1);
 		}
-	}
-
-	convertLatLng(latlng, from, to) {
-		const converted = proj4(from, to, latlng.map(c => +c).slice(0).reverse());
-		return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
-	}
-
-	convertGeoJSON(obj, from, to) {
-		const that = this;
-		function _convertGeoJSON(obj, from, to) {
-			if (typeof obj === "object" && obj !== null) {
-				Object.keys(obj).forEach(key => {
-					if (key === "coordinates") {
-						obj[key] = Array.isArray(obj[key][0]) ?
-							[obj[key].map(coords => that.convertLatLng(coords.slice(0).reverse(), from, to))] :
-							_convertGeoJSON(obj[key].slice(0).reverse(), from, to);
-					}
-					else _convertGeoJSON(obj[key], from, to);
-				});
-			}
-			return obj;
-		}
-
-		return _convertGeoJSON(JSON.parse(JSON.stringify(obj)), from, to);
 	}
 
 	triggerDrawing(featureType) {

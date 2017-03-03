@@ -1,4 +1,5 @@
 import "leaflet-contextmenu";
+import { convertGeoJSON, convertLatLng } from "./utils";
 
 import {
 	MAASTOKARTTA,
@@ -465,8 +466,8 @@ return class LajiMapWithControls extends LajiMap {
 
 					const {lat, lng} = latlng;
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
-					const ykj = that.convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
-					const euref = that.convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+					const ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
+					const euref = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
 
 					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
 						let coords = wgs84;
@@ -795,7 +796,7 @@ return class LajiMapWithControls extends LajiMap {
 		}
 
 		function convert(coords) {
-			return that.convertLatLng(coords, "EPSG:2393", "WGS84");
+			return convertLatLng(coords, "EPSG:2393", "WGS84");
 		}
 
 		container.addEventListener("submit", e => {
@@ -907,7 +908,7 @@ return class LajiMapWithControls extends LajiMap {
 			tab.addEventListener("click", () => {
 				const reprojected = isWGS84 ?
 					originalGeoJSON :
-					this.convertGeoJSON(originalGeoJSON, "WGS84", proj);
+					convertGeoJSON(originalGeoJSON, "WGS84", proj);
 
 				if (!isWGS84) {
 					reprojected.crs = {

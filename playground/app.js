@@ -136,12 +136,9 @@ class App {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
 			draw: {data: this.drawData, marker: false},
-			// draw: false,
 			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
 			lang: "fi",
 			popupOnHover: true,
-			// zoom: 7,
-			center: [60.40403173483798, 22.104264017028992],
 			center: {
 				"lat": 60.3499057749654,
 				"lng": 21.160612106323246
@@ -150,66 +147,26 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				draw: false,
-				// draw: {"rectangle": true},
-				drawCopy: false,
-				drawClear: false,
-				// coordinates: true,
-				coordinateInput: false,
-				// coordinateInput: false
+				drawCopy: true,
+				drawClear: true,
+				coordinates: true,
 				lineTransect: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
-			tileLayerName: "taustakartta",
 		};
 
 		const map = new LajiMap(options);
 		this.map = map;
 		const map2 = new LajiMap({...options,
 			rootElem: document.getElementById("root2"),
-			// tileLayerName: "taustakartta",
-			lineTransect: {feature: lineTransects.features[3], activeIdx: 3},
-			center: {
-				"lat": 60.02423666765825,
-				"lng": 22.735643075910296
-			},
-			zoom: 10
+			lang: "en",
+			lineTransect: undefined,
+			center: [60.40403173483798, 22.104264017028992],
+			zoom: 7,
+			tileLayerName: "taustakartta",
 		});
 
-		// map.startLTLineSplit();
-		// map.startRemoveLTSegmentMode();
-
-		// map.addData(
-		// 	{
-		// 		featureCollection: lineTransects,
-		// 		// featureCollection: {
-		// 		// 	features: [
-		// 		// 		{
-		// 		// 			type: "Feature",
-		// 		// 			properties: {},
-		// 		// 			geometry: {
-		// 		// 				type: "Point",
-		// 		// 				coordinates: [
-		// 		// 					22.024264017028992,
-		// 		// 					60.40403173483798
-		// 		// 				]
-		// 		// 			}
-		// 		// 		}
-		// 		// 	]
-		// 		// },
-		// 		getPopup: (idx) => "linja "  + idx,
-		// 		getFeatureStyle: ({idx, feature}) => {
-		// 			console.log(feature);
-		// 			return {
-		// 				weight: 2,
-		// 				opacity: 1,
-		// 				fillOpacity: 1,
-		// 				color: "#000"
-		// 			}
-		// 		}
-		// 	}
-		// );
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

@@ -1,5 +1,32 @@
-// Formats given segments (as [lat, lng]) to a geoJSON feature.
-export function segmentsToGeometry(segments) {
+import proj4 from "proj4"
+
+export function reverseCoordinate(c) {
+	return c.slice(0).reverse();
+}
+export function convertLatLng(latlng, from, to) {
+	const converted = proj4(from, to, reverseCoordinate(latlng.map(c => +c)));
+	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
+}
+
+export function convertGeoJSON(obj, from, to) {
+	function _convertGeoJSON(obj, from, to) {
+		if (typeof obj === "object" && obj !== null) {
+			Object.keys(obj).forEach(key => {
+				if (key === "coordinates") {
+					obj[key] = Array.isArray(obj[key][0]) ?
+						[obj[key].map(coords => convertLatLng(reverseCoordinate(coords), from, to))] :
+						_convertGeoJSON(reverseCoordinate(obj[key]), from, to);
+				}
+				else _convertGeoJSON(obj[key], from, to);
+			});
+		}
+		return obj;
+	}
+
+	return _convertGeoJSON(JSON.parse(JSON.stringify(obj)), from, to);
+}
+
+export function latLngSegmentsToGeoJSONGeometry(segments) {
 	const segmentPairs = segments.map((segment, i) => {
 		const next = segments[i + 1];
 		return [segment, next];
@@ -26,13 +53,15 @@ export function segmentsToGeometry(segments) {
 	};
 }
 
-export function geometryToLinesAsSegments(geometry) {
+export function geoJSONLineToLLatLngSegmentArrays(geometry) {
 	function lineStringToSegments(lineString) {
 		return lineString.map((c, i) => {
 			const next = lineString[i + 1];
-			if (next) return [c.slice(0).reverse(), next.slice(0).reverse()];
+			if (next) return [reverseCoordinate(c), reverseCoordinate(next)];
 		}).filter(c => c);
 	}
 	return (geometry.type === "MultiLineString" ?
 		geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
 }
+
+

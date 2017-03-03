@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./map";
-import { segmentsToGeometry, geometryToLinesAsSegments } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLLatLngSegmentArrays } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -75,7 +75,7 @@ export default function lineTransect(LajiMap) {
 
 		setOption(option, value) {
 			super.setOption(option, value);
-			if (option === "lineTransect") {
+			if (option === "lineTransect" && value) {
 				this.setLineTransect(value);
 			}
 		}
@@ -104,14 +104,14 @@ export default function lineTransect(LajiMap) {
 		_formatLTFeatureOut() {
 			const segments = this._allLines.map(layer => [...layer._latlngs.map(({lat, lng}) => [lng, lat])]);
 
-			return {...this.LTFeature, geometry: segmentsToGeometry(segments)};
+			return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
 		}
 
 		@dependsOn("map")
 		setLineTransectGeometry(geometry) {
 			if (!depsProvided(this, "setLineTransectGeometry", arguments)) return;
 
-			const wholeLinesAsSegments = geometryToLinesAsSegments(geometry);
+			const wholeLinesAsSegments = geoJSONLineToLLatLngSegmentArrays(geometry);
 
 			if (this._pointLayer) this.map.removeLayer(this._pointLayer);
 			if (this._lineLayer) this.map.removeLayer(this._lineLayer);

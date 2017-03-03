@@ -205,7 +205,7 @@ return class LajiMapWithControls extends LajiMap {
 			drawClear: false,
 			coordinates: false,
 			scale: true,
-			lineTransect: {split: false, delete: false}
+			lineTransect: {split: true, delete: true}
 		};
 
 		for (let setting in controlSettings) {
@@ -564,9 +564,8 @@ return class LajiMapWithControls extends LajiMap {
 				this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
 				this.cancelHandlers = {};
 
-				//TODO disabled until implemented.
-				if (that._controlIsAllowed("lineTransect", "split")) this.splitButton = this._createSplit(this.buttonContainer);
-				if (that._controlIsAllowed("lineTransect", "delete")) this.deleteButton = this._createDelete(this.buttonContainer);
+				if (that._controlIsAllowed("lineTransect.split")) this.splitButton = this._createSplit(this.buttonContainer);
+				if (that._controlIsAllowed("lineTransect.delete")) this.deleteButton = this._createDelete(this.buttonContainer);
 				return this.container;
 			},
 

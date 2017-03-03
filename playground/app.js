@@ -149,8 +149,7 @@ class App {
 			controlSettings: {
 				drawCopy: true,
 				drawClear: true,
-				coordinates: true,
-				lineTransect: true
+				coordinates: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",

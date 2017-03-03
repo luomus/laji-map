@@ -1,5 +1,5 @@
 import LajiMap from "../src/map";
-import lineTransects from "../data.json";
+import lineTransects from "./data.json";
 
 import "../src/styles.js";
 class App {

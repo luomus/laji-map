@@ -888,8 +888,8 @@ return class LajiMapWithControls extends LajiMap {
 
 		[
 			{name: "WGS84", proj: "WGS84"},
-			{name: "YKJ", proj: "EPSG:2393"},
-			{name: "ETRS", proj: "EPSG:3067"}
+			{name: "YKJ", proj: "EPSG:2393"}
+			//{name: "ETRS", proj: "EPSG:3067"}
 		].map(({name, proj}) => {
 			const tab = document.createElement("li");
 			const text = document.createElement("a");

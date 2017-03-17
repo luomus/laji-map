@@ -835,7 +835,7 @@ return class LajiMapWithControls extends LajiMap {
 			const layer = this._featureToLayer(this.draw.data.getFeatureStyle)(feature);
 			const isMarker = layer instanceof L.Marker;
 
-			this._onAdd(layer);
+			this._onAdd(layer, latInput.value + ':' + lngInput.value);
 			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
 			this.map.setView(center, this.map.zoom, {animate: false});
 			if (isMarker) {

@@ -983,7 +983,7 @@ export default class LajiMap {
 		if (handler) handler(e);
 	}
 
-	_onAdd(layer) {
+	_onAdd(layer, coordinateVerbatim) {
 		if (layer instanceof L.Marker) layer.setIcon(this._createIcon());
 
 		const {featureCollection: {features}} = this.draw.data;
@@ -999,6 +999,9 @@ export default class LajiMap {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
+		if (coordinateVerbatim && feature.geometry) {
+      feature.geometry.coordinateVerbatim = coordinateVerbatim;
+    }
 		features.push(feature);
 
 		const event = [

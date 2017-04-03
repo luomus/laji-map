@@ -339,11 +339,6 @@
 		en: "Click the segment that you want to delete",
 		sv: "Klicka det segment som du vill ta bort"
 	},
-	deleteLineSegmentTooltip: {
-		fi: "Klikkaa pätkää jonka haluat poistaa",
-		en: "Click the segment that you want to delete",
-		sv: "Klicka det segment som du vill ta bort"
-	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",
 		en: "from the beginning of the line",
@@ -354,4 +349,4 @@
 		en: "Overlapping points",
 		sv: "Överlappande punkter"
 	}
-}
+};

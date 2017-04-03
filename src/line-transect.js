@@ -35,661 +35,654 @@ function coordinatePairToGeoJSONLine(coordinatePair) {
 	return {type: "StringLine", coordinates: coordinatePair.map(({lat, lng}) => [lng, lat])};
 }
 
-export default function lineTransect(LajiMap) {
-	return class LajiMapWithLineTransect extends LajiMap {
+export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
+	constructor(props) {
+		super(props);
+		this._startLTDragHandler = this._startLTDragHandler.bind(this);
+		this._stopLTDragHandler = this._stopLTDragHandler.bind(this);
+		this._dragLTHandler = this._dragLTHandler.bind(this);
 
-		constructor(props) {
-			super(props);
-			this._startLTDragHandler = this._startLTDragHandler.bind(this);
-			this._stopLTDragHandler = this._stopLTDragHandler.bind(this);
-			this._dragLTHandler = this._dragLTHandler.bind(this);
+		this._startLTDragPointHandler = this._startLTDragPointHandler.bind(this);
+		this._stopLTDragPointHandler = this._stopLTDragPointHandler.bind(this);
+		this._dragLTPointHandler = this._dragLTPointHandler.bind(this);
 
-			this._startLTDragPointHandler = this._startLTDragPointHandler.bind(this);
-			this._stopLTDragPointHandler = this._stopLTDragPointHandler.bind(this);
-			this._dragLTPointHandler = this._dragLTPointHandler.bind(this);
+		this._startLTDragCorridorHandler = this._startLTDragCorridorHandler.bind(this);
+		this._stopLTDragCorridorHandler = this._stopLTDragCorridorHandler.bind(this);
+		this._dragLTCorridorHandler = this._dragLTCorridorHandler.bind(this);
 
-			this._startLTDragCorridorHandler = this._startLTDragCorridorHandler.bind(this);
-			this._stopLTDragCorridorHandler = this._stopLTDragCorridorHandler.bind(this);
-			this._dragLTCorridorHandler = this._dragLTCorridorHandler.bind(this);
+		this._mouseMoveLTLineSplitHandler = this._mouseMoveLTLineSplitHandler.bind(this);
+		this.startLTLineSplit = this.startLTLineSplit.bind(this);
+		this.stopLTLineSplit = this.stopLTLineSplit.bind(this);
 
-			this._mouseMoveLTLineSplitHandler = this._mouseMoveLTLineSplitHandler.bind(this);
-			this.startLTLineSplit = this.startLTLineSplit.bind(this);
-			this.stopLTLineSplit = this.stopLTLineSplit.bind(this);
+		this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
+		this.stopRemoveLTSegmentMode = this.stopRemoveLTSegmentMode.bind(this);
 
-			this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
-			this.stopRemoveLTSegmentMode = this.stopRemoveLTSegmentMode.bind(this);
+		this._addKeyListener(ESC, () => {
+			if (this.lineTransectEditIdx) {
+				this._commitPointDrag();
+				return true;
+			} else if (this._lineCutting) {
+				this.stopLTLineSplit();
+				return true;
+			} else if (this._removeLTMode) {
+				this.stopRemoveLTSegmentMode();
+				return true;
+			}
+		});
+	}
 
-			this._addKeyListener(ESC, () => {
-				if (this.lineTransectEditIdx) {
-					this._commitPointDrag();
-					return true;
-				} else if (this._lineCutting) {
-					this.stopLTLineSplit();
-					return true;
-				} else if (this._removeLTMode) {
-					this.stopRemoveLTSegmentMode();
-					return true;
-				}
+	setOption(option, value) {
+		super.setOption(option, value);
+		if (option === "lineTransect" && value) {
+			this.setLineTransect(value);
+		}
+	}
+
+	_interceptClick() {
+		return super._interceptClick() || (() => {
+			if (this.lineTransectEditIdx !== undefined && !this._LTDragging) {
+				this._commitPointDrag();
+				return true;
+			} else if (this._lineCutting) {
+				this._commitLTLineCut();
+			}
+			return false;
+		})();
+	}
+
+	setLineTransect(data) {
+		let {feature, activeIdx, onChange} = data;
+		this.LTFeature = feature;
+		this._onLTChange = onChange;
+		this._activeLTIdx = activeIdx;
+
+		this.setLineTransectGeometry(feature.geometry);
+	}
+
+	_formatLTFeatureOut() {
+		const segments = this._allLines.map(layer => [...layer._latlngs.map(({lat, lng}) => [lng, lat])]);
+
+		return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
+	}
+
+	@dependsOn("map")
+	setLineTransectGeometry(geometry) {
+		if (!depsProvided(this, "setLineTransectGeometry", arguments)) return;
+
+		const wholeLinesAsSegments = geoJSONLineToLatLngSegmentArrays(geometry);
+
+		// Init only once. If this is removed there will be following errors in beta.laji.fi forms:
+		// DOMException: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+		// triggered by LajiMapWithControls.setLineTransectGeometry this.map.removeLayer(this._lineLayer) line
+		// If it's wrapped to try catch then
+		// the original layer is not removed and there will be double line + events on every element on the line layer
+		if (this._lineLayer) {
+			return;
+		}
+
+		if (this._pointLayer) this.map.removeLayer(this._pointLayer);
+		if (this._lineLayer) this.map.removeLayer(this._lineLayer);
+		if (this._corridorLayer) this.map.removeLayer(this._corridorLayer);
+		this._pointLayers = [];
+		this._lineLayers = [];
+		this._corridorLayers = [];
+
+		const pointLayers = this._pointLayers;
+		const lineLayers = this._lineLayers;
+		const corridorLayers = this._corridorLayers;
+
+		let i = 0;
+		wholeLinesAsSegments.forEach((wholeLineAsSegments, j) => {
+			[pointLayers, lineLayers, corridorLayers].forEach(layers => {
+				layers.push([]);
 			});
-		}
+			const pointLayer = pointLayers[j];
+			const lineLayer = lineLayers[j];
+			const corridorLayer = corridorLayers[j];
 
-		setOption(option, value) {
-			super.setOption(option, value);
-			if (option === "lineTransect" && value) {
-				this.setLineTransect(value);
-			}
-		}
+			wholeLineAsSegments.forEach((segment) => {
+				const _i = i;
 
-		_interceptClick() {
-			return super._interceptClick() || (() => {
-				if (this.lineTransectEditIdx !== undefined && !this._LTDragging) {
-					this._commitPointDrag();
-					return true;
-				} else if (this._lineCutting) {
-					this._commitLTLineCut();
-				}
-				return false;
-			})();
-		}
-
-		setLineTransect(data) {
-			let {feature, activeIdx, onChange} = data;
-			this.LTFeature = feature;
-			this._onLTChange = onChange;
-			this._activeLTIdx = activeIdx;
-
-			this.setLineTransectGeometry(feature.geometry);
-		}
-
-		_formatLTFeatureOut() {
-			const segments = this._allLines.map(layer => [...layer._latlngs.map(({lat, lng}) => [lng, lat])]);
-
-			return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
-		}
-
-		@dependsOn("map")
-		setLineTransectGeometry(geometry) {
-			if (!depsProvided(this, "setLineTransectGeometry", arguments)) return;
-
-			const wholeLinesAsSegments = geoJSONLineToLatLngSegmentArrays(geometry);
-
-			// Init only once. If this is removed there will be following errors in beta.laji.fi forms:
-			// DOMException: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
-			// triggered by LajiMapWithControls.setLineTransectGeometry this.map.removeLayer(this._lineLayer) line
-      // If it's wrapped to try catch then
-      // the original layer is not removed and there will be double line + events on every element on the line layer
-			if (this._lineLayer) {
-				return;
-			}
-
-			if (this._pointLayer) this.map.removeLayer(this._pointLayer);
-			if (this._lineLayer) this.map.removeLayer(this._lineLayer);
-			if (this._corridorLayer) this.map.removeLayer(this._corridorLayer);
-			this._pointLayers = [];
-			this._lineLayers = [];
-			this._corridorLayers = [];
-
-			const pointLayers = this._pointLayers;
-			const lineLayers = this._lineLayers;
-			const corridorLayers = this._corridorLayers;
-
-			let i = 0;
-			let _segmentI = undefined;
-			wholeLinesAsSegments.forEach((wholeLineAsSegments, j) => {
-				[pointLayers, lineLayers, corridorLayers].forEach(layers => {
-					layers.push([]);
-				});
-				const pointLayer = pointLayers[j];
-				const lineLayer = lineLayers[j];
-				const corridorLayer = corridorLayers[j];
-
-				wholeLineAsSegments.forEach((segment, segmentI) => {
-					const _i = i;
-
-					lineLayer.push(
-						L.polyline(segment, i === this._activeLTIdx ? activeLineStyle : lineStyle)
-							.setText("     →     ", {repeat: true, attributes: {dy: 5, "font-size": 18}})
-					);
-
-					pointLayer.push(L.circleMarker(segment[0], pointStyle));
-
-					corridorLayer.push(L.polygon(
-						this._getCorridorCoordsForLine(segment),
-						_i === this._activeLTIdx ? activeCorridorStyle : corridorStyle
-					));
-
-					_segmentI = segmentI;
-					i++;
-				});
-
-				pointLayer.push(
-					L.circleMarker(wholeLineAsSegments[wholeLineAsSegments.length - 1][1], pointStyle)
+				lineLayer.push(
+					L.polyline(segment, i === this._activeLTIdx ? activeLineStyle : lineStyle)
+						.setText("     →     ", {repeat: true, attributes: {dy: 5, "font-size": 18}})
 				);
+
+				pointLayer.push(L.circleMarker(segment[0], pointStyle));
+
+				corridorLayer.push(L.polygon(
+					this._getCorridorCoordsForLine(segment),
+					_i === this._activeLTIdx ? activeCorridorStyle : corridorStyle
+				));
+
+				i++;
 			});
 
-			this._allLines = flattenMatrix(lineLayers);
-			this._allCorridors = flattenMatrix(corridorLayers);
-			this._allPoints = flattenMatrix(pointLayers);
+			pointLayer.push(
+				L.circleMarker(wholeLineAsSegments[wholeLineAsSegments.length - 1][1], pointStyle)
+			);
+		});
 
-			this._lineLayer = L.featureGroup(this._allLines).addTo(this.map);
-			this._corridorLayer = L.featureGroup(this._allCorridors).addTo(this.map);
-			this._pointLayer = L.featureGroup(this._allPoints).addTo(this.map);
+		this._allLines = flattenMatrix(lineLayers);
+		this._allCorridors = flattenMatrix(corridorLayers);
+		this._allPoints = flattenMatrix(pointLayers);
 
-			const overlappingsCoordsToIdxs = {};
+		this._lineLayer = L.featureGroup(this._allLines).addTo(this.map);
+		this._corridorLayer = L.featureGroup(this._allCorridors).addTo(this.map);
+		this._pointLayer = L.featureGroup(this._allPoints).addTo(this.map);
 
-			const distances = [];
-			let distance = 0;
-			let prevLatLng = undefined;
-			i = 0;
-			pointLayers.forEach((points, groupI) => {
-				let startIdx = i;
-				prevLatLng = undefined;
-				points.forEach((point, pointI) => {
-					const latlng = point.getLatLng();
-					distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
-					distances.push(distance);
-					prevLatLng = latlng;
+		const overlappingsCoordsToIdxs = {};
 
-					const getTooltipFor = idx =>
-						`${idx + 1}. ${this.translations.point} \
-						(${parseInt(distances[idx])}m ${this.translations.fromTheBeginningOfTheLine})`;
+		const distances = [];
+		let distance = 0;
+		let prevLatLng = undefined;
+		i = 0;
+		pointLayers.forEach((points, groupI) => {
+			let startIdx = i;
+			prevLatLng = undefined;
+			points.forEach((point, pointI) => {
+				const latlng = point.getLatLng();
+				distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
+				distances.push(distance);
+				prevLatLng = latlng;
 
-					let tooltip = getTooltipFor(i);
-					if (pointI === points.length - 1 && point.getLatLng().equals(points[0].getLatLng())) {
-						tooltip = `${this.translations.OverlappingPoints}<br/>${getTooltipFor(startIdx)}<br/>${tooltip}`;
-					}
-					point.bindTooltip(tooltip, {direction: "top"});
+				const getTooltipFor = idx =>
+					`${idx + 1}. ${this.translations.point} \
+					(${parseInt(distances[idx])}m ${this.translations.fromTheBeginningOfTheLine})`;
 
-					const stringCoords = `${latlng.lat}-${latlng.lng}`;
-					if (overlappingsCoordsToIdxs[stringCoords]) {
-						point.on("dblclick", () => {
-							const idxs = parseIdxsFromLTIdx(overlappingsCoordsToIdxs[stringCoords]);
-							const firstPoint = pointLayers[idxs[0]][idxs[1]];
-							const lastPoint = point;
+				let tooltip = getTooltipFor(i);
+				if (pointI === points.length - 1 && point.getLatLng().equals(points[0].getLatLng())) {
+					tooltip = `${this.translations.OverlappingPoints}<br/>${getTooltipFor(startIdx)}<br/>${tooltip}`;
+				}
+				point.bindTooltip(tooltip, {direction: "top"});
 
-							const translateHooks = [];
+				const stringCoords = `${latlng.lat}-${latlng.lng}`;
+				if (overlappingsCoordsToIdxs[stringCoords]) {
+					point.on("dblclick", () => {
+						const idxs = parseIdxsFromLTIdx(overlappingsCoordsToIdxs[stringCoords]);
+						const firstPoint = pointLayers[idxs[0]][idxs[1]];
+						const lastPoint = point;
 
-							const popup = document.createElement("div");
-							popup.className = "text-center";
+						const translateHooks = [];
 
-							const question = document.createElement("span");
-							translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
+						const popup = document.createElement("div");
+						popup.className = "text-center";
 
-							const firstButton = document.createElement("button");
-							firstButton.addEventListener("click", () => {
-								lastPoint.setStyle(pointStyle);
-								this._setLTPointEditable(idxs[0], idxs[1]);
-								lastPoint.closePopup();
-							});
-							translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
+						const question = document.createElement("span");
+						translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
 
-							const lastButton = document.createElement("button");
-							lastButton.addEventListener("click", () => {
-								firstPoint.setStyle(pointStyle);
-								this._setLTPointEditable(groupI, pointI);
-								lastPoint.closePopup();
-							});
-							translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
+						const firstButton = document.createElement("button");
+						firstButton.addEventListener("click", () => {
+							lastPoint.setStyle(pointStyle);
+							this._setLTPointEditable(idxs[0], idxs[1]);
+							lastPoint.closePopup();
+						});
+						translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
 
-							const buttonContainer = document.createElement("div");
-							buttonContainer.className = "btn-group";
-							[firstButton, lastButton].forEach(button => {
-								button.className = "btn btn-primary btn-xs";
-								buttonContainer.appendChild(button);
-							});
+						const lastButton = document.createElement("button");
+						lastButton.addEventListener("click", () => {
+							firstPoint.setStyle(pointStyle);
+							this._setLTPointEditable(groupI, pointI);
+							lastPoint.closePopup();
+						});
+						translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
 
-							popup.appendChild(question);
-							popup.appendChild(buttonContainer);
-
-							lastPoint.bindPopup(popup).openPopup();
-							lastPoint.on("popupclose", () => {
-								translateHooks.forEach(hook => this.removeTranslationHook(hook));
-								lastPoint.unbindPopup();
-							});
+						const buttonContainer = document.createElement("div");
+						buttonContainer.className = "btn-group";
+						[firstButton, lastButton].forEach(button => {
+							button.className = "btn btn-primary btn-xs";
+							buttonContainer.appendChild(button);
 						});
 
-						point.setStyle(overlappingPointStyle);
-					} else {
-						overlappingsCoordsToIdxs[stringCoords] = `${groupI}-${pointI}`;
-						point.on("dblclick", () => {this._setLTPointEditable(groupI, pointI)})
-					}
+						popup.appendChild(question);
+						popup.appendChild(buttonContainer);
 
-					i++;
-				})
+						lastPoint.bindPopup(popup).openPopup();
+						lastPoint.on("popupclose", () => {
+							translateHooks.forEach(hook => this.removeTranslationHook(hook));
+							lastPoint.unbindPopup();
+						});
+					});
+
+					point.setStyle(overlappingPointStyle);
+				} else {
+					overlappingsCoordsToIdxs[stringCoords] = `${groupI}-${pointI}`;
+					point.on("dblclick", () => {this._setLTPointEditable(groupI, pointI);});
+				}
+
+				i++;
 			});
+		});
 
-			const pointDistTreshold = 100;
+		const pointDistTreshold = 100;
 
-			let _i = 0;
-			corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentI) => {
-				const __i = _i;
-				corridor.on("click", () => {
-					if (this._removeLTMode) {
-						this._hoveredLTLineIdx = undefined;
-						this.commitRemoveLTSegment(__i);
-					} else {
-						this._triggerEvent(this._getOnActiveSegmentChangeEvent(__i), this._onLTChange);
-					}
-				}).on("mouseover", () => {
-					const prevHoverIdx = this._hoveredLTLineIdx;
-					this._hoveredLTLineIdx = __i;
-					this._updateStyleForLTIdx(prevHoverIdx);
-					this._updateStyleForLTIdx(this._hoveredLTLineIdx);
-					this._pointLayers[lineIdx][segmentI + 1].openTooltip();
-				}).on("mouseout", () => {
+		let _i = 0;
+		corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentI) => {
+			const __i = _i;
+			corridor.on("click", () => {
+				if (this._removeLTMode) {
 					this._hoveredLTLineIdx = undefined;
-					this._updateStyleForLTIdx(__i);
-					this._pointLayers[lineIdx][segmentI + 1].closeTooltip();
-				}).on("dblclick", ({latlng}) => {
-					const points = [segmentI, segmentI + 1].map(idx => this._pointLayers[lineIdx][idx]);
-					const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
-					const closerIdx = closestPoint === points[0] ? segmentI : segmentI + 1;
-					if (closestPoint.getLatLng().distanceTo(latlng) <= pointDistTreshold) {
-						this._setLTPointEditable(lineIdx, closerIdx)
-					}
-				});
-				_i++;
-			}));
-
-			provide(this, "lineTransect");
-		}
-
-		@reflect()
-		@dependsOn("lineTransect", "translations")
-		_updateLTLayerContextMenus() {
-			if (!depsProvided(this, "_updateLTLayerContextMenus", arguments)) return;
-
-			const {translations} = this;
-
-			this._allCorridors.forEach((corridor, idx) => {
-				const contextmenuItems = [
-					{
-						text: translations.SplitLine,
-						callback: () => this.startLTLineSplitForIdx(idx),
-						iconCls: "glyphicon glyphicon-scissors"
-					},
-					{
-						text: translations.DeleteLineSegment,
-						callback: () => this.commitRemoveLTSegment(idx),
-						iconCls: "glyphicon glyphicon-remove-sign"
-					}
-				]
-
-				corridor.bindContextMenu({
-					contextmenuInheritItems: false,
-					contextmenuItems
-				});
-			})
-		}
-
-		_setLTPointEditable(lineIdx, pointIdx) {
-			if (this.lineTransectEditIdx !== undefined) {
-				const prevIdxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
-				const editableLayer = this._pointLayers[prevIdxs[0]][prevIdxs[1]];
-				editableLayer.setStyle(pointStyle);
-			}
-
-			this.lineTransectEditIdx = `${lineIdx}-${pointIdx}`;
-			if (pointIdx !== undefined) {
-				const layer = this._pointLayers[lineIdx][pointIdx];
-				layer.setStyle(editablePointStyle)
-					.on("mousedown", this._startLTDragPointHandler)
-					.on("mouseup", this._stopLTDragPointHandler)
-					.bringToFront();
-
-				[pointIdx, pointIdx - 1].filter(i => i >= 0).forEach(idx => {
-						const corridor = this._corridorLayers[lineIdx][idx];
-						if (corridor) corridor.on("mousedown", this._startLTDragCorridorHandler)
-					}
-				);
-				this.map.on("mouseup", this._stopLTDragCorridorHandler);
-
-
-				this._pointLayers.forEach(points => points.forEach(point => {
-					point.closeTooltip()
-						.unbindTooltip();
-				}));
-			}
-		}
-
-		_commitPointDrag() {
-			this.map.off("mouseup", this._stopLTDragCorridorHandler);
-			this._stopLTDragPointHandler();
-			const idx = this.lineTransectEditIdx;
-			this.lineTransectEditIdx = undefined;
-
-			const feature = this._formatLTFeatureOut();
-			this.setLineTransectGeometry(feature.geometry);
-
-			const events = [];
-			[this._precedingLTDragIdx, this._followingLTDragIdx].forEach(idx => {
-				if (idx !== undefined) events.push({
-					type: "edit",
-					feature,
-					idx,
-					geometry: this._allLines[idx].toGeoJSON().geometry
-				})
-			})
-
-			this._triggerEvent(events, this._onLTChange);
-			this.map.fire("lineTransect:pointdrag")
-		}
-
-		_startLTDragHandler(handler) {
-			this._LTDragging = true;
-			this.map.dragging.disable();
-			L.DomUtil.disableTextSelection();
-			this.map.on("mousemove", handler);
-		}
-
-		_stopLTDragHandler(handler) {
-			// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
-			setTimeout(() => {
-				this._LTDragging = false;
-				this.map.dragging.enable();
-				L.DomUtil.enableTextSelection();
-				this.map.off("mousemove", handler);
-			}, 0);
-		}
-
-		_startLTDragPointHandler() {
-			this._startLTDragHandler(this._dragLTPointHandler);
-		}
-
-		_stopLTDragPointHandler() {
-			this._stopLTDragHandler(this._dragLTPointHandler);
-		}
-
-		_dragLTPointHandler({latlng}) {
-			this._dragLTHandler(latlng);
-		}
-
-		_startLTDragCorridorHandler({latlng}) {
-			this._startLTDragHandler(this._dragLTCorridorHandler);
-
-			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
-			const point = this._pointLayers[idxs[0]][idxs[1]];
-
-			this._dragPointStart = point.getLatLng();
-			this._dragMouseStart = latlng;
-		}
-
-		_stopLTDragCorridorHandler() {
-			this._stopLTDragHandler(this._dragLTCorridorHandler);
-			this._dragPointStart = undefined;
-			this._dragMouseStart = undefined;
-		}
-
-		_dragLTCorridorHandler({latlng}) {
-			const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
-			const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
-
-			const offsetDragPoint = L.GeometryUtil.destination(this._dragPointStart, mouseRotatedAngle, mouseMovedDistance);
-			this._dragLTHandler(offsetDragPoint)
-		}
-
-		_dragLTHandler(latlng) {
-			const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
-			const lineIdx = idxs[0];
-			const pointIdx = idxs[1];
-
-			const pointLayer = this._pointLayers[lineIdx];
-			const lineLayer = this._lineLayers[lineIdx];
-			const corridorLayer = this._corridorLayers[lineIdx];
-
-			const point = pointLayer[pointIdx];
-			point.setLatLng(latlng);
-
-			let precedingIdx = pointIdx - 1 >= 0 ? pointIdx - 1 : undefined;
-			let precedingLine, precedingCorridor, precedingPoint;
-			if (precedingIdx !== undefined) {
-				precedingLine = lineLayer[precedingIdx];
-				precedingCorridor = corridorLayer[precedingIdx];
-				precedingPoint = pointLayer[precedingIdx]
-			}
-
-			const followingIdx = pointIdx < pointLayer.length ? pointIdx : undefined;
-			let followingLine, followingCorridor, followingPoint;
-			if (followingIdx !== undefined) {
-				followingLine = lineLayer[followingIdx];
-				followingCorridor = corridorLayer[followingIdx];
-				followingPoint = pointLayer[followingIdx + 1];
-			}
-
-			if (precedingIdx !== undefined) {
-				this._precedingLTDragIdx = precedingIdx;
-				const lineCoords = [precedingLine.getLatLngs()[0], latlng];
-				precedingLine.setLatLngs(lineCoords).openTooltip();
-				precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
-			}
-
-			if (followingIdx !== undefined && followingLine) {
-				this._followingLTDragIdx = followingIdx;
-				const lineCoords = [latlng, followingLine.getLatLngs()[1]];
-				followingLine.setLatLngs(lineCoords).openTooltip();
-				followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
-			}
-
-			[precedingPoint, point, followingPoint].forEach(p => {
-				if (p) p.bringToFront();
-			})
-		}
-
-		_degreesFromNorth(lineCoords) {
-			const latLngs = lineCoords.map(L.latLng);
-
-			// Line angle horizontally.
-			const lineAngle = L.GeometryUtil.computeAngle(...latLngs.map(
-				latlng => this.map.options.crs.project(latlng)
-			));
-
-			// Line angle clockwise from north.
-			return 90 - lineAngle;
-		}
-
-		_getCorridorCoordsForLine(lineCoords) {
-			const latLngs = lineCoords.map(L.latLng);
-			const lineAngleFromNorth = this._degreesFromNorth(lineCoords);
-
-			// Variables are named as if the line was pointing towards north.
-			const SWCorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth - 90, LT_WIDTH_METERS);
-			const NWCorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth - 90, LT_WIDTH_METERS);
-			const SECorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth + 90, LT_WIDTH_METERS);
-			const NECorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth + 90, LT_WIDTH_METERS);
-
-			return [SWCorner, NWCorner, NECorner, SECorner];
-		}
-
-		_getOnActiveSegmentChangeEvent(idx) {
-			const prevIdx = this._activeLTIdx;
-			this._activeLTIdx = idx;
-			[prevIdx, idx].forEach(i => this._updateStyleForLTIdx(i));
-			return {type: "active", idx: this._activeLTIdx};
-		}
-
-		// Doesn't handle points.
-		_getStyleForLTLayer(layer, idx) {
-			const isActive = idx === this._activeLTIdx;
-			const isEdit = idx === this._splitLTIdx  || (this._removeLTMode && idx === this._hoveredLTLineIdx);
-			const isHover = idx === this._hoveredLTLineIdx;
-
-			const lineStyles = {
-				normal: lineStyle,
-				active: activeLineStyle,
-				edit: editLineStyle,
-				hover: hoverLineStyle,
-			};
-
-			const corridorStyles = {
-				normal: corridorStyle,
-				active: activeCorridorStyle,
-				edit: editCorridorStyle,
-				hover: hoverCorridorStyle,
-			};
-
-			let styleObject = undefined;
-			if (layer instanceof L.Polygon) {
-				styleObject = corridorStyles;
-			} else if (layer instanceof L.Polyline) {
-				styleObject = lineStyles;
-			}
-
-			if (isEdit) {
-				return styleObject.edit;
-			} else if (isHover) {
-				return styleObject.hover;
-			} else if (isActive) {
-				return styleObject.active;
-			} else {
-				return styleObject.normal;
-			}
-
-		}
-
-		_updateStyleForLTIdx(idx) {
-			if (idx === undefined) return;
-			[this._allLines, this._allCorridors].forEach(layerGroup => {
-				const layer = layerGroup[idx];
-				layer.setStyle(this._getStyleForLTLayer(layer, idx));
+					this.commitRemoveLTSegment(__i);
+				} else {
+					this._triggerEvent(this._getOnActiveSegmentChangeEvent(__i), this._onLTChange);
+				}
+			}).on("mouseover", () => {
+				const prevHoverIdx = this._hoveredLTLineIdx;
+				this._hoveredLTLineIdx = __i;
+				this._updateStyleForLTIdx(prevHoverIdx);
+				this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+				this._pointLayers[lineIdx][segmentI + 1].openTooltip();
+			}).on("mouseout", () => {
+				this._hoveredLTLineIdx = undefined;
+				this._updateStyleForLTIdx(__i);
+				this._pointLayers[lineIdx][segmentI + 1].closeTooltip();
+			}).on("dblclick", ({latlng}) => {
+				const points = [segmentI, segmentI + 1].map(idx => this._pointLayers[lineIdx][idx]);
+				const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
+				const closerIdx = closestPoint === points[0] ? segmentI : segmentI + 1;
+				if (closestPoint.getLatLng().distanceTo(latlng) <= pointDistTreshold) {
+					this._setLTPointEditable(lineIdx, closerIdx);
+				}
 			});
-		}
+			_i++;
+		}));
 
-		_commitLTLineCut() {
-			const splitIdx = this._splitLTIdx;
-			this.stopLTLineSplit();
+		provide(this, "lineTransect");
+	}
 
-			const splitLine = this._allLines[splitIdx];
-			const cutLineLatLng = splitLine.getLatLngs();
-			const splittedTail = [cutLineLatLng[0], this._splitPoint];
-			splitLine.setLatLngs(splittedTail);
+	@reflect()
+	@dependsOn("lineTransect", "translations")
+	_updateLTLayerContextMenus() {
+		if (!depsProvided(this, "_updateLTLayerContextMenus", arguments)) return;
 
-			const splittedHead = [this._splitPoint, cutLineLatLng[1]];
-			this._allLines.splice(splitIdx + 1, 0, L.polyline(splittedHead));
+		const {translations} = this;
 
-			const feature = this._formatLTFeatureOut();
-			this.setLineTransectGeometry(feature.geometry);
-
-			const events = [
+		this._allCorridors.forEach((corridor, idx) => {
+			const contextmenuItems = [
 				{
-					type: "edit",
-					feature,
-					idx: splitIdx,
-					geometry: coordinatePairToGeoJSONLine(splittedTail)
+					text: translations.SplitLine,
+					callback: () => this.startLTLineSplitForIdx(idx),
+					iconCls: "glyphicon glyphicon-scissors"
 				},
 				{
-					type: "create",
-					idx: splitIdx + 1,
-					geometry: coordinatePairToGeoJSONLine(splittedHead)
+					text: translations.DeleteLineSegment,
+					callback: () => this.commitRemoveLTSegment(idx),
+					iconCls: "glyphicon glyphicon-remove-sign"
 				}
 			];
 
-			if (splitIdx < this._activeLTIdx) {
-				events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx + 1))
+			corridor.bindContextMenu({
+				contextmenuInheritItems: false,
+				contextmenuItems
+			});
+		});
+	}
+
+	_setLTPointEditable(lineIdx, pointIdx) {
+		if (this.lineTransectEditIdx !== undefined) {
+			const prevIdxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
+			const editableLayer = this._pointLayers[prevIdxs[0]][prevIdxs[1]];
+			editableLayer.setStyle(pointStyle);
+		}
+
+		this.lineTransectEditIdx = `${lineIdx}-${pointIdx}`;
+		if (pointIdx !== undefined) {
+			const layer = this._pointLayers[lineIdx][pointIdx];
+			layer.setStyle(editablePointStyle)
+				.on("mousedown", this._startLTDragPointHandler)
+				.on("mouseup", this._stopLTDragPointHandler)
+				.bringToFront();
+
+			[pointIdx, pointIdx - 1].filter(i => i >= 0).forEach(idx => {
+				const corridor = this._corridorLayers[lineIdx][idx];
+				if (corridor) corridor.on("mousedown", this._startLTDragCorridorHandler);
 			}
+			);
+			this.map.on("mouseup", this._stopLTDragCorridorHandler);
 
-			this._triggerEvent(events, this._onLTChange);
 
-			this.map.fire("lineTransect:split")
+			this._pointLayers.forEach(points => points.forEach(point => {
+				point.closeTooltip()
+					.unbindTooltip();
+			}));
+		}
+	}
+
+	_commitPointDrag() {
+		this.map.off("mouseup", this._stopLTDragCorridorHandler);
+		this._stopLTDragPointHandler();
+		this.lineTransectEditIdx = undefined;
+
+		const feature = this._formatLTFeatureOut();
+		this.setLineTransectGeometry(feature.geometry);
+
+		const events = [];
+		[this._precedingLTDragIdx, this._followingLTDragIdx].forEach(idx => {
+			if (idx !== undefined) events.push({
+				type: "edit",
+				feature,
+				idx,
+				geometry: this._allLines[idx].toGeoJSON().geometry
+			});
+		});
+
+		this._triggerEvent(events, this._onLTChange);
+		this.map.fire("lineTransect:pointdrag");
+	}
+
+	_startLTDragHandler(handler) {
+		this._LTDragging = true;
+		this.map.dragging.disable();
+		L.DomUtil.disableTextSelection();
+		this.map.on("mousemove", handler);
+	}
+
+	_stopLTDragHandler(handler) {
+		// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
+		setTimeout(() => {
+			this._LTDragging = false;
+			this.map.dragging.enable();
+			L.DomUtil.enableTextSelection();
+			this.map.off("mousemove", handler);
+		}, 0);
+	}
+
+	_startLTDragPointHandler() {
+		this._startLTDragHandler(this._dragLTPointHandler);
+	}
+
+	_stopLTDragPointHandler() {
+		this._stopLTDragHandler(this._dragLTPointHandler);
+	}
+
+	_dragLTPointHandler({latlng}) {
+		this._dragLTHandler(latlng);
+	}
+
+	_startLTDragCorridorHandler({latlng}) {
+		this._startLTDragHandler(this._dragLTCorridorHandler);
+
+		const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
+		const point = this._pointLayers[idxs[0]][idxs[1]];
+
+		this._dragPointStart = point.getLatLng();
+		this._dragMouseStart = latlng;
+	}
+
+	_stopLTDragCorridorHandler() {
+		this._stopLTDragHandler(this._dragLTCorridorHandler);
+		this._dragPointStart = undefined;
+		this._dragMouseStart = undefined;
+	}
+
+	_dragLTCorridorHandler({latlng}) {
+		const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
+		const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
+
+		const offsetDragPoint = L.GeometryUtil.destination(this._dragPointStart, mouseRotatedAngle, mouseMovedDistance);
+		this._dragLTHandler(offsetDragPoint);
+	}
+
+	_dragLTHandler(latlng) {
+		const idxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
+		const lineIdx = idxs[0];
+		const pointIdx = idxs[1];
+
+		const pointLayer = this._pointLayers[lineIdx];
+		const lineLayer = this._lineLayers[lineIdx];
+		const corridorLayer = this._corridorLayers[lineIdx];
+
+		const point = pointLayer[pointIdx];
+		point.setLatLng(latlng);
+
+		let precedingIdx = pointIdx - 1 >= 0 ? pointIdx - 1 : undefined;
+		let precedingLine, precedingCorridor, precedingPoint;
+		if (precedingIdx !== undefined) {
+			precedingLine = lineLayer[precedingIdx];
+			precedingCorridor = corridorLayer[precedingIdx];
+			precedingPoint = pointLayer[precedingIdx];
 		}
 
-		stopLTLineSplit() {
-			const lastLineCutIdx = this._splitLTIdx;
-			this._lineCutting = false;
-			if (this._cutLine) this._cutLine.removeFrom(this.map);
-			this._cutLine = undefined;
-			this._lineCutIdx = undefined;
-			this._splitLTIdx = undefined;
-			this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
-			this._updateStyleForLTIdx(lastLineCutIdx);
-			this._disposeTooltip();
+		const followingIdx = pointIdx < pointLayer.length ? pointIdx : undefined;
+		let followingLine, followingCorridor, followingPoint;
+		if (followingIdx !== undefined) {
+			followingLine = lineLayer[followingIdx];
+			followingCorridor = corridorLayer[followingIdx];
+			followingPoint = pointLayer[followingIdx + 1];
 		}
 
-		_mouseMoveLTLineSplitHandler({latlng}) {
-			const allLines = this._allLines;
-
-			let closestLine, closestIdx;
-			if (this._lineCutIdx !== undefined) {
-				closestIdx = this._lineCutIdx;
-				closestLine = allLines[closestIdx];
-			} else {
-				closestLine = L.GeometryUtil.closestLayer(this.map, allLines, latlng).layer;
-				closestIdx = allLines.indexOf(closestLine);
-			}
-
-			const prevCutIdx = this._splitLTIdx;
-			this._splitLTIdx = closestIdx;
-			this._updateStyleForLTIdx(prevCutIdx);
-			this._updateStyleForLTIdx(this._splitLTIdx);
-
-			// Update cut line.
-			const closestLatLngOnLine = L.GeometryUtil.closest(this.map, closestLine, latlng);
-			this._splitPoint = closestLatLngOnLine;
-			const lineAngleFromNorth = this._degreesFromNorth(closestLine.getLatLngs());
-
-			const cutLineStart = L.GeometryUtil.destination(closestLatLngOnLine, lineAngleFromNorth - 90, LT_WIDTH_METERS);
-			const cutLineEnd = L.GeometryUtil.destination(closestLatLngOnLine, lineAngleFromNorth + 90, LT_WIDTH_METERS);
-
-			if (this._cutLine) {
-				this._cutLine.setLatLngs([cutLineStart, cutLineEnd]);
-			} else {
-				this._cutLine = L.polygon([cutLineStart, cutLineEnd], {...editLineStyle, dashArray: "5 5"}).addTo(this.map);
-			}
+		if (precedingIdx !== undefined) {
+			this._precedingLTDragIdx = precedingIdx;
+			const lineCoords = [precedingLine.getLatLngs()[0], latlng];
+			precedingLine.setLatLngs(lineCoords).openTooltip();
+			precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
 		}
 
-		startLTLineSplit() {
-			this._lineCutting = true;
-			this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
-			this._createTooltip("SplitLineTooltip");
+		if (followingIdx !== undefined && followingLine) {
+			this._followingLTDragIdx = followingIdx;
+			const lineCoords = [latlng, followingLine.getLatLngs()[1]];
+			followingLine.setLatLngs(lineCoords).openTooltip();
+			followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
 		}
 
-		startLTLineSplitForIdx(idx) {
-			this._lineCutting = true;
-			this._lineCutIdx = idx;
-			this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
-			this._createTooltip("SplitLineTooltip");
+		[precedingPoint, point, followingPoint].forEach(p => {
+			if (p) p.bringToFront();
+		});
+	}
+
+	_degreesFromNorth(lineCoords) {
+		const latLngs = lineCoords.map(L.latLng);
+
+		// Line angle horizontally.
+		const lineAngle = L.GeometryUtil.computeAngle(...latLngs.map(
+			latlng => this.map.options.crs.project(latlng)
+		));
+
+		// Line angle clockwise from north.
+		return 90 - lineAngle;
+	}
+
+	_getCorridorCoordsForLine(lineCoords) {
+		const latLngs = lineCoords.map(L.latLng);
+		const lineAngleFromNorth = this._degreesFromNorth(lineCoords);
+
+		// Variables are named as if the line was pointing towards north.
+		const SWCorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth - 90, LT_WIDTH_METERS);
+		const NWCorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth - 90, LT_WIDTH_METERS);
+		const SECorner = L.GeometryUtil.destination(latLngs[0], lineAngleFromNorth + 90, LT_WIDTH_METERS);
+		const NECorner = L.GeometryUtil.destination(latLngs[1], lineAngleFromNorth + 90, LT_WIDTH_METERS);
+
+		return [SWCorner, NWCorner, NECorner, SECorner];
+	}
+
+	_getOnActiveSegmentChangeEvent(idx) {
+		const prevIdx = this._activeLTIdx;
+		this._activeLTIdx = idx;
+		[prevIdx, idx].forEach(i => this._updateStyleForLTIdx(i));
+		return {type: "active", idx: this._activeLTIdx};
+	}
+
+	// Doesn't handle points.
+	_getStyleForLTLayer(layer, idx) {
+		const isActive = idx === this._activeLTIdx;
+		const isEdit = idx === this._splitLTIdx  || (this._removeLTMode && idx === this._hoveredLTLineIdx);
+		const isHover = idx === this._hoveredLTLineIdx;
+
+		const lineStyles = {
+			normal: lineStyle,
+			active: activeLineStyle,
+			edit: editLineStyle,
+			hover: hoverLineStyle,
+		};
+
+		const corridorStyles = {
+			normal: corridorStyle,
+			active: activeCorridorStyle,
+			edit: editCorridorStyle,
+			hover: hoverCorridorStyle,
+		};
+
+		let styleObject = undefined;
+		if (layer instanceof L.Polygon) {
+			styleObject = corridorStyles;
+		} else if (layer instanceof L.Polyline) {
+			styleObject = lineStyles;
 		}
 
-		startRemoveLTSegmentMode() {
-			this._removeLTMode = true;
-			this._createTooltip("DeleteLineSegmentTooltip");
-		}
-
-		stopRemoveLTSegmentMode() {
-			this._removeLTMode = false;
-			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
-			this._disposeTooltip();
-		}
-
-		commitRemoveLTSegment(i) {
-			this._allLines.splice(i, 1);
-			const feature = this._formatLTFeatureOut();
-
-			const events = [
-				{type: "delete", feature, idx: i},
-			];
-			if (i - 1 >= 0) {
-				events.push(this._getOnActiveSegmentChangeEvent(i - 1));
-			}
-
-
-			this._triggerEvent(events, this._onLTChange);
-			this.stopRemoveLTSegmentMode();
-			this.setLineTransectGeometry(feature.geometry);
-			this.map.fire("lineTransect:delete")
-		}
-
-		_createTooltip(translationKey) {
-			this._tooltip = new L.Draw.Tooltip(this.map);
-			this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
-			this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
-			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
-		}
-
-		_disposeTooltip() {
-			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.off(eType, this._onMouseMove));
-			if (this._tooltip) this._tooltip.dispose();
+		if (isEdit) {
+			return styleObject.edit;
+		} else if (isHover) {
+			return styleObject.hover;
+		} else if (isActive) {
+			return styleObject.active;
+		} else {
+			return styleObject.normal;
 		}
 
 	}
 
-}
+	_updateStyleForLTIdx(idx) {
+		if (idx === undefined) return;
+		[this._allLines, this._allCorridors].forEach(layerGroup => {
+			const layer = layerGroup[idx];
+			layer.setStyle(this._getStyleForLTLayer(layer, idx));
+		});
+	}
+
+	_commitLTLineCut() {
+		const splitIdx = this._splitLTIdx;
+		this.stopLTLineSplit();
+
+		const splitLine = this._allLines[splitIdx];
+		const cutLineLatLng = splitLine.getLatLngs();
+		const splittedTail = [cutLineLatLng[0], this._splitPoint];
+		splitLine.setLatLngs(splittedTail);
+
+		const splittedHead = [this._splitPoint, cutLineLatLng[1]];
+		this._allLines.splice(splitIdx + 1, 0, L.polyline(splittedHead));
+
+		const feature = this._formatLTFeatureOut();
+		this.setLineTransectGeometry(feature.geometry);
+
+		const events = [
+			{
+				type: "edit",
+				feature,
+				idx: splitIdx,
+				geometry: coordinatePairToGeoJSONLine(splittedTail)
+			},
+			{
+				type: "create",
+				idx: splitIdx + 1,
+				geometry: coordinatePairToGeoJSONLine(splittedHead)
+			}
+		];
+
+		if (splitIdx < this._activeLTIdx) {
+			events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx + 1));
+		}
+
+		this._triggerEvent(events, this._onLTChange);
+
+		this.map.fire("lineTransect:split");
+	}
+
+	stopLTLineSplit() {
+		const lastLineCutIdx = this._splitLTIdx;
+		this._lineCutting = false;
+		if (this._cutLine) this._cutLine.removeFrom(this.map);
+		this._cutLine = undefined;
+		this._lineCutIdx = undefined;
+		this._splitLTIdx = undefined;
+		this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._updateStyleForLTIdx(lastLineCutIdx);
+		this._disposeTooltip();
+	}
+
+	_mouseMoveLTLineSplitHandler({latlng}) {
+		const allLines = this._allLines;
+
+		let closestLine, closestIdx;
+		if (this._lineCutIdx !== undefined) {
+			closestIdx = this._lineCutIdx;
+			closestLine = allLines[closestIdx];
+		} else {
+			closestLine = L.GeometryUtil.closestLayer(this.map, allLines, latlng).layer;
+			closestIdx = allLines.indexOf(closestLine);
+		}
+
+		const prevCutIdx = this._splitLTIdx;
+		this._splitLTIdx = closestIdx;
+		this._updateStyleForLTIdx(prevCutIdx);
+		this._updateStyleForLTIdx(this._splitLTIdx);
+
+		// Update cut line.
+		const closestLatLngOnLine = L.GeometryUtil.closest(this.map, closestLine, latlng);
+		this._splitPoint = closestLatLngOnLine;
+		const lineAngleFromNorth = this._degreesFromNorth(closestLine.getLatLngs());
+
+		const cutLineStart = L.GeometryUtil.destination(closestLatLngOnLine, lineAngleFromNorth - 90, LT_WIDTH_METERS);
+		const cutLineEnd = L.GeometryUtil.destination(closestLatLngOnLine, lineAngleFromNorth + 90, LT_WIDTH_METERS);
+
+		if (this._cutLine) {
+			this._cutLine.setLatLngs([cutLineStart, cutLineEnd]);
+		} else {
+			this._cutLine = L.polygon([cutLineStart, cutLineEnd], {...editLineStyle, dashArray: "5 5"}).addTo(this.map);
+		}
+	}
+
+	startLTLineSplit() {
+		this._lineCutting = true;
+		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._createTooltip("SplitLineTooltip");
+	}
+
+	startLTLineSplitForIdx(idx) {
+		this._lineCutting = true;
+		this._lineCutIdx = idx;
+		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._createTooltip("SplitLineTooltip");
+	}
+
+	startRemoveLTSegmentMode() {
+		this._removeLTMode = true;
+		this._createTooltip("DeleteLineSegmentTooltip");
+	}
+
+	stopRemoveLTSegmentMode() {
+		this._removeLTMode = false;
+		this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+		this._disposeTooltip();
+	}
+
+	commitRemoveLTSegment(i) {
+		this._allLines.splice(i, 1);
+		const feature = this._formatLTFeatureOut();
+
+		const events = [
+			{type: "delete", feature, idx: i},
+		];
+		if (i - 1 >= 0) {
+			events.push(this._getOnActiveSegmentChangeEvent(i - 1));
+		}
+
+		this._triggerEvent(events, this._onLTChange);
+		this.stopRemoveLTSegmentMode();
+		this.setLineTransectGeometry(feature.geometry);
+		this.map.fire("lineTransect:delete");
+	}
+
+	_createTooltip(translationKey) {
+		this._tooltip = new L.Draw.Tooltip(this.map);
+		this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
+		this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
+		["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
+	}
+
+	_disposeTooltip() {
+		["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.off(eType, this._onMouseMove));
+		if (this._tooltip) this._tooltip.dispose();
+	}
+
+};
+

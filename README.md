@@ -122,3 +122,5 @@ The methods that are supposed to be used as private methods, and could break Laj
 Start the development playground with `npm start`.
 
 To release a new version, run `npm run publish-to-npm`.
+
+Try to keep the code style consistent - ```npm run lint``` should pass without errors.

@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import proj4 from "proj4"
+import proj4 from "proj4";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import {
@@ -19,7 +19,6 @@ import {
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
 	EPSG2393String,
-	MAP,
 	ESC
 } from "./globals";
 
@@ -40,7 +39,7 @@ const optionKeys = {
 	featurePopupOffset: true,
 	popupOnHover: true,
 	onInitializeDrawLayer: true
-}
+};
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
@@ -71,7 +70,7 @@ export function depsProvided(target, name, args) {
 export function reflect() {
 	return (target, property) => {
 		reflected[property] = true;
-	}
+	};
 }
 
 export function dependsOn(...deps) {
@@ -82,7 +81,7 @@ export function dependsOn(...deps) {
 			providerToDependency[dep] = [...(providerToDependency[dep] || []), property];
 		});
 		dependencyToProvider[property] = deps;
-	}
+	};
 }
 
 function depIsProvided(target, dep) {
@@ -189,7 +188,7 @@ export default class LajiMap {
 		this.blockerElem = document.createElement("div");
 		this.blockerElem.className = "blocker";
 
-		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
+		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem);});
 
 		this.map = L.map(this.mapElem, {
 			contextmenu: true,
@@ -237,7 +236,7 @@ export default class LajiMap {
 				version: "1.1.0"
 			}),
 			peninkulmaGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
-				layers: `YKJ:ykj10km_grid`,
+				layers: "YKJ:ykj10km_grid",
 				format: "image/png",
 				transparent: true,
 				version: "1.1.0",
@@ -272,7 +271,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
-			click: e => this._interceptClick(),
+			click: () => this._interceptClick(),
 			dblclick: e => {
 				if (this.editIdx !== undefined || this.drawing) return;
 				if ((typeof this.draw === "object" && this.draw.marker !== false)
@@ -281,8 +280,8 @@ export default class LajiMap {
 				}
 			},
 			"draw:created": ({ layer }) => this._onAdd(layer),
-			"draw:drawstart": () => { this.drawing = true },
-			"draw:drawstop": () => { this.drawing = false },
+			"draw:drawstart": () => { this.drawing = true; },
+			"draw:drawstop": () => { this.drawing = false; },
 			locationfound: (...params) => this._onLocationFound(...params),
 			locationerror: (...params) => this._onLocationNotFound(...params),
 			"contextmenu.show": this._interceptClick,
@@ -324,7 +323,7 @@ export default class LajiMap {
 		if (prioritize) {
 			this._keyListeners[key] = [fn, ...this._keyListeners[key]];
 		} else {
-			 this._keyListeners[key].push(fn);
+			this._keyListeners[key].push(fn);
 		}
 	}
 
@@ -418,7 +417,7 @@ export default class LajiMap {
 	}
 
 	getDenormalizedZoom() {
-		return this._getDefaultCRSLayers().includes(this.tileLayer) ? this.zoom + 3: this.zoom
+		return this._getDefaultCRSLayers().includes(this.tileLayer) ? this.zoom + 3: this.zoom;
 	}
 
 	@dependsOn("map")
@@ -440,12 +439,12 @@ export default class LajiMap {
 	}
 
 	destroy() {
-			this.map.remove();
-			this.map = null;
+		this.map.remove();
+		this.map = null;
 
-			if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
-				document.removeEventListener(type, this._documentEvents[type]);
-			});
+		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
+			document.removeEventListener(type, this._documentEvents[type]);
+		});
 	}
 
 	_constructDictionary() {
@@ -504,9 +503,9 @@ export default class LajiMap {
 			const coordinates = feature.geometry.coordinates[0].slice(0);
 
 			const sum = coordinates.map((c, i) => {
-					const next = coordinates[i + 1];
-					if (next) return [c, next];
-				}).filter(c => c)
+				const next = coordinates[i + 1];
+				if (next) return [c, next];
+			}).filter(c => c)
 					.reduce((sum, edge) =>
 					(sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
 					0
@@ -518,7 +517,7 @@ export default class LajiMap {
 			}
 		}
 
-		const {lajiMapIdx, ...properties} = feature.properties;
+		const {lajiMapIdx, ...properties} = feature.properties; //eslint-disable-line
 		return {...feature, properties};
 	}
 
@@ -657,12 +656,12 @@ export default class LajiMap {
 			{
 				pointToLayer: this._featureToLayer(this.draw.data.getFeatureStyle),
 				style: feature => {
-					return this.draw.data.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, feature})
+					return this.draw.data.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, feature});
 				},
 				onEachFeature: (feature, layer) => {
 					this._initializeDrawLayer(layer, feature.properties.lajiMapIdx);
 				}
-		});
+			});
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
 			this.clusterDrawLayer = L.markerClusterGroup(
@@ -684,7 +683,7 @@ export default class LajiMap {
 		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}
 
- 	_createIcon(options = {}) {
+	_createIcon(options = {}) {
 		const markerColor = options.color || NORMAL_COLOR;
 		const opacity = options.opacity || 1;
 		return L.VectorMarkers.icon({
@@ -699,13 +698,13 @@ export default class LajiMap {
 		return (cluster) => {
 			var childCount = cluster.getChildCount();
 
-			var className = ' marker-cluster-';
+			var className = " marker-cluster-";
 			if (childCount < 10) {
-				className += 'small';
+				className += "small";
 			} else if (childCount < 100) {
-				className += 'medium';
+				className += "medium";
 			} else {
-				className += 'large';
+				className += "large";
 			}
 
 			let color =  NORMAL_COLOR;
@@ -719,16 +718,16 @@ export default class LajiMap {
 			const styleObject = {
 				"background-color": color,
 				opacity: opacity
-			}
+			};
 			const styleString = Object.keys(styleObject)
-				.reduce((style, key) => {style += `${key}:${styleObject[key]};`; return style}, "");
+				.reduce((style, key) => {style += `${key}:${styleObject[key]};`; return style;}, "");
 
 			return L.divIcon({
 				html: `<div style="${styleString}"><span>${childCount}</span></div>`,
 				className: `marker-cluster${className}`,
 				iconSize: new L.Point(40, 40)
 			});
-		}
+		};
 	}
 
 	setActive(idx) {
@@ -805,7 +804,7 @@ export default class LajiMap {
 	redrawData() {
 		this.data.forEach((dataItem, idx) => {
 			this.redrawDataItem(idx);
-		})
+		});
 	}
 
 	redraw() {
@@ -847,7 +846,7 @@ export default class LajiMap {
 			let {popupCounter} = that;
 
 			// Allow either returning content or firing a callback with content.
-			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent)});
+			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
 			if (content) openPopup(content);
 		}
 
@@ -860,7 +859,7 @@ export default class LajiMap {
 			layer.on("mouseover", e => {
 				getContentAndOpenPopup(e.latlng);
 			});
-			layer.on('mouseout', e => {
+			layer.on("mouseout", () => {
 				closePopup();
 			});
 		} else {
@@ -877,7 +876,7 @@ export default class LajiMap {
 		if (!data.getTooltip) return;
 
 		function openTooltip(content) {
-			layer.bindTooltip(content, data.tooltipOptions)
+			layer.bindTooltip(content, data.tooltipOptions);
 		}
 
 		// Allow either returning content or firing a callback with content.
@@ -893,7 +892,7 @@ export default class LajiMap {
 
 		this._updateContextMenuForLayer(layer, idx);
 
-		layer.on("click", (e) => {
+		layer.on("click", () => {
 			if (!this._interceptClick()) this._onActiveChange(this.idsToIdxs[layer._leaflet_id]);
 		});
 		layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
@@ -927,7 +926,7 @@ export default class LajiMap {
 					callback: () => this._onDelete(this.idxsToIds[idx]),
 					iconCls: "glyphicon glyphicon-trash"
 				}
-				]
+			];
 		}
 
 		layer.bindContextMenu({
@@ -966,7 +965,7 @@ export default class LajiMap {
 				}).addTo(this.userLocationLayer);
 		}
 
-		this.userLocationMarker.on("click", () => { if (!this._interceptClick()) this.map.fitBounds(this.userLocationRadiusMarker.getBounds()) });
+		this.userLocationMarker.on("click", () => { if (!this._interceptClick()) this.map.fitBounds(this.userLocationRadiusMarker.getBounds()); });
 	}
 
 	_onLocationNotFound() {
@@ -1000,8 +999,8 @@ export default class LajiMap {
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
 		if (coordinateVerbatim && feature.geometry) {
-      feature.geometry.coordinateVerbatim = coordinateVerbatim;
-    }
+			feature.geometry.coordinateVerbatim = coordinateVerbatim;
+		}
 		features.push(feature);
 
 		const event = [
@@ -1013,7 +1012,7 @@ export default class LajiMap {
 		];
 
 		this._triggerEvent(event, this.draw.onChange);
-	};
+	}
 
 	_onEdit(data) {
 		const eventData = {};
@@ -1103,7 +1102,7 @@ export default class LajiMap {
 		return {
 			type: "active",
 			idx
-		}
+		};
 	}
 
 	_onActiveChange(idx) {
@@ -1210,7 +1209,7 @@ export default class LajiMap {
 				layer = L.GeoJSON.geometryToLayer(feature);
 			}
 			return layer;
-		}
+		};
 	}
 
 	_getDrawingDraftStyle() {
@@ -1238,7 +1237,7 @@ export default class LajiMap {
 			if (_styles) for (let style in _styles) {
 				styles[style] = _styles[style];
 			}
-		})
+		});
 
 		return styles;
 	}

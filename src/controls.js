@@ -13,9 +13,7 @@ import {
 
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
 
-export default function controls(LajiMap) {
-return class LajiMapWithControls extends LajiMap {
-
+export default LajiMap => class LajiMapWithControls extends LajiMap {
 	constructor(props) {
 		super(props);
 		this._initControls();
@@ -38,18 +36,11 @@ return class LajiMapWithControls extends LajiMap {
 		provide(this, "controlsConstructed");
 	}
 
-	setOption(option, value) {
-		super.setOption(option, value);
-		if (option === "controlSettings") {
-			this.setControlSettings(value);
-		}
-	}
-
 	@dependsOn("controls")
-	_setLang(lang) {
+	_setLang() {
 		if (!depsProvided(this, "setLang", arguments)) return;
 
-		// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
+	// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 		const drawLocalizations = L.drawLocal.draw;
 
 		const join = (...params) => this._joinTranslations(...params);
@@ -152,15 +143,15 @@ return class LajiMapWithControls extends LajiMap {
 
 		if (isProvided(this, "lineTransect")) {
 			this._addControl("lineTransect", this._getLineTransectControl());
-		// 	this._addControl("coordinateInput", this._getCoordinateInputControl());
-		// 	this._addControl("drawCopy", this._getDrawCopyControl());
-		// 	this._addControl("drawClear", this._getDrawClearControl());
+	// 	this._addControl("coordinateInput", this._getCoordinateInputControl());
+	// 	this._addControl("drawCopy", this._getDrawCopyControl());
+	// 	this._addControl("drawClear", this._getDrawClearControl());
 		}
 
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
 		this._addControl("coordinates", this._getCoordinatesControl());
 
-		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
+	// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
 		function removeHref(className) {
 			const elems = document.getElementsByClassName(className);
@@ -225,7 +216,7 @@ return class LajiMapWithControls extends LajiMap {
 			this.controlSettings[setting] = newSetting;
 		}
 
-		provide(this, "controlSettings")
+		provide(this, "controlSettings");
 	}
 
 	_controlIsAllowed(name) {
@@ -234,15 +225,15 @@ return class LajiMapWithControls extends LajiMap {
 			const control = splitted[0];
 			const subControl = splitted[1];
 			return (
-				this.controlSettings[control] === true ||
-				(this.controlSettings[control].constructor === Object && this.controlSettings[control][subControl])
+			this.controlSettings[control] === true ||
+			(this.controlSettings[control].constructor === Object && this.controlSettings[control][subControl])
 			);
 		}
 
 		const dependencies = {
 			coordinateInput: [
 				() => this.draw,
-				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false}))
+				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
 			],
 			drawCopy: [
 				() => this.draw,
@@ -259,10 +250,10 @@ return class LajiMapWithControls extends LajiMap {
 		function controlIsOk(controlName) {
 			const controlItem = controlSettings[controlName];
 			return (
-				controlItem &&
-				(dependencies[controlName] || []).every(dependency => {
-					return (typeof dependency === "function") ? dependency() : controlIsOk(dependency)}) &&
-				(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
+			controlItem &&
+			(dependencies[controlName] || []).every(dependency => {
+				return (typeof dependency === "function") ? dependency() : controlIsOk(dependency);}) &&
+			(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
 			);
 		}
 
@@ -291,7 +282,7 @@ return class LajiMapWithControls extends LajiMap {
 
 	_createControlItem(that, container, glyphName, title, fn) {
 		const elem = this._createControlButton(that, container, fn);
-		const glyph = L.DomUtil.create("span", glyphName, elem);
+		L.DomUtil.create("span", glyphName, elem);
 		elem.title = title;
 
 		return elem;
@@ -329,7 +320,7 @@ return class LajiMapWithControls extends LajiMap {
 
 		this.getFeatureTypes().forEach(type => {
 			if (this.controlSettings.draw === false ||
-				(this.controlSettings.draw.constructor === Object && this.controlSettings.draw[type] !== true)) {
+			(this.controlSettings.draw.constructor === Object && this.controlSettings.draw[type] !== true)) {
 				drawOptions.draw[type] = false;
 			}
 		});
@@ -344,7 +335,7 @@ return class LajiMapWithControls extends LajiMap {
 				position: "topleft"
 			},
 
-			onAdd: function(map) {
+			onAdd: function() {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
 
 				//TODO disabled until implemented.
@@ -374,7 +365,7 @@ return class LajiMapWithControls extends LajiMap {
 			options: {
 				position: "topright"
 			},
-			onAdd: function(map) {
+			onAdd: function() {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
 				const {iconCls, text, callback} = that.controlItems.coordinateInput;
 				that._createControlItem(this, container, iconCls, text, callback);
@@ -393,10 +384,10 @@ return class LajiMapWithControls extends LajiMap {
 				position: "topright"
 			},
 
-			onAdd: function(map) {
+			onAdd: function() {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
 				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
-					that.translations.CopyDrawnFeatures, (...params) => that.openDrawCopyDialog(...params));
+				that.translations.CopyDrawnFeatures, (...params) => that.openDrawCopyDialog(...params));
 				return container;
 			}
 		});
@@ -412,15 +403,15 @@ return class LajiMapWithControls extends LajiMap {
 				position: "topright"
 			},
 
-			onAdd: function(map) {
+			onAdd: function() {
 				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
 				that._createControlItem(
-					this,
-					container,
-					"glyphicon glyphicon-trash",
-					that.translations.ClearMap,
-					(...params) => that.clearDrawData(...params)
-				);
+				this,
+				container,
+				"glyphicon glyphicon-trash",
+				that.translations.ClearMap,
+				(...params) => that.clearDrawData(...params)
+			);
 				return container;
 			}
 		});
@@ -436,20 +427,20 @@ return class LajiMapWithControls extends LajiMap {
 				position: "bottomleft"
 			},
 
-			onAdd: function(map) {
+			onAdd: function() {
 				const container = L.DomUtil.create(
-					"div",
-					"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
-				);
+				"div",
+				"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
+			);
 
 				const table = L.DomUtil.create("table", undefined, container);
 				let visible = false;
 				container.style.display = "none";
 
 				const coordinateTypes = [
-					{name: "WGS84"},
-					{name: "YKJ"},
-					// {name: "ETRS"} removed due to error in laji.fi ('EPSG:3067' proj4js unable to convert to euref in there)
+				{name: "WGS84"},
+				{name: "YKJ"},
+				// {name: "ETRS"} removed due to error in laji.fi ('EPSG:3067' proj4js unable to convert to euref in there)
 				];
 
 				coordinateTypes.forEach(coordinateType => {
@@ -467,12 +458,12 @@ return class LajiMapWithControls extends LajiMap {
 					const {lat, lng} = latlng;
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
 					const ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
-					// const euref = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+				// const euref = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
 
 					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
 						let coords = wgs84;
 						if (name === "YKJ") coords = ykj;
-						// else if (name === "ETRS") coords = euref;
+					// else if (name === "ETRS") coords = euref;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
 						coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
 						coordsCell.className = "monospace";
@@ -480,7 +471,7 @@ return class LajiMapWithControls extends LajiMap {
 				}).on("mouseout", () => {
 					container.style.display = "none";
 					visible = false;
-				})
+				});
 
 				return container;
 			}
@@ -559,7 +550,7 @@ return class LajiMapWithControls extends LajiMap {
 				position: "topright"
 			},
 
-			onAdd: function(map) {
+			onAdd: function() {
 				this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
 				this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
 				this.cancelHandlers = {};
@@ -640,14 +631,14 @@ return class LajiMapWithControls extends LajiMap {
 			if (e) e.preventDefault();
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
-			// document.removeEventListener("keydown", onEscListener);
+		// document.removeEventListener("keydown", onEscListener);
 			that._removeKeyListener(ESC, close);
 			that.container.removeChild(_container);
 			if (onClose) onClose();
 		}
 
 		this.blockerElem.addEventListener("click", close);
-		// document.addEventListener("keydown", onEscListener);
+	// document.addEventListener("keydown", onEscListener);
 		this._addKeyListener(ESC, close);
 
 		this.blockerElem.style.display = "block";
@@ -676,7 +667,7 @@ return class LajiMapWithControls extends LajiMap {
 			const col = document.createElement("div");
 			col.className = "col-xs-12";
 
-			[label, input].forEach(elem => {col.appendChild(elem)});
+			[label, input].forEach(elem => {col.appendChild(elem);});
 			row.appendChild(col);
 
 			return row;
@@ -686,10 +677,10 @@ return class LajiMapWithControls extends LajiMap {
 			let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
 
 			if (charCode >= 48 && charCode <= 57) { // is a number
-				// The input cursor isn't necessary at the EOL, but this validation works regardless.
+			// The input cursor isn't necessary at the EOL, but this validation works regardless.
 				inputValidate(e, input.value + String.fromCharCode(charCode));
 			}
-		}}
+		};}
 
 		const ykjAllowed = that.draw.rectangle;
 		const wgs84Allowed = that.draw.marker;
@@ -703,8 +694,8 @@ return class LajiMapWithControls extends LajiMap {
 		const ykjRegexp = /^[0-9]{3,7}$/;
 		const ykjFormatter = value => (value.length < 7 ? value + "0".repeat(7 - value.length) : value);
 		const ykjValidator = [
-			{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
-			{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
+		{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
+		{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
 		];
 
 		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
@@ -722,8 +713,8 @@ return class LajiMapWithControls extends LajiMap {
 				const validator = latLngValidator[i];
 				const formatted = validator.formatter ? validator.formatter(value) : value;
 				return (
-					value !== "" && value.match(validator.regexp) &&
-					formatted >= validator.range[0] && formatted <= validator.range[1]
+				value !== "" && value.match(validator.regexp) &&
+				formatted >= validator.range[0] && formatted <= validator.range[1]
 				);
 			});
 		}
@@ -735,7 +726,6 @@ return class LajiMapWithControls extends LajiMap {
 			return validators.some(validator => validateLatLng(inputValues, validator));
 		}
 
-		const {translations} = this;
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates";
 
@@ -783,7 +773,7 @@ return class LajiMapWithControls extends LajiMap {
 				} else {
 					submitButton.setAttribute("disabled", "disabled");
 				}
-			}
+			};
 		});
 
 		function toYKJFormat(coords) {
@@ -822,20 +812,20 @@ return class LajiMapWithControls extends LajiMap {
 				const lonStart = toYKJFormat(latlng[1]);
 				const lonEnd = toYKJFormat(latlng[1] + 1);
 
-				geometry.type = 'Polygon';
+				geometry.type = "Polygon";
 				geometry.coordinates = [[
-					[latStart, lonStart],
-					[latStart, lonEnd],
-					[latEnd, lonEnd],
-					[latEnd, lonStart],
-					[latStart, lonStart]
+				[latStart, lonStart],
+				[latStart, lonEnd],
+				[latEnd, lonEnd],
+				[latEnd, lonStart],
+				[latStart, lonStart]
 				].map(convert)];
 			}
 
 			const layer = this._featureToLayer(this.draw.data.getFeatureStyle)(feature);
 			const isMarker = layer instanceof L.Marker;
 
-			this._onAdd(layer, latInput.value + ':' + lngInput.value);
+			this._onAdd(layer, latInput.value + ":" + lngInput.value);
 			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
 			this.map.setView(center, this.map.zoom, {animate: false});
 			if (isMarker) {
@@ -855,7 +845,7 @@ return class LajiMapWithControls extends LajiMap {
 		this._showDialog(container, () => {
 			translateHooks.forEach(hook => {
 				that.removeTranslationHook(hook);
-			})
+			});
 		});
 
 		latInput.focus();
@@ -887,9 +877,9 @@ return class LajiMapWithControls extends LajiMap {
 		tabs.className = "nav nav-tabs";
 
 		[
-			{name: "WGS84", proj: "WGS84"},
-			{name: "YKJ", proj: "EPSG:2393"}
-			//{name: "ETRS", proj: "EPSG:3067"}
+		{name: "WGS84", proj: "WGS84"},
+		{name: "YKJ", proj: "EPSG:2393"}
+		//{name: "ETRS", proj: "EPSG:3067"}
 		].map(({name, proj}) => {
 			const tab = document.createElement("li");
 			const text = document.createElement("a");
@@ -906,8 +896,8 @@ return class LajiMapWithControls extends LajiMap {
 
 			tab.addEventListener("click", () => {
 				const reprojected = isWGS84 ?
-					originalGeoJSON :
-					convertGeoJSON(originalGeoJSON, "WGS84", proj);
+				originalGeoJSON :
+				convertGeoJSON(originalGeoJSON, "WGS84", proj);
 
 				if (!isWGS84) {
 					reprojected.crs = {
@@ -915,7 +905,7 @@ return class LajiMapWithControls extends LajiMap {
 						properties: {
 							name: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
 						}
-					}
+					};
 				}
 
 				const {scrollTop} = input;
@@ -975,7 +965,7 @@ return class LajiMapWithControls extends LajiMap {
 			]
 		].forEach(controlGroup => {
 			if (controlGroup.some(control => this._controlIsAllowed(control.name))
-			) {
+		) {
 				this.map.contextmenu.addItem("-");
 			}
 			controlGroup.forEach(control => {
@@ -983,6 +973,4 @@ return class LajiMapWithControls extends LajiMap {
 			});
 		});
 	}
-
-}
-}
+};

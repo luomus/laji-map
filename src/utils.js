@@ -1,4 +1,4 @@
-import proj4 from "proj4"
+import proj4 from "proj4";
 
 export function reverseCoordinate(c) {
 	return c.slice(0).reverse();

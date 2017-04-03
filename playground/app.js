@@ -57,7 +57,7 @@ class App {
 						}
 					]
 				},
-				getPopup: (idx, callback) => {
+				getPopup: (idx) => {
 					return `gray ${idx}`;
 				},
 				cluster: true
@@ -87,9 +87,9 @@ class App {
 						opacity: 1,
 						fillOpacity: 1,
 						color: "#0f0"
-					}
+					};
 				},
-				getPopup: (idx, callback) => {
+				getPopup: (idx) => {
 					return `green ${idx}`;
 				}
 			}
@@ -117,7 +117,7 @@ class App {
 					}
 				],
 			},
-			getPopup: (idx, callback) => {
+			getPopup: (idx) => {
 				return `${idx}`;
 			},
 			getTooltip: (idx, callback) => {
@@ -128,7 +128,7 @@ class App {
 				permanent: true
 			},
 			cluster: true,
-		}
+		};
 
 		this.activeIdx = 0;
 
@@ -157,7 +157,7 @@ class App {
 
 		const map = new LajiMap(options);
 		this.map = map;
-		const map2 = new LajiMap({...options,
+		new LajiMap({...options,
 			rootElem: document.getElementById("root2"),
 			lang: "en",
 			lineTransect: undefined,
@@ -174,15 +174,15 @@ class App {
 
 	onLTChange = (events) => {
 		events.forEach(e => {
-			console.log(e);
+			console.log(e); // eslint-disable-line
 			switch (e.type) {
-				case "create":
-					break;
-				case "delete":
-					break;
-				case "edit":
-					break;
-				case "active":
+			case "create":
+				break;
+			case "delete":
+				break;
+			case "edit":
+				break;
+			case "active":
 			}
 		});
 	}
@@ -190,21 +190,21 @@ class App {
 	onMapChange = (events) => {
 		let { drawData } = this;
 		events.forEach(e => {
-			console.log(e);
+			console.log(e); // eslint-disable-line
 			switch (e.type) {
-				case "create":
-					drawData.featureCollection.features.push(e.feature);
-					break;
-				case "delete":
-					drawData.featureCollection.features = drawData.featureCollection.features.filter((item, i) => !e.idxs.includes(i));
-					break;
-				case "edit":
-					for (let idx in e.featureCollection) {
-						this.drawData.featureCollection.features[idx] = e.features[idx];
-					}
-					break;
-				case "active":
-					this.activeIdx = e.idx;
+			case "create":
+				drawData.featureCollection.features.push(e.feature);
+				break;
+			case "delete":
+				drawData.featureCollection.features = drawData.featureCollection.features.filter((item, i) => !e.idxs.includes(i));
+				break;
+			case "edit":
+				for (let idx in e.featureCollection) {
+					this.drawData.featureCollection.features[idx] = e.features[idx];
+				}
+				break;
+			case "active":
+				this.activeIdx = e.idx;
 			}
 		});
 	}

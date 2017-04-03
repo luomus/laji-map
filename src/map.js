@@ -1,13 +1,13 @@
 import "leaflet";
 import "leaflet-draw";
 import "proj4leaflet";
-import "leaflet-contextmenu";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import proj4 from "proj4"
 import HasControls from "./controls";
+import HasLineTransect from "./line-transect";
 import {
 	INCOMPLETE_COLOR,
 	NORMAL_COLOR,
@@ -19,7 +19,8 @@ import {
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
 	EPSG2393String,
-	MAP
+	MAP,
+	ESC
 } from "./globals";
 
 import translations from "./translations.js";
@@ -116,6 +117,7 @@ export function isProvided(target, prov) {
 
 
 @HasControls
+@HasLineTransect
 export default class LajiMap {
 	constructor(props) {
 		this._constructDictionary();
@@ -164,6 +166,17 @@ export default class LajiMap {
 		this.rootElem.appendChild(this.container);
 	}
 
+	getMMLProj() {
+		const mmlProj = L.TileLayer.MML.get3067Proj();
+
+		// Scale controller won't work without this hack.
+		// Fixes also circle projection.
+		mmlProj.distance =  L.CRS.Earth.distance;
+		mmlProj.R = 6378137;
+
+		return mmlProj;
+	}
+
 	_initializeMap() {
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
@@ -172,38 +185,20 @@ export default class LajiMap {
 		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
 			+ "laji-map";
 
-		this.finnishMapElem = document.createElement("div");
-		this.foreignMapElem = document.createElement("div");
+		this.mapElem = document.createElement("div");
 		this.blockerElem = document.createElement("div");
 		this.blockerElem.className = "blocker";
 
-		[this.finnishMapElem, this.foreignMapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
+		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem)});
 
-		const mmlProj = L.TileLayer.MML.get3067Proj();
-
-		// Scale controller won't work without this hack.
-		// Fixes also circle projection.
-		mmlProj.distance =  L.CRS.Earth.distance;
-		mmlProj.R = 6378137;
-
-		const mapOptions = {
+		this.map = L.map(this.mapElem, {
 			contextmenu: true,
 			contextmenuItems: [],
 			zoomControl: false,
 			noWrap: true,
 			continuousWorld: false,
-		}
-
-		this.finnishMap = L.map(this.finnishMapElem, {
-			...mapOptions,
-			crs: mmlProj,
-			maxBounds: [[40, 0], [60, 120]],
+			doubleClickZoom: false
 		});
-		this.foreignMap = L.map(this.foreignMapElem, {
-			...mapOptions,
-			maxBounds: [[89.45016124669523, 180], [-87.71179927260242, -180]]
-		});
-		this.maps = [this.finnishMap, this.foreignMap];
 
 		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
 			this[tileLayerName] = L.tileLayer.mml_wmts({
@@ -211,40 +206,45 @@ export default class LajiMap {
 			});
 		});
 
-		this.openStreetMap = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-		this.googleSatellite = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-			subdomains:['mt0','mt1','mt2','mt3']
+		this.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+		this.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+			subdomains:["mt0","mt1","mt2","mt3"]
 		});
 
 		this.overlays = {
 			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-				layers: 'test:eliomaakunnat',
-				format: 'image/png',
+				layers: "test:eliomaakunnat",
+				format: "image/png",
 				transparent: true,
-				version: '1.3.0'
+				version: "1.3.0"
 			}),
 			metsakasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-				layers: 'Metsakasvillisuusvyohykkeet',
-				format: 'image/png',
+				layers: "Metsakasvillisuusvyohykkeet",
+				format: "image/png",
 				transparent: true,
-				version: '1.3.0'
+				version: "1.3.0"
 			}).setOpacity(0.5),
 			suokasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-				layers: 'Suokasvillisuusvyohykkeet',
-				format: 'image/png',
+				layers: "Suokasvillisuusvyohykkeet",
+				format: "image/png",
 				transparent: true,
-				version: '1.3.0'
+				version: "1.3.0"
 			}).setOpacity(0.5),
-			peninkulmaGrid:
-				L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
-					layers: `YKJ:ykj10km_grid`,
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
-				})
+			uhanalaisuusarviointivyohykkeet: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
+				layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
+				format: "image/png",
+				transparent: true,
+				version: "1.1.0"
+			}),
+			peninkulmaGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
+				layers: `YKJ:ykj10km_grid`,
+				format: "image/png",
+				transparent: true,
+				version: "1.1.0",
+			})
 		};
 
-		this._initializeView();
+		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 		if (this.locate) {
 			this.initializeViewAfterLocateFail = true;
@@ -253,11 +253,11 @@ export default class LajiMap {
 
 		this._initializeMapEvents();
 
-		provide(this, "maps");
+		provide(this, "map");
 	}
 
 
-	@dependsOn("map", "center", "zoom")
+	@dependsOn("map", "tileLayer", "center", "zoom")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
 		this.map.setView(
@@ -267,28 +267,82 @@ export default class LajiMap {
 		);
 	}
 
-	@dependsOn("maps")
+	@dependsOn("map")
 	_initializeMapEvents() {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
-		this.maps.forEach(map => {
-			map.addEventListener({
-				click: e => this._interceptClick(),
-				dblclick: e => {
-					if (this.editIdx !== undefined || this.drawing) return;
-					if ((typeof this.draw === "object" && this.draw.marker !== false)
-					) {
-						this._onAdd(new L.marker(e.latlng));
-					}
-				},
-				"draw:created": ({ layer }) => this._onAdd(layer),
-				"draw:drawstart": () => { this.drawing = true },
-				"draw:drawstop": () => { this.drawing = false },
-				locationfound: (...params) => this._onLocationFound(...params),
-				locationerror: (...params) => this._onLocationNotFound(...params),
-				"contextmenu.hide": () => { this.contextMenuHideTimestamp = Date.now() },
-			});
+		this.map.addEventListener({
+			click: e => this._interceptClick(),
+			dblclick: e => {
+				if (this.editIdx !== undefined || this.drawing) return;
+				if ((typeof this.draw === "object" && this.draw.marker !== false)
+				) {
+					this._onAdd(new L.marker(e.latlng));
+				}
+			},
+			"draw:created": ({ layer }) => this._onAdd(layer),
+			"draw:drawstart": () => { this.drawing = true },
+			"draw:drawstop": () => { this.drawing = false },
+			locationfound: (...params) => this._onLocationFound(...params),
+			locationerror: (...params) => this._onLocationNotFound(...params),
+			"contextmenu.show": this._interceptClick,
 		});
+
+		this._addDocumentEventListener("click", e => {
+			if (e.target !== this.rootElem && !this.rootElem.contains(e.target)) {
+				this._interceptClick();
+			}
+		});
+
+		document.addEventListener("keydown", e => this.keyHandler(e));
+	}
+
+	keyHandler(e) {
+		e = e || window.event;
+		var isEscape = false;
+		if ("key" in e) {
+			isEscape = (e.key == "Escape" || e.key == "Esc");
+		} else {
+			isEscape = (e.keyCode == 27);
+		}
+		if (isEscape) {
+			this._triggerKeyEvent(ESC, e);
+			// close(e);
+		}
+	}
+
+
+	_addDocumentEventListener(type, fn) {
+		if (!this._documentEvents) this._documentEvents = {};
+		this._documentEvents[type] = fn;
+		document.addEventListener(type, fn);
+	}
+
+	_addKeyListener(key, fn, prioritize) {
+		if (!this._keyListeners) this._keyListeners = {};
+		if (!this._keyListeners[key]) this._keyListeners[key] = [];
+		if (prioritize) {
+			this._keyListeners[key] = [fn, ...this._keyListeners[key]];
+		} else {
+			 this._keyListeners[key].push(fn);
+		}
+	}
+
+	_removeKeyListener(key, fn) {
+		if (this._keyListeners && this._keyListeners[key]) {
+			const index = this._keyListeners[key].indexOf(fn);
+			if (index >= 0) {
+				this._keyListeners[key].splice(index, 1);
+			}
+		}
+	}
+
+	_triggerKeyEvent(key, e) {
+		if (this._keyListeners && this._keyListeners[key])  {
+			for (let fn of this._keyListeners[key]) {
+				if (fn(e) === true) break;
+			}
+		}
 	}
 
 	_getDefaultCRSLayers() {
@@ -299,110 +353,62 @@ export default class LajiMap {
 		return [this.maastokartta, this.taustakartta];
 	}
 
-	swapMap() {
-		let mapElem = this.finnishMapElem;
-		let otherMapElem = this.foreignMapElem;
-		let otherMap = this.foreignMap;
-
-		if (this.map === this.foreignMap) {
-			mapElem = this.foreignMapElem;
-			otherMapElem = this.finnishMapElem;
-			otherMap = this.finnishMap;
-		}
-		mapElem.style.display = "block";
-		otherMapElem.style.display = "none";
-
-		const swapLayer = layer => {
-			if (layer) {
-				if (otherMap.hasLayer(layer)) otherMap.removeLayer(layer);
-				this.map.addLayer(layer);
-			}
-		}
-
-		if (!this.userLocationLayer) {
-			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
-		} else  {
-			swapLayer(this.userLocationLayer);
-		}
-
-		(this.data || []).forEach((item, i) => {
-			if (item.clusterLayer) swapLayer(item.clusterLayer);
-			else if (this.dataLayerGroups && this.dataLayerGroups[i]) swapLayer(this.dataLayerGroups[i]);
-		});
-
-		if (this.clusterDrawLayer) swapLayer(this.clusterDrawLayer);
-		else if (this.drawLayerGroup) swapLayer(this.drawLayerGroup);
-
-		this.recluster();
-
-		this.map.invalidateSize();
-	}
-
-	@dependsOn("maps")
+	@dependsOn("map")
 	setTileLayerByName(name) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
 		this.tileLayerName = name;
 		this.setTileLayer(this[this.tileLayerName]);
-		provide(this, "tileLayerName");
 	}
 
-	@dependsOn("maps")
+	@dependsOn("map", "center", "zoom")
 	setTileLayer(layer) {
 		if (!depsProvided(this, "setTileLayer", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
-		if (!this.map) {
-			this.tileLayer = layer;
-			this.map = mmlCRSLayers.includes(this.tileLayer) ? this.finnishMap : this.foreignMap;
-			this.swapMap();
-			this.map.addLayer(this.tileLayer);
+		const center = this.map.getCenter();
+		this.map.options.crs = (defaultCRSLayers.includes(layer)) ? L.CRS.EPSG3857 : this.getMMLProj();
 
-			provide(this, "map");
+		this.map.setView(center);
 
-			return;
-		}
-
-		let mapChanged = false;
-		let otherMap = undefined;
+		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
-			zoom = zoom - 3;
-			mapChanged = true;
-			this.map = this.finnishMap;
-			otherMap = this.foreignMap;
+			if (isProvided(this, "tileLayer")) zoom = zoom - 3;
+			projectionChanged = true;
 		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom + 3;
-			mapChanged = true;
-			this.map = this.foreignMap;
-			otherMap = this.finnishMap;
+			projectionChanged = true;
 		}
 
-		if (!mapChanged) {
-			this.map.removeLayer(this.tileLayer);
-		}
+		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+		this.map.setView(center, zoom, {animate: false});
+
+		if (this.tileLayer) this.map.removeLayer(this.tileLayer);
+
 		this.tileLayer = layer;
 
 		this.map.addLayer(this.tileLayer);
-		if (mapChanged) {
-			this.map.setView(otherMap.getCenter(), zoom, {animate: false});
+
+		if (projectionChanged) {
 			for (let overlayName in this.overlays) {
 				const overlay = this.overlays[overlayName];
 				if (overlay._map) {
-					overlay._map.removeLayer(overlay);
+					this.map.removeLayer(overlay);
 					this.map.addLayer(overlay);
 				}
 			}
-			this.swapMap();
 		}
+
+		provide(this, "tileLayer");
 	}
 
 	getTileLayers() {
 		const tileLayers = {};
 		[TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
 			tileLayers[tileLayerName] = this[tileLayerName];
-		})
+		});
 		return tileLayers;
 	}
 
@@ -434,10 +440,12 @@ export default class LajiMap {
 	}
 
 	destroy() {
-		this.maps.forEach(map => {
-			map.off();
-			map = null;
-		})
+			this.map.remove();
+			this.map = null;
+
+			if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
+				document.removeEventListener(type, this._documentEvents[type]);
+			});
 	}
 
 	_constructDictionary() {
@@ -543,7 +551,9 @@ export default class LajiMap {
 			item.featureCollection,
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, idx),
-				style: feature => {return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature})},
+				style: feature => {
+					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature});
+				},
 				onEachFeature: (feature, layer) => {
 					this._initializePopup(item, layer, feature.properties.lajiMapIdx);
 					this._initializeTooltip(item, layer, feature.properties.lajiMapIdx);
@@ -656,7 +666,7 @@ export default class LajiMap {
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
 			this.clusterDrawLayer = L.markerClusterGroup(
-				{iconCreateFunction: this._getClusterIcon(this.draw.data, !!"isDrawData"),
+				{iconCreateFunction: this._getClusterIcon(this.draw.data),
 					...data.cluster})
 				.addLayer(this.drawLayerGroup);
 			drawLayerForMap = this.clusterDrawLayer;
@@ -685,7 +695,7 @@ export default class LajiMap {
 		});
 	}
 
-	_getClusterIcon(data, isDrawData) {
+	_getClusterIcon(data) {
 		return (cluster) => {
 			var childCount = cluster.getChildCount();
 
@@ -896,7 +906,10 @@ export default class LajiMap {
 		return layer;
 	}
 
+	@dependsOn("translations")
 	_updateContextMenuForLayer(layer, idx) {
+		if (!depsProvided(this, "_updateContextMenuForLayer", arguments)) return;
+
 		const { translations } = this;
 		layer.unbindContextMenu();
 
@@ -905,12 +918,12 @@ export default class LajiMap {
 		if (this.draw && this.draw.editable) {
 			contextmenuItems = [
 				{
-					text: translations ? translations.EditFeature : "",
+					text: translations.EditFeature,
 					callback: () => this._setEditable(idx),
 					iconCls: "glyphicon glyphicon-pencil"
 				},
 				{
-					text: translations ? translations.DeleteFeature : "",
+					text: translations.DeleteFeature,
 					callback: () => this._onDelete(this.idxsToIds[idx]),
 					iconCls: "glyphicon glyphicon-trash"
 				}
@@ -965,12 +978,12 @@ export default class LajiMap {
 		return this.drawLayerGroup._layers ? this.drawLayerGroup._layers[id] : undefined;
 	}
 
-	_triggerEvent(e) {
+	_triggerEvent(e, handler) {
 		if (!Array.isArray(e)) e = [e];
-		if (this.draw.onChange) this.draw.onChange(e);
+		if (handler) handler(e);
 	}
 
-	_onAdd(layer) {
+	_onAdd(layer, coordinateVerbatim) {
 		if (layer instanceof L.Marker) layer.setIcon(this._createIcon());
 
 		const {featureCollection: {features}} = this.draw.data;
@@ -986,6 +999,9 @@ export default class LajiMap {
 			this.clusterDrawLayer.clearLayers();
 			this.clusterDrawLayer.addLayer(this.drawLayerGroup);
 		}
+		if (coordinateVerbatim && feature.geometry) {
+      feature.geometry.coordinateVerbatim = coordinateVerbatim;
+    }
 		features.push(feature);
 
 		const event = [
@@ -996,7 +1012,7 @@ export default class LajiMap {
 			this._getOnActiveChangeEvent(features.length - 1)
 		];
 
-		this._triggerEvent(event);
+		this._triggerEvent(event, this.draw.onChange);
 	};
 
 	_onEdit(data) {
@@ -1011,7 +1027,7 @@ export default class LajiMap {
 		this._triggerEvent({
 			type: "edit",
 			features: eventData
-		});
+		}, this.draw.onChange);
 	}
 
 	_onDelete(deleteIds) {
@@ -1079,10 +1095,10 @@ export default class LajiMap {
 
 		if (changeActive) event.push(this._getOnActiveChangeEvent(this.idsToIdxs[newActiveId]));
 
-		this._triggerEvent(event);
+		this._triggerEvent(event, this.draw.onChange);
 	}
 
-	_getOnActiveChangeEvent(idx) {
+	_getOnActiveChangeEvent(idx,) {
 		this.setActive(idx);
 		return {
 			type: "active",
@@ -1091,7 +1107,7 @@ export default class LajiMap {
 	}
 
 	_onActiveChange(idx) {
-		if (this.draw.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(idx));
+		if (this.draw.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(idx), this.draw.onChange);
 	}
 
 	focusToLayer(idx) {
@@ -1147,12 +1163,6 @@ export default class LajiMap {
 	}
 
 	_interceptClick() {
-		if (this.contextMenuHideTimestamp !== undefined) {
-			const timestamp = this.contextMenuHideTimestamp;
-			this.contextMenuHideTimestamp = undefined;
-			if (Date.now() - timestamp < 200) return true;
-		}
-
 		if (this.drawing) return true;
 		if (this.editIdx !== undefined) {
 			this._commitEdit();
@@ -1292,16 +1302,22 @@ export default class LajiMap {
 		});
 	}
 
-	addTranslationHook(elem, attr, translationKey) {
+	addTranslationHook(elemOrFn, translationKey, attr = "innerHTML") {
 		const that = this;
 
 		function translate() {
-			const translation = (typeof translationKey === "function") ? translationKey() : that.translations[translationKey];
-
-			if (typeof elem[attr] === "function") {
-				elem[attr](translation);
+			if (typeof elemOrFn === "function") {
+				const fn = elemOrFn;
+				fn();
 			} else {
-				elem[attr] = translation;
+				const elem = elemOrFn;
+				const translation = (typeof translationKey === "function") ? translationKey() : that.translations[translationKey];
+
+				if (typeof elem[attr] === "function") {
+					elem[attr](translation);
+				} else {
+					elem[attr] = translation;
+				}
 			}
 		}
 
@@ -1317,11 +1333,6 @@ export default class LajiMap {
 		}
 	}
 
-	convert(latlng, from, to) {
-		const converted = proj4(from, to, latlng.map(c => +c).slice(0).reverse());
-		return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
-	}
-
 	triggerDrawing(featureType) {
 		const options = this._getDrawingDraftStyle(featureType.toLowerCase());
 		const optionsToPass = featureType.toLowerCase() !== "marker" ? {
@@ -1329,7 +1340,9 @@ export default class LajiMap {
 		} : {
 			icon: this._createIcon(options)
 		};
-		new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass).enable();
+		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass);
+		layer.enable();
+		return layer;
 	}
 
 	getFeatureTypes() {

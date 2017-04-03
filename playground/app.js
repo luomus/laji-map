@@ -1,4 +1,5 @@
 import LajiMap from "../src/map";
+import lineTransects from "./data.json";
 
 import "../src/styles.js";
 class App {
@@ -134,29 +135,55 @@ class App {
 		const options = {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
-			draw: {polyline: false, marker: false, rectangle: false},
+			draw: {data: this.drawData, marker: false},
+			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
 			lang: "fi",
 			popupOnHover: true,
-			zoom: 7,
-			center: [60.40403173483798, 22.104264017028992],
+			center: {
+				"lat": 60.3499057749654,
+				"lng": 21.160612106323246
+			},
+			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				draw: true,
 				drawCopy: true,
 				drawClear: true,
-				coordinates: true,
-				coordinatesInput: true
+				coordinates: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
 		};
 
 		const map = new LajiMap(options);
-		const map2 = new LajiMap({...options, rootElem: document.getElementById("root2")});
+		this.map = map;
+		const map2 = new LajiMap({...options,
+			rootElem: document.getElementById("root2"),
+			lang: "en",
+			lineTransect: undefined,
+			center: [60.40403173483798, 22.104264017028992],
+			zoom: 7,
+			tileLayerName: "taustakartta",
+		});
+
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));
+		});
+	}
+
+	onLTChange = (events) => {
+		events.forEach(e => {
+			console.log(e);
+			switch (e.type) {
+				case "create":
+					break;
+				case "delete":
+					break;
+				case "edit":
+					break;
+				case "active":
+			}
 		});
 	}
 
@@ -184,5 +211,5 @@ class App {
 }
 
 const app = new App();
-// if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
+if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
 

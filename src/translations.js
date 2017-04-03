@@ -62,6 +62,11 @@
 	point: {
 		fi: "Piste",
 		en: "Point",
+		sv: "punkten"
+	},
+	aPoint: {
+		fi: "Piste",
+		en: "A point",
 		sv: "En punkt"
 	},
 	editFeature: {
@@ -282,7 +287,7 @@
 	copyDrawnFeatures: {
 		fi: "Kopioi piirrettyjen kuvioiden koordinaatit",
 		en: "Copy the coordinates of the drawn features",
-		sv: "Kopiera koordinaterna för de dragna funktioner"
+		sv: "Kopiera koordinaterna för de dragna figurerna"
 	},
 	clearMap: {
 		fi: "Tyhjennä kartta",
@@ -293,5 +298,60 @@
 		fi: "Peninkulmat",
 		en: "Scandinavian miles",
 		sv: "Mil"
+	},
+	uhanalaisuusarviointivyohykkeet: {
+		fi: "Uhanalaisuusarviointivyöhykkeet",
+		en: "Threatened species evaluation zones",
+		sv: "Hotbedömningszoner"
+	},
+	firstOrLastPoint: {
+		fi: "Haluatko siirtää ensimmäistä vai viimeistä pistettä?",
+		en: "Do you want to move the first or the last point?",
+		sv: "Vill du flytta den första eller den sista punkten?"
+	},
+	firstPartitive: {
+		fi: "Ensimmäistä",
+		en: "The first",
+		sv: "Den första"
+	},
+	lastPartitive: {
+		fi: "Viimeistä",
+		en: "The last",
+		sv: "Den sista"
+	},
+	splitLine: {
+		fi: "Pätkäise linja",
+		en: "Split line transect",
+		sv: "Dela line transekt"
+	},
+	deleteLineSegment: {
+		fi: "Poista linjan pätkä",
+		en: "Delete a segment of the line transect",
+		sv: "Ta bort ett segment av linjen transekt"
+	},
+	splitLineTooltip: {
+		fi: "Klikkaa karttaa pätkäistäksesi linjan",
+		en: "Click the map to split the line",
+		sv: "Klicka på kartan för att dela linjen"
+	},
+	deleteLineSegmentTooltip: {
+		fi: "Klikkaa pätkää jonka haluat poistaa",
+		en: "Click the segment that you want to delete",
+		sv: "Klicka det segment som du vill ta bort"
+	},
+	deleteLineSegmentTooltip: {
+		fi: "Klikkaa pätkää jonka haluat poistaa",
+		en: "Click the segment that you want to delete",
+		sv: "Klicka det segment som du vill ta bort"
+	},
+	fromTheBeginningOfTheLine: {
+		fi: "linjan alusta",
+		en: "from the beginning of the line",
+		sv: "Från början av linjen"
+	},
+	overlappingPoints: {
+		fi: "Päällekkäisiä pistettä",
+		en: "Overlapping points",
+		sv: "Överlappande punkter"
 	}
 }

@@ -653,8 +653,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const events = [
 			{type: "delete", feature, idx: i},
 		];
-		if (i - 1 >= 0) {
-			events.push(this._getOnActiveSegmentChangeEvent(i - 1));
+		if (this._activeLTIdx !== undefined && i - 1 <= this._activeLTIdx) {
+			events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx - 1));
 		}
 
 		this._triggerEvent(events, this._onLTChange);

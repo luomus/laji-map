@@ -48,7 +48,8 @@ module.exports = {
 			}
 		],
 		noParse: [
-			/node_modules\/proj4leaflet\/lib\/proj4-compressed\.js/
+			/node_modules\/proj4leaflet\/lib\/proj4-compressed\.js/,
+			/node_modules\/proj4\/dist\/proj4\.js/
 		]
 	}
 };

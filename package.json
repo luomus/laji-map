@@ -2,7 +2,7 @@
   "name": "laji-map",
   "version": "1.0.167",
   "description": "A map with drawing functionality",
-  "main": "dist/laji-map.js",
+  "main": "lib/map.js",
   "scripts": {
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
     "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",

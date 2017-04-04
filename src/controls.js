@@ -1,6 +1,5 @@
 import "leaflet-contextmenu";
 import { convertGeoJSON, convertLatLng } from "./utils";
-
 import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
@@ -10,8 +9,7 @@ import {
 	EPSG2393String,
 	ESC
 } from "./globals";
-
-import { dependsOn, depsProvided, provide, reflect, isProvided } from "./map";
+import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 
 export default LajiMap => class LajiMapWithControls extends LajiMap {
 	constructor(props) {

@@ -4,7 +4,7 @@ var ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 module.exports = {
 	entry: {
-		"laji-map": ["./src/map"],
+		"laji-map": "./src/map",
 		styles: "./src/styles"
 	},
 	output: {

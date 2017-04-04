@@ -8,6 +8,7 @@ import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import proj4 from "proj4";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
+import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
 import {
 	INCOMPLETE_COLOR,
 	NORMAL_COLOR,
@@ -44,76 +45,6 @@ const optionKeys = {
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
-
-const providerToDependency = {};
-const dependencyToProvider = {};
-const reflected = {};
-
-function initDepContextFor(target) {
-	["provided", "depsExecuted", "params", "reflected"].forEach(prop => {
-		if (!target[prop]) {
-			target[prop] = {};
-		}
-	});
-}
-
-export function depsProvided(target, name, args) {
-	initDepContextFor(target);
-	const {depsExecuted, params} = target;
-	if (!depsExecuted[name] && !depIsProvided(target, name)) {
-		params[name] = args;
-		return false;
-	}
-	return true;
-}
-
-export function reflect() {
-	return (target, property) => {
-		reflected[property] = true;
-	};
-}
-
-export function dependsOn(...deps) {
-	return (target, property) => {
-		if (dependencyToProvider[property]) return; // dependency tree contructed already
-
-		deps.forEach(dep => {
-			providerToDependency[dep] = [...(providerToDependency[dep] || []), property];
-		});
-		dependencyToProvider[property] = deps;
-	};
-}
-
-function depIsProvided(target, dep) {
-	let returnValue = false;
-	const {depsExecuted, provided} = target;
-	if (dependencyToProvider[dep].every(_prov => provided[_prov])) {
-		if (depsExecuted[dep] && !reflected[dep]) return;
-		returnValue = true;
-	}
-	return returnValue;
-}
-
-function executeDependencies(target, prov) {
-	const {depsExecuted} = target;
-	(providerToDependency[prov] || []).filter(dep => depIsProvided(target, dep)).forEach(dep => {
-		if (!target.params[dep] && !reflected[dep]) return;
-		target[dep](...(target.params[dep] || []));
-		delete target.params[dep];
-		depsExecuted[dep] = true;
-	});
-}
-
-export function provide(target, prov) {
-	initDepContextFor(target);
-	target.provided[prov] = true;
-	executeDependencies(target, prov);
-}
-
-export function isProvided(target, prov) {
-	return target.provided[prov];
-}
-
 
 @HasControls
 @HasLineTransect

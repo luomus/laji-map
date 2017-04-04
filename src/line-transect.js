@@ -1,4 +1,4 @@
-import { dependsOn, depsProvided, provide, reflect } from "./map";
+import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
 import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";

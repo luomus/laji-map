@@ -111,15 +111,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		const wholeLinesAsSegments = geoJSONLineToLatLngSegmentArrays(geometry);
 
-		// Init only once. If this is removed there will be following errors in beta.laji.fi forms:
-		// DOMException: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
-		// triggered by LajiMapWithControls.setLineTransectGeometry this.map.removeLayer(this._lineLayer) line
-		// If it's wrapped to try catch then
-		// the original layer is not removed and there will be double line + events on every element on the line layer
-		if (this._lineLayer) {
-			return;
-		}
-
 		if (this._pointLayer) this.map.removeLayer(this._pointLayer);
 		if (this._lineLayer) this.map.removeLayer(this._lineLayer);
 		if (this._corridorLayer) this.map.removeLayer(this._corridorLayer);

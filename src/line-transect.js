@@ -9,6 +9,8 @@ import {
 	ESC
 } from "./globals";
 
+const POINT_DIST_TRESHOLD = 100;
+
 const lineStyle = {color: NORMAL_COLOR, weight: 2};
 const hoverLineStyle = {...lineStyle, color: INCOMPLETE_COLOR};
 const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
@@ -29,6 +31,30 @@ function flattenMatrix(m) {
 
 function parseIdxsFromLTIdx(idx) {
 	return idx ? idx.split("-").map(i => +i) : undefined;
+}
+
+function LTIdxToFlatIdx(LTIdx, container) {
+	const overlappingLTIdx = parseIdxsFromLTIdx(LTIdx);
+	let pointIdx = 0;
+	let pointGroupPointer = overlappingLTIdx[0] - 1;
+	while (pointGroupPointer >= 0) {
+		pointIdx += container[pointGroupPointer].length;
+		pointGroupPointer--;
+	}
+	pointIdx += overlappingLTIdx[1];
+
+	return pointIdx;
+}
+
+function flatIdxToLTIdx(idx, container) {
+	let lineIdx = 0;
+	let line = container[lineIdx];
+	while (idx >= line.length) {
+		idx -= line.length;
+		lineIdx++;
+		line = container[lineIdx];
+	}
+	return `${lineIdx}-${idx}`;
 }
 
 function coordinatePairToGeoJSONLine(coordinatePair) {
@@ -111,9 +137,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		const wholeLinesAsSegments = geoJSONLineToLatLngSegmentArrays(geometry);
 
-		if (this._pointLayer) this.map.removeLayer(this._pointLayer);
-		if (this._lineLayer) this.map.removeLayer(this._lineLayer);
-		if (this._corridorLayer) this.map.removeLayer(this._corridorLayer);
+		if (this._pointLayerGroup) this.map.removeLayer(this._pointLayerGroup);
+		if (this._lineLayerGroup) this.map.removeLayer(this._lineLayerGroup);
+		if (this._corridorLayerGroup) this.map.removeLayer(this._corridorLayerGroup);
 		this._pointLayers = [];
 		this._lineLayers = [];
 		this._corridorLayers = [];
@@ -158,127 +184,196 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._allCorridors = flattenMatrix(corridorLayers);
 		this._allPoints = flattenMatrix(pointLayers);
 
-		this._lineLayer = L.featureGroup(this._allLines).addTo(this.map);
-		this._corridorLayer = L.featureGroup(this._allCorridors).addTo(this.map);
-		this._pointLayer = L.featureGroup(this._allPoints).addTo(this.map);
+		this._lineLayerGroup = L.featureGroup(this._allLines).addTo(this.map);
+		this._corridorLayerGroup = L.featureGroup(this._allCorridors).addTo(this.map);
+		this._pointLayerGroup = L.featureGroup(this._allPoints).addTo(this.map);
 
+		this._overlappingPointIdxs = {};
 		const overlappingsCoordsToIdxs = {};
 
-		const distances = [];
-		let distance = 0;
-		let prevLatLng = undefined;
 		i = 0;
 		pointLayers.forEach((points, groupI) => {
-			let startIdx = i;
-			prevLatLng = undefined;
 			points.forEach((point, pointI) => {
 				const latlng = point.getLatLng();
-				distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
-				distances.push(distance);
-				prevLatLng = latlng;
-
-				const getTooltipFor = idx =>
-					`${idx + 1}. ${this.translations.point} \
-					(${parseInt(distances[idx])}m ${this.translations.fromTheBeginningOfTheLine})`;
-
-				let tooltip = getTooltipFor(i);
-				if (pointI === points.length - 1 && point.getLatLng().equals(points[0].getLatLng())) {
-					tooltip = `${this.translations.OverlappingPoints}<br/>${getTooltipFor(startIdx)}<br/>${tooltip}`;
-				}
-				point.bindTooltip(tooltip, {direction: "top"});
-
 				const stringCoords = `${latlng.lat}-${latlng.lng}`;
 				if (overlappingsCoordsToIdxs[stringCoords]) {
-					point.on("dblclick", () => {
-						const idxs = parseIdxsFromLTIdx(overlappingsCoordsToIdxs[stringCoords]);
-						const firstPoint = pointLayers[idxs[0]][idxs[1]];
-						const lastPoint = point;
+					const pointIdx = LTIdxToFlatIdx(overlappingsCoordsToIdxs[stringCoords], this._pointLayers);
 
-						const translateHooks = [];
-
-						const popup = document.createElement("div");
-						popup.className = "text-center";
-
-						const question = document.createElement("span");
-						translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
-
-						const firstButton = document.createElement("button");
-						firstButton.addEventListener("click", () => {
-							lastPoint.setStyle(pointStyle);
-							this._setLTPointEditable(idxs[0], idxs[1]);
-							lastPoint.closePopup();
-						});
-						translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
-
-						const lastButton = document.createElement("button");
-						lastButton.addEventListener("click", () => {
-							firstPoint.setStyle(pointStyle);
-							this._setLTPointEditable(groupI, pointI);
-							lastPoint.closePopup();
-						});
-						translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
-
-						const buttonContainer = document.createElement("div");
-						buttonContainer.className = "btn-group";
-						[firstButton, lastButton].forEach(button => {
-							button.className = "btn btn-primary btn-xs";
-							buttonContainer.appendChild(button);
-						});
-
-						popup.appendChild(question);
-						popup.appendChild(buttonContainer);
-
-						lastPoint.bindPopup(popup).openPopup();
-						lastPoint.on("popupclose", () => {
-							translateHooks.forEach(hook => this.removeTranslationHook(hook));
-							lastPoint.unbindPopup();
-						});
-					});
-
+					this._overlappingPointIdxs[i] = pointIdx;
+					this._overlappingPointIdxs[pointIdx] = i;
 					point.setStyle(overlappingPointStyle);
 				} else {
 					overlappingsCoordsToIdxs[stringCoords] = `${groupI}-${pointI}`;
-					point.on("dblclick", () => {this._setLTPointEditable(groupI, pointI);});
 				}
 
 				i++;
 			});
 		});
 
-		const pointDistTreshold = 100;
-
-		let _i = 0;
-		corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentI) => {
-			const __i = _i;
-			corridor.on("click", () => {
-				if (this._removeLTMode) {
-					this._hoveredLTLineIdx = undefined;
-					this.commitRemoveLTSegment(__i);
-				} else {
-					this._triggerEvent(this._getOnActiveSegmentChangeEvent(__i), this._onLTChange);
-				}
-			}).on("mouseover", () => {
-				const prevHoverIdx = this._hoveredLTLineIdx;
-				this._hoveredLTLineIdx = __i;
-				this._updateStyleForLTIdx(prevHoverIdx);
-				this._updateStyleForLTIdx(this._hoveredLTLineIdx);
-				this._pointLayers[lineIdx][segmentI + 1].openTooltip();
-			}).on("mouseout", () => {
-				this._hoveredLTLineIdx = undefined;
-				this._updateStyleForLTIdx(__i);
-				this._pointLayers[lineIdx][segmentI + 1].closeTooltip();
-			}).on("dblclick", ({latlng}) => {
-				const points = [segmentI, segmentI + 1].map(idx => this._pointLayers[lineIdx][idx]);
-				const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
-				const closerIdx = closestPoint === points[0] ? segmentI : segmentI + 1;
-				if (closestPoint.getLatLng().distanceTo(latlng) <= pointDistTreshold) {
-					this._setLTPointEditable(lineIdx, closerIdx);
-				}
-			});
-			_i++;
-		}));
+		this._setLineTransectEvents();
 
 		provide(this, "lineTransect");
+	}
+
+	_setLineTransectEvents() {
+		const leafletIdsToFlatCorridorSegmentIdxs = {};
+		const leafletIdsToCorridorLineIdxs = {};
+		const leafletIdsToCorridorSegmentIdxs = {};
+
+		let i = 0;
+		this._corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentIdx) => {
+			const id = corridor._leaflet_id;
+			leafletIdsToFlatCorridorSegmentIdxs[id] = i;
+			leafletIdsToCorridorLineIdxs[id] = lineIdx;
+			leafletIdsToCorridorSegmentIdxs[id] = segmentIdx;
+			i++;
+		}));
+
+		const pointIdxsToDistances = {};
+		const leafletIdsToFlatPointIdxs = {};
+
+		let distance = 0;
+		let prevLatLng = undefined;
+		i = 0;
+		this._pointLayers.forEach(points => {
+			prevLatLng = undefined;
+			points.forEach(point => {
+				const latlng = point.getLatLng();
+				distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
+				pointIdxsToDistances[i] = distance;
+				leafletIdsToFlatPointIdxs[point._leaflet_id] = i;
+				prevLatLng = latlng;
+				i++;
+			});
+		});
+
+		function getIdxsFromEvent({layer}) {
+			const {_leaflet_id} = layer;
+			return (layer instanceof L.CircleMarker) ? {
+				i: leafletIdsToFlatPointIdxs[_leaflet_id]
+			} : {
+				i: leafletIdsToFlatCorridorSegmentIdxs[_leaflet_id],
+				lineIdx: leafletIdsToCorridorLineIdxs[_leaflet_id],
+				segmentIdx: leafletIdsToCorridorSegmentIdxs[_leaflet_id]
+			};
+		}
+
+		const that = this;
+
+		function openTooltipFor(i) {
+			function getTooltipFor(idx) {
+				const distance = parseInt(pointIdxsToDistances[idx]);
+				return 	`${idx + 1}. ${that.translations.point} \
+				         (${distance}m ${that.translations.fromTheBeginningOfTheLine})`;
+			}
+
+			let tooltip = getTooltipFor(i);
+			if (that._overlappingPointIdxs[i] !== undefined) {
+				tooltip = `${that.translations.OverlappingPoints}<br/>${getTooltipFor(that._overlappingPointIdxs[i])}<br/>${tooltip}`;
+			}
+			const point = that._allPoints[i];
+			point.bindTooltip(tooltip, {direction: "top"}).openTooltip();
+		}
+
+		function closeTooltipFor(i) {
+			const point = that._allPoints[i];
+			point.unbindTooltip();
+		}
+
+		this._pointLayerGroup.on("mouseover", e => {
+			const {i} = getIdxsFromEvent(e);
+			openTooltipFor(i);
+		}).on("mouseout", e => {
+			const {i} = getIdxsFromEvent(e);
+			closeTooltipFor(i);
+		}).on("dblclick", e => {
+			const {i} = getIdxsFromEvent(e);
+			if (this._overlappingPointIdxs[i] !== undefined) {
+				const firstLTIdx = flatIdxToLTIdx(this._overlappingPointIdxs[i], this._pointLayers);
+				const lastLTIdx = flatIdxToLTIdx(i, this._pointLayers);
+				const firstPoint = this._allPoints[this._overlappingPointIdxs[i]];
+				const lastPoint = this._allPoints[i];
+
+				const translateHooks = [];
+
+				const popup = document.createElement("div");
+				popup.className = "text-center";
+
+				const question = document.createElement("span");
+				translateHooks.push(this.addTranslationHook(question, "FirstOrLastPoint"));
+
+				const firstButton = document.createElement("button");
+				firstButton.addEventListener("click", () => {
+					lastPoint.setStyle(pointStyle);
+					this._setLTPointEditable(...parseIdxsFromLTIdx(firstLTIdx));
+					lastPoint.closePopup();
+				});
+				translateHooks.push(this.addTranslationHook(firstButton, "FirstPartitive"));
+
+				const lastButton = document.createElement("button");
+				lastButton.addEventListener("click", () => {
+					firstPoint.setStyle(pointStyle);
+					this._setLTPointEditable(...parseIdxsFromLTIdx(lastLTIdx));
+					lastPoint.closePopup();
+				});
+				translateHooks.push(this.addTranslationHook(lastButton, "LastPartitive"));
+
+				const buttonContainer = document.createElement("div");
+				buttonContainer.className = "btn-group";
+				[firstButton, lastButton].forEach(button => {
+					button.className = "btn btn-primary btn-xs";
+					buttonContainer.appendChild(button);
+				});
+
+				popup.appendChild(question);
+				popup.appendChild(buttonContainer);
+
+				lastPoint.bindPopup(popup).openPopup();
+				lastPoint.on("popupclose", () => {
+					translateHooks.forEach(hook => this.removeTranslationHook(hook));
+					lastPoint.unbindPopup();
+				});
+			} else {
+				this._allPoints[i].on("dblclick", () => {this._setLTPointEditable(...parseIdxsFromLTIdx(flatIdxToLTIdx(i, this._pointLayers)));});
+			}
+		});
+
+		this._corridorLayerGroup.on("click", e => {
+			const {i} = getIdxsFromEvent(e);
+
+			if (this._removeLTMode) {
+				this._hoveredLTLineIdx = undefined;
+				this.commitRemoveLTSegment(i);
+			} else {
+				this._triggerEvent(this._getOnActiveSegmentChangeEvent(i), this._onLTChange);
+			}
+		}).on("mouseover", e => {
+			const {i, lineIdx, segmentIdx} = getIdxsFromEvent(e);
+
+			const prevHoverIdx = this._hoveredLTLineIdx;
+			this._hoveredLTLineIdx = i;
+			this._updateStyleForLTIdx(prevHoverIdx);
+			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
+			const pointIdx = LTIdxToFlatIdx(`${lineIdx}-${segmentIdx + 1}`, this._pointLayers);
+			openTooltipFor(pointIdx);
+		}).on("mouseout", e => {
+			const {i, lineIdx, segmentIdx} = getIdxsFromEvent(e);
+
+			this._hoveredLTLineIdx = undefined;
+			this._updateStyleForLTIdx(i);
+			const pointIdx = LTIdxToFlatIdx(`${lineIdx}-${segmentIdx + 1}`, this._pointLayers);
+			closeTooltipFor(pointIdx);
+		}).on("dblclick", e => {
+			const {latlng} = e;
+			const {lineIdx, segmentIdx} = getIdxsFromEvent(e);
+
+			const points = [segmentIdx, segmentIdx + 1].map(idx => this._pointLayers[lineIdx][idx]);
+			const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
+			const closerIdx = (closestPoint === points[0]) ? segmentIdx : segmentIdx + 1;
+			if (closestPoint.getLatLng().distanceTo(latlng) <= POINT_DIST_TRESHOLD) {
+				this._setLTPointEditable(lineIdx, closerIdx);
+			}
+		});
 	}
 
 	@reflect()

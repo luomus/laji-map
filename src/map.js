@@ -237,10 +237,8 @@ export default class LajiMap {
 		}
 		if (isEscape) {
 			this._triggerKeyEvent(ESC, e);
-			// close(e);
 		}
 	}
-
 
 	_addDocumentEventListener(type, fn) {
 		if (!this._documentEvents) this._documentEvents = {};

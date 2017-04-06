@@ -135,7 +135,7 @@ class App {
 		const options = {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
-			draw: {data: this.drawData, marker: false},
+			draw: {data: this.drawData},
 			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
 			lang: "fi",
 			popupOnHover: true,

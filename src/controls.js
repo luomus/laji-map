@@ -436,9 +436,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				container.style.display = "none";
 
 				const coordinateTypes = [
-				{name: "WGS84"},
-				{name: "YKJ"},
-				// {name: "ETRS"} removed due to error in laji.fi ('EPSG:3067' proj4js unable to convert to euref in there)
+					{name: "WGS84"},
+					{name: "YKJ"},
+					{name: "ETRS"}
 				];
 
 				coordinateTypes.forEach(coordinateType => {
@@ -456,12 +456,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					const {lat, lng} = latlng;
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
 					const ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
-				// const euref = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+					const euref = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
 
 					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
 						let coords = wgs84;
 						if (name === "YKJ") coords = ykj;
-					// else if (name === "ETRS") coords = euref;
+						else if (name === "ETRS") coords = euref;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
 						coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
 						coordsCell.className = "monospace";
@@ -875,9 +875,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		tabs.className = "nav nav-tabs";
 
 		[
-		{name: "WGS84", proj: "WGS84"},
-		{name: "YKJ", proj: "EPSG:2393"}
-		//{name: "ETRS", proj: "EPSG:3067"}
+			{name: "WGS84", proj: "WGS84"},
+			{name: "YKJ", proj: "EPSG:2393"},
+			{name: "ETRS", proj: "EPSG:3067"}
 		].map(({name, proj}) => {
 			const tab = document.createElement("li");
 			const text = document.createElement("a");

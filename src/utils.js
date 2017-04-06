@@ -1,10 +1,23 @@
 import proj4 from "proj4";
+import {
+	EPSG2393String,
+	EPSG3067String,
+} from "./globals";
 
 export function reverseCoordinate(c) {
 	return c.slice(0).reverse();
 }
+
 export function convertLatLng(latlng, from, to) {
-	const converted = proj4(from, to, reverseCoordinate(latlng.map(c => +c)));
+	function formatToProj4Format(format) {
+		switch(format) {
+		case "EPSG:2393": return EPSG2393String;
+		case "EPSG:3067": return EPSG3067String;
+		default: return proj4.defs(format);
+		}
+	}
+
+	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng.map(c => +c)));
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 }
 
@@ -63,5 +76,3 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 	return (geometry.type === "MultiLineString" ?
 		geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
 }
-
-

@@ -5,7 +5,6 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import proj4 from "proj4";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -19,7 +18,6 @@ import {
 	TAUSTAKARTTA,
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
-	EPSG2393String,
 	ESC
 } from "./globals";
 
@@ -52,9 +50,6 @@ export default class LajiMap {
 	constructor(props) {
 		this._constructDictionary();
 		this.onSetLangHooks = [];
-
-
-		proj4.defs("EPSG:2393", EPSG2393String);
 
 		const options = {
 			tileLayerName: TAUSTAKARTTA,

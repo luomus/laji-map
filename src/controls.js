@@ -104,7 +104,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				name: "coordinateInput",
 				text: this.translations.AddFeatureByCoordinates,
 				iconCls: "laji-map-coordinate-input-glyph",
-				callback: (...params) => this.openCoordinatesDialog(...params)
+				callback: (...params) => this.openCoordinatesInputDialog(...params)
 			},
 			drawCopy: {
 				name: "drawCopy",
@@ -645,7 +645,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._closeDialog = close;
 	}
 
-	openCoordinatesDialog() {
+	openCoordinatesInputDialog() {
 		const that = this;
 		const translateHooks = [];
 

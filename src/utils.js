@@ -22,13 +22,29 @@ export function convertLatLng(latlng, from, to) {
 }
 
 export function convertGeoJSON(obj, from, to) {
+	/**
+	 *  [26,60]
+	 *  [
+	 *    [25,60],
+	 *    [25,61],
+	 *  [
+	 *    [[25,60], [25,61]],
+	 *    [[30,54], [30,51]]
+	 *  ]
+	 */
 	function _convertGeoJSON(obj, from, to) {
+		function convertCoordinates(coords) {
+			if (typeof coords[0] === "number") {
+				return convertLatLng(reverseCoordinate(coords), from, to);
+			} else {
+				return coords.map(convertCoordinates);
+			}
+		}
+
 		if (typeof obj === "object" && obj !== null) {
 			Object.keys(obj).forEach(key => {
 				if (key === "coordinates") {
-					obj[key] = Array.isArray(obj[key][0]) ?
-						[obj[key].map(coords => convertLatLng(reverseCoordinate(coords), from, to))] :
-						_convertGeoJSON(reverseCoordinate(obj[key]), from, to);
+					obj[key] = convertCoordinates(obj[key]);
 				}
 				else _convertGeoJSON(obj[key], from, to);
 			});

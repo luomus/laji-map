@@ -9,7 +9,7 @@
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
     "build": "npm run build:lib && npm run build:dist",
     "publish-to-npm": "npm version patch && git push && npm run build && npm publish",
-    "lint": "eslint --ignore-pattern src/lib/ src playground"
+    "lint": "eslint  -c .eslintrc.prod.json --ignore-pattern src/lib/ src playground"
   },
   "repository": {
     "type": "git",

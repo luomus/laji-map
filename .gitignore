@@ -4,4 +4,6 @@ npm-debug.log
 /lib
 /dist
 .idea
-
+*.swp
+.vim*
+tags

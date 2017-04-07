@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng } from "./utils";
+import { convertGeoJSON, convertLatLng, geoJSONToISO6709, geoJSONToWKT } from "./utils";
 import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
@@ -141,9 +141,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		if (isProvided(this, "lineTransect")) {
 			this._addControl("lineTransect", this._getLineTransectControl());
-	// 	this._addControl("coordinateInput", this._getCoordinateInputControl());
-	// 	this._addControl("drawCopy", this._getDrawCopyControl());
-	// 	this._addControl("drawClear", this._getDrawClearControl());
 		}
 
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
@@ -850,79 +847,136 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	openDrawCopyDialog() {
-		const container = document.createElement("div");
+		const table = document.createElement("table");
 
-		const input = document.createElement("textarea");
-		input.setAttribute("rows", 10);
-		input.setAttribute("cols", 50);
-		input.setAttribute("readonly", "readonly");
-		input.className = "form-control";
-		input.addEventListener("focus", input.select);
+		const HTMLInput = document.createElement("textarea");
+		HTMLInput.setAttribute("rows", 10);
+		HTMLInput.setAttribute("cols", 50);
+		HTMLInput.setAttribute("readonly", "readonly");
+		HTMLInput.className = "form-control";
+		HTMLInput.addEventListener("focus", HTMLInput.select);
 
 		const features = this.draw.data.featureCollection.features.map(this.formatFeatureOut);
 		const originalGeoJSON = {...this.draw.data.featureCollection, features};
 
-		function updateGeoJSON(geoJSON) {
-			input.value = JSON.stringify(geoJSON, undefined, 2);
-			input.focus();
-			input.select();
+		function converterFor(proj) {
+			return input => {
+				const reprojected = convertGeoJSON(input, "WGS84", proj);
+				reprojected.crs = {
+					type: "name",
+					properties: {
+						name: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
+					}
+				};
+				return reprojected;
+			};
 		}
 
-		let activeProj = "WGS84";
-		let activeTab = undefined;
+		const TOP = "TOP";
+		const LEFT = "LEFT";
 
-		const tabs = document.createElement("ul");
-		tabs.className = "nav nav-tabs";
+		const pipeline = [
+			{ // GeoJSON -> GeoJSON with coordinates converted
+				commands: {
+					WGS84: input => input,
+					YKJ: converterFor("EPSG:2393"),
+					ETRS: converterFor("EPSG:3067")
+				},
+				position: TOP
+			},
+			{ // GeoJSON -> String
+				commands: {
+					GeoJSON: input => JSON.stringify(input, undefined, 2),
+					ISO: geoJSONToISO6709,
+					WKT: geoJSONToWKT
+				},
+				position: LEFT
+			}
+		];
 
-		[
-			{name: "WGS84", proj: "WGS84"},
-			{name: "YKJ", proj: "EPSG:2393"},
-			{name: "ETRS", proj: "EPSG:3067"}
-		].map(({name, proj}) => {
-			const tab = document.createElement("li");
-			const text = document.createElement("a");
+		let activeCommands = pipeline.map(({commands}) => Object.keys(commands)[0]);
 
-			if (proj === activeProj) {
+		const leftTabs = [];
+		const topTabs = [];
+
+		pipeline.forEach(({commands, position}, idx) => {
+			let activeTab = undefined;
+
+			function setActiveTab(tab, label) {
+				if (activeTab) {
+					activeTab.className = "";
+				}
 				activeTab = tab;
-				tab.className = "active";
+				activeTab.className = "active";
+				activeCommands[idx] = label;
 			}
 
-			text.innerHTML = name;
-			tab.appendChild(text);
+			const tabs = document.createElement("ul");
+			const tabContainer = (position === LEFT) ? (() => {
+				const _tabContainer = document.createElement("div");
+				_tabContainer.className = "tabs-left";
+				_tabContainer.appendChild(tabs);
+				return _tabContainer;
+			})() : tabs;
+			tabs.className = "nav nav-tabs";
 
-			const isWGS84 = proj === "WGS84";
+			Object.keys(commands).map((label, idx) => {
+				const tab = document.createElement("li");
+				const text = document.createElement("a");
 
-			tab.addEventListener("click", () => {
-				const reprojected = isWGS84 ?
-				originalGeoJSON :
-				convertGeoJSON(originalGeoJSON, "WGS84", proj);
-
-				if (!isWGS84) {
-					reprojected.crs = {
-						type: "name",
-						properties: {
-							name: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
-						}
-					};
+				if (idx === 0) {
+					setActiveTab(tab, label);
 				}
 
-				const {scrollTop} = input;
-				updateGeoJSON(reprojected);
-				input.scrollTop = scrollTop;
+				text.innerHTML = label;
+				tab.appendChild(text);
 
-				activeProj = proj;
-				activeTab.className = "";
-				activeTab = tab;
-				tab.className = "active";
-			});
-			return tab;
-		}).forEach(tab => tabs.appendChild(tab));
+				tab.addEventListener("click", () => {
+					const {scrollTop} = HTMLInput;
+					setActiveTab(tab, label);
+					updateOutput();
+					HTMLInput.scrollTop = scrollTop;
+				});
 
-		container.appendChild(tabs);
-		container.appendChild(input);
+				return tab;
+			}).forEach(tab => tabs.appendChild(tab));
 
-		this._showDialog(container);
-		updateGeoJSON(originalGeoJSON);
+			let tabsArr = topTabs;
+			if (position === LEFT) tabsArr = leftTabs;
+			tabsArr.push(tabContainer);
+		});
+
+		updateOutput();
+
+		function updateOutput() {
+			HTMLInput.value = pipeline.reduce((_output, {commands}, idx) => 
+				commands[activeCommands[idx]](_output), originalGeoJSON
+			);
+			HTMLInput.focus();
+			HTMLInput.select();
+		}
+
+		const rows = [
+			[undefined, topTabs], 
+			[leftTabs, HTMLInput]
+		];
+
+		const tBody = document.createElement("tbody");
+		rows.forEach(row => {
+			const tr = document.createElement("tr");
+			row.forEach(items => (Array.isArray(items) ? items : [items])
+				.forEach(elem => {
+				 const td = document.createElement("td");
+				 td.appendChild(elem || document.createElement("div"));
+				 tr.appendChild(td);
+				}));
+			tBody.appendChild(tr);
+		});
+
+		table.appendChild(tBody);
+
+		this._showDialog(table);
+		updateOutput(originalGeoJSON);
 	}
 
 	_joinTranslations(...words) {

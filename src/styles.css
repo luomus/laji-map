@@ -137,3 +137,88 @@
 .laji-map .monospace {
 	font-family: monospace;
 }
+
+/**
+ Vertical tabs (taken from here https://stackoverflow.com/questions/18432577/stacked-tabs-in-bootstrap-3)
+**/
+
+.laji-map .tabs-below > .nav-tabs,
+.laji-map .tabs-right > .nav-tabs,
+.laji-map .tabs-left > .nav-tabs {
+  border-bottom: 0;
+}
+
+.laji-map .tab-content > .tab-pane,
+.laji-map .pill-content > .pill-pane {
+  display: none;
+}
+
+.laji-map .tab-content > .active,
+.laji-map .pill-content > .active {
+  display: block;
+}
+
+.laji-map .tabs-below > .nav-tabs {
+  border-top: 1px solid #ddd;
+}
+
+.laji-map .tabs-below > .nav-tabs > li {
+  margin-top: -1px;
+  margin-bottom: 0;
+}
+
+.laji-map .tabs-below > .nav-tabs > li > a {
+  -webkit-border-radius: 0 0 4px 4px;
+     -moz-border-radius: 0 0 4px 4px;
+          border-radius: 0 0 4px 4px;
+}
+
+.laji-map .tabs-below > .nav-tabs > li > a:hover,
+.laji-map .tabs-below > .nav-tabs > li > a:focus {
+  border-top-color: #ddd;
+  border-bottom-color: transparent;
+}
+
+.laji-map .tabs-below > .nav-tabs > .active > a,
+.laji-map .tabs-below > .nav-tabs > .active > a:hover,
+.laji-map .tabs-below > .nav-tabs > .active > a:focus {
+  border-color: transparent #ddd #ddd #ddd;
+}
+
+.laji-map .tabs-left > .nav-tabs > li,
+.laji-map .tabs-right > .nav-tabs > li {
+  float: none;
+}
+
+.laji-map .tabs-left > .nav-tabs > li > a,
+.laji-map .tabs-right > .nav-tabs > li > a {
+  min-width: 74px;
+  margin-right: 0;
+  margin-bottom: 3px;
+}
+
+.laji-map .tabs-left > .nav-tabs {
+  float: left;
+  margin-right: -1px;
+  border-right: 1px solid #ddd;
+}
+
+.laji-map .tabs-left > .nav-tabs > li > a {
+  margin-right: -1px;
+  -webkit-border-radius: 4px 0 0 4px;
+     -moz-border-radius: 4px 0 0 4px;
+          border-radius: 4px 0 0 4px;
+}
+
+.laji-map .tabs-left > .nav-tabs > li > a:hover,
+.laji-map .tabs-left > .nav-tabs > li > a:focus {
+  border-color: #eeeeee #dddddd #eeeeee #eeeeee;
+}
+
+.laji-map .tabs-left > .nav-tabs .active > a,
+.laji-map .tabs-left > .nav-tabs .active > a:hover,
+.laji-map .tabs-left > .nav-tabs .active > a:focus {
+  border-color: #ddd transparent #ddd #ddd;
+  *border-right-color: #ffffff;
+}
+

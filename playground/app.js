@@ -166,7 +166,6 @@ class App {
 			tileLayerName: "taustakartta",
 		});
 
-
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));
 		});

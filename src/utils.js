@@ -1,8 +1,9 @@
 import proj4 from "proj4";
 import {
 	EPSG2393String,
-	EPSG3067String,
+	EPSG3067String
 } from "./globals";
+import circleToPolygon from "circle-to-polygon";
 
 export function reverseCoordinate(c) {
 	return c.slice(0).reverse();
@@ -21,28 +22,44 @@ export function convertLatLng(latlng, from, to) {
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 }
 
-export function convertGeoJSON(obj, from, to) {
-	function _convertGeoJSON(obj, from, to) {
-		function convertCoordinates(coords) {
-			if (typeof coords[0] === "number") {
-				return convertLatLng(reverseCoordinate(coords), from, to);
-			} else {
-				return coords.map(convertCoordinates);
-			}
-		}
-
+function updateImmutablyRecursivelyWith(obj, fn) {
+	function _updater(obj, from, to) {
 		if (typeof obj === "object" && obj !== null) {
 			Object.keys(obj).forEach(key => {
-				if (key === "coordinates") {
-					obj[key] = convertCoordinates(obj[key]);
-				}
-				else _convertGeoJSON(obj[key], from, to);
+				obj[key] = fn(key, obj[key]);
+				_updater(obj[key], from, to);
 			});
 		}
 		return obj;
 	}
 
-	return _convertGeoJSON(JSON.parse(JSON.stringify(obj)), from, to);
+	return _updater(JSON.parse(JSON.stringify(obj)));
+}
+
+export function convertGeoJSON(geoJSON, from, to) {
+	const convertCoordinates = coords => (typeof coords[0] === "number") ?
+			convertLatLng(reverseCoordinate(coords), from, to) :
+			coords.map(convertCoordinates);
+
+	return updateImmutablyRecursivelyWith(geoJSON, (key, obj) => {
+		if (key === "coordinates") obj = convertCoordinates(obj);
+		return obj;
+	});
+}
+
+export function standardizeGeoJSON(geoJSON) {
+	function standardizeGeometry(geom) {
+		let {coordinateVerbatim, radius, ...standardized} = geom; //eslint-disable-line
+		if (radius !== undefined) {
+			standardized = circleToPolygon(standardized.coordinates, radius, 8);
+		}
+		return standardized;
+	}
+
+	return updateImmutablyRecursivelyWith(geoJSON, (key, obj) => {
+		if (key === "geometry") obj = standardizeGeometry(obj);
+		return obj;
+	});
 }
 
 export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, coordinateJoiner, coordinateStrToPoint, coordinateStrToPolygon) {

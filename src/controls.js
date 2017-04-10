@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, geoJSONToISO6709, geoJSONToWKT } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT } from "./utils";
 import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
@@ -878,9 +878,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const pipeline = [
 			{ // GeoJSON -> GeoJSON with coordinates converted
 				commands: {
-					WGS84: input => input,
-					YKJ: converterFor("EPSG:2393"),
-					ETRS: converterFor("EPSG:3067")
+					WGS84: standardizeGeoJSON,
+					YKJ: input => converterFor("EPSG:2393")(standardizeGeoJSON(input)),
+					ETRS: input => converterFor("EPSG:3067")(standardizeGeoJSON(input))
 				},
 				position: TOP
 			},

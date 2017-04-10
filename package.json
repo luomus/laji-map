@@ -10,7 +10,7 @@
     "build": "npm run build:lib && npm run build:dist",
     "publish-to-npm": "npm run git-push && npm version patch && git push && npm run build && npm publish",
     "push-to-git": "npm run lint && git push",
-    "lint": "eslint  -c .eslintrc.prod.json --ignore-pattern src/lib/ src playground"
+    "lint": "eslint -c .eslintrc.prod.json --ignore-pattern src/lib/ src playground"
   },
   "repository": {
     "type": "git",
@@ -49,6 +49,7 @@
   "dependencies": {
     "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#17601bee91f2dae098a0a76e96714d59ec958fe6",
     "babel-runtime": "^6.18.0",
+    "circle-to-polygon": "^1.0.0",
     "leaflet": "1.0.3",
     "leaflet-contextmenu": "1.1.1",
     "leaflet-draw": "0.4.9",

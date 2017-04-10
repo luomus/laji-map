@@ -16,6 +16,7 @@ import {
 	USER_LOCATION_COLOR,
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
+	POHJAKARTTA,
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
 	ESC
@@ -125,10 +126,18 @@ export default class LajiMap {
 			doubleClickZoom: false
 		});
 
-		[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
+		[MAASTOKARTTA, TAUSTAKARTTA, POHJAKARTTA].forEach(tileLayerName => {
 			this[tileLayerName] = L.tileLayer.mml_wmts({
 				layer: tileLayerName
 			});
+		});
+
+		this.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", { 
+			layers: "osm_finland:Sea",
+			format: "image/png",
+			transparent: false,
+			version: "1.1.0",
+			attribution: "LUOMUS"
 		});
 
 		this.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
@@ -287,7 +296,7 @@ export default class LajiMap {
 	}
 
 	_getMMLCRSLayers() {
-		return [this.maastokartta, this.taustakartta];
+		return [this.maastokartta, this.taustakartta, this.pohjakartta];
 	}
 
 	@dependsOn("map")
@@ -343,7 +352,7 @@ export default class LajiMap {
 
 	getTileLayers() {
 		const tileLayers = {};
-		[TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
+		[TAUSTAKARTTA, MAASTOKARTTA, POHJAKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
 			tileLayers[tileLayerName] = this[tileLayerName];
 		});
 		return tileLayers;

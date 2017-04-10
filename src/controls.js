@@ -3,6 +3,7 @@ import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, ge
 import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
+	POHJAKARTTA,
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
 	EPSG3067String,
@@ -479,7 +480,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const baseMaps = {}, overlays = {};
 		const { translations } = this;
 
-		const tileLayersNames = [TAUSTAKARTTA, MAASTOKARTTA, GOOGLE_SATELLITE, OPEN_STREET];
+		const tileLayersNames = [TAUSTAKARTTA, MAASTOKARTTA, POHJAKARTTA, GOOGLE_SATELLITE, OPEN_STREET];
 
 		tileLayersNames.forEach(tileLayerName => {
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];

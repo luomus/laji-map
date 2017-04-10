@@ -6,6 +6,7 @@ export const USER_LOCATION_COLOR = "#FF0000";
 
 export const MAASTOKARTTA = "maastokartta";
 export const TAUSTAKARTTA = "taustakartta";
+export const POHJAKARTTA = "pohjakartta";
 export const OPEN_STREET = "openStreetMap";
 export const GOOGLE_SATELLITE = "googleSatellite";
 

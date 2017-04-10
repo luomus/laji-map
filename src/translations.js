@@ -294,11 +294,6 @@
 		en: "Clear map",
 		sv: "Töm kartan"
 	},
-	peninkulmaGrid: {
-		fi: "Peninkulmat",
-		en: "Scandinavian miles",
-		sv: "Mil"
-	},
 	uhanalaisuusarviointivyohykkeet: {
 		fi: "Uhanalaisuusarviointivyöhykkeet",
 		en: "Threatened species evaluation zones",

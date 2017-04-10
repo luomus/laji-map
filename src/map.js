@@ -170,12 +170,6 @@ export default class LajiMap {
 				transparent: true,
 				version: "1.1.0"
 			}),
-			peninkulmaGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/YKJ/wms", {
-				layers: "YKJ:ykj10km_grid",
-				format: "image/png",
-				transparent: true,
-				version: "1.1.0",
-			}),
 			ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
 				layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
 				format: "image/png",

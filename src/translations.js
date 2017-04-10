@@ -229,12 +229,12 @@
 		en: "Biogeographical provinces",
 		sv: "Biogeografiska provinser"
 	},
-	metsakasvillisuusvyohykkeet: {
+	forestVegetationZones: {
 		fi: "Metsäkasvillisuusvyöhykkeet",
 		en: "Forest vegetation zones",
 		sv: "Skogvegetationszoner"
 	},
-	suokasvillisuusvyohykkeet: {
+	mireVegetationZones: {
 		fi: "Suokasvillisuusvyöhykkeet",
 		en: "Mire vegetation zones",
 		sv: "Myrvegetationszoner"
@@ -294,7 +294,7 @@
 		en: "Clear map",
 		sv: "Töm kartan"
 	},
-	uhanalaisuusarviointivyohykkeet: {
+	threatenedSpeciesEvaluationZones: {
 		fi: "Uhanalaisuusarviointivyöhykkeet",
 		en: "Threatened species evaluation zones",
 		sv: "Hotbedömningszoner"
@@ -344,7 +344,7 @@
 		en: "Overlapping points",
 		sv: "Överlappande punkter"
 	},
-	ykjLabels: {
+	ykjGridLabels: {
 		fi: "YKJ selitteet",
 		en: "Finnish Uniform Grid legends",
 		sv: "EKS rutnät legends"

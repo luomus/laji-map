@@ -24,7 +24,8 @@ lang                                            | String                    | "e
 data                                            | Data options[]            | -                                   | Noneditable data to draw on map.
 draw                                            | Draw options              | -                                   | Options for the editable feature collection.
 controlSettings                                 | Control options           | -                                   | An option object that defines which control should be shown.
-tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap", "googleSatellite".
+tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap" or "googleSatellite".
+overlayNames                                    | String[]                  | -                                   | The default overlay layers. Possible values:  "geobiologicalProvinces", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "ykjGrid" and "ykjGridLabels".
 center                                          | LatLng                    | [65, 26]                            | The coordinates for the initial center of the map.
 zoom                                            | Int                       | 2                                   | The initial zoom level for the map.
 locate                                          | Boolean                   | false                               | The map is centered to the user location if found.

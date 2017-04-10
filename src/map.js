@@ -30,6 +30,7 @@ const optionKeys = {
 	data: "setData",
 	draw: "setDraw",
 	tileLayerName: "setTileLayerByName",
+	overlayNames: "setOverlaysByName",
 	center: "setCenter",
 	zoom: "setNormalizedZoom",
 	locate: true,
@@ -152,19 +153,19 @@ export default class LajiMap {
 				transparent: true,
 				version: "1.3.0"
 			}),
-			metsakasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+			forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 				layers: "Metsakasvillisuusvyohykkeet",
 				format: "image/png",
 				transparent: true,
 				version: "1.3.0"
 			}).setOpacity(0.5),
-			suokasvillisuusvyohykkeet: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+			mireVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 				layers: "Suokasvillisuusvyohykkeet",
 				format: "image/png",
 				transparent: true,
 				version: "1.3.0"
 			}).setOpacity(0.5),
-			uhanalaisuusarviointivyohykkeet: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
+			threatenedSpeciesEvaluationZones: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
 				layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
 				format: "image/png",
 				transparent: true,
@@ -177,7 +178,7 @@ export default class LajiMap {
 				version: "1.1.0",
 				attribution: "LUOMUS"
 			}),
-			ykjLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+			ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
 				layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
 				format: "image/png",
 				transparent: true,
@@ -350,6 +351,24 @@ export default class LajiMap {
 			tileLayers[tileLayerName] = this[tileLayerName];
 		});
 		return tileLayers;
+	}
+
+	@dependsOn("map")
+	setOverlays(overlays) {
+		if (!depsProvided(this, "setOverlays", arguments)) return;
+
+		Object.keys(this.overlays).forEach(overlay => {
+			if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
+		});
+		overlays.forEach(overlay => {
+			this.map.addLayer(overlay);
+		});
+	}
+
+	@dependsOn("map")
+	setOverlaysByName(overlayNames) {
+		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
+		this.setOverlays(overlayNames.map(name => this.overlays[name]));
 	}
 
 	getNormalizedZoom() {

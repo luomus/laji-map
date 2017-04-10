@@ -16,6 +16,10 @@
 	margin-right: 4px;
 }
 
+.laji-map .leaflet-top {
+    z-index: 1001;
+}
+
 .laji-map .laji-map-control {
 	background: white;
 	font-size: 14px;

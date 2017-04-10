@@ -348,5 +348,10 @@
 		fi: "Päällekkäisiä pistettä",
 		en: "Overlapping points",
 		sv: "Överlappande punkter"
+	},
+	ykjLabels: {
+		fi: "YKJ selitteet",
+		en: "Finnish Uniform Grid legends",
+		sv: "EKS rutnät legends"
 	}
 };

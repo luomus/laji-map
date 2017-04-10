@@ -166,6 +166,20 @@ export default class LajiMap {
 				format: "image/png",
 				transparent: true,
 				version: "1.1.0",
+			}),
+			ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+				layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
+				format: "image/png",
+				transparent: true,
+				version: "1.1.0",
+				attribution: "LUOMUS"
+			}),
+			ykjLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+				layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
+				format: "image/png",
+				transparent: true,
+				version: "1.1.0",
+				attribution: "LUOMUS"
 			})
 		};
 

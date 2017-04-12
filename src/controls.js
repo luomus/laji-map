@@ -849,6 +849,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	openDrawCopyDialog() {
 		const table = document.createElement("table");
+		table.className = "laji-form-draw-copy-table";
 
 		const HTMLInput = document.createElement("textarea");
 		HTMLInput.setAttribute("rows", 10);

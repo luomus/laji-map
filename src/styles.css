@@ -1,4 +1,5 @@
 .laji-map, .leaflet-container {
+	position: relative;
 	width: 100%;
 	height: 100%;
 }
@@ -18,11 +19,6 @@
 
 .laji-map .leaflet-top {
     z-index: 1001;
-}
-
-.laji-map .laji-map-control {
-	background: white;
-	font-size: 14px;
 }
 
 .laji-map .leaflet-control a {
@@ -93,7 +89,7 @@
 	height: 100%;
 	background-color: black;
 	opacity: 0.3;
-	z-index: 1000;
+	z-index: 1001;
 }
 .laji-map .laji-map-dialog {
 	position: absolute;
@@ -142,10 +138,17 @@
 	font-family: monospace;
 }
 
-/**
- Vertical tabs (taken from here https://stackoverflow.com/questions/18432577/stacked-tabs-in-bootstrap-3)
-**/
+.laji-form-draw-copy-table td {
+	vertical-align: top;
+}
+.laji-form-draw-copy-table textarea {
+	white-space: pre;
+}
 
+/**
+ * Taken from here: 
+ * https://stackoverflow.com/questions/18432577/stacked-tabs-in-bootstrap-3
+ */
 .laji-map .tabs-below > .nav-tabs,
 .laji-map .tabs-right > .nav-tabs,
 .laji-map .tabs-left > .nav-tabs {

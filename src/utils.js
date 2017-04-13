@@ -105,7 +105,7 @@ export function standardizeGeoJSON(geoJSON) {
 	});
 }
 
-export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, coordinateJoiner, coordinateStrToPoint, coordinateStrToPolygon) {
+export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon) {
 	function geoJSONCoordToTextual(coords) {
 		return latLngCoordConverter(reverseCoordinate(coords));
 	}
@@ -122,10 +122,8 @@ export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, 
 
 	function geometryConverterFn(geometry) {
 		switch (geometry.type) {
-		case "Circle":
 		case "Point": return coordinateStrToPoint(geoJSONCoordToTextual(geometry.coordinates));
-		case "LineString": return coordinateStrToPoint(geoJSONCoordsJoin(geometry.coordinates));
-		case "Rectangle": return coordinateStrToPolygon(geoJSONCoordsJoin(geoJSONCoordsToTextualArea(geometry.coordinates)));
+		case "LineString": return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
 		case "Polygon": {
 			if (geometry.coordinates.length > 1) throw new Error(`${name} doesn't support polygons with interior rings.`);
 			return coordinateStrToPolygon(geoJSONCoordsToTextualArea(geometry.coordinates[0]));
@@ -143,33 +141,36 @@ export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, 
 	}, "");
 }
 
+// Pads zeros to start of integer and end of decimal.
+function fixWgs84Length(coordinateHalf, intLength, decLength) {
+	const coordHalfStr = `${coordinateHalf}`;
+	const parts = coordHalfStr.split(".");
+
+	const integerPart = `${"0".repeat(intLength)}${parts[0]}`.slice(-intLength);
+	const decimalPart = `${parts[1]}${"0".repeat(decLength)}`.slice(0, decLength);
+	return `${integerPart}.${decimalPart}`;
+}
+
 export function geoJSONToISO6709(geoJSON) {
 	function latLngToISO6709String(latLng) {
 		function formatCoordHalf(coordHalf, intAmount) {
 			let coordHalfStr = `${coordHalf}`;
-			let sign = "+";
-			if (coordHalfStr.includes("-")) {
-				sign = "-";
-				coordHalfStr = coordHalfStr.slice(1);
-			}
 
 			if (coordHalfStr.includes(".")) { // Detect WGS84
-				const parts = coordHalfStr.split(".");
+				let sign = "+";
+				if (coordHalfStr.includes("-")) {
+					sign = "-";
+					coordHalfStr = coordHalfStr.slice(1);
+				}
 
-				// Integer part length must be three, padded with prepended zeros.
-				const integerPart = `${"0".repeat(intAmount)}${parts[0]}`.slice(-intAmount);
-
-				// In our current domain the length of the decimal part of WGS84 is always more than 6.
-				// If this changes in the future, should we make sure the length is always 6?
-				const decimalPart = parts[1].slice(0,6);
-
-				coordHalfStr = `${integerPart}.${decimalPart}`;
+				coordHalfStr = `${sign}${fixWgs84Length(coordHalfStr, intAmount, 6)}`;
 			}
 
-			return `${sign}${coordHalfStr}`;
+			return `${coordHalfStr}`;
 		}
 
-		return `${formatCoordHalf(latLng[0], 2)}${formatCoordHalf(latLng[1], 3)}\\`;
+		const delimiter = `${latLng[0]}`.includes(".") ? "" : ":";
+		return `${formatCoordHalf(latLng[0], 2)}${delimiter}${formatCoordHalf(latLng[1], 3)}/`;
 	}
 
 	function coordinateJoiner(coords) {
@@ -191,7 +192,10 @@ export function geoJSONToISO6709(geoJSON) {
 
 export function geoJSONToWKT(geoJSON) {
 	function latLngToWKTString(latLng) {
-		return latLng.reverse().join(" ");
+		function formatter(coordHalf) {
+			return (`${coordHalf}`.includes(".")) ? fixWgs84Length(coordHalf, 6) : coordHalf;
+		}
+		return latLng.map(formatter).reverse().join(" ");
 	}
 	function coordinateJoiner(coords) {
 		return coords.join(",");

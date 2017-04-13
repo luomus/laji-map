@@ -563,27 +563,20 @@ export default class LajiMap {
 
 		const drawAllowed = (options === true || options.constructor === Object);
 
-		this.draw = drawAllowed ? {
-			data: {featureCollection: {type: "FeatureCollection", features: []}},
-			editable: true,
-			hasActive: false,
+		this.draw = {
+			...([
+				"editable",
+				"rectangle",
+				"polyline",
+				"circle",
+				"marker"
+			].reduce((options, key) => {
+				options[key] = drawAllowed;
+				return options;
+			}, {})),
+			polygon: drawAllowed ? {showArea: true} : false,
 			activeIdx: undefined,
-			rectangle: true,
-			polygon: true,
-			polyline: true,
-			circle: true,
-			marker: true,
-			...(options || {})
-		} : {
-			data: {featureCollection: {type: "FeatureCollection", features: []}},
-			editable: false,
-			hasActive: false,
-			activeIdx: undefined,
-			rectangle: false,
-			polygon: false,
-			polyline: false,
-			circle: false,
-			marker: false,
+			...(drawAllowed? (options || {}) : {})
 		};
 
 		if (drawAllowed) {
@@ -943,7 +936,7 @@ export default class LajiMap {
 	}
 
 	_onAdd(layer, coordinateVerbatim) {
-		if (layer instanceof L.Marker) layer.setIcon(this._createIcon());
+		this.updateLayerStyle(layer, this._getStyleForLayer(layer));
 
 		const {featureCollection: {features}} = this.draw.data;
 
@@ -1100,6 +1093,7 @@ export default class LajiMap {
 		}
 		editLayer.editing.enable();
 		editLayer.closePopup();
+		this.updateLayerStyle(editLayer, this._getDrawingDraftStyle());
 	}
 
 	_clearEditable() {
@@ -1118,7 +1112,9 @@ export default class LajiMap {
 		const {editIdx} = this;
 		const editId = this.idxsToIds[editIdx];
 		this._clearEditable();
-		this._onEdit({[editId]: this._getDrawLayerById(editId)});
+		const editLayer = this._getDrawLayerById(editId);
+		this.updateLayerStyle(editLayer, this._getStyleForLayer(editLayer));
+		this._onEdit({[editId]: editLayer});
 	}
 
 	_interceptClick() {

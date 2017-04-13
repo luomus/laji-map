@@ -174,7 +174,7 @@ class App {
 
 	onLTChange = (events) => {
 		events.forEach(e => {
-			console.log(e); // eslint-disable-line
+			console.info(e);
 			switch (e.type) {
 			case "create":
 				break;
@@ -190,7 +190,7 @@ class App {
 	onMapChange = (events) => {
 		let { drawData } = this;
 		events.forEach(e => {
-			console.log(e); // eslint-disable-line
+			console.info(e);
 			switch (e.type) {
 			case "create":
 				drawData.featureCollection.features.push(e.feature);

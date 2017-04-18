@@ -287,14 +287,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_getDrawControl() {
 		const drawOptions = {
 			position: "topright",
-			draw: {
-				marker: {
-					icon: this._createIcon({...this._getDrawingDraftStyle()})
-				},
-				polygon: {
-					allowIntersection: false
-				}
-			},
 			edit: {
 				featureGroup: this.drawLayerGroup,
 				edit: false,
@@ -302,24 +294,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		this.getFeatureTypes().slice(0, -1).forEach(type => {
-			drawOptions.draw[type] = {
-				shapeOptions: this._getDrawingDraftStyle()
-			};
-		});
+		drawOptions.draw = this.getFeatureTypes().reduce((options, type) => {
+			options[type] = (this.draw[type] === false || this.controlSettings.draw[type] === false) ?
+				false : this._getDrawOptionsForType(type);
+			return options;
+		}, {});
 
-		this.getFeatureTypes().forEach(type => {
-			if (this.draw[type] === false || this.controlSettings.draw[type] === false) {
-				drawOptions.draw[type] = false;
-			}
-		});
-
-		this.getFeatureTypes().forEach(type => {
-			if (this.controlSettings.draw === false ||
-			(this.controlSettings.draw.constructor === Object && this.controlSettings.draw[type] !== true)) {
-				drawOptions.draw[type] = false;
-			}
-		});
 
 		return new L.Control.Draw(drawOptions);
 	}

@@ -1284,14 +1284,35 @@ export default class LajiMap {
 		}
 	}
 
+	_getDrawOptionsForType(featureType) {
+		featureType = featureType.toLowerCase();
+		const baseStyle = this._getDrawingDraftStyle();
+		let additionalOptions = {};
+
+		switch (featureType) {
+		case "marker": 
+			additionalOptions = {
+				icon: this._createIcon({...this._getDrawingDraftStyle()})
+			};
+			break;
+		case "polygon": 
+			additionalOptions = {
+				allowIntersection: false,
+				showArea: true
+			};
+			break;
+		case "rectangle": 
+			additionalOptions = {
+				showArea: true
+			};
+			break;
+		}
+
+		return {shapeOptions: {...baseStyle, ...(additionalOptions.shapeOptions || {})}, ...additionalOptions};
+	}
+
 	triggerDrawing(featureType) {
-		const options = this._getDrawingDraftStyle(featureType.toLowerCase());
-		const optionsToPass = featureType.toLowerCase() !== "marker" ? {
-			shapeOptions: options
-		} : {
-			icon: this._createIcon(options)
-		};
-		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, optionsToPass);
+		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
 		layer.enable();
 		return layer;
 	}

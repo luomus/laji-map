@@ -147,12 +147,12 @@ export default class LajiMap {
 		});
 
 		this.overlays = {
-			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-				layers: "test:eliomaakunnat",
-				format: "image/png",
-				transparent: true,
-				version: "1.3.0"
-			}),
+      geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
+        layers: "INSPIRE:fi_fmnh_br",
+        format: "image/png",
+        transparent: true,
+        version: "1.3.0"
+      }).setOpacity(0.3),
 			forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 				layers: "Metsakasvillisuusvyohykkeet",
 				format: "image/png",

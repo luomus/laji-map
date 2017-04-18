@@ -801,8 +801,8 @@ export default class LajiMap {
 			let {popupCounter} = that;
 
 			// Allow either returning content or firing a callback with content.
-			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
-			if (content) openPopup(content);
+			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(`${callbackContent}`);});
+			if (content !== undefined && typeof content !== "function") openPopup(`${content}`);
 		}
 
 
@@ -835,8 +835,8 @@ export default class LajiMap {
 		}
 
 		// Allow either returning content or firing a callback with content.
-		const content = data.getTooltip(idx, callbackContent => openTooltip(callbackContent));
-		if (content) openTooltip(content);
+		const content = data.getTooltip(idx, callbackContent => openTooltip(`${callbackContent}`));
+		if (content !== undefined && typeof content !== "function") openTooltip(`${content}`);
 	}
 
 	_initializeDrawLayer(layer, idx) {

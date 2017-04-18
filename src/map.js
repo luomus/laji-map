@@ -220,7 +220,9 @@ export default class LajiMap {
 				if (this.editIdx !== undefined || this.drawing) return;
 				if ((typeof this.draw === "object" && this.draw.marker !== false)
 				) {
-					this._onAdd(new L.marker(e.latlng));
+					const icon =  this._createIcon(this._getStyleForType());
+					const marker = new L.marker(e.latlng, ({icon}));
+					this._onAdd(marker);
 				}
 			},
 			"draw:created": ({ layer }) => this._onAdd(layer),
@@ -1177,25 +1179,19 @@ export default class LajiMap {
 	_getStyleForType(overrideStyles, id) {
 		const idx = this.idsToIdxs[id];
 
-		const styles = {
-			opacity: 1,
-			fillOpacity: 0.4,
-			color: NORMAL_COLOR,
-			fillColor: NORMAL_COLOR
-		};
-
 		const dataStyles = this.draw.data.getFeatureStyle({
 			featureIdx: idx,
 			feature: this.draw.data.featureCollection.features[idx]
 		});
 
-		[dataStyles, overrideStyles].forEach(_styles => {
-			if (_styles) for (let style in _styles) {
-				styles[style] = _styles[style];
-			}
-		});
-
-		return styles;
+		return {
+			opacity: 1,
+			fillOpacity: 0.4,
+			color: NORMAL_COLOR,
+			fillColor: NORMAL_COLOR,
+			...(dataStyles || {}),
+			...(overrideStyles || {})
+		};
 	}
 
 	_getStyleForLayer(layer, overrideStyles, id) {

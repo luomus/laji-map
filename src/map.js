@@ -133,7 +133,7 @@ export default class LajiMap {
 			});
 		});
 
-		this.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", { 
+		this.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
 			layers: "osm_finland:Sea",
 			format: "image/png",
 			transparent: false,
@@ -148,11 +148,11 @@ export default class LajiMap {
 
 		this.overlays = {
 			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-				layers: "test:eliomaakunnat",
+				layers: "INSPIRE:fi_fmnh_br",
 				format: "image/png",
 				transparent: true,
 				version: "1.3.0"
-			}),
+			}).setOpacity(0.3),
 			forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 				layers: "Metsakasvillisuusvyohykkeet",
 				format: "image/png",
@@ -1301,12 +1301,12 @@ export default class LajiMap {
 		let additionalOptions = {};
 
 		switch (featureType) {
-		case "marker": 
+		case "marker":
 			additionalOptions = {
 				icon: this._createIcon({...this._getDrawingDraftStyle()})
 			};
 			break;
-		case "polygon": 
+		case "polygon":
 			additionalOptions = {
 				allowIntersection: false,
 			};

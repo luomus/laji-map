@@ -133,16 +133,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		if (isProvided(this, "draw")) {
-			this._addControl("draw", this._getDrawControl());
-			this._addControl("coordinateInput", this._getCoordinateInputControl());
-			this._addControl("drawCopy", this._getDrawCopyControl());
-			this._addControl("drawClear", this._getDrawClearControl());
-		}
+		this._addControl("draw", this._getDrawControl());
+		this._addControl("coordinateInput", this._getCoordinateInputControl());
+		this._addControl("drawCopy", this._getDrawCopyControl());
+		this._addControl("drawClear", this._getDrawClearControl());
 
-		if (isProvided(this, "lineTransect")) {
-			this._addControl("lineTransect", this._getLineTransectControl());
-		}
+		this._addControl("lineTransect", this._getLineTransectControl());
 
 		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
 		this._addControl("coordinates", this._getCoordinatesControl());
@@ -172,6 +168,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@reflect()
 	@dependsOn("draw")
 	_updateDrawControls() {
+		this._updateMapControls();
+	}
+
+	@reflect()
+	@dependsOn("lineTransect")
+	_updateLineTransectControls() {
 		this._updateMapControls();
 	}
 
@@ -216,41 +218,58 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	_controlIsAllowed(name) {
-		if (name.includes(".")) {
-			const splitted = name.split(".");
-			const control = splitted[0];
-			const subControl = splitted[1];
-			return (
-			this.controlSettings[control] === true ||
-			(this.controlSettings[control].constructor === Object && this.controlSettings[control][subControl])
-			);
-		}
-
 		const dependencies = {
 			coordinateInput: [
 				() => this.draw,
 				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
 			],
+			draw: [
+				() => isProvided(this, "draw"),
+			],
 			drawCopy: [
-				() => this.draw,
+				() => isProvided(this, "draw"),
 				() => this.getFeatureTypes().some(type => this.draw[type])
 			],
 			drawClear: [
-				() => this.draw,
+				() => isProvided(this, "draw"),
 				() => this.getFeatureTypes().some(type => this.draw[type])
+			],
+			lineTransect: [
+				() => isProvided(this, "lineTransect")
 			]
 		};
 
 		const {controlSettings} = this;
 
 		function controlIsOk(controlName) {
-			const controlItem = controlSettings[controlName];
-			return (
-			controlItem &&
-			(dependencies[controlName] || []).every(dependency => {
-				return (typeof dependency === "function") ? dependency() : controlIsOk(dependency);}) &&
-			(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
-			);
+			let splitted, parentControl, subControl;
+			if (name.includes(".")) {
+				splitted = name.split(".");
+				parentControl = splitted[0];
+				subControl = splitted[1];
+			}
+
+			function dependenciesAreOk(controlName) {
+				return (dependencies[controlName] || []).every(dependency => 
+					(typeof dependency === "function") ? dependency() : controlIsOk(dependency)
+				);
+			}
+			
+			if (!splitted) {
+				const controlItem = controlSettings[controlName];
+				return (
+					controlItem &&
+					dependenciesAreOk(controlName) &&
+					(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
+				);
+			} else {
+				return (
+					controlSettings[parentControl] === true ||
+					(controlSettings[parentControl].constructor === Object && controlSettings[parentControl][subControl])
+				) && (
+					dependenciesAreOk(parentControl) && dependenciesAreOk(subControl)
+				);
+			}
 		}
 
 		return controlIsOk(name);
@@ -967,7 +986,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	@reflect()
-	@dependsOn("map", "translations", "controls", "draw")
+	@dependsOn("map", "translations", "controls")
 	_updateContextMenu() {
 		if (!depsProvided(this, "_updateContextMenu", arguments)) return;
 
@@ -998,12 +1017,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				this.controlItems.lineTransectDelete,
 			]
 		].forEach(controlGroup => {
-			if (controlGroup.some(control => this._controlIsAllowed(control.name))
-		) {
+			if (controlGroup.some(control => this._controlIsAllowed(control.name))) {
 				this.map.contextmenu.addItem("-");
 			}
 			controlGroup.forEach(control => {
-				this.map.contextmenu.addItem(control);
+				if (this._controlIsAllowed(control.name)) this.map.contextmenu.addItem(control);
 			});
 		});
 	}

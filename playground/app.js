@@ -118,11 +118,11 @@ class App {
 						}
 					],
 				},
-				getPopup: (idx, feature, callback) => {
+				getPopup: (idx, geometry, callback) => {
 					setTimeout(() => callback(`${idx}`), 2000);
 				},
-				getTooltip: (idx, feature) => {
-					return feature.geometry.type;
+				getTooltip: (idx, geometry) => {
+					return geometry.type;
 				},
 				cluster: true,
 			},

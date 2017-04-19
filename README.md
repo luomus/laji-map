@@ -41,8 +41,8 @@ lineTransect                                    | Linetransect options      | - 
 Option                                          | Type                      |  Default                            | Description
 ------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
 featureCollection                               | GeoJSON featureCollection | Empty feature collection            | The feature collection to render.
-getPopup(idx, callback)                         | Function                  | -                                   | Function that returns a popup string, or calls the callback with the popup string.
-getTooltip(idx, callback)                       | Function                  | -                                   | Function that returns a tooltip string, or calls the callback with the tooltip string.
+getPopup(idx, geometry, callback)               | Function                  | -                                   | Function that returns a popup string, or calls the callback with the popup string.
+getTooltip(idx, geometry, callback)             | Function                  | -                                   | Function that returns a tooltip string, or calls the callback with the tooltip string.
 getFeatureStyle({dataIdx, featureIdx, feature}) | Function                  | see `lajiMap._getDefaultDataStyle()`| A function that returns a Path style to use for the feature described by the input parameters. (Note that draw data doesn't receive `dataIdx` input).
 cluster                                         | Boolean                   | false                               | Controls whether the features should cluster.
 getClusterStyle({count))                        | Function                  | see `lajiMap._getClusterIcon()`     | A function that returns a Path style to use for feature clusters. The returned path style extends the default style. the `count` parameter is the number of features in the cluster.
@@ -52,7 +52,7 @@ getClusterStyle({count))                        | Function                  | se
 
 Option                                          | Type                 |  Default                                 | Description
 ------------------------------------------------|----------------------|------------------------------------------|------------------------------------
-data                                            | Data options         | Empty feature collection                 | The GeoJSON feature collection to use as the data.
+data                                            | Data options         | Data with empty feature collection       | The GeoJSON feature collection to use as the data.
 editable                                        | Boolean              | true                                     | Controls whether the data is editable.
 hasActive                                       | Boolean              | false                                    | Controls whether a feature can be activated. Activating is controlled by clicking a feature and `lajiMap.setActiveIdx(idx)`
 activeIdx                                       | Integer              | -                                        | The initial active idx. Works only if `hasActive` is `true`.

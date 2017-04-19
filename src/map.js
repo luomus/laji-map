@@ -614,7 +614,10 @@ export default class LajiMap {
 					return this.draw.data.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, feature});
 				},
 				onEachFeature: (feature, layer) => {
-					this._initializeDrawLayer(layer, feature.properties.lajiMapIdx);
+					const idx = feature.properties.lajiMapIdx;
+					this._initializeDrawLayer(layer, idx);
+					this._initializePopup(this.draw.data, layer, idx);
+					this._initializeTooltip(this.draw.data, layer, idx);
 				}
 			});
 		let drawLayerForMap = this.drawLayerGroup;
@@ -739,6 +742,14 @@ export default class LajiMap {
 			this._initializeDrawLayer(this._getDrawLayerById(id), this.idsToIdxs[id]);
 		}
 		this._resetIds();
+
+		let _idx = 0;
+		this.drawLayerGroup.eachLayer(layer => {
+			this._initializePopup(this.draw.data, layer, _idx);
+			this._initializeTooltip(this.draw.data, layer, _idx);
+			_idx++;
+		});
+
 		this._reclusterDrawData();
 	}
 
@@ -801,7 +812,7 @@ export default class LajiMap {
 			let {popupCounter} = that;
 
 			// Allow either returning content or firing a callback with content.
-			const content = data.getPopup(idx, callbackContent => {if (that.popupCounter == popupCounter) openPopup(`${callbackContent}`);});
+			const content = data.getPopup(idx, that.formatFeatureOut(layer.toGeoJSON(), layer).geometry, callbackContent => {if (that.popupCounter == popupCounter) openPopup(`${callbackContent}`);});
 			if (content !== undefined && typeof content !== "function") openPopup(`${content}`);
 		}
 
@@ -835,7 +846,7 @@ export default class LajiMap {
 		}
 
 		// Allow either returning content or firing a callback with content.
-		const content = data.getTooltip(idx, callbackContent => openTooltip(`${callbackContent}`));
+		const content = data.getTooltip(idx, this.formatFeatureOut(layer.toGeoJSON(), layer).geometry, callbackContent => openTooltip(`${callbackContent}`));
 		if (content !== undefined && typeof content !== "function") openTooltip(`${content}`);
 	}
 
@@ -851,9 +862,6 @@ export default class LajiMap {
 			if (!this._interceptClick()) this._onActiveChange(this.idsToIdxs[layer._leaflet_id]);
 		});
 		layer.on("dblclick", () => this._setEditable(this.idsToIdxs[layer._leaflet_id]));
-
-		this._initializePopup(this.draw.data, layer, idx);
-		this._initializeTooltip(this.draw.data, layer, idx);
 
 		if (this.onInitializeDrawLayer) this.onInitializeDrawLayer(idx, layer);
 
@@ -967,6 +975,9 @@ export default class LajiMap {
 		];
 
 		this._triggerEvent(event, this.draw.onChange);
+
+		this._initializePopup(this.draw.data, layer, idx);
+		this._initializeTooltip(this.draw.data, layer, idx);
 	}
 
 	_onEdit(data) {
@@ -1298,12 +1309,6 @@ export default class LajiMap {
 		case "polygon": 
 			additionalOptions = {
 				allowIntersection: false,
-				showArea: true
-			};
-			break;
-		case "rectangle": 
-			additionalOptions = {
-				showArea: true
 			};
 			break;
 		}

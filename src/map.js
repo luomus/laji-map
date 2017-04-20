@@ -152,7 +152,7 @@ export default class LajiMap {
 				format: "image/png",
 				transparent: true,
 				version: "1.3.0"
-			}).setOpacity(0.3),
+			}).setOpacity(0.5),
 			forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 				layers: "Metsakasvillisuusvyohykkeet",
 				format: "image/png",

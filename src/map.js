@@ -946,7 +946,7 @@ export default class LajiMap {
 	}
 
 	_onAdd(layer, coordinateVerbatim) {
-		if (layer instanceof L.Polyline && layer.getLatLngs().length < 2) {
+		if (layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type])) && layer.getLatLngs().length < 2) {
 			return;
 		}
 

@@ -946,6 +946,10 @@ export default class LajiMap {
 	}
 
 	_onAdd(layer, coordinateVerbatim) {
+		if (layer instanceof L.Polyline && layer.getLatLngs().length < 2) {
+			return;
+		}
+
 		this.updateLayerStyle(layer, this._getStyleForLayer(layer));
 
 		const {featureCollection: {features}} = this.draw.data;

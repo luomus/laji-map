@@ -997,6 +997,15 @@ export default class LajiMap {
 			type: "edit",
 			features: eventData
 		}, this.draw.onChange);
+
+		for (let id in data) {
+			const layer = this._getDrawLayerById(id);
+			const idx = this.idsToIdxs[id];
+
+			layer.closePopup().closeTooltip();
+			this._initializePopup(this.draw.data, layer, idx);
+			this._initializeTooltip(this.draw.data, layer, idx);
+		}
 	}
 
 	_onDelete(deleteIds) {

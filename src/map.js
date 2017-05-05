@@ -225,9 +225,21 @@ export default class LajiMap {
 					this._onAdd(marker);
 				}
 			},
-			"draw:created": ({ layer }) => this._onAdd(layer),
+			"draw:created": ({layer}) => this._onAdd(layer),
 			"draw:drawstart": () => { this.drawing = true; },
 			"draw:drawstop": () => { this.drawing = false; },
+			"draw:drawvertex": (e) => {
+				const layers = e.layers._layers;
+				const keys = Object.keys(layers);
+				const latlng = layers[keys[keys.length - 1]].getLatLng();
+
+				const {x, y} = this.map.latLngToContainerPoint(latlng);
+				const {width, height} = this.rootElem.getBoundingClientRect();
+				const treshold = Math.min(width, height) / 4;
+				if ([y, y - height, x, x - width].some(dist => Math.abs(dist) < treshold)) {
+					this.map.setView(latlng);
+				}
+			},
 			locationfound: (...params) => this._onLocationFound(...params),
 			locationerror: (...params) => this._onLocationNotFound(...params),
 			"contextmenu.show": this._interceptClick,

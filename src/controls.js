@@ -8,7 +8,8 @@ import {
 	GOOGLE_SATELLITE,
 	EPSG3067String,
 	EPSG2393String,
-	ESC
+	ESC,
+	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 
@@ -174,6 +175,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@reflect()
 	@dependsOn("lineTransect")
 	_updateLineTransectControls() {
+		this._updateMapControls();
+	}
+
+	@reflect()
+	@dependsOn("tileLayer", "overlays")
+	_updateLayersControls() {
 		this._updateMapControls();
 	}
 
@@ -485,6 +492,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
 		});
 		Object.keys(this.overlays).forEach(overlayName => {
+			if (this._getDefaultCRSLayers().includes(this.tileLayer) && ONLY_MML_OVERLAY_NAMES.includes(overlayName)) return;
 			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlays[overlayName];
 		});
 

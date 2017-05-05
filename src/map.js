@@ -19,7 +19,8 @@ import {
 	POHJAKARTTA,
 	OPEN_STREET,
 	GOOGLE_SATELLITE,
-	ESC
+	ESC,
+	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 
 import translations from "./translations.js";
@@ -340,6 +341,8 @@ export default class LajiMap {
 		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
 		this.map.setView(center, zoom, {animate: false});
 
+		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
+
 		if (this.tileLayer) this.map.removeLayer(this.tileLayer);
 
 		this.tileLayer = layer;
@@ -349,9 +352,13 @@ export default class LajiMap {
 		if (projectionChanged) {
 			for (let overlayName in this.overlays) {
 				const overlay = this.overlays[overlayName];
-				if (overlay._map) {
-					this.map.removeLayer(overlay);
-					this.map.addLayer(overlay);
+				if (overlay._map || (mmlCRSLayers.includes(this.tileLayer) && this.savedMMLOverlays[overlayName])) {
+					if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
+					if (mmlCRSLayers.includes(this.tileLayer) || !ONLY_MML_OVERLAY_NAMES.map(name => this.overlays[name]).includes(overlay)) {
+						this.map.addLayer(overlay);
+					} else if(!mmlCRSLayers.includes(this.tileLayer)) {
+						this.savedMMLOverlays[overlayName] = true;
+					}
 				}
 			}
 		}
@@ -367,9 +374,13 @@ export default class LajiMap {
 		return tileLayers;
 	}
 
-	@dependsOn("map")
+	@dependsOn("tileLayer")
 	setOverlays(overlays) {
 		if (!depsProvided(this, "setOverlays", arguments)) return;
+
+		if (this._getDefaultCRSLayers().includes(this.tileLayer)) {
+			overlays = overlays.filter(overlay => !ONLY_MML_OVERLAY_NAMES.map(name => this.overlays[name]).includes(overlay));
+		}
 
 		Object.keys(this.overlays).forEach(overlay => {
 			if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
@@ -377,6 +388,7 @@ export default class LajiMap {
 		overlays.forEach(overlay => {
 			this.map.addLayer(overlay);
 		});
+		provide(this, "overlays");
 	}
 
 	@dependsOn("map")

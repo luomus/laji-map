@@ -354,4 +354,9 @@
 		en: "Base map of Finland",
 		sv: "Finlands baskarta"
 	},
+	interval: {
+		fi: "väli",
+		en: "interval",
+		sv: "intervall"
+	}
 };

@@ -262,31 +262,22 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		function openTooltipFor(i) {
 			function getTooltipFor(idx) {
-				const distance = parseInt(pointIdxsToDistances[idx]);
-				return 	`${idx + 1}. ${that.translations.point} \
-				         (${distance}m ${that.translations.fromTheBeginningOfTheLine})`;
+				const prevDistance = parseInt(pointIdxsToDistances[idx]);
+				const distance = parseInt(pointIdxsToDistances[idx + 1]);
+				return 	`${idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
 			}
 
 			let tooltip = getTooltipFor(i);
-			if (that._overlappingPointIdxs[i] !== undefined) {
-				tooltip = `${that.translations.OverlappingPoints}<br/>${getTooltipFor(that._overlappingPointIdxs[i])}<br/>${tooltip}`;
-			}
-			const point = that._allPoints[i];
-			point.bindTooltip(tooltip, {direction: "top"}).openTooltip();
+			const line = that._allLines[i];
+			line.bindTooltip(tooltip, {direction: "top"}).openTooltip();
 		}
 
 		function closeTooltipFor(i) {
-			const point = that._allPoints[i];
-			point.unbindTooltip();
+			const line = that._allLines[i];
+			line.unbindTooltip();
 		}
 
-		this._pointLayerGroup.on("mouseover", e => {
-			const {i} = getIdxsFromEvent(e);
-			openTooltipFor(i);
-		}).on("mouseout", e => {
-			const {i} = getIdxsFromEvent(e);
-			closeTooltipFor(i);
-		}).on("dblclick", e => {
+		this._pointLayerGroup.on("dblclick", e => {
 			const {i} = getIdxsFromEvent(e);
 			if (this._overlappingPointIdxs[i] !== undefined) {
 				const firstLTIdx = flatIdxToLTIdx(this._overlappingPointIdxs[i], this._pointLayers);
@@ -348,21 +339,19 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._triggerEvent(this._getOnActiveSegmentChangeEvent(i), this._onLTChange);
 			}
 		}).on("mouseover", e => {
-			const {i, lineIdx, segmentIdx} = getIdxsFromEvent(e);
+			const {i} = getIdxsFromEvent(e);
 
 			const prevHoverIdx = this._hoveredLTLineIdx;
 			this._hoveredLTLineIdx = i;
 			this._updateStyleForLTIdx(prevHoverIdx);
 			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
-			const pointIdx = LTIdxToFlatIdx(`${lineIdx}-${segmentIdx + 1}`, this._pointLayers);
-			openTooltipFor(pointIdx);
+			openTooltipFor(i);
 		}).on("mouseout", e => {
-			const {i, lineIdx, segmentIdx} = getIdxsFromEvent(e);
+			const {i} = getIdxsFromEvent(e);
 
 			this._hoveredLTLineIdx = undefined;
 			this._updateStyleForLTIdx(i);
-			const pointIdx = LTIdxToFlatIdx(`${lineIdx}-${segmentIdx + 1}`, this._pointLayers);
-			closeTooltipFor(pointIdx);
+			closeTooltipFor(i);
 		}).on("dblclick", e => {
 			const {latlng} = e;
 			const {lineIdx, segmentIdx} = getIdxsFromEvent(e);

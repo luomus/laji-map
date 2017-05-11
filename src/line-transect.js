@@ -117,10 +117,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	setLineTransect(data) {
-		let {feature, activeIdx, onChange} = data;
+		let {feature, activeIdx, onChange, keepActiveTooltipOpen} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
 		this._activeLTIdx = activeIdx;
+		this.keepActiveTooltipOpen = keepActiveTooltipOpen;
 
 		this.setLineTransectGeometry(feature.geometry);
 	}
@@ -211,8 +212,29 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		});
 
 		this._setLineTransectEvents();
+		if (this.keepActiveTooltipOpen) this._openTooltipFor(this._activeLTIdx);
 
 		provide(this, "lineTransect");
+	}
+
+	_openTooltipFor(i) {
+		const that = this;
+		function getTooltipFor(idx) {
+			const prevDistance = parseInt(that.pointIdxsToDistances[idx]);
+			const distance = parseInt(that.pointIdxsToDistances[idx + 1]);
+			return 	`${idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
+		}
+
+		let tooltip = getTooltipFor(i);
+		const line = this._allLines[i];
+		if (!line._tooltip) line.bindTooltip(tooltip, {direction: "top", permanent: true});
+		line.openTooltip();
+	}
+
+
+	_closeTooltipFor(i) {
+		const line = this._allLines[i];
+		if (i !== this._activeLTIdx || !this.keepActiveTooltipOpen) line.closeTooltip().unbindTooltip();
 	}
 
 	_setLineTransectEvents() {
@@ -229,7 +251,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			i++;
 		}));
 
-		const pointIdxsToDistances = {};
+		this.pointIdxsToDistances = {};
 		const leafletIdsToFlatPointIdxs = {};
 
 		let distance = 0;
@@ -240,7 +262,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			points.forEach(point => {
 				const latlng = point.getLatLng();
 				distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
-				pointIdxsToDistances[i] = distance;
+				this.pointIdxsToDistances[i] = distance;
 				leafletIdsToFlatPointIdxs[point._leaflet_id] = i;
 				prevLatLng = latlng;
 				i++;
@@ -256,25 +278,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				lineIdx: leafletIdsToCorridorLineIdxs[_leaflet_id],
 				segmentIdx: leafletIdsToCorridorSegmentIdxs[_leaflet_id]
 			};
-		}
-
-		const that = this;
-
-		function openTooltipFor(i) {
-			function getTooltipFor(idx) {
-				const prevDistance = parseInt(pointIdxsToDistances[idx]);
-				const distance = parseInt(pointIdxsToDistances[idx + 1]);
-				return 	`${idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
-			}
-
-			let tooltip = getTooltipFor(i);
-			const line = that._allLines[i];
-			line.bindTooltip(tooltip, {direction: "top"}).openTooltip();
-		}
-
-		function closeTooltipFor(i) {
-			const line = that._allLines[i];
-			line.unbindTooltip();
 		}
 
 		this._pointLayerGroup.on("dblclick", e => {
@@ -345,13 +348,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._hoveredLTLineIdx = i;
 			this._updateStyleForLTIdx(prevHoverIdx);
 			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
-			openTooltipFor(i);
+			this._openTooltipFor(i);
 		}).on("mouseout", e => {
 			const {i} = getIdxsFromEvent(e);
 
 			this._hoveredLTLineIdx = undefined;
 			this._updateStyleForLTIdx(i);
-			closeTooltipFor(i);
+			if (i !== this._activeLTIdx) this._closeTooltipFor(i);
 		}).on("dblclick", e => {
 			const {latlng} = e;
 			const {lineIdx, segmentIdx} = getIdxsFromEvent(e);
@@ -622,6 +625,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const layer = layerGroup[idx];
 			layer.setStyle(this._getStyleForLTLayer(layer, idx));
 		});
+		(idx === this._activeLTIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(idx) : this._closeTooltipFor(idx);
 	}
 
 	_commitLTLineCut() {

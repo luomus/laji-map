@@ -550,7 +550,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		// Line angle horizontally.
 		const lineAngle = L.GeometryUtil.computeAngle(...latLngs.map(
-			latlng => this.map.options.crs.project(latlng)
+			latlng => L.CRS.EPSG3857.project(latlng)
 		));
 
 		// Line angle clockwise from north.

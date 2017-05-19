@@ -86,12 +86,22 @@ export default class LajiMap {
 		}
 	}
 
-	@dependsOn("map")
 	setRootElem(rootElem) {
-		if (!depsProvided(this, "setRootElem", arguments)) return;
+		this.container = document.createElement("div");
+		const {className} = this.container;
+		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
+			+ "laji-map";
+
+		this.mapElem = document.createElement("div");
+		this.blockerElem = document.createElement("div");
+		this.blockerElem.className = "blocker";
+
+		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem);});
+
 
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
+		provide(this, "rootElem");
 	}
 
 	getMMLProj() {
@@ -105,19 +115,10 @@ export default class LajiMap {
 		return mmlProj;
 	}
 
+	@dependsOn("rootElem")
 	_initializeMap() {
+		if (!depsProvided(this, "_initializeMap", arguments)) return;
 		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
-
-		this.container = document.createElement("div");
-		const {className} = this.container;
-		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
-			+ "laji-map";
-
-		this.mapElem = document.createElement("div");
-		this.blockerElem = document.createElement("div");
-		this.blockerElem.className = "blocker";
-
-		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem);});
 
 		this.map = L.map(this.mapElem, {
 			contextmenu: true,

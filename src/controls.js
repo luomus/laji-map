@@ -134,7 +134,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		this._addControl("draw", this._getDrawControl());
+		if (isProvided(this, "draw")) this._addControl("draw", this._getDrawControl());
 		this._addControl("coordinateInput", this._getCoordinateInputControl());
 		this._addControl("drawCopy", this._getDrawCopyControl());
 		this._addControl("drawClear", this._getDrawClearControl());

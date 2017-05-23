@@ -163,7 +163,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 				lineLayer.push(
 					L.polyline(segment, i === this._activeLTIdx ? activeLineStyle : lineStyle)
-						.setText("     →     ", {repeat: true, attributes: {dy: 5, "font-size": 18}})
+						.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}})
 				);
 
 				pointLayer.push(L.circleMarker(segment[0], pointStyle));
@@ -583,7 +583,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	// Doesn't handle points.
 	_getStyleForLTLayer(layer, idx) {
 		const isActive = idx === this._activeLTIdx;
-		const isEdit = idx === this._splitLTIdx  || (this._removeLTMode && idx === this._hoveredLTLineIdx);
+		const isEdit = idx === this._splitLTIdx || (this._removeLTMode && idx === this._hoveredLTLineIdx);
 		const isHover = idx === this._hoveredLTLineIdx;
 
 		const lineStyles = {

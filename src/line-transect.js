@@ -15,6 +15,7 @@ const lineStyle = {color: NORMAL_COLOR, weight: 2};
 const hoverLineStyle = {...lineStyle, color: INCOMPLETE_COLOR};
 const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
 const editLineStyle = {...lineStyle, color: "#f00"};
+const origLineStyle = {...lineStyle, color: "#99b", dashArray: "5, 5"};
 const corridorStyle = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
 const activeCorridorStyle = {...corridorStyle, fillColor: activeLineStyle.color};
 const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
@@ -116,7 +117,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		})();
 	}
 
+	@dependsOn("map")
 	setLineTransect(data) {
+		if (!depsProvided(this, "setLineTransect", arguments)) return;
+
 		let {feature, activeIdx, onChange, keepActiveTooltipOpen} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
@@ -124,6 +128,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.keepActiveTooltipOpen = keepActiveTooltipOpen;
 
 		this.setLineTransectGeometry(feature.geometry);
+		//this._allLines
+		console.log(this._allLines);
+		this._origLineTransect = L.featureGroup(this._allLines.map(line => L.polyline(line._latlngs, origLineStyle))).addTo(this.map).bringToBack();
 	}
 
 	_formatLTFeatureOut() {
@@ -132,10 +139,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
 	}
 
-	@dependsOn("map")
 	setLineTransectGeometry(geometry) {
-		if (!depsProvided(this, "setLineTransectGeometry", arguments)) return;
-
 		const wholeLinesAsSegments = geoJSONLineToLatLngSegmentArrays(geometry);
 
 		if (this._pointLayerGroup) this.map.removeLayer(this._pointLayerGroup);

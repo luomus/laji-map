@@ -220,8 +220,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_openTooltipFor(i) {
 		const that = this;
 		function getTooltipFor(idx) {
-			const prevDistance = parseInt(that.pointIdxsToDistances[idx]);
-			const distance = parseInt(that.pointIdxsToDistances[idx + 1]);
+			const prevDistance = Math.round(parseInt(that.pointIdxsToDistances[idx]) / 10) * 10;
+			const distance = Math.round(parseInt(that.pointIdxsToDistances[idx + 1]) / 10) * 10;
 			return 	`${idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
 		}
 

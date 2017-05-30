@@ -166,6 +166,10 @@ class App {
 			tileLayerName: "taustakartta",
 		});
 
+		setTimeout(() => {
+			this.map.setNormalizedZoom(13);
+		}, 100);
+
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));
 		});

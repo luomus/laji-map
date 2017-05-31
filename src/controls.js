@@ -575,7 +575,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.updateRedoButton();
 	}
 
+	@dependsOn("controls", "contextMenu")
 	updateUndoButton() {
+		if (!depsProvided(this, "updateUndoButton", arguments)) return;
+
 		const undoButton = this._controlButtons && this._controlButtons["lineTransect.undo"];
 		if (!undoButton) return;
 		if (this._LTHistoryPointer <= 0 && !undoButton.className.includes("leaflet-disabled")) {
@@ -583,15 +586,28 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		} else if (this._LTHistoryPointer > 0 && this._LTHistoryPointer < this._LTHistory.length && undoButton.className.includes("leaflet-disabled")) {
 			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
 		}
+
+		if (this._contextMenuItems) {
+			const contextMenuItem = this._contextMenuItems["lineTransect.undo"];
+			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, this._LTHistoryPointer <= 0);
+		}
 	}
 
+	@dependsOn("controls", "contextMenu")
 	updateRedoButton() {
+		if (!depsProvided(this, "updateRedoButton", arguments)) return;
+
 		const redoButton = this._controlButtons && this._controlButtons["lineTransect.redo"];
 		if (!redoButton) return;
 		if (this._LTHistoryPointer >= this._LTHistory.length - 1 && !redoButton.className.includes("leaflet-disabled")) {
 			redoButton.className += " leaflet-disabled";
 		} else if (this._LTHistoryPointer >= 0 && this._LTHistoryPointer < this._LTHistory.length - 1 && redoButton.className.includes("leaflet-disabled")) {
 			redoButton.className = redoButton.className.replace(" leaflet-disabled", "");
+		}
+
+		if (this._contextMenuItems) {
+			const contextMenuItem = this._contextMenuItems["lineTransect.redo"];
+			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, this._LTHistoryPointer >= this._LTHistory.length - 1);
 		}
 	}
 
@@ -977,6 +993,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const join = (...params) => this._joinTranslations(...params);
 
 		this.map.contextmenu.removeAllItems();
+		this._contextMenuItems = {};
 
 		let groupAdded = false;
 
@@ -984,7 +1001,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const text = join("Draw", featureType);
 
 			if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
-				this.map.contextmenu.addItem({
+				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
 					text: text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
 					callback: () => this.triggerDrawing(featureType)
@@ -1000,12 +1017,15 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 			groupAdded = false;
 			controlGroup.forEach(control => {
-				if ("text" in control && this._controlIsAllowed(getSubControlName(groupName, control.name))) {
-					this.map.contextmenu.addItem({...control, callback: control.fn});
+				const controlName = getSubControlName(groupName, control.name);
+				if ("text" in control && this._controlIsAllowed(controlName)) {
+					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({...control, callback: control.fn});
 					groupAdded = true;
 				}
 			});
 		};
 		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ?  control.controls : [control]));
+
+		provide(this, "contextMenu");
 	}
 };

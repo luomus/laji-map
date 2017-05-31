@@ -614,7 +614,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_getOnActiveSegmentChangeEvent(idx) {
 		const prevIdx = this._activeLTIdx;
 		this._activeLTIdx = idx;
-		[prevIdx, idx].forEach(i => this._updateStyleForLTIdx(i));
+		[prevIdx, idx].forEach(i => this._allLines[i] && this._updateStyleForLTIdx(i));
 		return {type: "active", idx: this._activeLTIdx};
 	}
 

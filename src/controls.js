@@ -171,14 +171,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					{
 						name: "undo",
 						text: this.translations.Undo,
-						iconCls: "glyphicon glyphicon-remove-sign",
+						iconCls: "laji-map-line-transect-undo-glyph",
 						fn: (...params) => this.LTUndo(...params),
 						onAdd: () => this.updateUndoButton()
 					},
 					{
 						name: "redo",
 						text: this.translations.Redo,
-						iconCls: "glyphicon glyphicon-remove-sign",
+						iconCls: "laji-map-line-transect-redo-glyph",
 						fn: (...params) => this.LTRedo(...params),
 						onAdd: () => this.updateRedoButton()
 					}

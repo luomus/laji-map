@@ -117,6 +117,17 @@
 	font-size: 11px;
 }
 
+.laji-map .laji-map-line-transect-undo-glyph:before {
+	content: "↶";
+	font-weight: bold;
+	font-size: 15px;
+}
+.laji-map .laji-map-line-transect-redo-glyph:before {
+	content: "↷";
+	font-weight: bold;
+	font-size: 15px;
+}
+
 .laji-map .laji-map-warning {
 	position: absolute;
 	z-index: 1000;

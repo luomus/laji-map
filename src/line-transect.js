@@ -127,6 +127,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._activeLTIdx = activeIdx;
 		this.keepActiveTooltipOpen = keepActiveTooltipOpen;
 
+		this._LTHistory = [feature.geometry];
+		this._LTHistoryPointer = 0;
+
+
 		this.setLineTransectGeometry(feature.geometry);
 		this._origLineTransect = L.featureGroup(this._allLines.map(line => 
 			L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
@@ -139,7 +143,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
 	}
 
-	setLineTransectGeometry(geometry) {
+	setLineTransectGeometry(geometry, undoable) {
+		if (undoable) {
+			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
+				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
+			}
+			this._LTHistory.push(geometry);
+			this._LTHistoryPointer++;
+		}
 
 		const wholeLinesAsSegments = geoJSONLineToLatLngSegmentArrays(geometry);
 
@@ -220,6 +231,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (this.keepActiveTooltipOpen) this._openTooltipFor(this._activeLTIdx);
 
 		provide(this, "lineTransect");
+	}
+
+	LTUndo() {
+		if (this._LTHistoryPointer <= 0) return;
+		this._LTHistoryPointer--;
+		this.setLineTransectGeometry(this._LTHistory[this._LTHistoryPointer]);
+	}
+
+	LTRedo() {
+		if (this._LTHistoryPointer >= this._LTHistory.length - 1) return;
+		this._LTHistoryPointer++;
+		this.setLineTransectGeometry(this._LTHistory[this._LTHistoryPointer]);
 	}
 
 	_openTooltipFor(i) {
@@ -447,7 +470,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.lineTransectEditIdx = undefined;
 
 		const feature = this._formatLTFeatureOut();
-		this.setLineTransectGeometry(feature.geometry);
+		this.setLineTransectGeometry(feature.geometry, !!"undoable");
 
 		const events = [];
 		[this._precedingLTDragIdx, this._followingLTDragIdx].forEach(idx => {
@@ -656,7 +679,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._allLines.splice(splitIdx + 1, 0, L.polyline(splittedHead));
 
 		const feature = this._formatLTFeatureOut();
-		this.setLineTransectGeometry(feature.geometry);
+		this.setLineTransectGeometry(feature.geometry, !!"undoable");
 
 		const events = [
 			{
@@ -762,7 +785,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this._triggerEvent(events, this._onLTChange);
 		this.stopRemoveLTSegmentMode();
-		this.setLineTransectGeometry(feature.geometry);
+		this.setLineTransectGeometry(feature.geometry, !!"undoable");
 		this.map.fire("lineTransect:delete");
 	}
 

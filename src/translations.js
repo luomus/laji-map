@@ -358,5 +358,15 @@
 		fi: "väli",
 		en: "interval",
 		sv: "intervall"
+	},
+	undo: {
+		fi: "kumoa",
+		en: "undo",
+		sv: "göra ogjord"
+	},
+	redo: {
+		fi: "tee uudelleen",
+		en: "redo",
+		sv: "görä om"
 	}
 };

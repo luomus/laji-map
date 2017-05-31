@@ -13,6 +13,11 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 
+function getSubControlName(name, subName) {
+	return (name !== undefined) ? `${name}.${subName}` : subName;
+}
+
+
 export default LajiMap => class LajiMapWithControls extends LajiMap {
 	constructor(props) {
 		super(props);
@@ -20,19 +25,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	_initControls() {
-		this.controls = {
-			layer: undefined,
-			location: undefined,
-			zoom: undefined,
-			draw: undefined,
-			coordinateInput: undefined,
-			drawCopy: undefined,
-			drawClear: undefined,
-			coordinates: undefined,
-			scale: undefined,
-			lineTransect: undefined
-		};
-
+		this.controls = {};
 		provide(this, "controlsConstructed");
 	}
 
@@ -97,54 +90,179 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (control) this.map.removeControl(control);
 		});
 
-		this._addControl("layer", this._getLayerControl());
-		this._addControl("location", this._getLocationControl());
-		this._addControl("zoom", this._getZoomControl());
-
-		this.controlItems = {
-			coordinateInput: {
-				name: "coordinateInput",
-				text: this.translations.AddFeatureByCoordinates,
-				iconCls: "laji-map-coordinate-input-glyph",
-				callback: (...params) => this.openCoordinatesInputDialog(...params)
+		this.controlItems = [
+			{
+				name: "layer",
+				control: this._getLayerControl()
 			},
-			drawCopy: {
-				name: "drawCopy",
-				text: this.translations.CopyDrawnFeatures,
-				iconCls: "glyphicon glyphicon-floppy-save",
-				callback: (...params) => this.openDrawCopyDialog(...params)
+			{
+				name: "location",
+				position: "topleft",
+				controls: [
+					{
+						name: "userLocation",
+						text: this.translations.Geolocate,
+						iconCls: "glyphicon glyphicon-screenshot",
+						fn: (...params) => this._onLocate(...params),
+					}
+				],
+				contextMenu: false
 			},
-			drawClear: {
-				name: "drawClear",
-				text: this.translations.ClearMap,
-				iconCls: "glyphicon glyphicon-trash",
-				callback: (...params) => this.clearDrawData(...params)
+			{
+				name: "zoom",
+				control: L.control.zoom({
+					zoomInTitle: this.translations.ZoomIn,
+					zoomOutTitle: this.translations.ZoomOut
+				})
 			},
-			lineTransectSplit: {
-				name: "lineTransect.split",
-				text: this.translations.SplitLine,
-				iconCls: "glyphicon glyphicon-scissors",
-				callback: (...params) => this.startLTLineSplit(...params)
+			{
+				name: "scale",
+				control: L.control.scale({metric: true, imperial: false})
 			},
-			lineTransectDelete: {
-				name: "lineTransect.delete",
-				text: this.translations.DeleteLineSegment,
-				iconCls: "glyphicon glyphicon-remove-sign",
-				callback: (...params) => this.startRemoveLTSegmentMode(...params)
+			{
+				name: "coordinates",
+				control: this._getCoordinatesControl()
+			},
+			{
+				name: "draw",
+				control: this._getDrawControl()
+			},
+			{
+				controls: [
+					{
+						name: "coordinateInput",
+						text: this.translations.AddFeatureByCoordinates,
+						iconCls: "laji-map-coordinate-input-glyph",
+						fn: (...params) => this.openCoordinatesInputDialog(...params)
+					},
+					{
+						name: "drawCopy",
+						text: this.translations.CopyDrawnFeatures,
+						iconCls: "glyphicon glyphicon-floppy-save",
+						fn: (...params) => this.openDrawCopyDialog(...params)
+					},
+					{
+						name: "drawClear",
+						text: this.translations.ClearMap,
+						iconCls: "glyphicon glyphicon-trash",
+						fn: (...params) => this.clearDrawData(...params)
+					}
+				]
+			},
+			{
+				name: "lineTransect",
+				controls: [
+					{
+						name: "split",
+						text: this.translations.SplitLine,
+						iconCls: "glyphicon glyphicon-scissors",
+						fn: (...params) => this.startLTLineSplit(...params),
+						stopFn: (...params) => this.stopLTLineSplit(...params),
+						eventName: "lineTransect:split"
+					},
+					{
+						name: "delete",
+						text: this.translations.DeleteLineSegment,
+						iconCls: "glyphicon glyphicon-remove-sign",
+						fn: (...params) => this.startRemoveLTSegmentMode(...params),
+						stopFn: (...params) => this.stopRemoveLTSegmentMode(...params),
+						eventName: "lineTransect:delete"
+					},
+					{
+						name: "undo",
+						text: this.translations.Undo,
+						iconCls: "glyphicon glyphicon-remove-sign",
+						fn: (...params) => this.LTUndo(...params),
+						onAdd: () => this.updateUndoButton()
+					},
+					{
+						name: "redo",
+						text: this.translations.Redo,
+						iconCls: "glyphicon glyphicon-remove-sign",
+						fn: (...params) => this.LTRedo(...params),
+						onAdd: () => this.updateRedoButton()
+					}
+				]
 			}
-		};
+		];
 
-		if (isProvided(this, "draw")) this._addControl("draw", this._getDrawControl());
-		this._addControl("coordinateInput", this._getCoordinateInputControl());
-		this._addControl("drawCopy", this._getDrawCopyControl());
-		this._addControl("drawClear", this._getDrawClearControl());
+		const that = this;
 
-		this._addControl("lineTransect", this._getLineTransectControl());
+		function _createCancelHandler(name, fn, eventName) {
+			let cont = this.cancelHandlers[name];
 
-		this._addControl("scale", L.control.scale({metric: true, imperial: false}));
-		this._addControl("coordinates", this._getCoordinatesControl());
+			const _that = this;
+			function stop() {
+				fn();
+				that._removeKeyListener(ESC, stop);
+				_that.container.removeChild(cont);
+				that.map.off(eventName);
+			}
 
-	// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
+			if (!cont) {
+				this.cancelHandlers[name] = L.DomUtil.create("ul", "leaflet-draw-actions");
+				cont = this.cancelHandlers[name];
+				const buttonWrapper = L.DomUtil.create("li");
+				const button = that._createControlButton(this, buttonWrapper, stop);
+				that.addTranslationHook(button, "Cancel");
+				cont.appendChild(buttonWrapper);
+			}
+
+			that._addKeyListener(ESC, stop, !!"high priority");
+			that.map.on(eventName, stop);
+
+			const parentBtn = that._controlButtons[name];
+			cont.style.top = `${parentBtn.offsetTop}px`;
+			cont.style.display = "block";
+
+			this.container.appendChild(cont);
+		}
+
+		this._controlButtons = {};
+
+		this.controlItems.forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
+			function callback(fn, stopFn, name, eventName) { return (...params) => {
+				if (stopFn) {
+					fn(...params);
+					this._createCancelHandler(name, stopFn, eventName);
+				} else {
+					fn(...params);
+				}
+			};}
+
+			const leafletControl = control || (() => {
+				const onAdd = (controls && controls.some(({name: subName}) => this._controlIsAllowed(getSubControlName(name, subName)))) ?
+					function() {
+						this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
+						this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
+						this.cancelHandlers = {};
+
+						controls.forEach(({name: subName, iconCls, text, fn, stopFn, eventName, onAdd: _onAdd}) => {
+							const buttonName = getSubControlName(name, subName);
+							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, stopFn, buttonName, eventName]));
+							if (_onAdd) _onAdd();
+						});
+
+						return this.container;
+					} : function() {
+						const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
+						that._controlButtons[name] = that._createControlItem(this, container, iconCls, text, callback.apply(this, [fn, stopFn, name, eventName]));
+						if (_onAdd) _onAdd();
+						return container;
+					};
+
+				const Control = L.Control.extend({
+					options: position ? {position} : undefined,
+					onAdd,
+					_createCancelHandler
+				});
+				return new Control();
+			})();
+
+			this._addControl(name, leafletControl);
+		});
+
+		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
 		function removeHref(className) {
 			const elems = document.getElementsByClassName(className);
@@ -169,18 +287,21 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@reflect()
 	@dependsOn("draw")
 	_updateDrawControls() {
+		if (!depsProvided(this, "_updateDrawControls", arguments)) return;
 		this._updateMapControls();
 	}
 
 	@reflect()
 	@dependsOn("lineTransect")
 	_updateLineTransectControls() {
+		if (!depsProvided(this, "_updateLineTransectControls", arguments)) return;
 		this._updateMapControls();
 	}
 
 	@reflect()
 	@dependsOn("tileLayer", "overlays")
 	_updateLayersControls() {
+		if (!depsProvided(this, "_updateLayersControls", arguments)) return;
 		this._updateMapControls();
 	}
 
@@ -201,7 +322,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawClear: false,
 			coordinates: false,
 			scale: true,
-			lineTransect: {split: true, delete: true}
+			lineTransect: {split: true, delete: true, undo: true, redo: true}
 		};
 
 		for (let setting in controlSettings) {
@@ -234,11 +355,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				() => isProvided(this, "draw"),
 			],
 			drawCopy: [
-				() => isProvided(this, "draw"),
 				() => this.getFeatureTypes().some(type => this.draw[type])
 			],
 			drawClear: [
-				() => isProvided(this, "draw"),
 				() => this.getFeatureTypes().some(type => this.draw[type])
 			],
 			lineTransect: [
@@ -249,8 +368,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const {controlSettings} = this;
 
 		function controlIsOk(controlName) {
+			if (controlName === undefined) return true;
+
 			let splitted, parentControl, subControl;
-			if (name.includes(".")) {
+			if (controlName.includes(".")) {
 				splitted = name.split(".");
 				parentControl = splitted[0];
 				subControl = splitted[1];
@@ -330,97 +451,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		return new L.Control.Draw(drawOptions);
 	}
 
-	_getLocationControl() {
-		const that = this;
-		const LocationControl = L.Control.extend({
-			options: {
-				position: "topleft"
-			},
-
-			onAdd: function() {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-location-control");
-
-				//TODO disabled until implemented.
-				// if (isAllowed("search")) this._createSearch(container);
-				if (that._controlIsAllowed("location", "userLocation")) this._createLocate(container);
-				return container;
-			},
-
-			_createSearch: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-search", that.translations.Search, () => this._onSearch(this));
-			},
-
-			_createLocate: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-screenshot", that.translations.Geolocate, () => that._onLocate());
-			},
-
-			_onSearch: function() {
-			}
-		});
-
-		return new LocationControl();
-	}
-
-	_getCoordinateInputControl() {
-		const that = this;
-		const CoordinateInputControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
-			onAdd: function() {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control laji-map-coordinate-input-control");
-				const {iconCls, text, callback} = that.controlItems.coordinateInput;
-				that._createControlItem(this, container, iconCls, text, callback);
-				return container;
-			}
-		});
-
-		return new CoordinateInputControl();
-	}
-
-	_getDrawCopyControl() {
-		const that = this;
-
-		const DrawCopyControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
-
-			onAdd: function() {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-				that._createControlItem(this, container, "glyphicon glyphicon-floppy-save",
-				that.translations.CopyDrawnFeatures, (...params) => that.openDrawCopyDialog(...params));
-				return container;
-			}
-		});
-
-		return new DrawCopyControl();
-	}
-
-	_getDrawClearControl() {
-		const that = this;
-
-		const DrawClearControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
-
-			onAdd: function() {
-				const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-				that._createControlItem(
-				this,
-				container,
-				"glyphicon glyphicon-trash",
-				that.translations.ClearMap,
-				(...params) => that.clearDrawData(...params)
-			);
-				return container;
-			}
-		});
-
-		return new DrawClearControl();
-
-	}
 
 	_getCoordinatesControl() {
 		const that = this;
@@ -539,82 +569,30 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		return new LayerControl(baseMaps, overlays, {position: "topleft"});
 	}
 
-	_getZoomControl() {
-		return L.control.zoom({
-			zoomInTitle: this.translations.ZoomIn,
-			zoomOutTitle: this.translations.ZoomOut
-		});
+	setLineTransectGeometry(feature, undo) {
+		super.setLineTransectGeometry(feature, undo);
+		this.updateUndoButton();
+		this.updateRedoButton();
 	}
 
-	_getLineTransectControl() {
-		const that = this;
-		const LineTransectControl = L.Control.extend({
-			options: {
-				position: "topright"
-			},
+	updateUndoButton() {
+		const undoButton = this._controlButtons && this._controlButtons["lineTransect.undo"];
+		if (!undoButton) return;
+		if (this._LTHistoryPointer <= 0 && !undoButton.className.includes("leaflet-disabled")) {
+			undoButton.className += " leaflet-disabled";
+		} else if (this._LTHistoryPointer > 0 && this._LTHistoryPointer < this._LTHistory.length && undoButton.className.includes("leaflet-disabled")) {
+			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
+		}
+	}
 
-			onAdd: function() {
-				this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
-				this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
-				this.cancelHandlers = {};
-
-				if (that._controlIsAllowed("lineTransect.split")) this.splitButton = this._createSplit(this.buttonContainer);
-				if (that._controlIsAllowed("lineTransect.delete")) this.deleteButton = this._createDelete(this.buttonContainer);
-				return this.container;
-			},
-
-			_createSplit: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-scissors", that.translations.SplitLine, () => this.onSplit());
-			},
-
-			_createDelete: function(container) {
-				return that._createControlItem(this, container, "glyphicon glyphicon-remove-sign", that.translations.DeleteLineSegment, () => this.onDelete());
-			},
-
-			_createCancelHandler(name, parentBtn, fn, eventName) {
-				let cont = this.cancelHandlers[name];
-
-				const _that = this;
-				function stop() {
-					fn();
-					that._removeKeyListener(ESC, stop);
-					_that.container.removeChild(cont);
-					that.map.off(eventName);
-				}
-
-				if (!cont) {
-					this.cancelHandlers[name] = L.DomUtil.create("ul", "leaflet-draw-actions");
-					cont = this.cancelHandlers[name];
-					const buttonWrapper = L.DomUtil.create("li");
-					const button = that._createControlButton(this, buttonWrapper, stop);
-					that.addTranslationHook(button, "Cancel");
-					cont.appendChild(buttonWrapper);
-				}
-
-				that._addKeyListener(ESC, stop, !!"high priority");
-				that.map.on(eventName, stop);
-
-				cont.style.top = `${parentBtn.offsetTop}px`;
-				cont.style.display = "block";
-
-				this.container.appendChild(cont);
-			},
-
-			onSplit: function() {
-				that.startLTLineSplit();
-
-				this._createCancelHandler("split", this.splitButton, that.stopLTLineSplit, "lineTransect:split");
-			},
-
-			onDelete: function () {
-				that.startRemoveLTSegmentMode();
-				this._createCancelHandler("delete", this.deleteButton, that.stopRemoveLTSegmentMode, "lineTransect:delete");
-			}
-		});
-
-
-		return new LineTransectControl();
-
+	updateRedoButton() {
+		const redoButton = this._controlButtons && this._controlButtons["lineTransect.redo"];
+		if (!redoButton) return;
+		if (this._LTHistoryPointer >= this._LTHistory.length - 1 && !redoButton.className.includes("leaflet-disabled")) {
+			redoButton.className += " leaflet-disabled";
+		} else if (this._LTHistoryPointer >= 0 && this._LTHistoryPointer < this._LTHistory.length - 1 && redoButton.className.includes("leaflet-disabled")) {
+			redoButton.className = redoButton.className.replace(" leaflet-disabled", "");
+		}
 	}
 
 	_showDialog(container, onClose) {
@@ -634,14 +612,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (e) e.preventDefault();
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
-		// document.removeEventListener("keydown", onEscListener);
 			that._removeKeyListener(ESC, close);
 			that.container.removeChild(_container);
 			if (onClose) onClose();
 		}
 
 		this.blockerElem.addEventListener("click", close);
-	// document.addEventListener("keydown", onEscListener);
 		this._addKeyListener(ESC, close);
 
 		this.blockerElem.style.display = "block";
@@ -994,13 +970,15 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	@reflect()
-	@dependsOn("map", "translations", "controls")
+	@dependsOn("controls")
 	_updateContextMenu() {
 		if (!depsProvided(this, "_updateContextMenu", arguments)) return;
 
 		const join = (...params) => this._joinTranslations(...params);
 
 		this.map.contextmenu.removeAllItems();
+
+		let groupAdded = false;
 
 		this.getFeatureTypes().forEach(featureType => {
 			const text = join("Draw", featureType);
@@ -1011,26 +989,23 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
 					callback: () => this.triggerDrawing(featureType)
 				});
+				groupAdded = true;
 			}
 		});
 
-		[
-			[
-				this.controlItems.coordinateInput,
-				this.controlItems.drawCopy,
-				this.controlItems.drawClear
-			],
-			[
-				this.controlItems.lineTransectSplit,
-				this.controlItems.lineTransectDelete,
-			]
-		].forEach(controlGroup => {
-			if (controlGroup.some(control => this._controlIsAllowed(control.name))) {
+		const addControlGroup = (groupName, controlGroup) => {
+			if (controlGroup.contextMenu === false) return;
+			if (groupAdded && controlGroup.some(control => this._controlIsAllowed(getSubControlName(groupName, control.name)))) {
 				this.map.contextmenu.addItem("-");
 			}
+			groupAdded = false;
 			controlGroup.forEach(control => {
-				if (this._controlIsAllowed(control.name)) this.map.contextmenu.addItem(control);
+				if ("text" in control && this._controlIsAllowed(getSubControlName(groupName, control.name))) {
+					this.map.contextmenu.addItem({...control, callback: control.fn});
+					groupAdded = true;
+				}
 			});
-		});
+		};
+		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ?  control.controls : [control]));
 	}
 };

@@ -286,6 +286,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 
 		this._pointLayerGroup.on("dblclick", e => {
+			L.DomEvent.stopPropagation(e);
+
 			const {i} = getIdxsFromEvent(e);
 			if (this._overlappingPointIdxs[i] !== undefined) {
 				const firstLTIdx = flatIdxToLTIdx(this._overlappingPointIdxs[i], this._pointLayers);
@@ -338,6 +340,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		});
 
 		this._corridorLayerGroup.on("click", e => {
+			L.DomEvent.stopPropagation(e);
+
 			const {i} = getIdxsFromEvent(e);
 
 			if (this._removeLTMode) {
@@ -347,6 +351,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._triggerEvent(this._getOnActiveSegmentChangeEvent(i), this._onLTChange);
 			}
 		}).on("mouseover", e => {
+			L.DomEvent.stopPropagation(e);
+
 			const {i} = getIdxsFromEvent(e);
 
 			const prevHoverIdx = this._hoveredLTLineIdx;
@@ -355,12 +361,16 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._updateStyleForLTIdx(this._hoveredLTLineIdx);
 			this._openTooltipFor(i);
 		}).on("mouseout", e => {
+			L.DomEvent.stopPropagation(e);
+
 			const {i} = getIdxsFromEvent(e);
 
 			this._hoveredLTLineIdx = undefined;
 			this._updateStyleForLTIdx(i);
 			if (i !== this._activeLTIdx) this._closeTooltipFor(i);
 		}).on("dblclick", e => {
+			L.DomEvent.stopPropagation(e);
+
 			const {latlng} = e;
 			const {lineIdx, segmentIdx} = getIdxsFromEvent(e);
 

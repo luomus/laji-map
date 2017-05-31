@@ -439,6 +439,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const prevIdxs = parseIdxsFromLTIdx(this.lineTransectEditIdx);
 			const editableLayer = this._pointLayers[prevIdxs[0]][prevIdxs[1]];
 			editableLayer.setStyle(pointStyle);
+			this._commitPointDrag();
 		}
 
 		this.lineTransectEditIdx = `${lineIdx}-${pointIdx}`;

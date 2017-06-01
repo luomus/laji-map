@@ -469,7 +469,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const lineToFilter = precedingLine || followingLine;
 			this._allLines = this._allLines.filter(l => l !== lineToFilter);
 		}
-		if (this._LTActiveIdx !== undefined && this._LTActiveIdx > LTIdxToFlatIdx(LTIdx)) {
+		if (this._LTActiveIdx !== undefined && this._LTActiveIdx > LTIdxToFlatIdx(LTIdx, this._allLines)) {
 			this._triggerEvent(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx - 1), this._onLTChange);
 		}
 		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, !!"undoable");

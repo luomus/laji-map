@@ -355,18 +355,40 @@
 		sv: "Finlands baskarta"
 	},
 	interval: {
-		fi: "väli",
-		en: "interval",
-		sv: "intervall"
+		fi: "Väli",
+		en: "Interval",
+		sv: "Intervall"
 	},
 	undo: {
-		fi: "kumoa",
-		en: "undo",
-		sv: "göra ogjord"
+		fi: "Kumoa",
+		en: "Undo",
+		sv: "Göra ogjord"
 	},
 	redo: {
-		fi: "tee uudelleen",
-		en: "redo",
-		sv: "görä om"
-	}
+		fi: "Tee uudelleen",
+		en: "Redo",
+		sv: "Görä om"
+	},
+	removePoint: {
+		fi: "Poista piste",
+		en: "Remove point",
+		sv: "Radera punkten"
+	},
+	removeFirstOrLastPoint: {
+		fi: "Poistetaanko ensimmäinen vai viimeinen piste?",
+		en: "Do you want to remove the first or the last point?",
+		sv: "Vill du radera förstä eller den sista punkten?"
+	},
+	first: {
+		fi: "Ensimmäinen",
+		en: "The first",
+		sv: "Den första"
+	},
+	last: {
+		fi: "Viimeinen",
+		en: "The last",
+		sv: "Den sista"
+	},
+
+
 };

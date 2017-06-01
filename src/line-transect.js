@@ -125,7 +125,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		let {feature, activeIdx, onChange, keepActiveTooltipOpen} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
-		this._activeLTIdx = activeIdx;
+		this._LTActiveIdx = activeIdx;
 		this.keepActiveTooltipOpen = keepActiveTooltipOpen;
 
 		this._LTHistory = [feature.geometry];
@@ -179,7 +179,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				const _i = i;
 
 				lineLayer.push(
-					L.polyline(segment, i === this._activeLTIdx ? activeLineStyle : lineStyle)
+					L.polyline(segment, i === this._LTActiveIdx ? activeLineStyle : lineStyle)
 						.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}})
 				);
 
@@ -187,7 +187,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 				corridorLayer.push(L.polygon(
 					this._getCorridorCoordsForLine(segment),
-					_i === this._activeLTIdx ? activeCorridorStyle : corridorStyle
+					_i === this._LTActiveIdx ? activeCorridorStyle : corridorStyle
 				));
 
 				i++;
@@ -230,7 +230,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._setLTIdxMappings();
 		this._setLineTransectEvents();
 
-		if (this.keepActiveTooltipOpen) this._openTooltipFor(this._activeLTIdx);
+		if (this.keepActiveTooltipOpen) this._openTooltipFor(this._LTActiveIdx);
 
 		provide(this, "lineTransect");
 	}
@@ -264,7 +264,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_closeTooltipFor(i) {
 		const line = this._allLines[i];
-		if (i !== this._activeLTIdx || !this.keepActiveTooltipOpen) line.closeTooltip().unbindTooltip();
+		if (i !== this._LTActiveIdx || !this.keepActiveTooltipOpen) line.closeTooltip().unbindTooltip();
 	}
 
 	// Opens a dialog and asks which point to use, if points are overlapping.
@@ -401,7 +401,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			this._hoveredLTLineIdx = undefined;
 			this._updateLTStyleForIdx(i);
-			if (i !== this._activeLTIdx) this._closeTooltipFor(i);
+			if (i !== this._LTActiveIdx) this._closeTooltipFor(i);
 		}).on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
 
@@ -469,8 +469,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const lineToFilter = precedingLine || followingLine;
 			this._allLines = this._allLines.filter(l => l !== lineToFilter);
 		}
-		if (this._activeLTIdx !== undefined && this._activeLTIdx > LTIdxToFlatIdx(LTIdx)) {
-			this._triggerEvent(this._getOnActiveSegmentChangeEvent(this._activeLTIdx - 1), this._onLTChange);
+		if (this._LTActiveIdx !== undefined && this._LTActiveIdx > LTIdxToFlatIdx(LTIdx)) {
+			this._triggerEvent(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx - 1), this._onLTChange);
 		}
 		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, !!"undoable");
 	}
@@ -654,15 +654,15 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_getOnActiveSegmentChangeEvent(idx) {
-		const prevIdx = this._activeLTIdx;
-		this._activeLTIdx = idx;
+		const prevIdx = this._LTActiveIdx;
+		this._LTActiveIdx = idx;
 		[prevIdx, idx].forEach(i => this._allLines[i] && this._updateLTStyleForIdx(i));
-		return {type: "active", idx: this._activeLTIdx};
+		return {type: "active", idx: this._LTActiveIdx};
 	}
 
 	// Doesn't handle points.
 	_getStyleForLTLayer(layer, idx) {
-		const isActive = idx === this._activeLTIdx;
+		const isActive = idx === this._LTActiveIdx;
 		const isEdit = idx === this._splitLTIdx || (this._removeLTMode && idx === this._hoveredLTLineIdx);
 		const isHover = idx === this._hoveredLTLineIdx;
 
@@ -705,7 +705,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const layer = layerGroup[idx];
 			layer.setStyle(this._getStyleForLTLayer(layer, idx));
 		});
-		(idx === this._activeLTIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(idx) : this._closeTooltipFor(idx);
+		(idx === this._LTActiveIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(idx) : this._closeTooltipFor(idx);
 	}
 
 	_commitLTLineCut() {
@@ -737,8 +737,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		];
 
-		if (splitIdx < this._activeLTIdx) {
-			events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx + 1));
+		if (splitIdx < this._LTActiveIdx) {
+			events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx + 1));
 		}
 
 		this._triggerEvent(events, this._onLTChange);
@@ -821,8 +821,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const events = [
 			{type: "delete", feature, idx: i},
 		];
-		if (this._activeLTIdx !== undefined && i - 1 < this._activeLTIdx) {
-			events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx - 1));
+		if (this._LTActiveIdx !== undefined && i - 1 < this._LTActiveIdx) {
+			events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx - 1));
 		}
 
 		this._triggerEvent(events, this._onLTChange);

@@ -465,10 +465,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (precedingLine && followingLine) {
 			precedingLine.setLatLngs([precedingLine.getLatLngs()[0], followingLine.getLatLngs()[1]]);
 			this._allLines = this._allLines.filter(l => l !== followingLine);
-		} else if (precedingLine) {
-			this._allLines = this._allLines.filter(l => l !== precedingLine);
-		} else if (followingLine) {
-			this._allLines = this._allLines.filter(l => l !== followingLine);
+		} else {
+			const lineToFilter = precedingLine || followingLine;
+			this._allLines = this._allLines.filter(l => l !== lineToFilter);
 		}
 		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, !!"undoable");
 	}
@@ -819,7 +818,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const events = [
 			{type: "delete", feature, idx: i},
 		];
-		if (this._activeLTIdx !== undefined && i - 1 <= this._activeLTIdx) {
+		if (this._activeLTIdx !== undefined && i - 1 < this._activeLTIdx) {
 			events.push(this._getOnActiveSegmentChangeEvent(this._activeLTIdx - 1));
 		}
 

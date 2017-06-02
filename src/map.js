@@ -148,7 +148,7 @@ export default class LajiMap {
 			subdomains:["mt0","mt1","mt2","mt3"]
 		});
 
-		this.overlays = {
+		this.overlaysByNames = {
 			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
 				layers: "INSPIRE:fi_fmnh_br",
 				format: "image/png",
@@ -351,17 +351,7 @@ export default class LajiMap {
 		this.map.addLayer(this.tileLayer);
 
 		if (projectionChanged) {
-			for (let overlayName in this.overlays) {
-				const overlay = this.overlays[overlayName];
-				if (overlay._map || (mmlCRSLayers.includes(this.tileLayer) && this.savedMMLOverlays[overlayName])) {
-					if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
-					if (mmlCRSLayers.includes(this.tileLayer) || !ONLY_MML_OVERLAY_NAMES.map(name => this.overlays[name]).includes(overlay)) {
-						this.map.addLayer(overlay);
-					} else if(!mmlCRSLayers.includes(this.tileLayer)) {
-						this.savedMMLOverlays[overlayName] = true;
-					}
-				}
-			}
+			this.setOverlays(this.overlays);
 		}
 
 		provide(this, "tileLayer");
@@ -376,26 +366,32 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	setOverlays(overlays) {
+	setOverlays(overlays = []) {
 		if (!depsProvided(this, "setOverlays", arguments)) return;
 
+		this.overlays = overlays;
+
 		if (this._getDefaultCRSLayers().includes(this.tileLayer)) {
-			overlays = overlays.filter(overlay => !ONLY_MML_OVERLAY_NAMES.map(name => this.overlays[name]).includes(overlay));
+			const onlyMMLOverlays = ONLY_MML_OVERLAY_NAMES.map(name => this.overlaysByNames[name]);
+			overlays = overlays.filter(overlay => !onlyMMLOverlays.includes(overlay));
 		}
 
-		Object.keys(this.overlays).forEach(overlay => {
+		Object.keys(this.overlaysByNames).forEach(name => {
+			const overlay = this.overlaysByNames[name];
 			if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
 		});
+
 		overlays.forEach(overlay => {
 			this.map.addLayer(overlay);
 		});
+
 		provide(this, "overlays");
 	}
 
 	@dependsOn("map")
 	setOverlaysByName(overlayNames) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
-		this.setOverlays(overlayNames.map(name => this.overlays[name]));
+		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]));
 	}
 
 	getNormalizedZoom() {

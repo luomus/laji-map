@@ -84,6 +84,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@dependsOn("map", "translations", "controlSettings")
 	_updateMapControls() {
 		if (!depsProvided(this, "_updateMapControls", arguments)) return;
+		console.log("update map controls");
 
 		Object.keys(this.controls).forEach(controlName => {
 			const control = this.controls[controlName];
@@ -525,9 +526,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		tileLayersNames.forEach(tileLayerName => {
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
 		});
-		Object.keys(this.overlays).forEach(overlayName => {
+		Object.keys(this.overlaysByNames).forEach(overlayName => {
 			if (this._getDefaultCRSLayers().includes(this.tileLayer) && ONLY_MML_OVERLAY_NAMES.includes(overlayName)) return;
-			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlays[overlayName];
+			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlaysByNames[overlayName];
 		});
 
 		const that = this;
@@ -537,7 +538,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 				const inputs = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
 
-				const overlayIdsToAdd = {};
+				const overlayIdsToAdd = that.overlays.reduce((ids, overlay) => {
+					ids[overlay._leaflet_id] = true;
+					return ids;
+				}, {});
 				for (let i = 0; i < inputs.length; i++) {
 					const input = inputs[i];
 					if (input.checked) {
@@ -547,8 +551,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 								break;
 							}
 						}
-						for (let overlayName of Object.keys(that.overlays)) {
-							const overlay = that.overlays[overlayName];
+						for (let overlayName of Object.keys(that.overlaysByNames)) {
+							const overlay = that.overlaysByNames[overlayName];
 							if (overlay._leaflet_id === input.layerId) {
 								overlayIdsToAdd[input.layerId] = true;
 							}
@@ -556,14 +560,15 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					}
 				}
 
-				for (let overlayName of Object.keys(that.overlays)) {
-					const overlay = that.overlays[overlayName];
-					if (overlayIdsToAdd[overlay._leaflet_id] && !that.map.hasLayer(overlay)) {
-						that.map.addLayer(overlay);
-					} else if (!overlayIdsToAdd[overlay._leaflet_id] && that.map.hasLayer(overlay)) {
-						that.map.removeLayer(overlay);
+				let overlaysToAdd = [];
+				for (let overlayName of Object.keys(that.overlaysByNames)) {
+					const overlay = that.overlaysByNames[overlayName];
+					if (overlayIdsToAdd[overlay._leaflet_id]) {
+						overlaysToAdd.push(overlay);
 					}
 				}
+
+				that.setOverlays(overlaysToAdd);
 
 				this._handlingClick = false;
 

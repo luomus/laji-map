@@ -220,18 +220,18 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		this._controlButtons = {};
 
-		this.controlItems.forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
-			function callback(fn, stopFn, name, eventName) { return (...params) => {
-				if (stopFn) {
-					fn(...params);
-					this._createCancelHandler(name, stopFn, eventName);
-				} else {
-					fn(...params);
-				}
-			};}
+		function callback(fn, stopFn, name, eventName) { return (...params) => {
+			if (stopFn) {
+				fn(...params);
+				this._createCancelHandler(name, stopFn, eventName);
+			} else {
+				fn(...params);
+			}
+		};}
 
+		this.controlItems.forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
 			const leafletControl = control || (() => {
-				const onAdd = (controls && controls.some(({name: subName}) => this._controlIsAllowed(getSubControlName(name, subName)))) ?
+				const onAdd = (controls) ?
 					function() {
 						this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
 						this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
@@ -251,6 +251,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						return container;
 					};
 
+				if (controls && !controls.filter(({name: subName}) => that._controlIsAllowed(getSubControlName(name, subName))).length) {
+					return;
+				}
+
 				const Control = L.Control.extend({
 					options: position ? {position} : undefined,
 					onAdd,
@@ -259,7 +263,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				return new Control();
 			})();
 
-			this._addControl(name, leafletControl);
+			if (leafletControl) this._addControl(name, leafletControl);
 		});
 
 		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.

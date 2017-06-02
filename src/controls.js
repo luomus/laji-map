@@ -84,7 +84,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@dependsOn("map", "translations", "controlSettings")
 	_updateMapControls() {
 		if (!depsProvided(this, "_updateMapControls", arguments)) return;
-		console.log("update map controls");
 
 		Object.keys(this.controls).forEach(controlName => {
 			const control = this.controls[controlName];

@@ -1,11 +1,6 @@
 import "leaflet-contextmenu";
 import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT } from "./utils";
 import {
-	MAASTOKARTTA,
-	TAUSTAKARTTA,
-	POHJAKARTTA,
-	OPEN_STREET,
-	GOOGLE_SATELLITE,
 	EPSG3067String,
 	EPSG2393String,
 	ESC,
@@ -520,14 +515,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const baseMaps = {}, overlays = {};
 		const { translations } = this;
 
-		const tileLayersNames = [TAUSTAKARTTA, MAASTOKARTTA, POHJAKARTTA, GOOGLE_SATELLITE, OPEN_STREET];
+		const tileLayersNames = Object.keys(this.availableTileLayers);
 
 		tileLayersNames.forEach(tileLayerName => {
-			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this[tileLayerName];
+			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this.tileLayers[tileLayerName];
 		});
-		Object.keys(this.overlaysByNames).forEach(overlayName => {
+		Object.keys(this.availableOverlaysByNames).forEach(overlayName => {
 			if (this._getDefaultCRSLayers().includes(this.tileLayer) && ONLY_MML_OVERLAY_NAMES.includes(overlayName)) return;
-			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.overlaysByNames[overlayName];
+			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.availableOverlaysByNames[overlayName];
 		});
 
 		const that = this;
@@ -550,7 +545,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 								break;
 							}
 						}
-						for (let overlayName of Object.keys(that.overlaysByNames)) {
+						for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
 							const overlay = that.overlaysByNames[overlayName];
 							if (overlay._leaflet_id === input.layerId) {
 								overlayIdsToAdd[input.layerId] = true;
@@ -560,7 +555,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				}
 
 				let overlaysToAdd = [];
-				for (let overlayName of Object.keys(that.overlaysByNames)) {
+				for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
 					const overlay = that.overlaysByNames[overlayName];
 					if (overlayIdsToAdd[overlay._leaflet_id]) {
 						overlaysToAdd.push(overlay);

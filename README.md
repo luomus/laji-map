@@ -35,6 +35,10 @@ featurePopupOffset                              | Int                       | 0 
 popupOnHover                                    | Boolean                   | false                               | Controls whether the popups are shown on hovering a feature or by clicking a feature.
 onInitializeDrawLayer                           | Function                  | -                                   | A callback function that is triggered after the draw layer is initialized.
 lineTransect                                    | Linetransect options      | -                                   | Options for a line transect layer.
+availableTileLayerNamesWhitelist                | String[]                  | -                                   | List of tile layer names to show in the layer control. See the possible values of tileLayerName option.
+availableTileLayerNamesBlacklist                | String[]                  | -                                   | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
+availableOverlayNamesWhitelist                  | String[]                  | -                                   | List of overlay names to show in the layer control. See the possible values of overlayNames option.
+availableOverlayNamesBlacklist                  | String[]                  | -                                   | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
 
 ### Data options ###
 

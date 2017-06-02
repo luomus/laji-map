@@ -17,8 +17,6 @@ import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
 	POHJAKARTTA,
-	OPEN_STREET,
-	GOOGLE_SATELLITE,
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
@@ -31,7 +29,11 @@ const optionKeys = {
 	data: "setData",
 	draw: "setDraw",
 	tileLayerName: "setTileLayerByName",
+	availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
+	availableTileLayerNamesWhitelist: "setAvailableTileLayerWhitelist",
 	overlayNames: "setOverlaysByName",
+	availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
+	availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 	center: "setCenter",
 	zoom: "setNormalizedZoom",
 	locate: true,
@@ -129,13 +131,15 @@ export default class LajiMap {
 			doubleClickZoom: false
 		});
 
+		this.tileLayers = {};
+
 		[MAASTOKARTTA, TAUSTAKARTTA, POHJAKARTTA].forEach(tileLayerName => {
-			this[tileLayerName] = L.tileLayer.mml_wmts({
+			this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 				layer: tileLayerName
 			});
 		});
 
-		this.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
+		this.tileLayers.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
 			layers: "osm_finland:Sea",
 			format: "image/png",
 			transparent: false,
@@ -143,10 +147,12 @@ export default class LajiMap {
 			attribution: "LUOMUS"
 		});
 
-		this.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
-		this.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+		this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+		this.tileLayers.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
 			subdomains:["mt0","mt1","mt2","mt3"]
 		});
+
+		this.availableTileLayers = this.tileLayers;
 
 		this.overlaysByNames = {
 			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
@@ -188,6 +194,8 @@ export default class LajiMap {
 				attribution: "LUOMUS"
 			})
 		};
+
+		this.availableOverlaysByNames = this.overlaysByNames;
 
 		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
@@ -303,18 +311,39 @@ export default class LajiMap {
 	}
 
 	_getDefaultCRSLayers() {
-		return [this.openStreetMap, this.googleSatellite];
+		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
 	}
 
 	_getMMLCRSLayers() {
-		return [this.maastokartta, this.taustakartta, this.pohjakartta];
+		return [this.tileLayers.maastokartta, this.tileLayers.taustakartta, this.tileLayers.pohjakartta];
 	}
 
 	@dependsOn("map")
 	setTileLayerByName(name) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
 		this.tileLayerName = name;
-		this.setTileLayer(this[this.tileLayerName]);
+		this.setTileLayer(this.tileLayers[this.tileLayerName]);
+	}
+
+	@dependsOn("map")
+	setAvailableTileLayers(names, condition) {
+		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
+		const list = names.reduce((list, name) => {
+			list[name] = true;
+			return list;
+		}, {});
+		this.availableTileLayers = Object.keys(this.tileLayers).reduce((tileLayers, name) => {
+			if (name in list === condition) tileLayers[name] = this.tileLayers[name];
+			return tileLayers;
+		}, {});
+	}
+
+	setAvailableTileLayerBlacklist(names) {
+		this.setAvailableTileLayers(names, false);
+	}
+
+	setAvailableTileLayerWhitelist(names) {
+		this.setAvailableTileLayers(names, true);
 	}
 
 	@dependsOn("map", "center", "zoom")
@@ -359,8 +388,8 @@ export default class LajiMap {
 
 	getTileLayers() {
 		const tileLayers = {};
-		[TAUSTAKARTTA, MAASTOKARTTA, POHJAKARTTA, GOOGLE_SATELLITE, OPEN_STREET].forEach(tileLayerName => {
-			tileLayers[tileLayerName] = this[tileLayerName];
+		Object.keys(this.tileLayers).forEach(tileLayerName => {
+			tileLayers[tileLayerName] = this.tileLayers[tileLayerName];
 		});
 		return tileLayers;
 	}
@@ -381,8 +410,13 @@ export default class LajiMap {
 			if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
 		});
 
+		const availableOverlays = [];
+		Object.keys(this.availableOverlaysByNames).forEach(name => {
+			availableOverlays.push(this.overlaysByNames[name]);
+		});
+
 		overlays.forEach(overlay => {
-			this.map.addLayer(overlay);
+			if (availableOverlays.includes(overlay)) this.map.addLayer(overlay);
 		});
 
 		provide(this, "overlays");
@@ -392,6 +426,27 @@ export default class LajiMap {
 	setOverlaysByName(overlayNames) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
 		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]));
+	}
+
+	setAvailableOverlaysBlacklist(overlayNames) {
+		this.setAvailableOverlays(overlayNames, false);
+	}
+
+	setAvailableOverlaysWhitelist(overlayNames) {
+		this.setAvailableOverlays(overlayNames, true);
+	}
+
+	@dependsOn("map")
+	setAvailableOverlays(overlayNames, condition) {
+		if (!depsProvided(this, "setAvailableOverlays", arguments)) return;
+		const list = overlayNames.reduce((list, name) => {
+			list[name] = true;
+			return list;
+		}, {});
+		this.availableOverlaysByNames = Object.keys(this.overlaysByNames).reduce((overlaysByNames, name) => {
+			if (name in list === condition) overlaysByNames[name] = this.overlaysByNames[name];
+			return overlaysByNames;
+		}, {});
 	}
 
 	getNormalizedZoom() {

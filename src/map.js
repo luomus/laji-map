@@ -89,20 +89,21 @@ export default class LajiMap {
 	}
 
 	setRootElem(rootElem) {
-		this.container = document.createElement("div");
-		const {className} = this.container;
-		this.container.className += ((className !== undefined && className !== null && className !== "") ? " " : "")
-			+ "laji-map";
+		this.mapElem = this.mapElem || document.createElement("div");
+		this.blockerElem = this.blockerElem || document.createElement("div");
 
-		this.mapElem = document.createElement("div");
-		this.blockerElem = document.createElement("div");
+		this.cleanDOM();
+
+		this.container = document.createElement("div");
+		this.container.className = "laji-map";
+
 		this.blockerElem.className = "blocker";
 
 		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem);});
 
-
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
+
 		provide(this, "rootElem");
 	}
 
@@ -480,7 +481,11 @@ export default class LajiMap {
 		this.map.remove();
 		this.map = null;
 
-		this.rootElem.removeChild(this.container);
+		this.cleanDOM();
+	}
+
+	cleanDOM() {
+		if (this.rootElem) this.rootElem.removeChild(this.container);
 
 		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
 			document.removeEventListener(type, this._documentEvents[type]);

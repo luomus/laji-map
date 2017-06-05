@@ -540,8 +540,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					const input = inputs[i];
 					if (input.checked) {
 						for (let tileLayerName of tileLayersNames) {
-							if (that[tileLayerName]._leaflet_id === input.layerId) {
-								that.setTileLayer(that[tileLayerName]);
+							if (that.tileLayers[tileLayerName]._leaflet_id === input.layerId) {
+								that.setTileLayer(that.tileLayers[tileLayerName]);
 								break;
 							}
 						}

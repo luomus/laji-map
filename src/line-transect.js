@@ -22,7 +22,7 @@ const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fil
 const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
 const pointStyle = {weight: 0, radius: 5, fillColor: "#154EAA", fillOpacity: 1};
 const editablePointStyle = {...pointStyle, radius: 7, fillColor: "#f00", fillOpacity: 0.7};
-const overlappingPointStyle = {...pointStyle, radius: 6, weight: 2, color: "#000"};
+const overlappingPointStyle = {...pointStyle, radius: 6, weight: 3, color: "#000"};
 
 const LT_WIDTH_METERS = 25;
 

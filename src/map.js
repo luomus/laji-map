@@ -480,6 +480,8 @@ export default class LajiMap {
 		this.map.remove();
 		this.map = null;
 
+		this.rootElem.removeChild(this.container);
+
 		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
 			document.removeEventListener(type, this._documentEvents[type]);
 		});

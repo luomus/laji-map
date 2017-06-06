@@ -146,8 +146,6 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				drawCopy: true,
-				drawClear: true,
 				coordinates: true
 			},
 			data: this.data,

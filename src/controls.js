@@ -235,6 +235,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 						controls.forEach(({name: subName, iconCls, text, fn, stopFn, eventName, onAdd: _onAdd}) => {
 							const buttonName = getSubControlName(name, subName);
+							if (!that._controlIsAllowed(buttonName)) return;
 							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, stopFn, buttonName, eventName]));
 							if (_onAdd) _onAdd();
 						});

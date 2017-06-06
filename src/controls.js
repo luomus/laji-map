@@ -545,11 +545,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 								break;
 							}
 						}
-						for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
-							const overlay = that.overlaysByNames[overlayName];
-							if (overlay._leaflet_id === input.layerId) {
-								overlayIdsToAdd[input.layerId] = true;
-							}
+					}
+
+					for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
+						const overlay = that.overlaysByNames[overlayName];
+						if (overlay._leaflet_id === input.layerId) {
+							overlayIdsToAdd[input.layerId] = input.checked;
 						}
 					}
 				}

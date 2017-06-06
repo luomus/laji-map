@@ -1,6 +1,6 @@
 {
   "name": "laji-map",
-  "version": "1.0.196",
+  "version": "1.0.197",
   "description": "A map with drawing functionality",
   "main": "lib/map.js",
   "scripts": {

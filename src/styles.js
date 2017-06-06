@@ -5,5 +5,6 @@ export * from "Leaflet.vector-markers/dist/leaflet-vector-markers.css";
 export * from "leaflet.markercluster/dist/MarkerCluster.Default.css";
 export * from "leaflet.markercluster/dist/MarkerCluster.css";
 export * from "./lib/Leaflet.rrose/leaflet.rrose.css";
+export * from "rangeslider-js/dist/styles.min.css";
 export * from "./styles.css";
 

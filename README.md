@@ -39,8 +39,10 @@ availableTileLayerNamesWhitelist                | String[]                  | - 
 availableTileLayerNamesBlacklist                | String[]                  | -                                   | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
 availableOverlayNamesWhitelist                  | String[]                  | -                                   | List of overlay names to show in the layer control. See the possible values of overlayNames option.
 availableOverlayNamesBlacklist                  | String[]                  | -                                   | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
+tileLayerOpacity                                | Float                     | -                                   | Tile layer opacity. Range: 0.0-1.0
 
 ### Data options ###
+
 
 Option                                          | Type                      |  Default                            | Description
 ------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
@@ -83,6 +85,7 @@ drawCopy                                        | Boolean                  | fal
 drawClear                                       | Boolean                  | false                                | Shows a control for clearing all draw data. Only shown if `draw` option is set.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
+layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
 
 #### Draw control options ####
 

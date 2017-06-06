@@ -7,6 +7,7 @@ import {
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
+import rangeSlider from "rangeslider-js";
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
@@ -88,7 +89,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.controlItems = [
 			{
 				name: "layer",
-				control: this._getLayerControl()
+				control: this._getLayerControl(this.controlSettings.layerOpacity)
 			},
 			{
 				name: "location",
@@ -321,7 +322,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawClear: false,
 			coordinates: false,
 			scale: true,
-			lineTransect: {split: true, delete: true, undo: true, redo: true}
+			lineTransect: {split: true, delete: true, undo: true, redo: true},
+			layerOpacity: true
 		};
 
 		for (let setting in controlSettings) {
@@ -511,7 +513,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		return new CoordinateControl();
 	}
 
-	_getLayerControl() {
+	_getLayerControl(opacityControl = true) {
 		const baseMaps = {}, overlays = {};
 		const { translations } = this;
 
@@ -568,9 +570,46 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				this._handlingClick = false;
 
 				that.controls.layer.expand();
+			},
+			_initLayout: function() {
+				L.Control.Layers.prototype._initLayout.call(this);
+
+				if (that._sliderElem) {
+					layerControl._separator.parentElement.insertBefore(that._sliderElem, layerControl._separator);
+				}
 			}
 		});
-		return new LayerControl(baseMaps, overlays, {position: "topleft"});
+		const layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
+
+		if (!that._slider && this.controlSettings.layer && opacityControl) setImmediate(() => {
+			const sliderInput = document.createElement("input");
+			sliderInput.type = "range";
+			layerControl._separator.parentElement.insertBefore(sliderInput, layerControl._separator);
+			rangeSlider.create(sliderInput, {
+				min: 0,
+				max: 1,
+				step: 0.01,
+				value: that.tileLayerOpacity,
+				polyfill: false,
+				onSlide: (opacity) => {
+					that._opacitySetBySlide = true;
+					that.setTileLayerOpacity(opacity);
+				}
+			});
+			layerControl._separator.parentElement.removeChild(sliderInput);
+			that._sliderElem = document.getElementsByClassName("rangeslider")[0];
+			that._slider = sliderInput["rangeslider-js"];
+		});
+		
+		return layerControl;
+	}
+
+	setTileLayerOpacity(opacity) {
+		super.setTileLayerOpacity(opacity);
+		if (!this._opacitySetBySlide && this._slider) {
+			this._slider.update({value: opacity});
+		}
+		this._opacitySetBySlide = false;
 	}
 
 	setLineTransectGeometry(feature, undo) {

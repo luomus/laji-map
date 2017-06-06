@@ -34,6 +34,7 @@ const optionKeys = {
 	overlayNames: "setOverlaysByName",
 	availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
 	availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
+	tileLayerOpacity: "setTileLayerOpacity",
 	center: "setCenter",
 	zoom: "setNormalizedZoom",
 	locate: true,
@@ -379,6 +380,7 @@ export default class LajiMap {
 		this.tileLayer = layer;
 
 		this.map.addLayer(this.tileLayer);
+		this.setTileLayerOpacity(this.tileLayerOpacity);
 
 		if (projectionChanged) {
 			this.setOverlays(this.overlays);
@@ -393,6 +395,14 @@ export default class LajiMap {
 			tileLayers[tileLayerName] = this.tileLayers[tileLayerName];
 		});
 		return tileLayers;
+	}
+
+	@dependsOn("tileLayer")
+	setTileLayerOpacity(val = 1) {
+		if (!depsProvided(this, "setTileLayerOpacity", arguments)) return;
+
+		this.tileLayerOpacity = val;
+		this.tileLayer.setOpacity(val);
 	}
 
 	@dependsOn("tileLayer")

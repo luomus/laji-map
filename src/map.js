@@ -128,6 +128,7 @@ export default class LajiMap {
 			contextmenu: true,
 			contextmenuItems: [],
 			zoomControl: false,
+			attributionControl: false,
 			noWrap: true,
 			continuousWorld: false,
 			doubleClickZoom: false

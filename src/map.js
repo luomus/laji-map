@@ -5,6 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
+import { convertAnyToWGS84GeoJSON } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -614,7 +615,7 @@ export default class LajiMap {
 	initializeDataItem(idx) {
 		const item = this.data[idx];
 		const layer = L.geoJson(
-			item.featureCollection,
+			convertAnyToWGS84GeoJSON(item.geoData || item.featureCollection).features,
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, idx),
 				style: feature => {
@@ -702,7 +703,7 @@ export default class LajiMap {
 		};
 
 		const featureCollection = {type: "FeatureCollection"};
-		featureCollection.features = this.cloneFeatures(data.featureCollection.features);
+		featureCollection.features = this.cloneFeatures(convertAnyToWGS84GeoJSON(data.geoData || data.featureCollection).features);
 		this.draw.data = (data) ? {
 			getFeatureStyle: (...params) => this._getDefaultDrawStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDrawClusterStyle(...params),

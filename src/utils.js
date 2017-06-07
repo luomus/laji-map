@@ -199,6 +199,45 @@ export function geoJSONToISO6709(geoJSON) {
 	return ISOGeo;
 }
 
+export function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, crsPrefix) {
+	const features = text.split("\n").map(line => line.trim()).filter(line => line && !line.startsWith(crsPrefix)).map((line, idx) => {
+		if (lineIsPolygon(line)) {
+			return {type: "Polygon", coordinates: [lineToCoordinates(line)]};
+		} else if (lineIsLineString(line)) {
+			return {type: "LineString", coordinates: lineToCoordinates(line)};
+		} else if (lineIsPoint(line)) {
+			return {type: "Point", coordinates: lineToCoordinates(line)[0]};
+		} else {
+			throw new Error(`Couldn't detect geo data line format. Line: ${idx}`);
+		}
+	}).map(geometry => {return {type: "Feature", properties: {}, geometry};});
+
+	return {type: "FeatureCollection", features};
+}
+
+export function ISO6709ToGeoJSON(ISO) {
+	function lineToCoordinates(line) {
+		return line.split("/").filter(line => line).map(coordString => {
+			return coordString.match(/-?\d+\.*\d*/g).map(number => +number).reverse();
+		}
+		);
+	}
+
+	function lineIsPolygon(line) {
+		return line.match(/^\//);
+	}
+
+	function lineIsLineString(line) {
+		return line.match(/\//g).length > 1;
+	}
+
+	function lineIsPoint(line) {
+		return line.match(/\d+.*\//g);
+	}
+
+	return textualFormatToGeoJSON(ISO, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");
+}
+
 export function geoJSONToWKT(geoJSON) {
 	function latLngToWKTString(latLng) {
 		function formatter(coordHalf) {
@@ -231,6 +270,23 @@ export function geoJSONToWKT(geoJSON) {
 	}
 
 	return WKTGeo;
+}
+
+export function WKTToGeoJSON(WKT) {
+	function lineToCoordinates(line) {
+		return line.match(/.+\((.*)\)/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
+	}
+
+	function lineIsPolygon(line) {
+		return line.startsWith("POLYGON");
+	}
+	function lineIsLineString(line) {
+		return line.startsWith("LINESTRING");
+	}
+	function lineIsPoint(line) {
+		return line.startsWith("POINT");
+	}
+	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "PROJCRS");
 }
 
 
@@ -270,4 +326,18 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 	}
 	return (geometry.type === "MultiLineString" ?
 		geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
+}
+
+export function convertAnyToWGS84GeoJSON(data) {
+	let geoJSON = undefined;
+	if (typeof data === "string" && !data.match(/{.*}/) && data.includes("(")) {
+		geoJSON = WKTToGeoJSON(data);
+	} else if (typeof data === "string" && !data.match(/{.*}/) && data.includes("/")) {
+		geoJSON = ISO6709ToGeoJSON(data);
+	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+		geoJSON = (typeof data === "object") ? data : JSON.parse(geoJSON);
+	} else {
+		throw new Error("Couldn't detect geo data format");
+	}
+	return geoJSON;
 }

@@ -63,9 +63,9 @@ class App {
 				cluster: true,
 				on: {
 					click: (e, {idx, feature, layer}) => {
-						console.log(idx);
-						console.log(feature);
-						console.log(layer);
+						console.info(idx);
+						console.info(feature);
+						console.info(layer);
 					},
 				}
 			},
@@ -134,10 +134,10 @@ class App {
 				cluster: true,
 				on: {
 					click: (e, idx) => {
-						console.log(idx);
+						console.info(idx);
 					},
 					mouseenter: (e, idx) => {
-						console.log(idx);
+						console.info(idx);
 					}
 				}
 			},

@@ -60,7 +60,14 @@ class App {
 				getPopup: (idx) => {
 					return `gray ${idx}`;
 				},
-				cluster: true
+				cluster: true,
+				on: {
+					click: (e, {idx, feature, layer}) => {
+						console.log(idx);
+						console.log(feature);
+						console.log(layer);
+					},
+				}
 			},
 			{
 				featureCollection: {
@@ -125,6 +132,14 @@ class App {
 					return geometry.type;
 				},
 				cluster: true,
+				on: {
+					click: (e, idx) => {
+						console.log(idx);
+					},
+					mouseenter: (e, idx) => {
+						console.log(idx);
+					}
+				}
 			},
 			onChange: this.onMapChange
 		};

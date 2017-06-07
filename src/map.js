@@ -600,6 +600,17 @@ export default class LajiMap {
 		};
 	}
 
+	_initializeDataItemEvents(item, layer) {
+		if (item.on) Object.keys(item.on).forEach(eventName => {
+			layer.on(eventName, (e) => {
+				const {layer} = e;
+				const {feature} = layer;
+				const idx = feature.properties.lajiMapIdx;
+				item.on[eventName](e, {idx, layer, feature: this.formatFeatureOut(feature, layer)});
+			});
+		});
+	}
+
 	initializeDataItem(idx) {
 		const item = this.data[idx];
 		const layer = L.geoJson(
@@ -614,8 +625,10 @@ export default class LajiMap {
 					this._initializeTooltip(item, layer, feature.properties.lajiMapIdx);
 				}
 			}
-
 		);
+
+		this._initializeDataItemEvents(item, layer);
+
 		this.dataLayerGroups.push(layer);
 		let container = this.map;
 		if (item.cluster) {
@@ -714,6 +727,9 @@ export default class LajiMap {
 					this._initializeTooltip(this.draw.data, layer, idx);
 				}
 			});
+
+		this._initializeDataItemEvents(data, this.drawLayerGroup);
+
 		let drawLayerForMap = this.drawLayerGroup;
 		if (data.cluster) {
 			this.clusterDrawLayer = L.markerClusterGroup(

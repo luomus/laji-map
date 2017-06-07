@@ -1,7 +1,9 @@
 import proj4 from "proj4";
 import {
 	EPSG2393String,
-	EPSG3067String
+	EPSG3067String,
+	EPSG2393WKTString,
+	EPSG3067WKTString
 } from "./globals";
 
 export function reverseCoordinate(c) {
@@ -187,7 +189,14 @@ export function geoJSONToISO6709(geoJSON) {
 		return `/${coords}`;
 	}
 
-	return geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToISO6709String, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
+	let ISOGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToISO6709String, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
+
+	if (geoJSON.crs) {
+		const projString = geoJSON.crs.properties.name;
+		ISOGeo += `\CRS${(projString === EPSG2393String) ? "EPSG:2393" : "EPSG:3067"}`;
+	}
+
+	return ISOGeo;
 }
 
 export function geoJSONToWKT(geoJSON) {
@@ -213,7 +222,15 @@ export function geoJSONToWKT(geoJSON) {
 		return `POLYGON(${coords})`;
 	}
 
-	return geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToWKTString, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
+	let WKTGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToWKTString, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
+
+
+	if (geoJSON.crs) {
+		const projString = geoJSON.crs.properties.name;
+		WKTGeo += (projString === EPSG2393String) ? EPSG2393WKTString : EPSG3067WKTString;
+	}
+
+	return WKTGeo;
 }
 
 

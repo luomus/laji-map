@@ -52,6 +52,7 @@ getTooltip(idx, geometry, callback)             | Function                  | - 
 getFeatureStyle({dataIdx, featureIdx, feature}) | Function                  | see `lajiMap._getDefaultDataStyle()`| A function that returns a Path style to use for the feature described by the input parameters. (Note that draw data doesn't receive `dataIdx` input).
 cluster                                         | Boolean                   | false                               | Controls whether the features should cluster.
 getClusterStyle({count))                        | Function                  | see `lajiMap._getClusterIcon()`     | A function that returns a Path style to use for feature clusters. The returned path style extends the default style. the `count` parameter is the number of features in the cluster.
+on                                              | Object                    | -                                   | An object containing event name -> event handler pairs. Event handler arguments look like this: (e, {idx, layer, feature}). Example: {click: function(e, {idx, layer, feature}) { //handle event }}
 
 
 ### Draw options ###

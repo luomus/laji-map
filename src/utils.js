@@ -208,7 +208,7 @@ export function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, l
 		} else if (lineIsPoint(line)) {
 			return {type: "Point", coordinates: lineToCoordinates(line)[0]};
 		} else {
-			throw new Error(`Couldn't detect geo data line format. Line: ${idx}`);
+			throw new Error(`Couldn't detect geo data line format. Line: ${idx + 1}`);
 		}
 	}).map(geometry => {return {type: "Feature", properties: {}, geometry};});
 
@@ -286,7 +286,7 @@ export function WKTToGeoJSON(WKT) {
 	function lineIsPoint(line) {
 		return line.startsWith("POINT");
 	}
-	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "PROJCRS");
+	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "PROJCS");
 }
 
 
@@ -330,14 +330,29 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 
 export function convertAnyToWGS84GeoJSON(data) {
 	let geoJSON = undefined;
+	let from = undefined;
 	if (typeof data === "string" && !data.match(/{.*}/) && data.includes("(")) {
+		let crs = data.match(/(PROJCS.*)/);
+		if (crs) {
+			if (crs[1] === EPSG2393WKTString) from = "EPSG:2393";
+			else if (crs[1] === EPSG3067WKTString) from = "EPSG:3067";
+		}
 		geoJSON = WKTToGeoJSON(data);
 	} else if (typeof data === "string" && !data.match(/{.*}/) && data.includes("/")) {
 		geoJSON = ISO6709ToGeoJSON(data);
+		const crs = data.match(/CRS(.*)/);
+		if (crs) from = crs[1];
 	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
-		geoJSON = (typeof data === "object") ? data : JSON.parse(geoJSON);
+		geoJSON = (typeof data === "object") ? data : JSON.parse(data);
+		const crs = geoJSON.crs;
+		if (crs) {
+			const name = crs.properties.name;
+			if (name === EPSG2393String) from = "EPSG:2393";
+			else if (name === EPSG3067String) from = "EPSG:3067";
+		}
 	} else {
 		throw new Error("Couldn't detect geo data format");
 	}
+	if (from) geoJSON = convertGeoJSON(geoJSON, from, "WGS84");
 	return geoJSON;
 }

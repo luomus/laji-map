@@ -34,7 +34,7 @@ function updateImmutablyRecursivelyWith(obj, fn) {
 		return obj;
 	}
 
-	return _updater(JSON.parse(JSON.stringify(obj)));
+	return _updater(parseJSON(JSON.stringify(obj)));
 }
 
 export function convertGeoJSON(geoJSON, from, to) {
@@ -199,15 +199,25 @@ export function geoJSONToISO6709(geoJSON) {
 }
 
 export function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, crsPrefix) {
+	const _lineToCoordinates = (line, idx) => {
+		try  {
+			const coords = lineToCoordinates(line);
+			if (!coords || coords.length < 1 || coords.some(coord => coord.length < 2)) throw new LajiMapError("Coordinate parsing failed", "coordinateParsingError", {lineIx: idx});
+			return coords;
+		} catch (e) {
+			throw new LajiMapError("Line coordinate parsing failed", "CoordinateParsingError", {lineIdx: idx});
+		}
+	};
+
 	const features = text.split("\n").map(line => line.trim()).filter(line => line && !line.startsWith(crsPrefix)).map((line, idx) => {
 		if (lineIsPolygon(line)) {
-			return {type: "Polygon", coordinates: [lineToCoordinates(line)]};
+			return {type: "Polygon", coordinates: [_lineToCoordinates(line, idx)]};
 		} else if (lineIsLineString(line)) {
-			return {type: "LineString", coordinates: lineToCoordinates(line)};
+			return {type: "LineString", coordinates: _lineToCoordinates(line, idx)};
 		} else if (lineIsPoint(line)) {
-			return {type: "Point", coordinates: lineToCoordinates(line)[0]};
+			return {type: "Point", coordinates: _lineToCoordinates(line, idx)[0]};
 		} else {
-			throw new Error(`Couldn't detect geo data line format. Line: ${idx + 1}`);
+			throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", {lineIdx: idx});
 		}
 	}).map(geometry => {return {type: "Feature", properties: {}, geometry};});
 
@@ -227,11 +237,12 @@ export function ISO6709ToGeoJSON(ISO) {
 	}
 
 	function lineIsLineString(line) {
-		return line.match(/\//g).length > 1;
+		const match = line.match(/.+\//g);
+		return match && match.length > 1;
 	}
 
 	function lineIsPoint(line) {
-		return line.match(/\d+.*\//g);
+		return line.match(/^\d+.*\//g);
 	}
 
 	return textualFormatToGeoJSON(ISO, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");
@@ -339,22 +350,41 @@ export function detectFormat(data) {
 
 export function detectCRS(data) {
 	const format = detectFormat(data);
-	let crs = "WGS84";
+	let crs = undefined;
+	let geoJSON = undefined;
 	if (format === "WKT") {
 		let detection = data.match(/(PROJCS.*)/);
 		if (detection) {
 			if (detection[1] === EPSG2393WKTString) crs = "EPSG:2393";
 			else if (detection[1] === EPSG3067WKTString) crs = "EPSG:3067";
+		} else {
+			geoJSON = WKTToGeoJSON(data);
 		}
 	} else if (format === "ISO") {
 		const detection = data.match(/CRS(.*)/);
 		if (detection) crs = detection[1];
+		else {
+			geoJSON = ISO6709ToGeoJSON(data);
+		}
 	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
-		const geoJSON = (typeof data === "object") ? data : JSON.parse(data);
+		geoJSON = (typeof data === "object") ? data : parseJSON(data);
 		if (geoJSON.crs) {
 			const name = geoJSON.crs.properties.name;
 			if (name === EPSG2393String) crs = "EPSG:2393";
 			else if (name === EPSG3067String) crs = "EPSG:3067";
+		}
+	}
+
+	if (!crs && geoJSON && geoJSON.features && geoJSON.features[0] && geoJSON.features[0].geometry && geoJSON.features[0].geometry.coordinates) {
+		let coordinateSample = geoJSON.features[0].geometry.coordinates;
+		while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
+		coordinateSample = coordinateSample.map(c => `${c}`).reverse();
+		if (validateLatLng(coordinateSample, wgs84Validator)) {
+			crs = "WGS84";
+		} else if (validateLatLng(coordinateSample, ykjValidator)) {
+			crs = "EPSG:2393";
+		} else if (validateLatLng(coordinateSample, etrsValidator)) {
+			crs = "EPSG:3067";
 		}
 	}
 	return crs;
@@ -368,15 +398,19 @@ export function convert(input, outputFormat, outputCRS) {
 	const inputFormat = detectFormat(input);
 	const inputCRS = detectCRS(input);
 
+	if (!inputCRS) {
+		throw new LajiMapError("Couldn't detect geo data CRS", "GeoDataCRSDetectionError");
+	}
+
 	let geoJSON = undefined;
 	if (inputFormat === "WKT") {
 		geoJSON = WKTToGeoJSON(input);
 	} else if (inputFormat === "ISO") {
 		geoJSON = ISO6709ToGeoJSON(input);
 	} else if (inputFormat === "GeoJSON") {
-		geoJSON = (typeof input === "object") ? input : JSON.parse(input);
+		geoJSON = (typeof input === "object") ? input : parseJSON(input);
 	} else {
-		throw new Error("Couldn't detect geo data format");
+		throw new LajiMapError("Couldn't detect geo data format", "GeoDataFormatDetectionError");
 	}
 
 	if (inputCRS !== outputCRS) geoJSON = convertGeoJSON(geoJSON, inputCRS, outputCRS);
@@ -402,4 +436,59 @@ export function getCRSObjectForGeoJSON(geoJSON, crs) {
 			name: crs === "EPSG:2393" ? EPSG2393String : EPSG3067String
 		}
 	};
+}
+
+export class LajiMapError extends Error {
+	constructor(message, translationKey, additional = {}) {
+		super(message);
+		this.translationKey = translationKey;
+		Object.keys(additional).forEach(key => this[key] = additional[key]);
+	}
+}
+
+export function stringifyLajiMapError(error, translations) {
+	let msg = `${translations.errorHTML} ${error.translationKey && translations[error.translationKey] ? translations[error.translationKey] : error.message}.`;
+	if ("lineIdx" in error) msg  += `${translations.Line}: ${error.lineIdx}`;
+	return msg;
+}
+
+export function parseJSON(json) {
+	try {
+		return JSON.parse(json);
+	} catch (e) {
+		throw new LajiMapError(e.message, "JsonParseError");
+	}
+}
+
+const wgs84Check = {
+	regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
+	range: [-180, 180]
+};
+const wgs84Validator = [wgs84Check, wgs84Check];
+
+function formatterForLength(length) {
+	return  value => (value.length < length ? value + "0".repeat(length - value.length) : value);
+}
+const ykjRegexp = /^[0-9]{3,7}$/;
+const ykjFormatter = formatterForLength(7);
+const ykjValidator = [
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
+	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
+];
+const etrsValidator = [
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
+	{regexp: /^[0-9]{3,6}$/, range: [50000, 760000], formatter: formatterForLength(6)}
+];
+
+export {wgs84Validator, ykjValidator, etrsValidator};
+
+export function validateLatLng(latlng, latLngValidator) {
+	return latlng.every((value, i) => {
+		const validator = latLngValidator[i];
+		const formatted = +(validator.formatter ? validator.formatter(value) : value);
+		return (
+		value !== "" && value.match(validator.regexp) &&
+		formatted >= validator.range[0] && formatted <= validator.range[1]
+		);
+	});
 }

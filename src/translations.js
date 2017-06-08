@@ -389,6 +389,49 @@
 		en: "The last",
 		sv: "Den sista"
 	},
-
-
+	uploadDrawnFeatures: {
+		fi: "Tuo kuviot tekstinä",
+		en: "Upload textual coordinates",
+		sv: "Ladda upp textkoordinater"
+	},
+	geoDataFormatDetectionError: {
+		fi: "Formaatin tunnistus epäonnistui",
+		en: "Format detection failed",
+		sv: "Formatdetektering misslyckades"
+	},
+	GeoDataCRSDetectionError: {
+		fi: "Koordinaattijärjestelmän tunnistus epäonnistui",
+		en: "Coordinate system detection failed",
+		sv: "Koordinatesystemet misslyckades"
+	},
+	jsonParseError: {
+		fi: "JSON:in purku epäonnistui",
+		en: "Invalid JSON",
+		sv: "Ogiltig JSON"
+	},
+	detectedFormat: {
+		fi: "Tunnistettu formaatti",
+		en: "Detected format",
+		sv: "Detekterade formatet"
+	},
+	detectedCRS: {
+		fi: "Tunnistettu koordinaattijärjestelmä",
+		en: "Detected coordinate system",
+		sv: "Detekterade koordinatesystemet"
+	},
+	coordinateParsingError: {
+		fi: "Koordinaattien purku epäonnistui",
+		en: "Parsing coordinates failed",
+		sv: "Analysera misslyckade koordinater"
+	},
+	lineGeoDataFormatError: {
+		fi: "Rivin purku epäonnistui.",
+		en: "Parsing row failed",
+		sv: "Parserraden misslyckades"
+	},
+	line: {
+		fi: "Rivi",
+		en: "Line",
+		sv: "Rad"
+	},
 };

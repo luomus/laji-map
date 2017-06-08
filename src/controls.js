@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjValidator, wgs84Validator, stringifyLajiMapError } from "./utils";
 import {
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
@@ -134,6 +134,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.CopyDrawnFeatures,
 						iconCls: "glyphicon glyphicon-floppy-save",
 						fn: (...params) => this.openDrawCopyDialog(...params)
+					},
+					{
+						name: "drawUpload",
+						text: this.translations.UploadDrawnFeatures,
+						iconCls: "glyphicon glyphicon-floppy-open",
+						fn: (...params) => this.openDrawUploadDialog(...params)
 					},
 					{
 						name: "drawClear",
@@ -318,6 +324,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			},
 			coordinateInput: true,
 			drawCopy: false,
+			drawUpload: false,
 			drawClear: false,
 			coordinates: false,
 			scale: true,
@@ -356,6 +363,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			],
 			drawCopy: [
 				() => this.getFeatureTypes().some(type => this.draw[type])
+			],
+			drawUpload: [
+				"draw"
 			],
 			drawClear: [
 				() => this.getFeatureTypes().some(type => this.draw[type])
@@ -722,19 +732,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const ykjAllowed = that.draw.rectangle;
 		const wgs84Allowed = that.draw.marker;
 
-		const wgs84Check = {
-			regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
-			range: [-180, 180]
-		};
-		const wgs84Validator = [wgs84Check, wgs84Check];
-
-		const ykjRegexp = /^[0-9]{3,7}$/;
-		const ykjFormatter = value => (value.length < 7 ? value + "0".repeat(7 - value.length) : value);
-		const ykjValidator = [
-		{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
-		{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
-		];
-
 		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
 
 		function inputValidate(e, value) {
@@ -743,17 +740,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				return false;
 			}
 			return true;
-		}
-
-		function validateLatLng(latlng, latLngValidator) {
-			return latlng.every((value, i) => {
-				const validator = latLngValidator[i];
-				const formatted = validator.formatter ? validator.formatter(value) : value;
-				return (
-				value !== "" && value.match(validator.regexp) &&
-				formatted >= validator.range[0] && formatted <= validator.range[1]
-				);
-			});
 		}
 
 		function submitValidate(inputValues) {
@@ -1015,6 +1001,129 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		this._showDialog(table);
 		updateOutput(originalGeoJSON);
+	}
+
+	openDrawUploadDialog() {
+		const container = document.createElement("form");
+
+		const textarea = document.createElement("textarea");
+		textarea.setAttribute("rows", 10);
+		textarea.setAttribute("cols", 50);
+		textarea.className = "form-control form-group";
+
+		const button = document.createElement("button");
+		button.setAttribute("type", "submit");
+		button.className = "btn btn-block btn-primary";
+
+		let translationsHooks = [];
+		translationsHooks.push(this.addTranslationHook(button, "UploadDrawnFeatures"));
+		button.setAttribute("disabled", "disabled");
+
+		textarea.oninput = ({target: {value}}) => {
+			if (value === "") {
+				updateInfo();
+				button.setAttribute("disabled", "disabled");
+				if (container.className.includes(" has-error")) container.className = container.className.replace(" has-error", "");
+			}
+			try {
+				const format = detectFormat(value);
+				const crs = detectCRS(value);
+				const valid = convertAnyToWGS84GeoJSON(value);
+
+				updateInfo(value, format, crs);
+				if (format && crs && valid) {
+					button.removeAttribute("disabled");
+					if (alert) {
+						container.removeChild(alert);
+						alert = undefined;
+					}
+				} else {
+					button.setAttribute("disabled", "disabled");
+				}
+				if (container.className.includes(" has-error")) container.className = container.className.replace(" has-error", "");
+			} catch (e) {
+				if (value !== "" && !container.className.includes("has-error")) container.className += " has-error";
+				updateInfo(value);
+			}
+		};
+
+		const that = this;
+
+		const formatContainer = document.createElement("div");
+		const crsContainer = document.createElement("div");
+		const formatInfo = document.createElement("span");
+		const crsInfo = document.createElement("span");
+		const formatValue = document.createElement("span");
+		const crsValue = document.createElement("span");
+
+		formatContainer.className = "form-group text-success";
+		crsContainer.className = "form-group text-success";
+
+		formatContainer.appendChild(formatInfo);
+		formatContainer.appendChild(formatValue);
+		crsContainer.appendChild(crsInfo);
+		crsContainer.appendChild(crsValue);
+
+		translationsHooks.push(that.addTranslationHook(formatInfo, () => `${this.translations.DetectedFormat}: `));
+		translationsHooks.push(that.addTranslationHook(crsInfo, () => `${this.translations.DetectedCRS}: `));
+
+		updateInfo();
+
+		function updateInfo(value = "", format = "", crs = "") {
+			if (format) {
+				formatContainer.style.display = "block";
+			} else {
+				formatContainer.style.display = "none";
+			}
+			if (crs) {
+				crsContainer.style.display = "block";
+			} else {
+				crsContainer.style.display = "none";
+			}
+			formatValue.innerHTML = format;
+			crsValue.innerHTML = crs;
+		}
+
+		let alert = undefined;
+		let alertTranslationHook = undefined;
+
+		function updateAlert(error) {
+			if (alert) container.removeChild(alert);
+			alert = document.createElement("div");
+			alert.className = "alert alert-danger";
+			if (alertTranslationHook) that.removeTranslationHook(alertTranslationHook);
+			alertTranslationHook = that.addTranslationHook(alert, () => stringifyLajiMapError(error, that.translations));
+			container.appendChild(alert);
+		}
+
+		function convertText(e) {
+			e.preventDefault();
+			try {
+				that.setDrawData({...that.draw.data, featureCollection: undefined, geoData: textarea.value});
+				that._closeDialog(e);
+			} catch (e) {
+				updateAlert(e);
+				throw e;
+			}
+			const bounds = that.drawLayerGroup.getBounds();
+			if (Object.keys(bounds).length) that.map.fitBounds(bounds);
+		}
+
+		button.addEventListener("click", convertText);
+
+		container.appendChild(textarea);
+		container.appendChild(formatContainer);
+		container.appendChild(crsContainer);
+		container.appendChild(button);
+
+		this._showDialog(container, () => {
+			translationsHooks.forEach(hook => this.removeTranslationHook(hook));
+			if (alertTranslationHook) this.removeTranslationHook(alertTranslationHook);
+			button.removeEventListener("click", convertText);
+		});
+
+		textarea.focus();
+		textarea.select();
 	}
 
 	_joinTranslations(...words) {

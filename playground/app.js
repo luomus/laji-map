@@ -168,6 +168,7 @@ class App {
 			controlSettings: {
 				coordinates: true,
 				drawCopy: true,
+				drawUpload: true,
 				drawClear: true
 			},
 			data: this.data,

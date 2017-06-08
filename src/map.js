@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import { convertAnyToWGS84GeoJSON } from "./utils";
+import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -691,7 +691,9 @@ export default class LajiMap {
 
 		if (drawAllowed) {
 			this.setDrawData(this.draw.data);
-			this.setOnDrawChange(this.draw.onChange);
+			const format = (this.draw.data.geoData) ? detectFormat(this.draw.data.geoData) : undefined;
+			const crs = (this.draw.data.geoData || this.draw.data.featureCollection) ? detectCRS(this.draw.data.geoData || this.draw.data.featureCollection) : undefined;
+			this.setOnDrawChange(this.draw.onChange, format, crs);
 			this.setActive(options.hasActive ? options.activeIdx : undefined);
 			provide(this, "draw");
 		}
@@ -744,8 +746,20 @@ export default class LajiMap {
 		this.setActive(this.draw.activeIdx);
 	}
 
-	setOnDrawChange(onChange) {
-		this.draw.onChange = onChange;
+	setOnDrawChange(onChange, format = "GeoJSON", crs = "WGS84") {
+		this.draw.onChange = events => onChange(events.map(e => {
+			switch (e.type) {
+			case "create":
+				e.geoData = convert({type: "FeatureCollection", features: [e.feature], properties: {}}, format, crs);
+				break;
+			case "delete":
+			case "edit":
+				e.geoData = convert({type: "FeatureCollection", features: e.features, properties: {}}, format, crs);
+				break;
+			}
+			
+			return e;
+		}));
 	}
 
 	clearDrawData() {

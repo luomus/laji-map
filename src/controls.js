@@ -1,8 +1,6 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON } from "./utils";
 import {
-	EPSG3067String,
-	EPSG2393String,
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
@@ -907,12 +905,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function converterFor(proj) {
 			return input => {
 				const reprojected = convertGeoJSON(input, "WGS84", proj);
-				reprojected.crs = {
-					type: "name",
-					properties: {
-						name: proj === "EPSG:2393" ? EPSG2393String : EPSG3067String
-					}
-				};
+				reprojected.crs = getCRSObjectForGeoJSON(reprojected, proj);
 				return reprojected;
 			};
 		}

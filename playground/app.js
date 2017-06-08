@@ -109,7 +109,7 @@ class App {
 
 		this.drawOptions = {
 			data: {
-				geoData: {
+				featureCollection: {
 					type: "FeatureCollection",
 					features: [
 						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},

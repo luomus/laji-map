@@ -118,7 +118,6 @@ export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, 
 
 	function geoJSONCoordsToTextualArea(coords) {
 		let _coords = coords.slice(0);
-		_coords.pop();
 		return geoJSONCoordsJoin(_coords);
 	}
 
@@ -328,31 +327,79 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 		geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
 }
 
-export function convertAnyToWGS84GeoJSON(data) {
-	let geoJSON = undefined;
-	let from = undefined;
+export function detectFormat(data) {
 	if (typeof data === "string" && !data.match(/{.*}/) && data.includes("(")) {
-		let crs = data.match(/(PROJCS.*)/);
-		if (crs) {
-			if (crs[1] === EPSG2393WKTString) from = "EPSG:2393";
-			else if (crs[1] === EPSG3067WKTString) from = "EPSG:3067";
-		}
-		geoJSON = WKTToGeoJSON(data);
+		return "WKT";
 	} else if (typeof data === "string" && !data.match(/{.*}/) && data.includes("/")) {
-		geoJSON = ISO6709ToGeoJSON(data);
-		const crs = data.match(/CRS(.*)/);
-		if (crs) from = crs[1];
+		return "ISO";
 	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
-		geoJSON = (typeof data === "object") ? data : JSON.parse(data);
-		const crs = geoJSON.crs;
-		if (crs) {
-			const name = crs.properties.name;
-			if (name === EPSG2393String) from = "EPSG:2393";
-			else if (name === EPSG3067String) from = "EPSG:3067";
+		return "GeoJSON";
+	}
+}
+
+export function detectCRS(data) {
+	const format = detectFormat(data);
+	let crs = "WGS84";
+	if (format === "WKT") {
+		let detection = data.match(/(PROJCS.*)/);
+		if (detection) {
+			if (detection[1] === EPSG2393WKTString) crs = "EPSG:2393";
+			else if (detection[1] === EPSG3067WKTString) crs = "EPSG:3067";
 		}
+	} else if (format === "ISO") {
+		const detection = data.match(/CRS(.*)/);
+		if (detection) crs = detection[1];
+	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+		const geoJSON = (typeof data === "object") ? data : JSON.parse(data);
+		if (geoJSON.crs) {
+			const name = geoJSON.crs.properties.name;
+			if (name === EPSG2393String) crs = "EPSG:2393";
+			else if (name === EPSG3067String) crs = "EPSG:3067";
+		}
+	}
+	return crs;
+}
+
+export function convertAnyToWGS84GeoJSON(data) {
+	return convert(data, "GeoJSON", "WGS84");
+}
+
+export function convert(input, outputFormat, outputCRS) {
+	const inputFormat = detectFormat(input);
+	const inputCRS = detectCRS(input);
+
+	let geoJSON = undefined;
+	if (inputFormat === "WKT") {
+		geoJSON = WKTToGeoJSON(input);
+	} else if (inputFormat === "ISO") {
+		geoJSON = ISO6709ToGeoJSON(input);
+	} else if (inputFormat === "GeoJSON") {
+		geoJSON = (typeof input === "object") ? input : JSON.parse(input);
 	} else {
 		throw new Error("Couldn't detect geo data format");
 	}
-	if (from) geoJSON = convertGeoJSON(geoJSON, from, "WGS84");
-	return geoJSON;
+
+	if (inputCRS !== outputCRS) geoJSON = convertGeoJSON(geoJSON, inputCRS, outputCRS);
+
+	if (outputCRS !== "WGS84") geoJSON.crs = getCRSObjectForGeoJSON(geoJSON, outputCRS);
+
+	switch (outputFormat) {
+	case "WKT":
+		return geoJSONToWKT(geoJSON);
+	case "ISO":
+		return geoJSONToISO6709(geoJSON);
+	case "GeoJSON":
+		return geoJSON;
+	default:
+		throw new Error("Unknown output format");
+	}
+}
+
+export function getCRSObjectForGeoJSON(geoJSON, crs) {
+	return (!crs || crs === "WGS84") ? undefined : {
+		type: "name",
+		properties: {
+			name: crs === "EPSG:2393" ? EPSG2393String : EPSG3067String
+		}
+	};
 }

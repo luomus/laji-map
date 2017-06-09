@@ -406,9 +406,6 @@ export function convert(input, outputFormat, outputCRS) {
 	const inputFormat = detectFormat(input);
 	const inputCRS = detectCRS(input);
 
-	if (!inputCRS) {
-		throw new LajiMapError("Couldn't detect geo data CRS", "GeoDataCRSDetectionError");
-	}
 
 	let geoJSON = undefined;
 	if (inputFormat === "WKT") {
@@ -419,6 +416,10 @@ export function convert(input, outputFormat, outputCRS) {
 		geoJSON = (typeof input === "object") ? input : parseJSON(input);
 	} else {
 		throw new LajiMapError("Couldn't detect geo data format", "GeoDataFormatDetectionError");
+	}
+
+	if (geoJSON.features.length > 0 && !inputCRS) {
+		throw new LajiMapError("Couldn't detect geo data CRS", "GeoDataCRSDetectionError");
 	}
 
 	if (inputCRS !== outputCRS) geoJSON = convertGeoJSON(geoJSON, inputCRS, outputCRS);

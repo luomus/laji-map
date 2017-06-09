@@ -712,12 +712,20 @@ export default class LajiMap {
 	}
 
 	setDrawData(data) {
+		const emptyFeatureCollection = {type: "FeatureCollection", features: []};
 		if (!data) data = {
-			featureCollection: {features: []}
+			featureCollection: emptyFeatureCollection
 		};
 
-		const featureCollection = {type: "FeatureCollection"};
-		featureCollection.features = this.cloneFeatures(convertAnyToWGS84GeoJSON(data.geoData || data.featureCollection).features);
+		const featureCollection = emptyFeatureCollection;
+		try  {
+			featureCollection.features = this.cloneFeatures(convertAnyToWGS84GeoJSON(data.geoData || data.featureCollection).features);
+		}  catch (e) {
+			if (e._lajiMapError) {
+				this._showError(e);
+				this.setDrawData({...data, geoData: undefined, featureCollection: emptyFeatureCollection});
+			 }
+		}
 		this.draw.data = (data) ? {
 			getFeatureStyle: (...params) => this._getDefaultDrawStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDrawClusterStyle(...params),
@@ -727,7 +735,6 @@ export default class LajiMap {
 
 		if (this.drawLayerGroup) this.drawLayerGroup.clearLayers();
 		if (this.clusterDrawLayer) this.clusterDrawLayer.clearLayers();
-
 		this.drawLayerGroup = L.geoJson(
 			this.draw.data.featureCollection,
 			{

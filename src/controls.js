@@ -1081,7 +1081,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				crsContainer.style.display = "none";
 			}
 			formatValue.innerHTML = format;
-			crsValue.innerHTML = crs;
+			crsValue.innerHTML = that.translations[crs] ? that.translations[crs] : crs;
 		}
 
 		let alert = undefined;

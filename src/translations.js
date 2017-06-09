@@ -434,4 +434,14 @@
 		en: "Line",
 		sv: "Rad"
 	},
+	"EPSG:2393": {
+		fi: "YKJ (EPSG:2393)",
+		en: "Finnish Uniform Grid (EPSG:2393)",
+		sv: "EKS (EPSG:2393)"
+	},
+	"EPSG:3067": {
+		fi: "ETRS (EPSG:3067)",
+		en: "ETRS (EPSG:3067)",
+		sv: "ETRS (EPSG:3067)"
+	},
 };

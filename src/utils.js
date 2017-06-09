@@ -19,7 +19,15 @@ export function convertLatLng(latlng, from, to) {
 		}
 	}
 
-	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng.map(c => +c)));
+	let validator = undefined;
+	if (from === "EPSG:2393") {
+		validator = ykjValidator;
+	} else if (from === "EPSG:2393") {
+		validator = etrsValidator;
+	}
+	if (validator && validator.formatter) latlng = latlng.map(c => `${c}`).map((c, i) => +ykjValidator[i].formatter(c));
+
+	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 }
 

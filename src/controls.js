@@ -71,6 +71,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	setOption(option, value)  {
 		if (option === "controlSettings") this.setControlSettings(value);
+		if (option === "customControls") this.setCustomControls(value);
 		else super.setOption(option, value);
 	}
 
@@ -186,6 +187,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		];
 
+		if (this._customControls) this.controlItems = [...this.controlItems, ...this._customControls];
+
 		const that = this;
 
 		function _createCancelHandler(name, fn, eventName) {
@@ -297,6 +300,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	@reflect()
+	@dependsOn("customControls")
+	_updateCustomControls() {
+		if (!depsProvided(this, "_updateCustomControls", arguments)) return;
+		this._updateMapControls();
+	}
+
+	@reflect()
 	@dependsOn("lineTransect")
 	_updateLineTransectControls() {
 		if (!depsProvided(this, "_updateLineTransectControls", arguments)) return;
@@ -333,7 +343,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		};
 
 		for (let setting in controlSettings) {
-			if (!this.controlSettings.hasOwnProperty(setting)) continue;
+			if (!(setting in this.controlSettings)) continue;
 
 			let newSetting = controlSettings[setting];
 			if (this.controlSettings[setting].constructor === Object) {
@@ -351,6 +361,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		provide(this, "controlSettings");
 	}
+
+	setCustomControls(controls) {
+		this._customControls = controls;
+		provide(this, "customControls");
+	}
+
 
 	_controlIsAllowed(name) {
 		const dependencies = {

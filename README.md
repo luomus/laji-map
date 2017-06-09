@@ -69,6 +69,7 @@ polyline                                        | Boolean              | true   
 circle                                          | Boolean              | true                                     | Controls whether the draw data can contain a circle. Adding new circles is prevented. Map controls are affected by this option.
 marker                                          | Boolean              | true                                     | Controls whether the draw data can contain a marker. Adding new markers is prevented. Map controls are affected by this option.
 getDraftStyle                                   | Function             | true                                     | A function that returns a Path style to use for the feature during drawing & editing a feature.
+customControls                                  | Object               | -                                        | An array of custom controls. See custom control options.
 
 ### Control options ###
 
@@ -109,6 +110,36 @@ Option                                          | Type                     |  De
 userLocation                                    | Boolean                  | true                                 | Controls whether to show the user locating button.
 search (NOT SUPPORTED YET)                      | Boolean                  | true                                 | Controls whether to show a place name search input.
 
+
+### Custom control options ###
+
+An array or custom control items. A control item is either a singular control, or a collection of control items (the control items in a collection must be singular control items).
+
+Option                                          | Type                     |  Default                             | Description
+------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
+controls                                        | Control items[]          | -                                    | Sets this control item to a collection of contor items.
+text                                            | String                   | -                                    | Text to show in control button tooltip and in the context menu.
+position                                        | String                   | "topleft"                            | The corner where the control is shown at.
+fn                                              | Function                 | -                                    | A callback function that is called upon control click.
+stopFn                                          | Function                 | -                                    | A callback function that is called upon control action cancel (an action cancel handler is created if stopFn is given). Useful for functions that start a continuous action that should be cancellable.
+eventName                                       | String                   | -                                    | A name for the event that is triggered on action stop.
+iconCls                                         | String                   | -                                    | A class that is added to the button icon.
+onAdd                                           | Function                 | -                                    | A callback that is called when the control is added to the map.
+contextMenu                                     | Boolean                  | true                                 | If true, control is added to the context menu.
+
+Option                                          | Type                     |  Default                             | Description
+------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
+draw                                            | Draw control options     | true                                 | Shows a map control for adding new features.
+layer                                           | Boolean                  | true                                 | Shows a tile/baselayer control.
+zoom                                            | Boolean                  | true                                 | Shows a zoom control.
+scale                                           | Integer                  | true                                 | Shows a scale control as meters.
+location                                        | Location control options | true                                 | Shows a location control.
+coordinateInput                                 | Boolean                  | true                                 | Shows a control for entering a new feature to the draw layer by coordinates. Only shown if main options  `draw` option is set.
+drawCopy                                        | Boolean                  | false                                | Shows a control for copying the draw data. Only shown if `draw` option is set.
+drawClear                                       | Boolean                  | false                                | Shows a control for clearing all draw data. Only shown if `draw` option is set.
+coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
+lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
+layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
 #### Line transect control options ####
 
 If line transect control is true, it is interpreted as a line transect control options object with all default options.

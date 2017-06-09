@@ -162,13 +162,10 @@ class App {
 			featurePopupOffset: 5,
 			controlSettings: {
 				coordinates: true,
-				drawCopy: true,
-				drawUpload: true,
-				drawClear: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
-			overlayNames: ["ykjGrid", "ykjGridLabels"],
+			overlayNames: ["ykjGrid", "ykjGridLabels"]
 		};
 
 		const map = new LajiMap(options);
@@ -179,7 +176,7 @@ class App {
 			lineTransect: undefined,
 			center: [60.40403173483798, 22.104264017028992],
 			zoom: 7,
-			tileLayerName: "taustakartta",
+			tileLayerName: "taustakartta"
 		});
 
 		setTimeout(() => {

@@ -956,10 +956,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				tab.appendChild(text);
 
 				tab.addEventListener("click", () => {
-					const {scrollTop} = HTMLInput;
+					const {scrollTop, scrollLeft} = HTMLInput;
 					setActiveTab(tab, label);
 					updateOutput();
 					HTMLInput.scrollTop = scrollTop;
+					HTMLInput.scrollLeft = scrollLeft;
 				});
 
 				return tab;

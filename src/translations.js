@@ -425,9 +425,9 @@
 		sv: "Analysera misslyckade koordinater"
 	},
 	lineGeoDataFormatError: {
-		fi: "Rivin purku epäonnistui.",
-		en: "Parsing row failed",
-		sv: "Parserraden misslyckades"
+		fi: "Kuvion purku tekstisyötteestä epäonnistui",
+		en: "Parsing feature from text input failed",
+		sv: "Parsing figuren från textinmatning misslyckades"
 	},
 	line: {
 		fi: "Rivi",

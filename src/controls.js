@@ -664,34 +664,21 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	_showDialog(container, onClose) {
-		const closeButton = document.createElement("button");
-		closeButton.setAttribute("type", "button");
-		closeButton.className = "close";
-		closeButton.innerHTML = "✖";
-		closeButton.addEventListener("click", close);
-
 		const _container = document.createElement("div");
 		_container.className = "laji-map-dialog panel panel-default panel-body";
-		_container.appendChild(closeButton);
 		_container.appendChild(container);
 
 		const that = this;
 		function close(e) {
-			if (e) e.preventDefault();
 			that.blockerElem.style.display = "";
 			that.blockerElem.removeEventListener("click", close);
-			that._removeKeyListener(ESC, close);
-			that.container.removeChild(_container);
-			if (onClose) onClose();
+			if (onClose) onClose(e);
 		}
 
 		this.blockerElem.addEventListener("click", close);
-		this._addKeyListener(ESC, close);
-
 		this.blockerElem.style.display = "block";
-		this.container.appendChild(_container);
 
-		this._closeDialog = close;
+		this.showClosableElement(_container, close);
 	}
 
 	openCoordinatesInputDialog() {

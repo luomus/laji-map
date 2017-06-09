@@ -449,6 +449,7 @@ export function getCRSObjectForGeoJSON(geoJSON, crs) {
 export class LajiMapError extends Error {
 	constructor(message, translationKey, additional = {}) {
 		super(message);
+		this._lajiMapError = true;
 		this.translationKey = translationKey;
 		Object.keys(additional).forEach(key => this[key] = additional[key]);
 	}
@@ -456,7 +457,7 @@ export class LajiMapError extends Error {
 
 export function stringifyLajiMapError(error, translations) {
 	let msg = `${translations.errorHTML} ${error.translationKey && translations[error.translationKey] ? translations[error.translationKey] : error.message}.`;
-	if ("lineIdx" in error) msg  += `${translations.Line}: ${error.lineIdx}`;
+	if ("lineIdx" in error) msg  += ` ${translations.Line}: ${error.lineIdx}`;
 	return msg;
 }
 

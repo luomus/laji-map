@@ -244,4 +244,11 @@
   border-color: #ddd transparent #ddd #ddd;
   *border-right-color: #ffffff;
 }
-
+.laji-map-popup {
+    position: absolute;
+    z-index: 500 !important;
+    top: 5%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    text-align: center;
+}

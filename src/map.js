@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert } from "./utils";
+import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert, stringifyLajiMapError } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -122,95 +122,103 @@ export default class LajiMap {
 
 	@dependsOn("rootElem")
 	_initializeMap() {
-		if (!depsProvided(this, "_initializeMap", arguments)) return;
-		L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
+		try {
+			if (!depsProvided(this, "_initializeMap", arguments)) return;
+			L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
-		this.map = L.map(this.mapElem, {
-			contextmenu: true,
-			contextmenuItems: [],
-			zoomControl: false,
-			attributionControl: false,
-			noWrap: true,
-			continuousWorld: false,
-			doubleClickZoom: false
-		});
-
-		this.tileLayers = {};
-
-		[MAASTOKARTTA, TAUSTAKARTTA, POHJAKARTTA].forEach(tileLayerName => {
-			this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
-				layer: tileLayerName
+			this.map = L.map(this.mapElem, {
+				contextmenu: true,
+				contextmenuItems: [],
+				zoomControl: false,
+				attributionControl: false,
+				noWrap: true,
+				continuousWorld: false,
+				doubleClickZoom: false
 			});
-		});
 
-		this.tileLayers.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
-			layers: "osm_finland:Sea",
-			format: "image/png",
-			transparent: false,
-			version: "1.1.0",
-			attribution: "LUOMUS"
-		});
+			this.tileLayers = {};
 
-		this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
-		this.tileLayers.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-			subdomains:["mt0","mt1","mt2","mt3"]
-		});
+			[MAASTOKARTTA, TAUSTAKARTTA, POHJAKARTTA].forEach(tileLayerName => {
+				this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
+					layer: tileLayerName
+				});
+			});
 
-		this.availableTileLayers = this.tileLayers;
-
-		this.overlaysByNames = {
-			geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-				layers: "INSPIRE:fi_fmnh_br",
+			this.tileLayers.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
+				layers: "osm_finland:Sea",
 				format: "image/png",
-				transparent: true,
-				version: "1.3.0"
-			}).setOpacity(0.5),
-			forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-				layers: "Metsakasvillisuusvyohykkeet",
-				format: "image/png",
-				transparent: true,
-				version: "1.3.0"
-			}).setOpacity(0.5),
-			mireVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-				layers: "Suokasvillisuusvyohykkeet",
-				format: "image/png",
-				transparent: true,
-				version: "1.3.0"
-			}).setOpacity(0.5),
-			threatenedSpeciesEvaluationZones: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
-				layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
-				format: "image/png",
-				transparent: true,
-				version: "1.1.0"
-			}),
-			ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
-				layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
-				format: "image/png",
-				transparent: true,
+				transparent: false,
 				version: "1.1.0",
 				attribution: "LUOMUS"
-			}),
-			ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
-				layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
-				format: "image/png",
-				transparent: true,
-				version: "1.1.0",
-				attribution: "LUOMUS"
-			})
-		};
+			});
 
-		this.availableOverlaysByNames = this.overlaysByNames;
+			this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+			this.tileLayers.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+				subdomains:["mt0","mt1","mt2","mt3"]
+			});
 
-		this.userLocationLayer = new L.LayerGroup().addTo(this.map);
+			this.availableTileLayers = this.tileLayers;
 
-		if (this.locate) {
-			this.initializeViewAfterLocateFail = true;
-			this._onLocate();
+			this.overlaysByNames = {
+				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
+					layers: "INSPIRE:fi_fmnh_br",
+					format: "image/png",
+					transparent: true,
+					version: "1.3.0"
+				}).setOpacity(0.5),
+				forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+					layers: "Metsakasvillisuusvyohykkeet",
+					format: "image/png",
+					transparent: true,
+					version: "1.3.0"
+				}).setOpacity(0.5),
+				mireVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+					layers: "Suokasvillisuusvyohykkeet",
+					format: "image/png",
+					transparent: true,
+					version: "1.3.0"
+				}).setOpacity(0.5),
+				threatenedSpeciesEvaluationZones: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
+					layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
+					format: "image/png",
+					transparent: true,
+					version: "1.1.0"
+				}),
+				ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
+					format: "image/png",
+					transparent: true,
+					version: "1.1.0",
+					attribution: "LUOMUS"
+				}),
+				ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
+					format: "image/png",
+					transparent: true,
+					version: "1.1.0",
+					attribution: "LUOMUS"
+				})
+			};
+
+			this.availableOverlaysByNames = this.overlaysByNames;
+
+			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
+
+			if (this.locate) {
+				this.initializeViewAfterLocateFail = true;
+				this._onLocate();
+			}
+
+			this._initializeMapEvents();
+
+			provide(this, "map");
+		} catch (e) {
+			if (e._lajiMapError) {
+				this._showError(e);
+			} else {
+				throw e;
+			}
 		}
-
-		this._initializeMapEvents();
-
-		provide(this, "map");
 	}
 
 
@@ -539,6 +547,10 @@ export default class LajiMap {
 
 		if (!this.translations || this.lang !== lang) {
 			this.lang = lang;
+			if (["fi", "en", "sv"].every(_lang => _lang != lang)) {
+				console.warn(`LajiMap: Invalid lang option '${lang}'. Fallbacking to 'en'.`);
+				this.lang = "en";
+			}
 			this.translations = this.dictionary[this.lang];
 
 			if (this.idsToIdxs) for (let id in this.idsToIdxs) {
@@ -1421,8 +1433,7 @@ export default class LajiMap {
 			}
 		}
 
-		translate();
-		this.onSetLangHooks.push(translate);
+		translate(); this.onSetLangHooks.push(translate);
 		return translate;
 	}
 
@@ -1462,5 +1473,42 @@ export default class LajiMap {
 
 	getFeatureTypes() {
 		return ["rectangle", "polyline", "polygon", "circle", "marker"];
+	}
+
+	_showError(e) {
+		const alert = document.createElement("div");
+		alert.style.display = "block";
+		alert.style.className = "block";
+		alert.className = "laji-map-popup alert alert-danger";
+		const message = () => (e._lajiMapError) ? stringifyLajiMapError(e, this.translations) : e.message;
+		const translationHook = this.addTranslationHook(alert, message);
+
+		this.showClosableElement(alert, () => {
+			this.removeTranslationHook(translationHook);
+		});
+	}
+
+	showClosableElement(container, onClose) {
+		const closeButton = document.createElement("button");
+		closeButton.setAttribute("type", "button");
+		closeButton.className = "close";
+		closeButton.innerHTML = "✖";
+		closeButton.addEventListener("click", close);
+
+		container.insertBefore(closeButton, container.firstChild);
+
+		const that = this;
+		function close(e) {
+			if (e) e.preventDefault();
+			that._removeKeyListener(ESC, close);
+			that.container.removeChild(container);
+			if (onClose) onClose(e);
+		}
+
+		this._addKeyListener(ESC, close);
+
+		this.container.appendChild(container);
+
+		this._closeDialog = close;
 	}
 }

@@ -13,16 +13,6 @@ function getSubControlName(name, subName) {
 
 
 export default LajiMap => class LajiMapWithControls extends LajiMap {
-	constructor(props) {
-		super(props);
-		this._initControls();
-	}
-
-	_initControls() {
-		this.controls = {};
-		provide(this, "controlsConstructed");
-	}
-
 	@dependsOn("controls")
 	_setLang() {
 		if (!depsProvided(this, "setLang", arguments)) return;
@@ -80,10 +70,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_updateMapControls() {
 		if (!depsProvided(this, "_updateMapControls", arguments)) return;
 
-		Object.keys(this.controls).forEach(controlName => {
-			const control = this.controls[controlName];
+		(this.controls || []).forEach(control => {
 			if (control) this.map.removeControl(control);
 		});
+
+		this.controls = [];
 
 		this.controlItems = [
 			{
@@ -320,10 +311,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._updateMapControls();
 	}
 
-	@dependsOn("controlsConstructed")
 	setControlSettings(controlSettings) {
-		if (!depsProvided(this, "setControlSettings", arguments)) return;
-
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
@@ -432,8 +420,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	_addControl(name, control) {
 		if (control && this._controlIsAllowed(name)) {
-			this.controls[name] = control;
 			this.map.addControl(control);
+			this.controls.push(control);
 		}
 	}
 
@@ -468,7 +456,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		};
 
 		drawOptions.draw = this.getFeatureTypes().reduce((options, type) => {
-			options[type] = (this.draw[type] === false || this.controlSettings.draw[type] === false) ?
+			options[type] = (!this.draw ||this.draw[type] === false || this.controlSettings.draw[type] === false) ?
 				false : this._getDrawOptionsForType(type);
 			return options;
 		}, {});
@@ -594,7 +582,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 				this._handlingClick = false;
 
-				that.controls.layer.expand();
+				that.layerControl.expand();
 			},
 			_initLayout: function() {
 				L.Control.Layers.prototype._initLayout.call(this);
@@ -625,6 +613,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			that._sliderElem = document.getElementsByClassName("rangeslider")[0];
 			that._slider = sliderInput["rangeslider-js"];
 		});
+
+		this.layerControl = layerControl;
 		
 		return layerControl;
 	}

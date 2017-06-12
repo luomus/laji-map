@@ -165,7 +165,7 @@ class App {
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
-			overlayNames: ["ykjGrid", "ykjGridLabels"]
+			overlayNames: ["ykjGrid", "ykjGridLabels"],
 		};
 
 		const map = new LajiMap(options);
@@ -178,10 +178,6 @@ class App {
 			zoom: 7,
 			tileLayerName: "taustakartta"
 		});
-
-		setTimeout(() => {
-			this.map.setNormalizedZoom(13);
-		}, 100);
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

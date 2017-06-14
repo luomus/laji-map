@@ -62,7 +62,6 @@ export default class LajiMap {
 			tileLayerName: TAUSTAKARTTA,
 			lang: "en",
 			data: [],
-			draw: {}, //default are set at setDraw
 			locate: false,
 			center:  [65, 26],
 			zoom: 2,

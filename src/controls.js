@@ -363,16 +363,16 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
 			],
 			draw: [
-				() => isProvided(this, "draw"),
+				() => this.draw
 			],
 			drawCopy: [
-				() => this.getFeatureTypes().some(type => this.draw[type])
+				() => this.draw
 			],
 			drawUpload: [
-				"draw"
+				() => this.draw
 			],
 			drawClear: [
-				() => this.getFeatureTypes().some(type => this.draw[type])
+				() => this.draw
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect")

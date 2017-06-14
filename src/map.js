@@ -684,6 +684,8 @@ export default class LajiMap {
 
 		const drawAllowed = (options === true || options.constructor === Object);
 
+		if (!drawAllowed) return;
+
 		this.draw = {
 			...([
 				"editable",

@@ -674,17 +674,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		_container.className = "laji-map-dialog panel panel-default panel-body";
 		_container.appendChild(container);
 
-		const that = this;
 		function close(e) {
-			that.blockerElem.style.display = "";
-			that.blockerElem.removeEventListener("click", close);
 			if (onClose) onClose(e);
 		}
 
-		this.blockerElem.addEventListener("click", close);
-		this.blockerElem.style.display = "block";
-
-		this.showClosableElement(_container, close);
+		this.showClosableElement(_container, close, !!"showBlocker");
 	}
 
 	openCoordinatesInputDialog() {

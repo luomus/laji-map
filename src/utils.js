@@ -418,7 +418,7 @@ export function convert(input, outputFormat, outputCRS) {
 		throw new LajiMapError("Couldn't detect geo data format", "GeoDataFormatDetectionError");
 	}
 
-	if (geoJSON.features.length > 0 && !inputCRS) {
+	if (geoJSON && geoJSON.features && geoJSON.features.length > 0 && !inputCRS) {
 		throw new LajiMapError("Couldn't detect geo data CRS", "GeoDataCRSDetectionError");
 	}
 

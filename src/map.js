@@ -682,7 +682,7 @@ export default class LajiMap {
 	setDraw(options) {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
-		const drawAllowed = (options === true || options.constructor === Object);
+		const drawAllowed = (options === true || typeof options === "object" && options !== null && !Array.isArray(options) && options.constructor === Object);
 
 		if (!drawAllowed) return;
 
@@ -713,6 +713,11 @@ export default class LajiMap {
 	}
 
 	setDrawData(data) {
+		if (!this.draw) {
+			this.setDraw({data});
+			return;
+		}
+
 		const emptyFeatureCollection = {type: "FeatureCollection", features: []};
 		if (!data) data = {
 			featureCollection: emptyFeatureCollection
@@ -727,6 +732,7 @@ export default class LajiMap {
 				this.setDrawData({...data, geoData: undefined, featureCollection: emptyFeatureCollection});
 			 }
 		}
+
 		this.draw.data = (data) ? {
 			getFeatureStyle: (...params) => this._getDefaultDrawStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDrawClusterStyle(...params),

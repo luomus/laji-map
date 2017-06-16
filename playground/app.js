@@ -149,7 +149,7 @@ class App {
 		const options = {
 			rootElem: document.getElementById("root"),
 			activeIdx: 0,
-			draw: false,
+			draw: this.drawOptions,
 			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
 			lang: "fi",
 			popupOnHover: true,

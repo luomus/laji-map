@@ -68,6 +68,7 @@ export default class LajiMap {
 			popupOnHover: false
 		};
 
+		this.options = {};
 		const combined = {...options, ...props};
 		Object.keys(combined).forEach(option => {
 			this.setOption(option, combined[option]);
@@ -87,6 +88,11 @@ export default class LajiMap {
 		else {
 			this[optionKeys[option]](value);
 		}
+		this.options[option] = value;
+	}
+
+	getOptions() {
+		return this.options;
 	}
 
 	setRootElem(rootElem) {

@@ -32,7 +32,7 @@ const optionKeys = {
 	tileLayerName: "setTileLayerByName",
 	availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
 	availableTileLayerNamesWhitelist: "setAvailableTileLayerWhitelist",
-	overlayNames: "setOverlaysByName",
+	overlayNames: "_setOverlaysByName",
 	availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
 	availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 	tileLayerOpacity: "setTileLayerOpacity",
@@ -444,7 +444,6 @@ export default class LajiMap {
 	}
 
 	setOverlays(overlays = [], triggerEvent = true) {
-		const initialCall = this.overlays === undefined;
 
 		this.overlays = overlays;
 
@@ -469,7 +468,7 @@ export default class LajiMap {
 			}
 		});
 
-		if (!initialCall && triggerEvent) {
+		if (triggerEvent) {
 			const names = [];
 			this.overlays.forEach(overlay => {
 				names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
@@ -480,10 +479,15 @@ export default class LajiMap {
 		provide(this, "overlays");
 	}
 
+	// Wrapper that prevents overlay event triggering on initial call.
+	_setOverlaysByName(overlayNames) {
+		this.setOverlaysByName(overlayNames, false);
+	}
+
 	@dependsOn("tileLayer")
-	setOverlaysByName(overlayNames) {
+	setOverlaysByName(overlayNames, triggerEvent = true) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
-		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]));
+		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]), triggerEvent);
 	}
 
 	setAvailableOverlaysBlacklist(overlayNames) {

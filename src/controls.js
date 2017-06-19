@@ -578,7 +578,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					}
 				}
 
-				if (overlaysToAdd.some(overlay => !that.overlays.includes(overlay)) ||
+				if (overlaysToAdd.some(overlay => !(that.overlays || []).includes(overlay)) ||
 				    (that.overlays || []).some(overlay => !overlaysToAdd.includes(overlay))) {
 					that.setOverlays(overlaysToAdd);
 				}

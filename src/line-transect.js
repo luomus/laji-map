@@ -138,6 +138,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		)).addTo(this.map).bringToBack();
 	}
 
+	setLTActiveIdx(idx) {
+		const prevIdx = this._LTActiveIdx;
+		this._LTActiveIdx = idx;
+		[prevIdx, this._LTActiveIdx].forEach(i => this._updateLTStyleForIdx(i));
+	}
+
 	_formatLTFeatureOut() {
 		const segments = this._allLines.map(layer => [...layer._latlngs.map(({lat, lng}) => [lng, lat])]);
 

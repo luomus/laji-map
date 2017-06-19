@@ -363,16 +363,16 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
 			],
 			draw: [
-				() => isProvided(this, "draw"),
+				() => this.draw
 			],
 			drawCopy: [
-				() => this.getFeatureTypes().some(type => this.draw[type])
+				() => this.draw
 			],
 			drawUpload: [
-				"draw"
+				() => this.draw
 			],
 			drawClear: [
-				() => this.getFeatureTypes().some(type => this.draw[type])
+				() => this.draw
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect")
@@ -677,17 +677,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		_container.className = "laji-map-dialog panel panel-default panel-body";
 		_container.appendChild(container);
 
-		const that = this;
 		function close(e) {
-			that.blockerElem.style.display = "";
-			that.blockerElem.removeEventListener("click", close);
 			if (onClose) onClose(e);
 		}
 
-		this.blockerElem.addEventListener("click", close);
-		this.blockerElem.style.display = "block";
-
-		this.showClosableElement(_container, close);
+		this.showClosableElement(_container, close, !!"showBlocker");
 	}
 
 	openCoordinatesInputDialog() {

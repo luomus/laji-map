@@ -63,7 +63,6 @@ export default class LajiMap {
 			tileLayerName: TAUSTAKARTTA,
 			lang: "en",
 			data: [],
-			draw: {}, //default are set at setDraw
 			locate: false,
 			center:  [65, 26],
 			zoom: 2,
@@ -86,6 +85,11 @@ export default class LajiMap {
 		else {
 			this[optionKeys[option]](value);
 		}
+		this.options[option] = value;
+	}
+
+	getOptions() {
+		return this.options;
 	}
 
 	setRootElem(rootElem) {
@@ -716,7 +720,9 @@ export default class LajiMap {
 	setDraw(options) {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
-		const drawAllowed = (options === true || options.constructor === Object);
+		const drawAllowed = (options === true || typeof options === "object" && options !== null && !Array.isArray(options) && options.constructor === Object);
+
+		if (!drawAllowed) return;
 
 		this.draw = {
 			...([
@@ -745,6 +751,11 @@ export default class LajiMap {
 	}
 
 	setDrawData(data) {
+		if (!this.draw) {
+			this.setDraw({data});
+			return;
+		}
+
 		const emptyFeatureCollection = {type: "FeatureCollection", features: []};
 		if (!data) data = {
 			featureCollection: emptyFeatureCollection
@@ -759,6 +770,7 @@ export default class LajiMap {
 				this.setDrawData({...data, geoData: undefined, featureCollection: emptyFeatureCollection});
 			 }
 		}
+
 		this.draw.data = (data) ? {
 			getFeatureStyle: (...params) => this._getDefaultDrawStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDrawClusterStyle(...params),
@@ -1528,7 +1540,7 @@ export default class LajiMap {
 		});
 	}
 
-	showClosableElement(container, onClose) {
+	showClosableElement(container, onClose, blocker = false) {
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
 		closeButton.className = "close";
@@ -1542,12 +1554,21 @@ export default class LajiMap {
 			if (e) e.preventDefault();
 			that._removeKeyListener(ESC, close);
 			that.container.removeChild(container);
+			if (blocker) {
+				that.blockerElem.style.display = "";
+				that.blockerElem.removeEventListener("click", close);
+			}
 			if (onClose) onClose(e);
 		}
 
 		this._addKeyListener(ESC, close);
 
 		this.container.appendChild(container);
+
+		if (blocker) {
+			this.blockerElem.addEventListener("click", close);
+			this.blockerElem.style.display = "block";
+		}
 
 		this._closeDialog = close;
 	}

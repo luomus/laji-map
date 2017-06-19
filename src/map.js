@@ -69,6 +69,7 @@ export default class LajiMap {
 			popupOnHover: false
 		};
 
+		this.options = {};
 		this.setOptions({...options, ...props});
 		this._initializeMap();
 	}

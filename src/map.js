@@ -418,7 +418,7 @@ export default class LajiMap {
 			for (let tileLayerName in this.tileLayers) {
 				if (this.tileLayer == this.tileLayers[tileLayerName]) currentLayerName = tileLayerName;
 			}
-			this.map.fire("tileLayerChange", currentLayerName);
+			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
 		}
 
 		provide(this, "tileLayer");
@@ -440,7 +440,7 @@ export default class LajiMap {
 
 		this.tileLayerOpacity = val;
 		this.tileLayer.setOpacity(val);
-		if (!initialCall) this.map.fire("tileLayerOpacityChange", val);
+		if (!initialCall) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
 	}
 
 	setOverlays(overlays = [], triggerEvent = true) {
@@ -469,13 +469,12 @@ export default class LajiMap {
 			}
 		});
 
-
 		if (!initialCall && triggerEvent) {
 			const names = [];
 			this.overlays.forEach(overlay => {
 				names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
 			});
-			this.map.fire("overlaysChange", names);
+			this.map.fire("overlaysChange", {overlayNames: names});
 		}
 
 		provide(this, "overlays");

@@ -40,6 +40,7 @@ availableTileLayerNamesBlacklist                | String[]                  | - 
 availableOverlayNamesWhitelist                  | String[]                  | -                                   | List of overlay names to show in the layer control. See the possible values of overlayNames option.
 availableOverlayNamesBlacklist                  | String[]                  | -                                   | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
 tileLayerOpacity                                | Float                     | -                                   | Tile layer opacity. Range: 0.0-1.0
+on                                              | Object                    | -                                   | Leaflet events to listen for. Must be an object with event names as keys and value as callbacks. You can also use setEventListeners().
 
 ### Data options ###
 

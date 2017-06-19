@@ -44,7 +44,8 @@ const optionKeys = {
 	markerPopupOffset: true,
 	featurePopupOffset: true,
 	popupOnHover: true,
-	onInitializeDrawLayer: true
+	onInitializeDrawLayer: true,
+	on: "setEventListeners"
 };
 
 function capitalizeFirstLetter(string) {
@@ -69,10 +70,7 @@ export default class LajiMap {
 			popupOnHover: false
 		};
 
-		const combined = {...options, ...props};
-		Object.keys(combined).forEach(option => {
-			this.setOption(option, combined[option]);
-		});
+		this.setOptions({...options, ...props});
 		this._initializeMap();
 	}
 
@@ -321,6 +319,20 @@ export default class LajiMap {
 			}
 		}
 	}
+	
+	@dependsOn("map")
+	setEventListeners(eventListeners) {
+		if (!depsProvided(this, "setEventListeners", arguments)) return;
+
+		if (this._listenedEvents) {
+			Object.keys(this._listenedEvents).forEach(name => {
+				this.map.removeEventListener(name, this._listenedEvents[name]);
+			});
+		}
+
+		this._listenedEvents = eventListeners;
+		this.map.addEventListener(eventListeners);
+	}
 
 	_getDefaultCRSLayers() {
 		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
@@ -392,8 +404,16 @@ export default class LajiMap {
 		this.map.addLayer(this.tileLayer);
 		this.setTileLayerOpacity(this.tileLayerOpacity);
 
-		if (projectionChanged) {
-			this.setOverlays(this.overlays);
+		if (projectionChanged && this.overlays) {
+			this.setOverlays(this.overlays, !"trigger event");
+		}
+
+		if (isProvided(this, "tileLayer")) {
+			let currentLayerName = undefined;
+			for (let tileLayerName in this.tileLayers) {
+				if (this.tileLayer == this.tileLayers[tileLayerName]) currentLayerName = tileLayerName;
+			}
+			this.map.fire("tileLayerChange", currentLayerName);
 		}
 
 		provide(this, "tileLayer");
@@ -411,13 +431,15 @@ export default class LajiMap {
 	setTileLayerOpacity(val = 1) {
 		if (!depsProvided(this, "setTileLayerOpacity", arguments)) return;
 
+		let initialCall = this.tileLayerOpacity === undefined;
+
 		this.tileLayerOpacity = val;
 		this.tileLayer.setOpacity(val);
+		if (!initialCall) this.map.fire("tileLayerOpacityChange", val);
 	}
 
-	@dependsOn("tileLayer")
-	setOverlays(overlays = []) {
-		if (!depsProvided(this, "setOverlays", arguments)) return;
+	setOverlays(overlays = [], triggerEvent = true) {
+		const initialCall = this.overlays === undefined;
 
 		this.overlays = overlays;
 
@@ -437,8 +459,19 @@ export default class LajiMap {
 		});
 
 		overlays.forEach(overlay => {
-			if (availableOverlays.includes(overlay)) this.map.addLayer(overlay);
+			if (availableOverlays.includes(overlay)) {
+				this.map.addLayer(overlay);
+			}
 		});
+
+
+		if (!initialCall && triggerEvent) {
+			const names = [];
+			this.overlays.forEach(overlay => {
+				names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
+			});
+			this.map.fire("overlaysChange", names);
+		}
 
 		provide(this, "overlays");
 	}

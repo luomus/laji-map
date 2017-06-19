@@ -578,7 +578,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					}
 				}
 
-				that.setOverlays(overlaysToAdd);
+				if (overlaysToAdd.some(overlay => !that.overlays.includes(overlay)) ||
+				    that.overlays.some(overlay => !overlaysToAdd.includes(overlay))) {
+					that.setOverlays(overlaysToAdd);
+				}
 
 				this._handlingClick = false;
 

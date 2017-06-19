@@ -547,7 +547,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 				const inputs = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
 
-				const overlayIdsToAdd = that.overlays.reduce((ids, overlay) => {
+				const overlayIdsToAdd = (that.overlays || []).reduce((ids, overlay) => {
 					ids[overlay._leaflet_id] = true;
 					return ids;
 				}, {});
@@ -579,7 +579,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				}
 
 				if (overlaysToAdd.some(overlay => !that.overlays.includes(overlay)) ||
-				    that.overlays.some(overlay => !overlaysToAdd.includes(overlay))) {
+				    (that.overlays || []).some(overlay => !overlaysToAdd.includes(overlay))) {
 					that.setOverlays(overlaysToAdd);
 				}
 

@@ -165,12 +165,7 @@ class App {
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
-			overlayNames: ["ykjGrid", "ykjGridLabels"],
-			on: {
-				tileLayerChange: tileLayerName => {
-					console.log(tileLayerName);
-				}
-			}
+			overlayNames: ["ykjGrid", "ykjGridLabels"]
 		};
 
 		const map = new LajiMap(options);

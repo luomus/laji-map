@@ -622,8 +622,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		return layerControl;
 	}
 
-	setTileLayerOpacity(opacity) {
-		super.setTileLayerOpacity(opacity);
+	setTileLayerOpacity(opacity, triggerEvent) {
+		super.setTileLayerOpacity(opacity, triggerEvent);
 		if (!this._opacitySetBySlide && this._slider) {
 			this._slider.update({value: opacity});
 		}

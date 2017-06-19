@@ -407,7 +407,7 @@ export default class LajiMap {
 		this.tileLayer = layer;
 
 		this.map.addLayer(this.tileLayer);
-		this.setTileLayerOpacity(this.tileLayerOpacity);
+		this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
 
 		if (projectionChanged && this.overlays) {
 			this.setOverlays(this.overlays, !"trigger event");
@@ -433,14 +433,14 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	setTileLayerOpacity(val = 1) {
+	setTileLayerOpacity(val = 1, triggerEvent = true) {
 		if (!depsProvided(this, "setTileLayerOpacity", arguments)) return;
 
 		let initialCall = this.tileLayerOpacity === undefined;
 
 		this.tileLayerOpacity = val;
 		this.tileLayer.setOpacity(val);
-		if (!initialCall) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
+		if (!initialCall && triggerEvent) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
 	}
 
 	setOverlays(overlays = [], triggerEvent = true) {

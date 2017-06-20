@@ -25,7 +25,7 @@ export function convertLatLng(latlng, from, to) {
 	} else if (from === "EPSG:2393") {
 		validator = etrsValidator;
 	}
-	if (validator && validator.formatter) latlng = latlng.map(c => `${c}`).map((c, i) => +ykjValidator[i].formatter(c));
+	if (validator && validator.formatter) latlng = latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
 
 	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));

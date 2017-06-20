@@ -162,6 +162,8 @@ class App {
 			featurePopupOffset: 5,
 			controlSettings: {
 				coordinates: true,
+				drawUpload: true,
+				drawCopy: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",

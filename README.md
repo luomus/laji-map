@@ -168,7 +168,7 @@ Option                                          | Data property in event
 tileLayerChange                                 | tileLayerName        
 tileLayerOpacityChange                          | tileLayerOpacity     
 tileLayerOpacityChangeEnd                       | tileLayerOpacity     
-overlayNames                                    | overlayNames         
+overlaysChange                                  | overlayNames         
 lineTransect:split                              | -                    
 lineTransect:delete                             | -                    
 lineTransect:pointdrag                          | -                    

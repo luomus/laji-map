@@ -141,6 +141,7 @@ drawClear                                       | Boolean                  | fal
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
 layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
+
 #### Line transect control options ####
 
 If line transect control is true, it is interpreted as a line transect control options object with all default options.
@@ -157,6 +158,20 @@ TODO.
 The methods that are supposed to be used as private methods, and could break LajiMap's internal state if used wrong, start with an underscore.
 
 `src/utils.js` contains some utilities for geoJSON and coordinate conversion.
+
+## Events ##
+
+LajiMap provides the following events in addition to the Leaflet events.
+
+Option                                          | Data property in event
+------------------------------------------------|-----------------------
+tileLayerChange                                 | tileLayerName        
+tileLayerOpacityChange                          | tileLayerOpacity     
+tileLayerOpacityChangeEnd                       | tileLayerOpacity     
+overlayNames                                    | overlayNames         
+lineTransect:split                              | -                    
+lineTransect:delete                             | -                    
+lineTransect:pointdrag                          | -                    
 
 ## Development ##
 

@@ -56,7 +56,7 @@
     "leaflet-mml-layers": "2.0.1",
     "leaflet-textpath": "git+https://git@github.com/makinacorpus/Leaflet.textPath.git#ad1afd910b387e075989b258d487cd7d6db93b0b",
     "leaflet.markercluster": "1.0.3",
-    "proj4": "2.4.3",
+    "proj4": "^2.3.14",
     "proj4leaflet": "1.0.1",
     "rangeslider-js": "^3.0.2"
   }

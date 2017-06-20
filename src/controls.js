@@ -610,6 +610,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				onSlide: (opacity) => {
 					that._opacitySetBySlide = true;
 					that.setTileLayerOpacity(opacity);
+				},
+				onSlideEnd: (opacity) => {
+					that.map.fire("tileLayerOpacityChangeEnd", {tileLayerOpacity: opacity});
 				}
 			});
 			layerControl._separator.parentElement.removeChild(sliderInput);

@@ -163,7 +163,8 @@ class App {
 			controlSettings: {
 				coordinates: true,
 				drawUpload: true,
-				drawCopy: true
+				drawCopy: true,
+				tileLayerOpacity: false
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",

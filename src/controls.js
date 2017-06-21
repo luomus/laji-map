@@ -5,7 +5,8 @@ import {
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
-import rangeSlider from "rangeslider-js";
+//import rangeSlider from "rangeslider-js";
+import noUiSlider from "nouislider";
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
@@ -584,41 +585,49 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				}
 
 				this._handlingClick = false;
-
-				that.layerControl.expand();
 			},
 			_initLayout: function() {
 				L.Control.Layers.prototype._initLayout.call(this);
 
-				if (that._sliderElem) {
-					layerControl._separator.parentElement.insertBefore(that._sliderElem, layerControl._separator);
-				}
+				if (!opacityControl)  return;
+
+				function disableSelect(e) { e.preventDefault(); }
+
+				const sliderContainer = document.createElement("div");
+				sliderContainer.className = "slider-container";
+				const sliderInput = document.createElement("div");
+				sliderContainer.appendChild(sliderInput);
+				this._separator.parentElement.insertBefore(sliderContainer, layerControl._separator);
+
+				const _noUiSlider = noUiSlider.create(sliderInput, {
+					start: that.tileLayerOpacity,
+					range: {
+						min: [0],
+						max: [1]
+					},
+					step: 0.01,
+					connect: [true, false],
+					behaviour: "snap"
+				});
+				_noUiSlider.on("update", () => {
+					that._opacitySetBySlide = true;
+					that.setTileLayerOpacity(_noUiSlider.get());
+				});
+				_noUiSlider.on("end", () => {
+					that.map.fire("tileLayerOpacityChangeEnd", {tileLayerOpacity: _noUiSlider.get()});
+				});
+				_noUiSlider.on("start", () => {
+					document.addEventListener("selectstart", disableSelect);
+				});
+				_noUiSlider.on("end", () => {
+					document.removeEventListener("selectstart", disableSelect);
+				});
+
+				that._slider = _noUiSlider;
 			}
 		});
-		const layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
 
-		if (!that._slider && this.controlSettings.layer && opacityControl) setImmediate(() => {
-			const sliderInput = document.createElement("input");
-			sliderInput.type = "range";
-			layerControl._separator.parentElement.insertBefore(sliderInput, layerControl._separator);
-			rangeSlider.create(sliderInput, {
-				min: 0,
-				max: 1,
-				step: 0.01,
-				value: that.tileLayerOpacity,
-				polyfill: false,
-				onSlide: (opacity) => {
-					that._opacitySetBySlide = true;
-					that.setTileLayerOpacity(opacity);
-				},
-				onSlideEnd: (opacity) => {
-					that.map.fire("tileLayerOpacityChangeEnd", {tileLayerOpacity: opacity});
-				}
-			});
-			layerControl._separator.parentElement.removeChild(sliderInput);
-			that._sliderElem = document.getElementsByClassName("rangeslider")[0];
-			that._slider = sliderInput["rangeslider-js"];
-		});
+		const layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
 
 		this.layerControl = layerControl;
 		
@@ -628,7 +637,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	setTileLayerOpacity(opacity, triggerEvent) {
 		super.setTileLayerOpacity(opacity, triggerEvent);
 		if (!this._opacitySetBySlide && this._slider) {
-			this._slider.update({value: opacity});
+			this._slider.set(opacity);
 		}
 		this._opacitySetBySlide = false;
 	}

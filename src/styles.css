@@ -252,3 +252,22 @@
     transform: translate(-50%, 0);
     text-align: center;
 }
+
+.laji-map .leaflet-control-layers .slider-container .noUi-target {
+    height: 8px;
+}
+
+.laji-map .leaflet-control-layers .slider-container .noUi-handle {
+    height: 16px;
+    width: 12px;
+    left: -8px;
+}
+
+.laji-map .leaflet-control-layers .slider-container .noUi-handle:after,
+.laji-map .leaflet-control-layers .slider-container .noUi-handle:before {
+    height: 5px;
+    left: 3px;
+    right: 3px;
+    top: 5px;
+    width: 4px;
+}

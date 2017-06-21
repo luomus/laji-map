@@ -720,7 +720,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (idx === undefined) return;
 		[this._allLines, this._allCorridors].forEach(layerGroup => {
 			const layer = layerGroup[idx];
-			console.log(layer);
 			layer.setStyle(this._getStyleForLTLayer(layer, idx));
 		});
 		(idx === this._LTActiveIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(idx) : this._closeTooltipFor(idx);

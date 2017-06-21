@@ -127,6 +127,11 @@
 	font-weight: bold;
 	font-size: 15px;
 }
+.laji-map .laji-map-line-transect-split-by-meters-glyph:before {
+	content: "123";
+	font-weight: bold;
+	font-size: 11px;
+}
 
 .laji-map .laji-map-warning {
 	position: absolute;

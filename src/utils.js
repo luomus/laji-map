@@ -502,3 +502,7 @@ export function validateLatLng(latlng, latLngValidator) {
 		);
 	});
 }
+
+export function roundMeters(meters, accuracy = 1) {
+	return Math.round(parseInt(meters) / accuracy) * accuracy;
+}

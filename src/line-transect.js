@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -82,8 +82,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.startLTLineSplit = this.startLTLineSplit.bind(this);
 		this.stopLTLineSplit = this.stopLTLineSplit.bind(this);
 
+		this.startSelectLTSegmentMode = this.startSelectLTSegmentMode.bind(this);
+		this.stopSelectLTSegmentMode = this.stopSelectLTSegmentMode.bind(this);
+
+		this.commitRemoveLTSegment = this.commitRemoveLTSegment.bind(this);
 		this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
-		this.stopRemoveLTSegmentMode = this.stopRemoveLTSegmentMode.bind(this);
+		this.startSplitByMetersLTSegmentMode = this.startSplitByMetersLTSegmentMode.bind(this);
+
+		this.splitLTByMeters = this.splitLTByMeters.bind(this);
 
 		this._addKeyListener(ESC, () => {
 			if (this.lineTransectEditIdx) {
@@ -92,8 +98,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			} else if (this._lineCutting) {
 				this.stopLTLineSplit();
 				return true;
-			} else if (this._removeLTMode) {
-				this.stopRemoveLTSegmentMode();
+			} else if (this._selectLTMode) {
+				this.stopSelectLTSegmentMode();
 				return true;
 			}
 		});
@@ -112,7 +118,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._commitPointDrag();
 				return true;
 			} else if (this._lineCutting) {
-				this._commitLTLineCut();
+				this._commitLTLineSplit(this._splitLTIdx, this._splitPoint);
 			}
 			return false;
 		})();
@@ -256,8 +262,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_openTooltipFor(i) {
 		const that = this;
 		function getTooltipFor(idx) {
-			const prevDistance = Math.round(parseInt(that.pointIdxsToDistances[idx]) / 10) * 10;
-			const distance = Math.round(parseInt(that.pointIdxsToDistances[idx + 1]) / 10) * 10;
+			const prevDistance = roundMeters(that.pointIdxsToDistances[idx], 10);
+			const distance = roundMeters(that.pointIdxsToDistances[idx + 1], 10);
 			return 	`${idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
 		}
 
@@ -384,9 +390,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			const {i} = this.getIdxsFromEvent(e);
 
-			if (this._removeLTMode) {
+			if (this._selectLTMode) {
 				this._hoveredLTLineIdx = undefined;
-				this.commitRemoveLTSegment(i);
+				if (this._onSelectLT) this._onSelectLT(i);
 			} else {
 				this._triggerEvent(this._getOnActiveSegmentChangeEvent(i), this._onLTChange);
 			}
@@ -438,6 +444,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 						text: translations.SplitLine,
 						callback: () => this.startLTLineSplitForIdx(idx),
 						iconCls: "glyphicon glyphicon-scissors"
+					},
+					{
+						text: translations.SplitLineByMeters,
+						callback: () => this.splitLTByMeters(idx),
+						iconCls: "laji-map-line-transect-split-by-meters-glyph"
 					},
 					{
 						text: translations.DeleteLineSegment,
@@ -669,7 +680,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	// Doesn't handle points.
 	_getStyleForLTLayer(layer, idx) {
 		const isActive = idx === this._LTActiveIdx;
-		const isEdit = idx === this._splitLTIdx || (this._removeLTMode && idx === this._hoveredLTLineIdx);
+		const isEdit = idx === this._splitLTIdx || (this._selectLTMode && idx === this._hoveredLTLineIdx);
 		const isHover = idx === this._hoveredLTLineIdx;
 
 		const lineStyles = {
@@ -709,21 +720,21 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (idx === undefined) return;
 		[this._allLines, this._allCorridors].forEach(layerGroup => {
 			const layer = layerGroup[idx];
+			console.log(layer);
 			layer.setStyle(this._getStyleForLTLayer(layer, idx));
 		});
 		(idx === this._LTActiveIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(idx) : this._closeTooltipFor(idx);
 	}
 
-	_commitLTLineCut() {
-		const splitIdx = this._splitLTIdx;
+	_commitLTLineSplit(splitIdx, splitPoint) {
 		this.stopLTLineSplit();
 
 		const splitLine = this._allLines[splitIdx];
 		const cutLineLatLng = splitLine.getLatLngs();
-		const splittedTail = [cutLineLatLng[0], this._splitPoint];
+		const splittedTail = [cutLineLatLng[0], splitPoint];
 		splitLine.setLatLngs(splittedTail);
 
-		const splittedHead = [this._splitPoint, cutLineLatLng[1]];
+		const splittedHead = [splitPoint, cutLineLatLng[1]];
 		this._allLines.splice(splitIdx + 1, 0, L.polyline(splittedHead));
 
 		const feature = this._formatLTFeatureOut();
@@ -809,15 +820,28 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._createTooltip("SplitLineTooltip");
 	}
 
-	startRemoveLTSegmentMode() {
-		this._removeLTMode = true;
-		this._createTooltip("DeleteLineSegmentTooltip");
+	startSelectLTSegmentMode(onSelect, tooltip) {
+		this._selectLTMode = true;
+		this._onSelectLT = (idx) => {
+			onSelect(idx);
+			this.stopSelectLTSegmentMode(idx);
+		};
+		if (tooltip) this._createTooltip(tooltip);
 	}
 
-	stopRemoveLTSegmentMode() {
-		this._removeLTMode = false;
-		this._updateLTStyleForIdx(this._hoveredLTLineIdx);
+	stopSelectLTSegmentMode(idx) {
+		this._selectLTMode = false;
+		this._onSelectLT = undefined;
+		this._updateLTStyleForIdx(idx);
 		this._disposeTooltip();
+	}
+
+	startRemoveLTSegmentMode() {
+		this.startSelectLTSegmentMode(this.commitRemoveLTSegment, "DeleteLineSegmentTooltip");
+	}
+
+	startSplitByMetersLTSegmentMode() {
+		this.startSelectLTSegmentMode(this.splitLTByMeters, "SplitLineByMetersTooltip");
 	}
 
 	commitRemoveLTSegment(i) {
@@ -832,9 +856,71 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 
 		this._triggerEvent(events, this._onLTChange);
-		this.stopRemoveLTSegmentMode();
 		this.setLineTransectGeometry(feature.geometry, !!"undoable");
 		this.map.fire("lineTransect:delete");
+	}
+
+	splitLTByMeters(idx) {
+		let input = undefined;
+		const splitByMeters = (e) => {
+			e.preventDefault();
+
+			const {value} = input;
+
+			const line = this._allLines[idx];
+			const lineAngleFromNorth = this._degreesFromNorth(line.getLatLngs());
+			const splitPoint = L.GeometryUtil.destination(line.getLatLngs()[0], lineAngleFromNorth, value);
+			this._commitLTLineSplit(idx, splitPoint);
+			if (this._selectLTMode) this.stopSelectLTSegmentMode();
+			this._closeDialog(e);
+		};
+
+		const translateHooks = [];
+		const container = document.createElement("form");
+
+		const length = roundMeters(this.pointIdxsToDistances[idx + 1] - this.pointIdxsToDistances[idx]);
+
+		const help = document.createElement("span");
+		help.className = "help-block";
+		translateHooks.push(this.addTranslationHook(help, () => `${this.translations.segmentSplitByLengthHelp}: ${length}m`));
+
+		input = document.createElement("input");
+		input.type = "text";
+		input.className = "form-control form-group";
+
+		let prevVal = "";
+		input.oninput = (e => {
+			e.target.value = e.target.value.replace(",", ".");
+			if (!e.target.value.match(/^\d*\.?\d*$/)) {
+				e.target.value = prevVal;
+			}
+			prevVal = e.target.value;
+
+			if (e.target.value === "" || parseInt(e.target.value) < 0 || parseInt(e.target.value) > length) {
+				submit.setAttribute("disabled", "disabled");
+			} else {
+				submit.removeAttribute("disabled");
+			}
+		});
+
+		const submit = document.createElement("button");
+		submit.setAttribute("type", "submit");
+		submit.className = "btn btn-block btn-primary";
+		translateHooks.push(this.addTranslationHook(submit, "Add"));
+		submit.setAttribute("disabled", "disabled");
+		
+		submit.addEventListener("click", splitByMeters);
+
+		container.appendChild(help);
+		container.appendChild(input);
+		container.appendChild(submit);
+
+		this._showDialog(container, () => {
+			translateHooks.forEach(hook => this.removeTranslationHook(hook));
+			submit.removeEventListener("click", splitByMeters);
+		});
+
+		input.focus();
 	}
 
 	_createTooltip(translationKey) {

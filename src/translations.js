@@ -444,4 +444,19 @@
 		en: "ETRS (EPSG:3067)",
 		sv: "ETRS (EPSG:3067)"
 	},
+	splitLineByMeters: {
+		fi: "Pätkäise linja metriluvulla",
+		en: "Split line transect by meters",
+		sv: "Dela line transekt metrisk talet"
+	},
+	segmentSplitByLengthHelp: {
+		fi: "Syötä uusi pituus. Nykyisen linjan pituus",
+		en: "Enter a new length. The length of the current segment",
+		sv: "Ange en ny längd. Längden på det aktuella segmentet"
+	},
+	splitLineByMetersTooltip: {
+		fi: "Klikkaa pätkää jonka haluat pätkäistä",
+		en: "Click the segment that you want to split",
+		sv: "Klicka det segment som du vill ta dela"
+	},
 };

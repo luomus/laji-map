@@ -407,7 +407,7 @@ export default class LajiMap {
 		this.tileLayer = layer;
 
 		this.map.addLayer(this.tileLayer);
-		this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
+		if (this.tileLayerOpacity !== undefined) this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
 
 		if (projectionChanged && this.overlays) {
 			this.setOverlays(this.overlays, !"trigger event");

@@ -608,7 +608,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				this._separator.parentElement.insertBefore(sliderContainer, layerControl._separator);
 
 				const _noUiSlider = noUiSlider.create(sliderInput, {
-					start: that.tileLayerOpacity,
+					start: that.tileLayerOpacity !== undefined ? that.tileLayerOpacity : 1,
 					range: {
 						min: [0],
 						max: [1]

@@ -168,7 +168,6 @@ class App {
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
-			tileLayerOpacity: 0.5,
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 		};
 

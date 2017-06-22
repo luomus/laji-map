@@ -232,7 +232,7 @@ export function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, l
 	return {type: "FeatureCollection", features};
 }
 
-export function ISO6709ToGeoJSON(ISO) {
+export function ISO6709ToGeoJSON(ISO6709) {
 	function lineToCoordinates(line) {
 		return line.split("/").filter(line => line).map(coordString => {
 			return coordString.match(/-?\d+\.*\d*/g).map(number => +number).reverse();
@@ -253,7 +253,7 @@ export function ISO6709ToGeoJSON(ISO) {
 		return line.match(/^\d+.*\//g);
 	}
 
-	return textualFormatToGeoJSON(ISO, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");
+	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");
 }
 
 export function geoJSONToWKT(geoJSON) {
@@ -350,7 +350,7 @@ export function detectFormat(data) {
 	if (typeof data === "string" && !data.match(/{.*}/) && data.includes("(")) {
 		return "WKT";
 	} else if (typeof data === "string" && !data.match(/{.*}/) && data.includes("/")) {
-		return "ISO";
+		return "ISO 6709";
 	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
 		return "GeoJSON";
 	}
@@ -368,7 +368,7 @@ export function detectCRS(data) {
 		} else {
 			geoJSON = WKTToGeoJSON(data);
 		}
-	} else if (format === "ISO") {
+	} else if (format === "ISO 6709") {
 		const detection = data.match(/CRS(.*)/);
 		if (detection) crs = detection[1];
 		else {
@@ -379,7 +379,7 @@ export function detectCRS(data) {
 		if (geoJSON.crs) {
 			const name = geoJSON.crs.properties.name;
 			if (name === EPSG2393String) crs = "EPSG:2393";
-			else if (name === EPSG3067String) crs = "EPSG:3067";
+			else if (name.includes("ETRS-TM35FIN")) crs = "EPSG:3067";
 		}
 	}
 
@@ -406,11 +406,10 @@ export function convert(input, outputFormat, outputCRS) {
 	const inputFormat = detectFormat(input);
 	const inputCRS = detectCRS(input);
 
-
 	let geoJSON = undefined;
 	if (inputFormat === "WKT") {
 		geoJSON = WKTToGeoJSON(input);
-	} else if (inputFormat === "ISO") {
+	} else if (inputFormat === "ISO 6709") {
 		geoJSON = ISO6709ToGeoJSON(input);
 	} else if (inputFormat === "GeoJSON") {
 		geoJSON = (typeof input === "object") ? input : parseJSON(input);
@@ -429,7 +428,7 @@ export function convert(input, outputFormat, outputCRS) {
 	switch (outputFormat) {
 	case "WKT":
 		return geoJSONToWKT(geoJSON);
-	case "ISO":
+	case "ISO 6709":
 		return geoJSONToISO6709(geoJSON);
 	case "GeoJSON":
 		return geoJSON;

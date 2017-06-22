@@ -506,3 +506,18 @@ export function validateLatLng(latlng, latLngValidator) {
 export function roundMeters(meters, accuracy = 1) {
 	return Math.round(parseInt(meters) / accuracy) * accuracy;
 }
+
+export function createTextInput() {
+	const input = document.createElement("input");
+	input.type = "text";
+	input.className = "form-control laji-map-input";
+	return input;
+}
+
+export function createTextArea(rows = 10, cols = 10) {
+	const input = document.createElement("textarea");
+	input.setAttribute("rows", rows);
+	input.setAttribute("cols", cols);
+	input.className = "form-control laji-map-input";
+	return input;
+}

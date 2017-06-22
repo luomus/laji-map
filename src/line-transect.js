@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -860,7 +860,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	splitLTByMeters(idx) {
-		let input = undefined;
 		const splitByMeters = (e) => {
 			e.preventDefault();
 
@@ -883,9 +882,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		help.className = "help-block";
 		translateHooks.push(this.addTranslationHook(help, () => `${this.translations.segmentSplitByLengthHelp}: ${length}m`));
 
-		input = document.createElement("input");
-		input.type = "text";
-		input.className = "form-control form-group";
+		const input = createTextInput();
+		input.className += " form-group";
 
 		let prevVal = "";
 		input.oninput = (e => {
@@ -905,7 +903,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const submit = document.createElement("button");
 		submit.setAttribute("type", "submit");
 		submit.className = "btn btn-block btn-primary";
-		translateHooks.push(this.addTranslationHook(submit, "Add"));
+		translateHooks.push(this.addTranslationHook(submit, "SplitLine"));
 		submit.setAttribute("disabled", "disabled");
 		
 		submit.addEventListener("click", splitByMeters);

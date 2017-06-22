@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjValidator, wgs84Validator, stringifyLajiMapError } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjValidator, wgs84Validator, stringifyLajiMapError, createTextInput, createTextArea } from "./utils";
 import {
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
@@ -708,11 +708,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const that = this;
 		const translateHooks = [];
 
-		function createTextInput(id, translationKey) {
-			const input = document.createElement("input");
-			input.setAttribute("type", "text");
+		function createCoordinateInput(id, translationKey) {
+			const input = createTextInput();
 			input.id = `laji-map-${id}`;
-			input.className = "form-control";
 
 			const label = document.createElement("label");
 			label.setAttribute("for", input.id);
@@ -762,8 +760,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates";
 
-		const latLabelInput = createTextInput("coordinate-input-lat", "Latitude");
-		const lngLabelInput = createTextInput("coordinate-input-lng", "Longitude");
+		const latLabelInput = createCoordinateInput("coordinate-input-lat", "Latitude");
+		const lngLabelInput = createCoordinateInput("coordinate-input-lng", "Longitude");
 		const latInput = latLabelInput.getElementsByTagName("input")[0];
 		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
 
@@ -888,11 +886,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const table = document.createElement("table");
 		table.className = "laji-form-draw-copy-table";
 
-		const HTMLInput = document.createElement("textarea");
-		HTMLInput.setAttribute("rows", 10);
-		HTMLInput.setAttribute("cols", 50);
+		const HTMLInput = createTextArea(10, 50);
 		HTMLInput.setAttribute("readonly", "readonly");
-		HTMLInput.className = "form-control";
 		HTMLInput.addEventListener("focus", HTMLInput.select);
 
 		const features = this.draw.data.featureCollection.features.map(this.formatFeatureOut);
@@ -1017,10 +1012,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	openDrawUploadDialog() {
 		const container = document.createElement("form");
 
-		const textarea = document.createElement("textarea");
-		textarea.setAttribute("rows", 10);
-		textarea.setAttribute("cols", 50);
-		textarea.className = "form-control form-group";
+		const textarea = createTextArea(10, 50);
+		textarea.className += " form-group";
 
 		const button = document.createElement("button");
 		button.setAttribute("type", "submit");

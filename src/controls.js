@@ -495,7 +495,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				const coordinateTypes = [
 					{name: "WGS84"},
 					{name: "YKJ"},
-					{name: "ETRS"}
+					{name: "ETRS-TM35FIN"}
 				];
 
 				coordinateTypes.forEach(coordinateType => {
@@ -513,12 +513,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					const {lat, lng} = latlng;
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
 					const ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
-					const euref = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+					const etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
 
 					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
 						let coords = wgs84;
 						if (name === "YKJ") coords = ykj;
-						else if (name === "ETRS") coords = euref;
+						else if (name === "ETRS-TM35FIN") coords = etrsTm35Fin;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
 						coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
 						coordsCell.className = "monospace";
@@ -909,7 +909,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				commands: {
 					WGS84: standardizeGeoJSON,
 					YKJ: input => converterFor("EPSG:2393")(standardizeGeoJSON(input)),
-					ETRS: input => converterFor("EPSG:3067")(standardizeGeoJSON(input))
+					"ETRS-TM35FIN": input => converterFor("EPSG:3067")(standardizeGeoJSON(input))
 				},
 				position: TOP
 			},

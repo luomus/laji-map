@@ -23,7 +23,7 @@ export function convertLatLng(latlng, from, to) {
 	if (from === "EPSG:2393") {
 		validator = ykjValidator;
 	} else if (from === "EPSG:2393") {
-		validator = etrsValidator;
+		validator = etrsTm35FinValidator;
 	}
 	if (validator && validator.formatter) latlng = latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
 
@@ -391,7 +391,7 @@ export function detectCRS(data) {
 			crs = "WGS84";
 		} else if (validateLatLng(coordinateSample, ykjValidator)) {
 			crs = "EPSG:2393";
-		} else if (validateLatLng(coordinateSample, etrsValidator)) {
+		} else if (validateLatLng(coordinateSample, etrsTm35FinValidator)) {
 			crs = "EPSG:3067";
 		}
 	}
@@ -485,12 +485,13 @@ const ykjValidator = [
 	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
 	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
 ];
-const etrsValidator = [
+const etrsTm35FinValidator = [
 	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
 	{regexp: /^[0-9]{3,6}$/, range: [50000, 760000], formatter: formatterForLength(6)}
 ];
+const etrsValidator = etrsTm35FinValidator; // For backward compability
 
-export {wgs84Validator, ykjValidator, etrsValidator};
+export {wgs84Validator, ykjValidator, etrsTm35FinValidator, etrsValidator};
 
 export function validateLatLng(latlng, latLngValidator) {
 	return latlng.every((value, i) => {

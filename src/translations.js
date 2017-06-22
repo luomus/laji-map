@@ -435,14 +435,14 @@
 		sv: "Rad"
 	},
 	"EPSG:2393": {
-		fi: "YKJ (EPSG:2393)",
-		en: "Finnish Uniform Grid (EPSG:2393)",
-		sv: "EKS (EPSG:2393)"
+		fi: "YKJ",
+		en: "Finnish Uniform Grid",
+		sv: "EKS"
 	},
 	"EPSG:3067": {
-		fi: "ETRS (EPSG:3067)",
-		en: "ETRS (EPSG:3067)",
-		sv: "ETRS (EPSG:3067)"
+		fi: "ETRS-TM35FIN",
+		en: "ETRS-TM35FIN",
+		sv: "ETRS-TM35FIN"
 	},
 	splitLineByMeters: {
 		fi: "Pätkäise linja metriluvulla",

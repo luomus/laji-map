@@ -593,6 +593,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				}
 
 				this._handlingClick = false;
+
+				that.layerControl.expand();
 			},
 			_initLayout: function() {
 				L.Control.Layers.prototype._initLayout.call(this);

@@ -747,7 +747,7 @@ export default class LajiMap {
 				activeIdx: undefined,
 				...(drawAllowed ? (options || {}) : {})
 			}
-		}
+		};
 
 		if (drawAllowed) {
 			this.setDrawData(this.draw.data);

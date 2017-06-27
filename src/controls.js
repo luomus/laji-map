@@ -918,7 +918,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			{ // GeoJSON -> String
 				commands: {
 					GeoJSON: input => JSON.stringify(input, undefined, 2),
-					ISO6709: geoJSONToISO6709,
+					"ISO 6709": geoJSONToISO6709,
 					WKT: geoJSONToWKT
 				},
 				position: LEFT

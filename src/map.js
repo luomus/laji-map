@@ -725,22 +725,27 @@ export default class LajiMap {
 
 		const drawAllowed = (options === true || typeof options === "object" && options !== null && !Array.isArray(options) && options.constructor === Object);
 
-		if (!drawAllowed) return;
-
 		this.draw = {
 			...([
 				"editable",
 				"rectangle",
 				"polyline",
+				"polygon",
 				"circle",
 				"marker"
-			].reduce((options, key) => {
-				options[key] = drawAllowed;
-				return options;
-			}, {})),
-			polygon: drawAllowed ? {showArea: true} : false,
-			activeIdx: undefined,
-			...(drawAllowed? (options || {}) : {})
+			].reduce((_options, key) => {
+				const optionValue = (typeof options === "object" && options !== null && options.constructor === Object && !Array.isArray(options)) ? options[key] !== false : drawAllowed === true;
+				_options[key] = optionValue;
+				return _options;
+			}, {}))
+		};
+		this.draw = {
+			...this.draw,
+			...{
+				polygon: this.draw.polygon ? {showArea: true} : false,
+				activeIdx: undefined,
+				...(drawAllowed ? (options || {}) : {})
+			}
 		};
 
 		if (drawAllowed) {
@@ -749,6 +754,9 @@ export default class LajiMap {
 			const crs = (this.draw.data.geoData || this.draw.data.featureCollection) ? detectCRS(this.draw.data.geoData || this.draw.data.featureCollection) : undefined;
 			this.setOnDrawChange(this.draw.onChange, format, crs);
 			this.setActive(options.hasActive ? options.activeIdx : undefined);
+			provide(this, "draw");
+		} else {
+			this.setDrawData(undefined);
 			provide(this, "draw");
 		}
 	}

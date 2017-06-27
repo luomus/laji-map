@@ -409,7 +409,7 @@ export default class LajiMap {
 		this.map.addLayer(this.tileLayer);
 		if (this.tileLayerOpacity !== undefined) this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
 
-		if (projectionChanged && this.overlays) {
+		if (projectionChanged) {
 			this.setOverlays(this.overlays, !"trigger event");
 		}
 
@@ -444,7 +444,6 @@ export default class LajiMap {
 	}
 
 	setOverlays(overlays = [], triggerEvent = true) {
-
 		this.overlays = overlays;
 
 		if (this._getDefaultCRSLayers().includes(this.tileLayer)) {

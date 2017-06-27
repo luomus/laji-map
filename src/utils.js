@@ -258,10 +258,7 @@ export function ISO6709ToGeoJSON(ISO6709) {
 
 export function geoJSONToWKT(geoJSON) {
 	function latLngToWKTString(latLng) {
-		function formatter(coordHalf) {
-			return (`${coordHalf}`.includes(".")) ? fixWgs84Length(coordHalf, 6) : coordHalf;
-		}
-		return latLng.map(formatter).reverse().join(" ");
+		return latLng.reverse().join(" ");
 	}
 	function coordinateJoiner(coords) {
 		return coords.join(",");

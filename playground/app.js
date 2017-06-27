@@ -167,7 +167,8 @@ class App {
 				tileLayerOpacity: false
 			},
 			data: this.data,
-			tileLayerName: "openStreetMap"
+			tileLayerName: "openStreetMap",
+			overlayNames: ["ykjGrid", "ykjGridLabels"],
 		};
 
 		const map = new LajiMap(options);

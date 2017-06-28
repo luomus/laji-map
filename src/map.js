@@ -484,7 +484,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	setOverlaysByName(overlayNames, triggerEvent = true) {
+	setOverlaysByName(overlayNames = [], triggerEvent = true) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
 		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]), triggerEvent);
 	}

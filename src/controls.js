@@ -520,7 +520,18 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						if (name === "YKJ") coords = ykj;
 						else if (name === "ETRS-TM35FIN") coords = etrsTm35Fin;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
-						coordsCell.innerHTML = coords.join(name === "WGS84" ? ", " : ":");
+						let coordsFormatted = undefined;
+						switch (name) {
+						case "WGS84":
+							coordsFormatted = coords.join(", ");
+							break;
+						case "YKJ":
+							coordsFormatted = coords.join(":");
+							break;
+						case "ETRS-TM35FIN":
+							coordsFormatted = `N: ${coords[0]}, E: ${coords[1]}`;
+						}
+						coordsCell.innerHTML = coordsFormatted;
 						coordsCell.className = "monospace";
 					});
 				}).on("mouseout", () => {

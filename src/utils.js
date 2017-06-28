@@ -250,7 +250,7 @@ export function ISO6709ToGeoJSON(ISO6709) {
 	}
 
 	function lineIsPoint(line) {
-		return line.match(/^\d+.*\//g);
+		return line.match(/^(\+|-)?\d+\.?\d*(\+|-|:)?\d+\.?\d*\//);
 	}
 
 	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");

@@ -1,5 +1,6 @@
 import LajiMap from "../src/map";
 import lineTransects from "./data.json";
+import * as utils from "../src/utils";
 
 import "../src/styles.js";
 class App {
@@ -164,6 +165,7 @@ class App {
 				coordinates: true,
 				drawUpload: true,
 				drawCopy: true,
+				drawClear: true,
 				tileLayerOpacity: false
 			},
 			data: this.data,
@@ -226,5 +228,8 @@ class App {
 }
 
 const app = new App();
-if (process.env.NODE_ENV !== "production") window.lajiMap = app.map;
+if (process.env.NODE_ENV !== "production") {
+	window.lajiMap = app.map;
+	window.lajiMapUtils = utils;
+}
 

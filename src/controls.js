@@ -529,7 +529,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 							coordsFormatted = coords.join(":");
 							break;
 						case "ETRS-TM35FIN":
-							coordsFormatted = `N: ${coords[0]}, E: ${coords[1]}`;
+							coordsFormatted = `N=${coords[0]} E=${coords[1]}`;
 						}
 						coordsCell.innerHTML = coordsFormatted;
 						coordsCell.className = "monospace";

@@ -165,20 +165,21 @@ export function geoJSONToISO6709(geoJSON) {
 		function formatCoordHalf(coordHalf, intAmount) {
 			let coordHalfStr = `${coordHalf}`;
 
-			if (coordHalfStr.includes(".")) { // Detect WGS84
+			if (detectCRSFromLatLng(latLng) !== "EPSG:2393") { // Don't add sign to YKJ.
 				let sign = "+";
 				if (coordHalfStr.includes("-")) {
 					sign = "-";
 					coordHalfStr = coordHalfStr.slice(1);
 				}
 
-				coordHalfStr = `${sign}${fixWgs84Length(coordHalfStr, intAmount, 6)}`;
+				const numberPart = detectCRSFromLatLng(latLng) === "WGS84" ? fixWgs84Length(coordHalfStr, intAmount, 6) : coordHalfStr;
+				coordHalfStr = `${sign}${numberPart}`;
 			}
 
 			return `${coordHalfStr}`;
 		}
 
-		const delimiter = `${latLng[0]}`.includes(".") ? "" : ":";
+		const delimiter = (detectCRSFromLatLng(latLng) !== "EPSG:2393") ? "" : ":"; // Use ':' delimiter for YKJ.
 		return `${formatCoordHalf(latLng[0], 2)}${delimiter}${formatCoordHalf(latLng[1], 3)}/`;
 	}
 
@@ -353,46 +354,55 @@ export function detectFormat(data) {
 	}
 }
 
-export function detectCRS(data) {
-	const format = detectFormat(data);
-	let crs = undefined;
-	let geoJSON = undefined;
-	if (format === "WKT") {
-		let detection = data.match(/(PROJCS.*)/);
-		if (detection) {
-			if (detection[1] === EPSG2393WKTString) crs = "EPSG:2393";
-			else if (detection[1] === EPSG3067WKTString) crs = "EPSG:3067";
-		} else {
-			geoJSON = WKTToGeoJSON(data);
-		}
-	} else if (format === "ISO 6709") {
-		const detection = data.match(/CRS(.*)/);
-		if (detection) crs = detection[1];
-		else {
-			geoJSON = ISO6709ToGeoJSON(data);
-		}
-	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
-		geoJSON = (typeof data === "object") ? data : parseJSON(data);
-		if (geoJSON.crs) {
-			const name = geoJSON.crs.properties.name;
-			if (name === EPSG2393String) crs = "EPSG:2393";
-			else if (name.includes("ETRS-TM35FIN")) crs = "EPSG:3067";
-		}
+export function detectCRSFromLatLng(latLng) {
+	if (latLng instanceof L.LatLng) {
+		latLng = [latLng.lat, latLng.lng];
 	}
+	if (validateLatLng(latLng, wgs84Validator)) {
+		return "WGS84";
+	} else if (validateLatLng(latLng, ykjValidator)) {
+		return "EPSG:2393";
+	} else if (validateLatLng(latLng, etrsTm35FinValidator)) {
+		return "EPSG:3067";
+	}
+}
 
-	if (!crs && geoJSON && geoJSON.features && geoJSON.features[0] && geoJSON.features[0].geometry && geoJSON.features[0].geometry.coordinates) {
-		let coordinateSample = geoJSON.features[0].geometry.coordinates;
-		while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
-		coordinateSample = coordinateSample.map(c => `${c}`).reverse();
-		if (validateLatLng(coordinateSample, wgs84Validator)) {
-			crs = "WGS84";
-		} else if (validateLatLng(coordinateSample, ykjValidator)) {
-			crs = "EPSG:2393";
-		} else if (validateLatLng(coordinateSample, etrsTm35FinValidator)) {
-			crs = "EPSG:3067";
+export function detectCRS(data) {
+	try {
+		return detectCRSFromLatLng(data);
+	} catch (e) {
+		const format = detectFormat(data);
+		let geoJSON = undefined;
+		if (format === "WKT") {
+			let detection = data.match(/(PROJCS.*)/);
+			if (detection) {
+				if (detection[1] === EPSG2393WKTString) return "EPSG:2393";
+				else if (detection[1] === EPSG3067WKTString) return "EPSG:3067";
+			} else {
+				geoJSON = WKTToGeoJSON(data);
+			}
+		} else if (format === "ISO 6709") {
+			const detection = data.match(/CRS(.*)/);
+			if (detection) return detection[1];
+			else {
+				geoJSON = ISO6709ToGeoJSON(data);
+			}
+		} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+			geoJSON = (typeof data === "object") ? data : parseJSON(data);
+			if (geoJSON.crs) {
+				const name = geoJSON.crs.properties.name;
+				if (name === EPSG2393String) return "EPSG:2393";
+				else if (name.includes("ETRS-TM35FIN")) return "EPSG:3067";
+			}
+		}
+
+		if (geoJSON && geoJSON.features && geoJSON.features[0] && geoJSON.features[0].geometry && geoJSON.features[0].geometry.coordinates) {
+			let coordinateSample = geoJSON.features[0].geometry.coordinates;
+			while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
+			coordinateSample = coordinateSample.map(c => `${c}`).reverse();
+			return detectCRSFromLatLng(coordinateSample);
 		}
 	}
-	return crs;
 }
 
 export function convertAnyToWGS84GeoJSON(data) {
@@ -473,7 +483,7 @@ const wgs84Check = {
 const wgs84Validator = [wgs84Check, wgs84Check];
 
 function formatterForLength(length) {
-	return  value => (value.length < length ? value + "0".repeat(length - value.length) : value);
+	return value => (value.length < length ? value + "0".repeat(length - value.length) : value);
 }
 const ykjRegexp = /^[0-9]{3,7}$/;
 const ykjFormatter = formatterForLength(7);
@@ -491,11 +501,12 @@ export {wgs84Validator, ykjValidator, etrsTm35FinValidator, etrsValidator};
 
 export function validateLatLng(latlng, latLngValidator) {
 	return latlng.every((value, i) => {
+		value = `${value}`;
 		const validator = latLngValidator[i];
 		const formatted = +(validator.formatter ? validator.formatter(value) : value);
 		return (
-		value !== "" && value.match(validator.regexp) &&
-		formatted >= validator.range[0] && formatted <= validator.range[1]
+			value !== "" && value.match(validator.regexp) &&
+			formatted >= validator.range[0] && formatted <= validator.range[1]
 		);
 	});
 }

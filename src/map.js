@@ -24,30 +24,6 @@ import {
 
 import translations from "./translations.js";
 
-const optionKeys = {
-	rootElem: "setRootElem",
-	lang: "setLang",
-	data: "setData",
-	draw: "setDraw",
-	tileLayerName: "setTileLayerByName",
-	availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
-	availableTileLayerNamesWhitelist: "setAvailableTileLayerWhitelist",
-	overlayNames: "_setOverlaysByName",
-	availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
-	availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
-	tileLayerOpacity: "setTileLayerOpacity",
-	center: "setCenter",
-	zoom: "setNormalizedZoom",
-	locate: true,
-	onChange: "setOnDrawChange",
-	onPopupClose: true,
-	markerPopupOffset: true,
-	featurePopupOffset: true,
-	popupOnHover: true,
-	onInitializeDrawLayer: true,
-	on: "setEventListeners"
-};
-
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
@@ -73,6 +49,32 @@ export default class LajiMap {
 		this.setOptions({...options, ...props});
 		this._initializeMap();
 	}
+	
+	getOptionKeys() {
+		return {
+			rootElem: "setRootElem",
+			lang: "setLang",
+			data: "setData",
+			draw: "setDraw",
+			tileLayerName: "setTileLayerByName",
+			availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
+			availableTileLayerNamesWhitelist: "setAvailableTileLayerWhitelist",
+			overlayNames: "_setOverlaysByName",
+			availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
+			availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
+			tileLayerOpacity: "setTileLayerOpacity",
+			center: "setCenter",
+			zoom: "setNormalizedZoom",
+			locate: true,
+			onChange: ["setOnDrawChange", () => this.draw ? this.draw.onChange : undefined],
+			onPopupClose: true,
+			markerPopupOffset: true,
+			featurePopupOffset: true,
+			popupOnHover: true,
+			onInitializeDrawLayer: true,
+			on: "setEventListeners"
+		};
+	}
 
 	setOptions(options) {
 		Object.keys(options || {}).forEach(option => {
@@ -81,16 +83,29 @@ export default class LajiMap {
 	}
 
 	setOption(option, value) {
+		const optionKeys = this.getOptionKeys();
+
 		if (!optionKeys.hasOwnProperty(option)) return;
-		else if (optionKeys[option] === true) this[option] = value;
+
+		const optionKey = Array.isArray(optionKeys[option]) ? optionKeys[option][0] : optionKeys[option];
+
+		if (optionKey === true) this[option] = value;
 		else {
-			this[optionKeys[option]](value);
+			this[optionKey](value);
 		}
-		this.options[option] = value;
 	}
 
 	getOptions() {
-		return this.options;
+		const optionKeys = this.getOptionKeys();
+
+		return Object.keys(optionKeys).reduce((options, key) => {
+			if (Array.isArray(optionKeys[key])) {
+				options[key] = optionKeys[key][1]();
+			} else if (key in this) {
+				options[key] = this[key];
+			}
+			return options;
+		}, {});
 	}
 
 	setRootElem(rootElem) {
@@ -821,7 +836,10 @@ export default class LajiMap {
 		this.setActive(this.draw.activeIdx);
 	}
 
+	@dependsOn("draw")
 	setOnDrawChange(onChange, format = "GeoJSON", crs = "WGS84") {
+		if (!depsProvided(this, "setOnDrawChange", arguments)) return;
+
 		this.draw.onChange = events => onChange(events.map(e => {
 			switch (e.type) {
 			case "create":

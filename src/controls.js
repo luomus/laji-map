@@ -14,6 +14,14 @@ function getSubControlName(name, subName) {
 
 
 export default LajiMap => class LajiMapWithControls extends LajiMap {
+	getOptionKeys() {
+		return {
+			...super.getOptionKeys(),
+			controlSettings: "setControlSettings",
+			customControls: "setCustomControls"
+		};
+	}
+
 	@dependsOn("controls")
 	_setLang() {
 		if (!depsProvided(this, "setLang", arguments)) return;
@@ -58,12 +66,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	setLang(lang) {
 		super.setLang(lang);
 		this._setLang(lang);
-	}
-
-	setOption(option, value)  {
-		if (option === "controlSettings") this.setControlSettings(value);
-		if (option === "customControls") this.setCustomControls(value);
-		else super.setOption(option, value);
 	}
 
 	@reflect()

@@ -24,6 +24,7 @@ lang                                            | String                    | "e
 data                                            | Data options[]            | -                                   | Noneditable data to draw on map.
 draw                                            | Draw options              | -                                   | Options for the editable feature collection.
 controlSettings                                 | Control options           | -                                   | An option object that defines which control should be shown.
+customControls                                  | Object               | -                                        | An array of custom controls. See custom control options.
 tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap" or "googleSatellite".
 overlayNames                                    | String[]                  | -                                   | The default overlay layers. Possible values:  "geobiologicalProvinces", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "ykjGrid" and "ykjGridLabels".
 center                                          | LatLng                    | [65, 26]                            | The coordinates for the initial center of the map.
@@ -70,7 +71,15 @@ polyline                                        | Boolean              | true   
 circle                                          | Boolean              | true                                     | Controls whether the draw data can contain a circle. Adding new circles is prevented. Map controls are affected by this option.
 marker                                          | Boolean              | true                                     | Controls whether the draw data can contain a marker. Adding new markers is prevented. Map controls are affected by this option.
 getDraftStyle                                   | Function             | true                                     | A function that returns a Path style to use for the feature during drawing & editing a feature.
-customControls                                  | Object               | -                                        | An array of custom controls. See custom control options.
+onChange                                        | Function             | -                                        | A callback function that fires events for draw data changes. Receives an array of event objects.
+
+### Line transect options ###
+
+Option                                          | Type                 |  Default                                 | Description
+------------------------------------------------|----------------------|------------------------------------------|------------------------------------
+feature                                         | GeoJSON Feature      | -                                        | The GeoJSON feature to use as the data.
+activeIdx                                       | Integer              | -                                        | The index of the active line transect segment.
+onChange                                        | Function             | -                                        | A function that fires events for line transect changes. Receives an array of event objects.
 
 ### Control options ###
 

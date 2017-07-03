@@ -105,13 +105,20 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		});
 	}
 
-	setOption(option, value) {
-		super.setOption(option, value);
-		if (option === "lineTransect" && value) {
-			this.setLineTransect(value);
-		}
+	getOptionKeys() {
+		return {
+			...super.getOptionKeys(),
+			lineTransect: ["setLineTransect", () => {
+				return this.LTFeature ? {
+					feature: this._formatLTFeatureOut(),
+					activeIdx: this._LTActiveIdx,
+					onChange: this._onLTChange,
+					keepActiveTooltipOpen: this.keepActiveTooltipOpen
+				} : undefined;
+			}]
+		};
 	}
-
+	
 	_interceptClick() {
 		return super._interceptClick() || (() => {
 			if (this.lineTransectEditIdx !== undefined && !this._LTDragging) {
@@ -127,6 +134,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	@dependsOn("map")
 	setLineTransect(data) {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
+		if (!data) return;
 
 		let {feature, activeIdx, onChange, keepActiveTooltipOpen} = data;
 		this.LTFeature = feature;

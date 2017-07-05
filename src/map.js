@@ -59,7 +59,7 @@ export default class LajiMap {
 			tileLayerName: "setTileLayerByName",
 			availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
 			availableTileLayerNamesWhitelist: "setAvailableTileLayerWhitelist",
-			overlayNames: "_setOverlaysByName",
+			overlayNames: ["_setOverlaysByName", () => this.getOverlaysByName()],
 			availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
 			availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 			tileLayerOpacity: "setTileLayerOpacity",
@@ -483,11 +483,7 @@ export default class LajiMap {
 		});
 
 		if (triggerEvent) {
-			const names = [];
-			this.overlays.forEach(overlay => {
-				names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
-			});
-			this.map.fire("overlaysChange", {overlayNames: names});
+			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});
 		}
 
 		provide(this, "overlays");
@@ -496,6 +492,14 @@ export default class LajiMap {
 	// Wrapper that prevents overlay event triggering on initial call.
 	_setOverlaysByName(overlayNames) {
 		this.setOverlaysByName(overlayNames, false);
+	}
+
+	getOverlaysByName() {
+		const names = [];
+		(this.overlays || []).forEach(overlay => {
+			names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
+		});
+		return names;
 	}
 
 	@dependsOn("tileLayer")

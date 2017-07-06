@@ -1046,6 +1046,9 @@ export default class LajiMap {
 			layer.on("mouseout", () => {
 				closePopup();
 			});
+			layer.on("remove", () => {
+				closePopup();
+			});
 		} else {
 			layer.on("click", e => {
 				if (data.getPopup) {

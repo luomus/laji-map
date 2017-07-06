@@ -131,6 +131,7 @@ export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, 
 
 	function geometryConverterFn(geometry) {
 		switch (geometry.type) {
+		case "GeometryCollection": return geometry.geometries.reduce((collStr, _geom) => `${collStr}${geometryConverterFn(_geom)}\n`, "");
 		case "Point": return coordinateStrToPoint(geoJSONCoordToTextual(geometry.coordinates));
 		case "LineString": return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
 		case "Polygon": {
@@ -141,13 +142,29 @@ export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, 
 		}
 	}
 
-	return geoJSON.features.reduce((coordinateStr, feature) => {
-		if (!feature.geometry) {
-			throw new Error(`Can't convert geoJSON feature without geometry to ${name}. Are you perhaps using nested feature collections? GeoJSON spec doesn't recommend using them.`);
-		}
-		coordinateStr += `${geometryConverterFn(feature.geometry)}\n`;
-		return coordinateStr;
-	}, "");
+	function recursiveConvert(geometry, coordinateStr = "") {
+		const reducer = (coordinateStr, geoObject) => {
+			if (geoObject.features) {
+				geoObject.features.forEach(feature => {
+					coordinateStr += `${recursiveConvert(feature)}`;
+				});
+			} else if (geoObject.geometry) {
+				coordinateStr += `${geometryConverterFn(geoObject.geometry)}\n`;
+			} else if (geoObject.geometries) {
+				geoObject.geometries.forEach(geometry => {
+					coordinateStr += `${geometryConverterFn(geometry)}\n`;
+				});
+			} else if (geoObject.coordinates) {
+				coordinateStr += `${geometryConverterFn(geoObject)}\n`;
+			} else {
+				throw new Error(`Ran into an unknown geoJSON object "${geoObject}"`);
+			}
+			return coordinateStr;
+		};
+		return (Array.isArray(geometry) ? geometry : [geometry]).reduce(reducer, coordinateStr);
+	}
+
+	return recursiveConvert(geoJSON).replace(/\n$/, "");
 }
 
 // Pads zeros to start of integer and end of decimal.
@@ -201,7 +218,7 @@ export function geoJSONToISO6709(geoJSON) {
 
 	if (geoJSON.crs) {
 		const projString = geoJSON.crs.properties.name;
-		ISOGeo += `\CRS${(projString === EPSG2393String) ? "EPSG:2393" : "EPSG:3067"}`;
+		ISOGeo += `\nCRS${(projString === EPSG2393String) ? "EPSG:2393" : "EPSG:3067"}`;
 	}
 
 	return ISOGeo;
@@ -282,7 +299,7 @@ export function geoJSONToWKT(geoJSON) {
 
 	if (geoJSON.crs) {
 		const projString = geoJSON.crs.properties.name;
-		WKTGeo += (projString === EPSG2393String) ? EPSG2393WKTString : EPSG3067WKTString;
+		WKTGeo += "\n" + ((projString === EPSG2393String) ? EPSG2393WKTString : EPSG3067WKTString);
 	}
 
 	return WKTGeo;

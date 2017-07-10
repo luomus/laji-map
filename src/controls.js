@@ -323,6 +323,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	setControlSettings(controlSettings) {
+		console.log(controlSettings);
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,
@@ -341,21 +342,30 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			layerOpacity: true
 		};
 
-		for (let setting in controlSettings) {
-			if (!(setting in this.controlSettings)) continue;
+		if (!controlSettings) {
+			controlSettings = Object.keys(this.controlSettings).reduce((settings, key) => {
+				settings[key] = false;
+				return settings;
+			}, {});
+		}
 
-			let newSetting = controlSettings[setting];
-			if (this.controlSettings[setting].constructor === Object) {
-				if (controlSettings[setting].constructor === Object) {
-					newSetting = {...this.controlSettings[setting], ...controlSettings[setting]};
-				} else {
-					newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
-						subSettings[subSetting] = controlSettings[setting];
-						return subSettings;
-					}, {});
+		if (typeof controlSettings === "object" && !Array.isArray(controlSettings) && controlSettings !== null) {
+			for (let setting in controlSettings) {
+				if (!(setting in this.controlSettings)) continue;
+
+				let newSetting = controlSettings[setting];
+				if (this.controlSettings[setting].constructor === Object) {
+					if (controlSettings[setting].constructor === Object) {
+						newSetting = {...this.controlSettings[setting], ...controlSettings[setting]};
+					} else {
+						newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
+							subSettings[subSetting] = controlSettings[setting];
+							return subSettings;
+						}, {});
+					}
 				}
+				this.controlSettings[setting] = newSetting;
 			}
-			this.controlSettings[setting] = newSetting;
 		}
 
 		provide(this, "controlSettings");

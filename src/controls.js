@@ -323,7 +323,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	setControlSettings(controlSettings) {
-		console.log(controlSettings);
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,

@@ -71,23 +71,7 @@ class App {
 				}
 			},
 			{
-				featureCollection: {
-					type: "featureCollection",
-					features: [
-						{
-							"type": "Feature",
-							"properties": {},
-							"geometry": {
-								"type": "Point",
-								"coordinates": [
-									22.704264017028992,
-									60.40403173483798
-								],
-								"radius": 4000
-							}
-						}
-					]
-				},
+				geoData: 						{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]},
 				getFeatureStyle: (e) => {
 					const {featureIdx} = e;
 					return {

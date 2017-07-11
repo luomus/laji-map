@@ -365,8 +365,7 @@ export default class LajiMap {
 	@dependsOn("map")
 	setTileLayerByName(name) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
-		this.tileLayerName = name;
-		this.setTileLayer(this.tileLayers[this.tileLayerName]);
+		this.setTileLayer(this.tileLayers[name]);
 	}
 
 	@dependsOn("map")
@@ -418,9 +417,7 @@ export default class LajiMap {
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
 		if (this.tileLayer) this.map.removeLayer(this.tileLayer);
-
 		this.tileLayer = layer;
-
 		this.map.addLayer(this.tileLayer);
 		if (this.tileLayerOpacity !== undefined) this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
 
@@ -428,11 +425,15 @@ export default class LajiMap {
 			this.setOverlays(this.overlays, !"trigger event");
 		}
 
-		if (isProvided(this, "tileLayer")) {
-			let currentLayerName = undefined;
-			for (let tileLayerName in this.tileLayers) {
-				if (this.tileLayer == this.tileLayers[tileLayerName]) currentLayerName = tileLayerName;
+		let currentLayerName = undefined;
+		for (let tileLayerName in this.tileLayers) {
+			if (this.tileLayer == this.tileLayers[tileLayerName]) {
+				currentLayerName = tileLayerName;
+				this.tileLayerName = currentLayerName;
 			}
+		}
+
+		if (isProvided(this, "tileLayer")) {
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
 		}
 
@@ -663,12 +664,14 @@ export default class LajiMap {
 	}
 
 	cloneDataItem(dataItem) {
+		if (!dataItem.featureCollection) return dataItem;
 		let featureCollection = {type: "FeatureCollection"};
 		featureCollection.features = this.cloneFeatures(dataItem.featureCollection.features);
 		return {
 			getFeatureStyle: (...params) => this._getDefaultDataStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDataClusterStyle(...params),
-			...dataItem, featureCollection
+			...dataItem, 
+			featureCollection
 		};
 	}
 
@@ -684,7 +687,22 @@ export default class LajiMap {
 	}
 
 	initializeDataItem(idx) {
-		const item = this.data[idx];
+		const {geoData, ...item} = this.data[idx];
+		if (geoData) {
+			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
+			const geometryOrFeatureToFeature = geoJSON => {
+				return (geoJSON.geometry) ? geoJSON : {type: "Feature", geometry: geoJSON};
+			};
+			this.data[idx] = {
+				...item, 
+				featureCollection: {
+					type: "FeatureCollection", 
+					features: this.cloneFeatures([geometryOrFeatureToFeature(geoJSON)])
+				}
+			};
+			this.initializeDataItem(idx);
+			return;
+		}
 		const layer = L.geoJson(
 			convertAnyToWGS84GeoJSON(item.geoData || item.featureCollection).features,
 			{
@@ -793,12 +811,21 @@ export default class LajiMap {
 
 		const featureCollection = emptyFeatureCollection;
 		try  {
-			featureCollection.features = this.cloneFeatures(convertAnyToWGS84GeoJSON(data.geoData || data.featureCollection).features);
+			if (data.geoData) {
+				const geoJSON = convertAnyToWGS84GeoJSON(data.geoData);
+				const geometryOrFeatureToFeature = geoJSON => {
+					return (geoJSON.geometry) ? geoJSON : {type: "Feature", geometry: geoJSON};
+				};
+				this.setDrawData({...data, geoData: undefined, featureCollection: {...emptyFeatureCollection, features: [geometryOrFeatureToFeature(geoJSON)]}});
+				return;
+			} else {
+				featureCollection.features = this.cloneFeatures(data.featureCollection.features);
+			}
 		}  catch (e) {
 			if (e._lajiMapError) {
 				this._showError(e);
 				this.setDrawData({...data, geoData: undefined, featureCollection: emptyFeatureCollection});
-			 }
+			}
 		}
 
 		this.draw.data = (data) ? {
@@ -847,11 +874,13 @@ export default class LajiMap {
 		this.draw.onChange = events => onChange(events.map(e => {
 			switch (e.type) {
 			case "create":
-				e.geoData = convert({type: "FeatureCollection", features: [e.feature], properties: {}}, format, crs);
+				e.geoData = convert(e.feature, format, crs);
 				break;
-			case "delete":
 			case "edit":
-				e.geoData = convert({type: "FeatureCollection", features: e.features, properties: {}}, format, crs);
+				e.geoData = Object.keys(e.features).reduce((features, idx) => {
+					features[idx] = convert(e.features[idx], format, crs);
+					return features;
+				}, {});
 				break;
 			}
 			
@@ -1218,6 +1247,14 @@ export default class LajiMap {
 			this.draw.data.featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
 		}
 
+		for (let id in data) {
+			const layer = this._getDrawLayerById(id);
+
+			if (layer) {
+				layer.closePopup().closeTooltip();
+			}
+		}
+
 		this._triggerEvent({
 			type: "edit",
 			features: eventData
@@ -1227,9 +1264,10 @@ export default class LajiMap {
 			const layer = this._getDrawLayerById(id);
 			const idx = this.idsToIdxs[id];
 
-			layer.closePopup().closeTooltip();
-			this._initializePopup(this.draw.data, layer, idx);
-			this._initializeTooltip(this.draw.data, layer, idx);
+			if (layer) {
+				this._initializePopup(this.draw.data, layer, idx);
+				this._initializeTooltip(this.draw.data, layer, idx);
+			}
 		}
 	}
 

@@ -82,7 +82,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.controlItems = [
 			{
 				name: "layer",
-				control: this._getLayerControl(this.controlSettings.layerOpacity)
+				control: () => this._getLayerControl(this.controlSettings.layerOpacity)
 			},
 			{
 				name: "location",
@@ -99,22 +99,22 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			},
 			{
 				name: "zoom",
-				control: L.control.zoom({
+				control: () => L.control.zoom({
 					zoomInTitle: this.translations.ZoomIn,
 					zoomOutTitle: this.translations.ZoomOut
 				})
 			},
 			{
 				name: "scale",
-				control: L.control.scale({metric: true, imperial: false})
+				control: () =>  L.control.scale({metric: true, imperial: false})
 			},
 			{
 				name: "coordinates",
-				control: this._getCoordinatesControl()
+				control: () => this._getCoordinatesControl()
 			},
 			{
 				name: "draw",
-				control: this._getDrawControl()
+				control: () => this._getDrawControl()
 			},
 			{
 				controls: [
@@ -234,8 +234,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};}
 
-		this.controlItems.forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
-			const leafletControl = control || (() => {
+		this.controlItems.filter(({control, name}) => {
+			return !control || this._controlIsAllowed(name);
+		}).forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
+			const leafletControl = (control ? control() : undefined) || (() => {
 				const onAdd = (controls) ?
 					function() {
 						this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");

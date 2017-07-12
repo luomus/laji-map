@@ -270,9 +270,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_openTooltipFor(i) {
 		const that = this;
 		function getTooltipFor(idx) {
-			const prevDistance = roundMeters(that.pointIdxsToDistances[idx], 10);
-			const distance = roundMeters(that.pointIdxsToDistances[idx + 1], 10);
-			return 	`${idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
+			const lineCount = parseIdxsFromLTIdx(flatIdxToLTIdx(idx, that._lineLayers))[0];
+			const _idx = idx + lineCount;
+			const prevDistance = roundMeters(that.pointIdxsToDistances[_idx], 10);
+			const distance = roundMeters(that.pointIdxsToDistances[_idx + 1], 10);
+			return 	`${_idx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
 		}
 
 		let tooltip = getTooltipFor(i);
@@ -370,10 +372,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.leafletIdsToFlatPointIdxs = {};
 
 		let distance = 0;
-		let prevLatLng = undefined;
 		i = 0;
 		this._pointLayers.forEach(points => {
-			prevLatLng = undefined;
+			let prevLatLng = undefined;
 			points.forEach(point => {
 				const latlng = point.getLatLng();
 				distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
@@ -884,7 +885,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const translateHooks = [];
 		const container = document.createElement("form");
 
-		const length = roundMeters(this.pointIdxsToDistances[idx + 1] - this.pointIdxsToDistances[idx]);
+		const lineCount = parseIdxsFromLTIdx(flatIdxToLTIdx(idx, this._lineLayers))[0];
+		const _idx = idx + lineCount;
+		const length = roundMeters(this.pointIdxsToDistances[_idx + 1] - this.pointIdxsToDistances[_idx]);
 
 		const help = document.createElement("span");
 		help.className = "help-block";

@@ -95,20 +95,20 @@
 	opacity: 0.3;
 	z-index: 1001;
 }
-.laji-map .laji-map-dialog {
+.laji-map-dialog {
 	position: absolute;
 	z-index: 1002;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
 }
-.laji-map .close {
+.laji-map .close, .laji-map-dialog .close {
 	margin-top: -10px;
 	margin-right: -10px;
 	font-size: 14px;
 }
 
-.laji-map .laji-map-coordinates {
+.laji-map-dialog .laji-map-coordinates {
 	max-width: 230px;
 }
 .laji-map .laji-map-coordinate-input-glyph:before {
@@ -146,23 +146,24 @@
 	margin-top: 0px;
 }
 
-.laji-map .laji-map-coordinates-control {
+.laji-map-dialog .laji-map-coordinates-control {
 	padding: 4px;
 	font-size: 11px;
 	background-color: #fff;
 }
-.laji-map .laji-map-coordinates-control table tr td:first-child {
+.laji-map-dialog .laji-map-coordinates-control table tr td:first-child {
 	padding-right: 4px;
 }
 
-.laji-map .monospace {
+.laji-map .monospace,
+.laji-map-dialog .monospace {
 	font-family: monospace;
 }
 
-.laji-form-draw-copy-table td {
+.laji-map-draw-copy-table td {
 	vertical-align: top;
 }
-.laji-form-draw-copy-table textarea {
+.laji-map-draw-copy-table textarea {
 	white-space: pre;
 }
 
@@ -172,80 +173,90 @@
  */
 .laji-map .tabs-below > .nav-tabs,
 .laji-map .tabs-right > .nav-tabs,
-.laji-map .tabs-left > .nav-tabs {
+.laji-map .tabs-left > .nav-tabs ,
+.laji-map-dialog .tabs-below > .nav-tabs,
+.laji-map-dialog .tabs-right > .nav-tabs,
+.laji-map-dialog .tabs-left > .nav-tabs {
   border-bottom: 0;
 }
 
 .laji-map .tab-content > .tab-pane,
-.laji-map .pill-content > .pill-pane {
+.laji-map .pill-content > .pill-pane,
+.laji-map-dialog .tab-content > .tab-pane,
+.laji-map-dialog .pill-content > .pill-pane {
   display: none;
 }
 
 .laji-map .tab-content > .active,
-.laji-map .pill-content > .active {
+.laji-map .pill-content > .active ,
+.laji-map-dialog .tab-content > .active,
+.laji-map-dialog .pill-content > .active {
   display: block;
 }
 
-.laji-map .tabs-below > .nav-tabs {
+.laji-map .tabs-below > .nav-tabs, 
+.laji-map-dialog .tabs-below > .nav-tabs {
   border-top: 1px solid #ddd;
 }
 
-.laji-map .tabs-below > .nav-tabs > li {
+.laji-map .tabs-below > .nav-tabs > li,
+.laji-map-dialog .tabs-below > .nav-tabs > li {
   margin-top: -1px;
   margin-bottom: 0;
 }
 
+.laji-map-dialog .tabs-below > .nav-tabs > li > a,
 .laji-map .tabs-below > .nav-tabs > li > a {
   -webkit-border-radius: 0 0 4px 4px;
      -moz-border-radius: 0 0 4px 4px;
           border-radius: 0 0 4px 4px;
 }
 
-.laji-map .tabs-below > .nav-tabs > li > a:hover,
-.laji-map .tabs-below > .nav-tabs > li > a:focus {
+.laji-map-dialog .tabs-below > .nav-tabs > li > a:hover,
+.laji-map-dialog .tabs-below > .nav-tabs > li > a:focus {
   border-top-color: #ddd;
   border-bottom-color: transparent;
 }
 
-.laji-map .tabs-below > .nav-tabs > .active > a,
-.laji-map .tabs-below > .nav-tabs > .active > a:hover,
-.laji-map .tabs-below > .nav-tabs > .active > a:focus {
+.laji-map-dialog .tabs-below > .nav-tabs > .active > a,
+.laji-map-dialog .tabs-below > .nav-tabs > .active > a:hover,
+.laji-map-dialog .tabs-below > .nav-tabs > .active > a:focus {
   border-color: transparent #ddd #ddd #ddd;
 }
 
-.laji-map .tabs-left > .nav-tabs > li,
-.laji-map .tabs-right > .nav-tabs > li {
+.laji-map-dialog .tabs-left > .nav-tabs > li,
+.laji-map-dialog .tabs-right > .nav-tabs > li {
   float: none;
 }
 
-.laji-map .tabs-left > .nav-tabs > li > a,
-.laji-map .tabs-right > .nav-tabs > li > a {
+.laji-map-dialog .tabs-left > .nav-tabs > li > a,
+.laji-map-dialog .tabs-right > .nav-tabs > li > a {
   min-width: 74px;
   margin-right: 0;
   margin-bottom: 3px;
 }
 
-.laji-map .tabs-left > .nav-tabs {
+.laji-map-dialog .tabs-left > .nav-tabs {
   float: left;
   margin-right: -1px;
   border-right: 1px solid #ddd;
 }
 
-.laji-map .tabs-left > .nav-tabs > li > a {
+.laji-map-dialog .tabs-left > .nav-tabs > li > a {
   margin-right: -1px;
   -webkit-border-radius: 4px 0 0 4px;
      -moz-border-radius: 4px 0 0 4px;
           border-radius: 4px 0 0 4px;
 }
 
-.laji-map .tabs-left > .nav-tabs > li > a:hover,
-.laji-map .tabs-left > .nav-tabs > li > a:focus {
+.laji-map-dialog .tabs-left > .nav-tabs > li > a:hover,
+.laji-map-dialog .tabs-left > .nav-tabs > li > a:focus {
   border-color: #eeeeee #dddddd #eeeeee #eeeeee;
 }
 
-.laji-map .tabs-left > .nav-tabs .active > a,
-.laji-map .tabs-left > .nav-tabs .active > a:hover,
-.laji-map .tabs-left > .nav-tabs .active > a:focus {
+.laji-map-dialog .tabs-left > .nav-tabs .active > a,
+.laji-map-dialog .tabs-left > .nav-tabs .active > a:hover,
+.laji-map-dialog .tabs-left > .nav-tabs .active > a:focus {
   border-color: #ddd transparent #ddd #ddd;
   *border-right-color: #ffffff;
 }

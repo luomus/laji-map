@@ -146,7 +146,8 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			controlSettings: {
-				draw: {marker: false}
+				drawCopy: true,
+				drawUpload: true
 			},
 			data: this.data,
 			tileLayerName: "openStreetMap",

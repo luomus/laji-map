@@ -728,7 +728,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (onClose) onClose(e);
 		}
 
-		this.showClosableElement(_container, close, !!"showBlocker");
+		this.showClosableElement(_container, close, !!"showBlocker", document.body);
 	}
 
 	openCoordinatesInputDialog() {
@@ -911,7 +911,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	openDrawCopyDialog() {
 		const table = document.createElement("table");
-		table.className = "laji-form-draw-copy-table";
+		table.className = "laji-map-draw-copy-table";
 
 		const HTMLInput = createTextArea(10, 50);
 		HTMLInput.setAttribute("readonly", "readonly");

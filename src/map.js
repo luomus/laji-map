@@ -1629,20 +1629,20 @@ export default class LajiMap {
 		});
 	}
 
-	showClosableElement(container, onClose, blocker = false) {
+	showClosableElement(elem, onClose, blocker = false, container = this.container) {
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
 		closeButton.className = "close";
 		closeButton.innerHTML = "✖";
 		closeButton.addEventListener("click", close);
 
-		container.insertBefore(closeButton, container.firstChild);
+		elem.insertBefore(closeButton, elem.firstChild);
 
 		const that = this;
 		function close(e) {
 			if (e) e.preventDefault();
 			that._removeKeyListener(ESC, close);
-			that.container.removeChild(container);
+			container.removeChild(elem);
 			if (blocker) {
 				that.blockerElem.style.display = "";
 				that.blockerElem.removeEventListener("click", close);
@@ -1652,7 +1652,7 @@ export default class LajiMap {
 
 		this._addKeyListener(ESC, close);
 
-		this.container.appendChild(container);
+		container.appendChild(elem);
 
 		if (blocker) {
 			this.blockerElem.addEventListener("click", close);

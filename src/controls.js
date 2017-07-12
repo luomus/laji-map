@@ -422,7 +422,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (!splitted) {
 				const controlItem = controlSettings[controlName];
 				return (
-					controlItem &&
+					!controlItem || // Pass custom controls
 					dependenciesAreOk(controlName) &&
 					(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
 				);

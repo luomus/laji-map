@@ -1596,6 +1596,15 @@ export default class LajiMap {
 	triggerDrawing(featureType) {
 		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
 		layer.enable();
+
+		const abort = () => {
+			layer.disable();
+			this._removeKeyListener(ESC, abort);
+		};
+
+		this.map.on("draw:created", abort);
+		this._addKeyListener(ESC, abort);
+
 		return layer;
 	}
 

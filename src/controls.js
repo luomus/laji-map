@@ -484,7 +484,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		}, {});
 
 
-		return new L.Control.Draw(drawOptions);
+		this.drawControl = new L.Control.Draw(drawOptions);
+		return this.drawControl;
 	}
 
 
@@ -1203,5 +1204,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ?  control.controls : [control]));
 
 		provide(this, "contextMenu");
+	}
+
+	triggerDrawing(featureType) {
+		try {
+			this.drawControl._toolbars.draw._modes[featureType.toLowerCase()].handler.enable()
+		} catch (e) {
+			super.triggerDrawing(featureType);
+		}
 	}
 };

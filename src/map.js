@@ -1597,13 +1597,17 @@ export default class LajiMap {
 		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
 		layer.enable();
 
-		const abort = () => {
+		const abort = (e) => {
+			if (e.preventDefault) {
+				e.preventDefault();
+				e.stopPropagation();
+			}
 			layer.disable();
 			this._removeKeyListener(ESC, abort);
+			this.map.removeEventListener("draw:created", abort);
 		};
 
 		this.map.on("draw:created", abort);
-		this._addKeyListener(ESC, abort);
 
 		return layer;
 	}

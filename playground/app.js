@@ -145,10 +145,7 @@ class App {
 			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			controlSettings: {
-				drawCopy: true,
-				drawUpload: true
-			},
+			controlSettings: false,
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"]

@@ -109,17 +109,18 @@ export default class LajiMap {
 	}
 
 	setRootElem(rootElem) {
+		this.cleanDOM();
+
 		this.mapElem = this.mapElem || document.createElement("div");
 		this.blockerElem = this.blockerElem || document.createElement("div");
-
-		this.cleanDOM();
 
 		this.container = document.createElement("div");
 		this.container.className = "laji-map";
 
-		this.blockerElem.className = "blocker";
+		this.blockerElem.className = "laji-map-blocker";
 
-		[this.mapElem, this.blockerElem].forEach(elem => {this.container.appendChild(elem);});
+		this.container.appendChild(this.mapElem);
+		document.body.appendChild(this.blockerElem);
 
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
@@ -566,6 +567,7 @@ export default class LajiMap {
 
 	cleanDOM() {
 		if (this.rootElem) this.rootElem.removeChild(this.container);
+		if (this.blockerElem) document.body.removeChild(this.blockerElem);
 
 		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
 			document.removeEventListener(type, this._documentEvents[type]);

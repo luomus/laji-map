@@ -71,7 +71,7 @@ class App {
 				}
 			},
 			{
-				geoData: 						{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]},
+				geoData: {"type":"Point","coordinates":[22.24,60.42]},
 				getFeatureStyle: (e) => {
 					const {featureIdx} = e;
 					return {
@@ -145,7 +145,7 @@ class App {
 			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			controlSettings: false,
+			controlSettings: true,
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],

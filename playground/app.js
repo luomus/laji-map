@@ -145,7 +145,6 @@ class App {
 			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			controlSettings: false,
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],

@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput, LajiMapError } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {

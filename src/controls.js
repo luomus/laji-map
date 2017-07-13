@@ -164,11 +164,19 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						eventName: "lineTransect:split"
 					},
 					{
-						name: "delete",
+						name: "deleteSegment",
 						text: this.translations.DeleteLineSegment,
-						iconCls: "glyphicon glyphicon-remove-sign",
+						iconCls: "laji-map-line-transect-remove-segment-glyph",
 						fn: (...params) => this.startRemoveLTSegmentMode(...params),
 						stopFn: (...params) => this.stopSelectLTSegmentMode(...params),
+						eventName: "lineTransect:delete"
+					},
+					{
+						name: "deletePoints",
+						text: this.translations.ConnectSegments,
+						iconCls: "laji-map-line-transect-remove-point-glyph",
+						fn: (...params) => this.startRemoveLTPointMode(...params),
+						stopFn: (...params) => this.stopRemoveLTPointMode(...params),
 						eventName: "lineTransect:delete"
 					},
 					{
@@ -339,7 +347,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawClear: false,
 			coordinates: false,
 			scale: true,
-			lineTransect: {split: true, splitByMeters: true, delete: true, undo: true, redo: true},
+			lineTransect: {split: true, splitByMeters: true, deleteSegment: true, deletePoints: true, undo: true, redo: true},
 			layerOpacity: true
 		};
 

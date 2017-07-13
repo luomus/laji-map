@@ -132,6 +132,18 @@
 	font-weight: bold;
 	font-size: 11px;
 }
+.laji-map .laji-map-line-transect-remove-segment-glyph:before {
+	content: "-o o-";
+	font-weight: bold;
+	font-size: 9px;
+	white-space: nowrap;
+}
+.laji-map .laji-map-line-transect-remove-point-glyph:before {
+	content: "o-o";
+	font-weight: bold;
+	font-size: 9px;
+	white-space: nowrap;
+}
 
 .laji-map .laji-map-warning {
 	position: absolute;

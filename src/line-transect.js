@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput, LajiMapError } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -87,6 +87,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this.commitRemoveLTSegment = this.commitRemoveLTSegment.bind(this);
 		this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
+		this.startRemoveLTPointMode = this.startRemoveLTPointMode.bind(this);
+		this.stopRemoveLTPointMode = this.stopRemoveLTPointMode.bind(this);
+		this.chooseFirstSegmentToConnect = this.chooseFirstSegmentToConnect.bind(this);
+		this.chooseLastSegmentToConnectAndCommit = this.chooseLastSegmentToConnectAndCommit.bind(this);
 		this.startSplitByMetersLTSegmentMode = this.startSplitByMetersLTSegmentMode.bind(this);
 
 		this.splitLTByMeters = this.splitLTByMeters.bind(this);
@@ -462,7 +466,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					{
 						text: translations.DeleteLineSegment,
 						callback: () => this.commitRemoveLTSegment(idx),
-						iconCls: "glyphicon glyphicon-remove-sign"
+						iconCls: "laji-map-line-transect-remove-segment-glyph"
 					}
 				]
 			});
@@ -484,7 +488,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		});
 	}
 
-	removeLTPoint(LTIdx) {
+	removeLTPoint(LTIdx, commit = true) {
 		const idxs = parseIdxsFromLTIdx(LTIdx);
 		const precedingLine = this._lineLayers[idxs[0]][idxs[1] - 1];
 		const followingLine = this._lineLayers[idxs[0]][idxs[1]];
@@ -495,10 +499,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const lineToFilter = precedingLine || followingLine;
 			this._allLines = this._allLines.filter(l => l !== lineToFilter);
 		}
+
 		if (this._LTActiveIdx !== undefined && this._LTActiveIdx > LTIdxToFlatIdx(LTIdx, this._allLines)) {
-			this._triggerEvent(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx - 1), this._onLTChange);
+			this._LTActiveIdx = this._LTActiveIdx - 1;
 		}
-		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, !!"undoable");
+		if (commit) {
+			this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, !!"undoable");
+			this._triggerEvent(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx), this._onLTChange);
+		}
 	}
 
 	_setLTPointEditable(lineIdx, pointIdx) {
@@ -563,12 +571,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_stopLTDragHandler(handler) {
 		// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
-		setTimeout(() => {
+		setImmediate(() => {
 			this._LTDragging = false;
 			this.map.dragging.enable();
 			L.DomUtil.enableTextSelection();
 			this.map.off("mousemove", handler);
-		}, 0);
+		});
 	}
 
 	_startLTDragPointHandler() {
@@ -689,7 +697,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	// Doesn't handle points.
 	_getStyleForLTLayer(layer, idx) {
 		const isActive = idx === this._LTActiveIdx;
-		const isEdit = idx === this._splitLTIdx || (this._selectLTMode && idx === this._hoveredLTLineIdx);
+		const isEdit = idx === this._splitLTIdx || 
+			(this._selectLTMode && idx === this._hoveredLTLineIdx) ||
+			idx === this._firstLTSegmentToRemoveIdx;
 		const isHover = idx === this._hoveredLTLineIdx;
 
 		const lineStyles = {
@@ -831,8 +841,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	startSelectLTSegmentMode(onSelect, tooltip) {
 		this._selectLTMode = true;
 		this._onSelectLT = (idx) => {
-			onSelect(idx);
-			this.stopSelectLTSegmentMode(idx);
+			if (onSelect(idx) !== false) this.stopSelectLTSegmentMode(idx);
 		};
 		if (tooltip) this._createTooltip(tooltip);
 	}
@@ -840,7 +849,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopSelectLTSegmentMode(idx) {
 		this._selectLTMode = false;
 		this._onSelectLT = undefined;
-		this._updateLTStyleForIdx(idx);
+		try {
+			this._updateLTStyleForIdx(idx);
+		} catch (e) { 
+			// Swallow warning
+		}
 		this._disposeTooltip();
 	}
 
@@ -848,8 +861,51 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.startSelectLTSegmentMode(this.commitRemoveLTSegment, "DeleteLineSegmentTooltip");
 	}
 
+
 	startSplitByMetersLTSegmentMode() {
 		this.startSelectLTSegmentMode(this.splitLTByMeters, "SplitLineByMetersTooltip");
+	}
+
+	startRemoveLTPointMode() {
+		this.startSelectLTSegmentMode(this.chooseFirstSegmentToConnect, "startLineConnectFirstPointHelp");
+	}
+
+	stopRemoveLTPointMode(...params) {
+		const idx = this._firstLTSegmentToRemoveIdx;
+		this._firstLTSegmentToRemoveIdx = undefined;
+		this._updateLTStyleForIdx(idx);
+		this.stopSelectLTSegmentMode(...params);
+	}
+
+	chooseFirstSegmentToConnect(idx) {
+		this._firstLTSegmentToRemoveIdx = idx;
+		this._updateLTStyleForIdx(idx);
+		this.startSelectLTSegmentMode(this.chooseLastSegmentToConnectAndCommit, "startLineConnectLastPointHelp");
+		return false;
+	}
+
+	chooseLastSegmentToConnectAndCommit(idx) {
+		const idxs = [this._firstLTSegmentToRemoveIdx, idx].map(_idx => parseIdxsFromLTIdx(flatIdxToLTIdx(_idx, this._corridorLayers))[0]);
+		let timeout = undefined;
+		if (idxs[0] !== idxs[1]) {
+			this._createTooltip("SegmentsMustBeOfSameLine", !!"error");
+			timeout = setTimeout(() => {
+				this._createTooltip("startLineConnectLastPointHelp");
+				timeout = undefined;
+			}, 2000);
+			return false;
+		}
+
+		const [first, last] = [this._firstLTSegmentToRemoveIdx, idx].sort((a, b) => a - b);
+		this._firstLTSegmentToRemoveIdx = undefined;
+		
+		let i = last;
+		while (i !== first) {
+			this.removeLTPoint(flatIdxToLTIdx(i, this._lineLayers), i === first + 1);
+			i--;
+		}
+
+		if (timeout) clearTimeout(timeout);
 	}
 
 	commitRemoveLTSegment(i) {
@@ -931,17 +987,27 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		input.focus();
 	}
 
-	_createTooltip(translationKey) {
-		this._tooltip = new L.Draw.Tooltip(this.map);
-		this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
-		this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
-		["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
+	_createTooltip(translationKey, error = false) {
+		if (this._tooltip) {
+			this.removeTranslationHook(this._tooltipTranslationHook);
+		} else {
+			this._tooltip = new L.Draw.Tooltip(this.map);
+			this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
+			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
+		}
+		this._tooltipTranslationHook = this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
+		if (error) this._tooltip.showAsError();
+		else this._tooltip.removeError();
 	}
 
 	_disposeTooltip() {
-		["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.off(eType, this._onMouseMove));
+		if (this._onMouseMove) ["mousemove", "touchmove", "MSPointerMove"].forEach(
+			eType => this.map.off(eType, this._onMouseMove)
+		);
+		this._onMouseMove = undefined;
 		if (this._tooltip) this._tooltip.dispose();
+		this.removeTranslationHook(this._tooltipTranslationHook);
+		this._tooltip = undefined;
 	}
-
 };
 

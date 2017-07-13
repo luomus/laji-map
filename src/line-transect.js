@@ -467,6 +467,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 						text: translations.DeleteLineSegment,
 						callback: () => this.commitRemoveLTSegment(idx),
 						iconCls: "laji-map-line-transect-remove-segment-glyph"
+					},
+					{
+						text: translations.ConnectSegments,
+						callback: () => this.chooseFirstSegmentToConnect(idx),
+						iconCls: "laji-map-line-transect-remove-point-glyph"
 					}
 				]
 			});

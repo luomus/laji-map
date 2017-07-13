@@ -86,7 +86,7 @@
 	background-position: -124px -5px;
 }
 .laji-map-blocker {
-	position: absolute;
+	position: fixed;
 	display: none;
 	top: 0;
 	width: 100%;

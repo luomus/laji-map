@@ -568,6 +568,7 @@ export default class LajiMap {
 	cleanDOM() {
 		if (this.rootElem) this.rootElem.removeChild(this.container);
 		if (this.blockerElem) document.body.removeChild(this.blockerElem);
+		if (this._closeDialog) this._closeDialog();
 
 		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
 			document.removeEventListener(type, this._documentEvents[type]);
@@ -1650,6 +1651,7 @@ export default class LajiMap {
 				that.blockerElem.removeEventListener("click", close);
 			}
 			if (onClose) onClose(e);
+			that._closeDialog = undefined;
 		}
 
 		this._addKeyListener(ESC, close);

@@ -413,11 +413,22 @@ export function detectCRS(data) {
 			}
 		}
 
-		if (geoJSON && geoJSON.features && geoJSON.features[0] && geoJSON.features[0].geometry && geoJSON.features[0].geometry.coordinates) {
-			let coordinateSample = geoJSON.features[0].geometry.coordinates;
-			while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
-			coordinateSample = coordinateSample.map(c => `${c}`).reverse();
-			return detectCRSFromLatLng(coordinateSample);
+		let geometrySample = geoJSON;
+		while (geometrySample) {
+			if (geometrySample.geometry) {
+				geometrySample = geometrySample.geometry;
+			} else if (geometrySample.features && geometrySample.features[0]) {
+				geometrySample = geometrySample.features[0];
+			} else if (!geometrySample.coordinates) {
+				geometrySample = undefined;
+			}
+
+			if (geometrySample && geometrySample.coordinates) {
+				let coordinateSample = geometrySample.coordinates;
+				while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
+				coordinateSample = coordinateSample.map(c => `${c}`).reverse();
+				return detectCRSFromLatLng(coordinateSample);
+			}
 		}
 	}
 }
@@ -441,7 +452,7 @@ export function convert(input, outputFormat, outputCRS) {
 		throw new LajiMapError("Couldn't detect geo data format", "GeoDataFormatDetectionError");
 	}
 
-	if (geoJSON && geoJSON.features && geoJSON.features.length > 0 && !inputCRS) {
+	if (geoJSON && (geoJSON.features && geoJSON.features.length > 0 || geoJSON.geometry) && !inputCRS) {
 		throw new LajiMapError("Couldn't detect geo data CRS", "GeoDataCRSDetectionError");
 	}
 

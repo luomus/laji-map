@@ -459,4 +459,24 @@
 		en: "Click the segment that you want to split",
 		sv: "Klicka det segment som du vill ta dela"
 	},
+	connectSegments: {
+		fi: "Yhdistä linjan pätkät",
+		en: "Connect line transect segments",
+		sv: "Koppla linje transekt segment"
+	},
+	startLineConnectFirstPointHelp: {
+		fi: "Klikkaa ensimmäistä pätkää jonka haluat yhdistää",
+		en: "Click the first segment you want to connect",
+		sv: "Klicka på det första segmentet du vill ansluta"
+	},
+	startLineConnectLastPointHelp: {
+		fi: "Klikkaa viimeistä pätkää jonka haluat yhdistää",
+		en: "Click the last segment you want to connect",
+		sv: "Klicka på den sista segmentet du vill ansluta"
+	},
+	SegmentsMustBeOfSameLine: {
+		fi: "Pätkien täytyy olla samalta kokonaisuudelta!",
+		en: "The segments must be from the same line body!",
+		sv: "Segmenten måste vara från samma linjekropp!"
+	}
 };

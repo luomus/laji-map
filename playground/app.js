@@ -71,23 +71,7 @@ class App {
 				}
 			},
 			{
-				featureCollection: {
-					type: "featureCollection",
-					features: [
-						{
-							"type": "Feature",
-							"properties": {},
-							"geometry": {
-								"type": "Point",
-								"coordinates": [
-									22.704264017028992,
-									60.40403173483798
-								],
-								"radius": 4000
-							}
-						}
-					]
-				},
+				geoData: {"type":"Point","coordinates":[22.24,60.42]},
 				getFeatureStyle: (e) => {
 					const {featureIdx} = e;
 					return {
@@ -161,16 +145,10 @@ class App {
 			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			controlSettings: {
-				coordinates: true,
-				drawUpload: true,
-				drawCopy: true,
-				drawClear: true,
-				tileLayerOpacity: false
-			},
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
+			controlSettings: true
 		};
 
 		const map = new LajiMap(options);

@@ -82,7 +82,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.controlItems = [
 			{
 				name: "layer",
-				control: this._getLayerControl(this.controlSettings.layerOpacity)
+				control: () => this._getLayerControl(this.controlSettings.layerOpacity)
 			},
 			{
 				name: "location",
@@ -99,22 +99,22 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			},
 			{
 				name: "zoom",
-				control: L.control.zoom({
+				control: () => L.control.zoom({
 					zoomInTitle: this.translations.ZoomIn,
 					zoomOutTitle: this.translations.ZoomOut
 				})
 			},
 			{
 				name: "scale",
-				control: L.control.scale({metric: true, imperial: false})
+				control: () =>  L.control.scale({metric: true, imperial: false})
 			},
 			{
 				name: "coordinates",
-				control: this._getCoordinatesControl()
+				control: () => this._getCoordinatesControl()
 			},
 			{
 				name: "draw",
-				control: this._getDrawControl()
+				control: () => this._getDrawControl()
 			},
 			{
 				controls: [
@@ -164,11 +164,19 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						eventName: "lineTransect:split"
 					},
 					{
-						name: "delete",
+						name: "deleteSegment",
 						text: this.translations.DeleteLineSegment,
-						iconCls: "glyphicon glyphicon-remove-sign",
+						iconCls: "laji-map-line-transect-remove-segment-glyph",
 						fn: (...params) => this.startRemoveLTSegmentMode(...params),
 						stopFn: (...params) => this.stopSelectLTSegmentMode(...params),
+						eventName: "lineTransect:delete"
+					},
+					{
+						name: "deletePoints",
+						text: this.translations.ConnectSegments,
+						iconCls: "laji-map-line-transect-remove-point-glyph",
+						fn: (...params) => this.startRemoveLTPointMode(...params),
+						stopFn: (...params) => this.stopRemoveLTPointMode(...params),
 						eventName: "lineTransect:delete"
 					},
 					{
@@ -234,8 +242,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};}
 
-		this.controlItems.forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
-			const leafletControl = control || (() => {
+		this.controlItems.filter(({control, name}) => {
+			return !control || this._controlIsAllowed(name);
+		}).forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
+			const leafletControl = (control ? control() : undefined) || (() => {
 				const onAdd = (controls) ?
 					function() {
 						this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
@@ -337,25 +347,34 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawClear: false,
 			coordinates: false,
 			scale: true,
-			lineTransect: {split: true, splitByMeters: true, delete: true, undo: true, redo: true},
+			lineTransect: {split: true, splitByMeters: true, deleteSegment: true, deletePoints: true, undo: true, redo: true},
 			layerOpacity: true
 		};
 
-		for (let setting in controlSettings) {
-			if (!(setting in this.controlSettings)) continue;
+		if (!controlSettings) {
+			controlSettings = Object.keys(this.controlSettings).reduce((settings, key) => {
+				settings[key] = false;
+				return settings;
+			}, {});
+		}
 
-			let newSetting = controlSettings[setting];
-			if (this.controlSettings[setting].constructor === Object) {
-				if (controlSettings[setting].constructor === Object) {
-					newSetting = {...this.controlSettings[setting], ...controlSettings[setting]};
-				} else {
-					newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
-						subSettings[subSetting] = controlSettings[setting];
-						return subSettings;
-					}, {});
+		if (typeof controlSettings === "object" && !Array.isArray(controlSettings) && controlSettings !== null) {
+			for (let setting in controlSettings) {
+				if (!(setting in this.controlSettings)) continue;
+
+				let newSetting = controlSettings[setting];
+				if (this.controlSettings[setting].constructor === Object) {
+					if (controlSettings[setting].constructor === Object) {
+						newSetting = {...this.controlSettings[setting], ...controlSettings[setting]};
+					} else {
+						newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
+							subSettings[subSetting] = controlSettings[setting];
+							return subSettings;
+						}, {});
+					}
 				}
+				this.controlSettings[setting] = newSetting;
 			}
-			this.controlSettings[setting] = newSetting;
 		}
 
 		provide(this, "controlSettings");
@@ -411,7 +430,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (!splitted) {
 				const controlItem = controlSettings[controlName];
 				return (
-					controlItem &&
+					!(controlName in controlSettings) ||
+					controlItem && // Pass custom controls
 					dependenciesAreOk(controlName) &&
 					(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
 				);
@@ -473,7 +493,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		}, {});
 
 
-		return new L.Control.Draw(drawOptions);
+		this.drawControl = new L.Control.Draw(drawOptions);
+		return this.drawControl;
 	}
 
 
@@ -716,7 +737,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (onClose) onClose(e);
 		}
 
-		this.showClosableElement(_container, close, !!"showBlocker");
+		this.showClosableElement(_container, close, !!"showBlocker", document.body);
 	}
 
 	openCoordinatesInputDialog() {
@@ -899,7 +920,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	openDrawCopyDialog() {
 		const table = document.createElement("table");
-		table.className = "laji-form-draw-copy-table";
+		table.className = "laji-map-draw-copy-table";
 
 		const HTMLInput = createTextArea(10, 50);
 		HTMLInput.setAttribute("readonly", "readonly");
@@ -1192,5 +1213,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ?  control.controls : [control]));
 
 		provide(this, "contextMenu");
+	}
+
+	triggerDrawing(featureType) {
+		try {
+			this.drawControl._toolbars.draw._modes[featureType.toLowerCase()].handler.enable();
+		} catch (e) {
+			super.triggerDrawing(featureType);
+		}
 	}
 };

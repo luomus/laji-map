@@ -148,7 +148,11 @@ class App {
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
-			controlSettings: true
+			controlSettings: {
+				coordinates: true,
+				drawCopy: true,
+				drawUpload: true,
+			}
 		};
 
 		const map = new LajiMap(options);

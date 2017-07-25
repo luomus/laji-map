@@ -638,10 +638,9 @@ export default class LajiMap {
 				const next = coordinates[i + 1];
 				if (next) return [c, next];
 			}).filter(c => c)
-					.reduce((sum, edge) =>
+				.reduce((sum, edge) => 
 					(sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
-					0
-				);
+				0);
 			const isClockwise = sum >= 0;
 
 			if (!isClockwise) {
@@ -818,10 +817,7 @@ export default class LajiMap {
 		try  {
 			if (data.geoData) {
 				const geoJSON = convertAnyToWGS84GeoJSON(data.geoData);
-				const geometryOrFeatureToFeature = geoJSON => {
-					return (geoJSON.geometry) ? geoJSON : {type: "Feature", geometry: geoJSON};
-				};
-				this.setDrawData({...data, geoData: undefined, featureCollection: {...emptyFeatureCollection, features: [geometryOrFeatureToFeature(geoJSON)]}});
+				this.setDrawData({...data, geoData: undefined, featureCollection: geoJSON});
 				return;
 			} else {
 				featureCollection.features = this.cloneFeatures(data.featureCollection.features);

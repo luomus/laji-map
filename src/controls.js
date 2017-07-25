@@ -26,7 +26,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_setLang() {
 		if (!depsProvided(this, "setLang", arguments)) return;
 
-	// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
+		// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 		const drawLocalizations = L.drawLocal.draw;
 
 		const join = (...params) => this._joinTranslations(...params);
@@ -507,9 +507,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 			onAdd: function() {
 				const container = L.DomUtil.create(
-				"div",
-				"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
-			);
+					"div",
+					"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
+				);
 
 				const table = L.DomUtil.create("table", undefined, container);
 				let visible = false;
@@ -881,11 +881,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 				geometry.type = "Polygon";
 				geometry.coordinates = [[
-				[latStart, lonStart],
-				[latStart, lonEnd],
-				[latEnd, lonEnd],
-				[latEnd, lonStart],
-				[latStart, lonStart]
+					[latStart, lonStart],
+					[latStart, lonEnd],
+					[latEnd, lonEnd],
+					[latEnd, lonStart],
+					[latStart, lonStart]
 				].map(convert)];
 			}
 
@@ -1070,7 +1070,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				const crs = detectCRS(value);
 				const valid = convertAnyToWGS84GeoJSON(value);
 
-				updateInfo(value, format, crs);
+				updateInfo(format, crs);
 				if (format && crs && valid) {
 					button.removeAttribute("disabled");
 					if (alert) {
@@ -1083,7 +1083,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				if (container.className.includes(" has-error")) container.className = container.className.replace(" has-error", "");
 			} catch (e) {
 				if (value !== "" && !container.className.includes("has-error")) container.className += " has-error";
-				updateInfo(value);
+				updateInfo();
 			}
 		};
 
@@ -1109,7 +1109,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		updateInfo();
 
-		function updateInfo(value = "", format = "", crs = "") {
+		function updateInfo(format = "", crs = "") {
 			if (format) {
 				formatContainer.style.display = "block";
 			} else {

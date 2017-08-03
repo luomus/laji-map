@@ -693,22 +693,37 @@ export default class LajiMap {
 		let {geoData, ..._item} = this.data[idx];
 		if (geoData) {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
-			const geometryOrFeatureToFeature = geoJSON => {
-				return (geoJSON.geometry) ? geoJSON : {type: "Feature", geometry: geoJSON};
+			const anyToFeatureCollection = geoJSON => {
+				switch (geoJSON.type) {
+				case "FeatureCollection":
+					return geoJSON;
+				case "Feature":
+					return {type: "FeatureCollection", features: [geoJSON]};
+				case "Point":
+				case "Polygon":
+				case "LineString":
+				case "GeometryCollection":
+					return {type: "FeatureCollection", features: [{type: "Feature", geometry: geoJSON}]};
+				}
 			};
 			item = {
 				..._item, 
 				featureCollection: {
 					type: "FeatureCollection", 
-					features: this.cloneFeatures([geometryOrFeatureToFeature(geoJSON)])
+					features: this.cloneFeatures(anyToFeatureCollection(geoJSON).features)
 				}
 			};
 			this.data[idx] = item;
 			this.initializeDataItem(idx);
 			return;
 		}
+		if (!item.getFeatureStyle) {
+			item = {...item, getFeatureStyle: this._getDefaultDataStyle};
+			this.data[idx] = item;
+		}
+
 		const layer = L.geoJson(
-			convertAnyToWGS84GeoJSON(item.geoData || item.featureCollection).features,
+			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, idx),
 				style: feature => {

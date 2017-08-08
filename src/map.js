@@ -125,6 +125,8 @@ export default class LajiMap {
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
 
+		if (this.map) this.map.invalidateSize();
+
 		provide(this, "rootElem");
 	}
 

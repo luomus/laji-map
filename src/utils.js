@@ -512,19 +512,20 @@ const wgs84Validator = [wgs84Check, wgs84Check];
 function formatterForLength(length) {
 	return value => (value.length < length ? value + "0".repeat(length - value.length) : value);
 }
-const ykjRegexp = /^[0-9]{3,7}$/;
-const ykjFormatter = formatterForLength(7);
+const ykjRegexp = /^[0-9]{7}$/;
 const ykjValidator = [
-	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
-	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: ykjFormatter}
+	{regexp: ykjRegexp, range: [6600000, 7800000]},
+	{regexp: ykjRegexp, range: [3000000, 3800000]}
 ];
 const etrsTm35FinValidator = [
-	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: ykjFormatter},
-	{regexp: /^[0-9]{3,6}$/, range: [50000, 760000], formatter: formatterForLength(6)}
+	{regexp: ykjRegexp, range: [6600000, 7800000]},
+	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000]}
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
-export {wgs84Validator, ykjValidator, etrsTm35FinValidator, etrsValidator};
+const ykjGridValidator = ykjValidator.map(validator => {return {...validator, regexp: /^[0-9]{3,7}$/, formatter: formatterForLength(7)};});
+
+export {wgs84Validator, ykjValidator, ykjGridValidator, etrsTm35FinValidator, etrsValidator};
 
 export function validateLatLng(latlng, latLngValidator) {
 	return latlng.every((value, i) => {

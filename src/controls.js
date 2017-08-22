@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjValidator, wgs84Validator, stringifyLajiMapError, createTextInput, createTextArea } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridValidator, wgs84Validator, stringifyLajiMapError, createTextInput, createTextArea } from "./utils";
 import {
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
@@ -789,7 +789,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function submitValidate(inputValues) {
 			const validators = [];
 			if (wgs84Allowed) validators.push(wgs84Validator);
-			if (ykjAllowed) validators.push(ykjValidator);
+			if (ykjAllowed) validators.push(ykjGridValidator);
 			return validators.some(validator => validateLatLng(inputValues, validator));
 		}
 

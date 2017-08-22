@@ -254,8 +254,7 @@ export function ISO6709ToGeoJSON(ISO6709) {
 	function lineToCoordinates(line) {
 		return line.split("/").filter(line => line).map(coordString => {
 			return coordString.match(/-?\d+\.*\d*/g).map(number => +number).reverse();
-		}
-		);
+		});
 	}
 
 	function lineIsPolygon(line) {
@@ -291,7 +290,7 @@ export function geoJSONToWKT(geoJSON) {
 	}
 
 	function coordinateStrToPolygon(coords) {
-		return `POLYGON(${coords})`;
+		return `POLYGON((${coords}))`;
 	}
 
 	let WKTGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToWKTString, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
@@ -307,7 +306,7 @@ export function geoJSONToWKT(geoJSON) {
 
 export function WKTToGeoJSON(WKT) {
 	function lineToCoordinates(line) {
-		return line.match(/.+\((.*)\)/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
+		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
 	}
 
 	function lineIsPolygon(line) {

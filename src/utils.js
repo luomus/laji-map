@@ -414,7 +414,9 @@ export function detectCRS(data) {
 
 		let geometrySample = geoJSON;
 		while (geometrySample) {
-			if (geometrySample.geometry) {
+			if (geometrySample.geometries) {
+				geometrySample = geometrySample.geometries[0];
+			}	else if (geometrySample.geometry) {
 				geometrySample = geometrySample.geometry;
 			} else if (geometrySample.features && geometrySample.features[0]) {
 				geometrySample = geometrySample.features[0];

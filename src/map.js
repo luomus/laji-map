@@ -49,7 +49,7 @@ export default class LajiMap {
 		this.setOptions({...options, ...props});
 		this._initializeMap();
 	}
-	
+
 	getOptionKeys() {
 		return {
 			rootElem: "setRootElem",
@@ -182,7 +182,7 @@ export default class LajiMap {
 
 			this.overlaysByNames = {
 				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-					layers: "INSPIRE:fi_fmnh_br",
+					layers: "INSPIRE:fi_fmnh_br_extended",
 					format: "image/png",
 					transparent: true,
 					version: "1.3.0"
@@ -342,7 +342,7 @@ export default class LajiMap {
 			}
 		}
 	}
-	
+
 	@dependsOn("map")
 	setEventListeners(eventListeners) {
 		if (!depsProvided(this, "setEventListeners", arguments)) return;
@@ -640,7 +640,7 @@ export default class LajiMap {
 				const next = coordinates[i + 1];
 				if (next) return [c, next];
 			}).filter(c => c)
-				.reduce((sum, edge) => 
+				.reduce((sum, edge) =>
 					(sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
 				0);
 			const isClockwise = sum >= 0;
@@ -674,7 +674,7 @@ export default class LajiMap {
 		return {
 			getFeatureStyle: (...params) => this._getDefaultDataStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDataClusterStyle(...params),
-			...dataItem, 
+			...dataItem,
 			featureCollection
 		};
 	}
@@ -709,9 +709,9 @@ export default class LajiMap {
 				}
 			};
 			item = {
-				..._item, 
+				..._item,
 				featureCollection: {
-					type: "FeatureCollection", 
+					type: "FeatureCollection",
 					features: this.cloneFeatures(anyToFeatureCollection(geoJSON).features)
 				}
 			};
@@ -901,7 +901,7 @@ export default class LajiMap {
 				}, {});
 				break;
 			}
-			
+
 			return e;
 		}));
 	}

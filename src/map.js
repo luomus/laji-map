@@ -543,11 +543,11 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setNormalizedZoom(zoom) {
+	setNormalizedZoom(zoom, options) {
 		if (!depsProvided(this, "setNormalizedZoom", arguments)) return;
 
 		this.zoom = zoom;
-		if (this.map) this.map.setZoom(this.getDenormalizedZoom());
+		if (this.map) this.map.setZoom(this.getDenormalizedZoom(), options);
 		provide(this, "zoom");
 	}
 
@@ -889,7 +889,7 @@ export default class LajiMap {
 	setOnDrawChange(onChange, format = "GeoJSON", crs = "WGS84") {
 		if (!depsProvided(this, "setOnDrawChange", arguments)) return;
 
-		this.draw.onChange = events => onChange(events.map(e => {
+		if (this.draw.onChange) this.draw.onChange = events => onChange(events.map(e => {
 			switch (e.type) {
 			case "create":
 				e.geoData = convert(e.feature, format, crs);

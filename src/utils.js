@@ -253,7 +253,7 @@ export function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, l
 export function ISO6709ToGeoJSON(ISO6709) {
 	function lineToCoordinates(line) {
 		return line.split("/").filter(line => line).map(coordString => {
-			return coordString.match(/-?\d+\.*\d*/g).map(number => +number).reverse();
+			return coordString.match(/-?\d+\.?\d*/g).map(number => +number).reverse();
 		});
 	}
 
@@ -262,12 +262,12 @@ export function ISO6709ToGeoJSON(ISO6709) {
 	}
 
 	function lineIsLineString(line) {
-		const match = line.match(/.+\//g);
-		return match && match.length > 1;
+		const result = line.match(/^(.+(\+|-|:).+\/){2,}$/g);
+		return result;
 	}
 
 	function lineIsPoint(line) {
-		return line.match(/^(\+|-)?\d+\.?\d*(\+|-|:)?\d+\.?\d*\//);
+		return line.match(/^(\+|-)?\d+\.?\d*(\+|-|:)\d+\.?\d*\/$/);
 	}
 
 	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");

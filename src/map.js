@@ -683,8 +683,8 @@ export default class LajiMap {
 		if (item.on) Object.keys(item.on).forEach(eventName => {
 			layer.on(eventName, (e) => {
 				const {layer} = e;
-				const {feature} = layer;
-				const idx = feature.properties.lajiMapIdx;
+				const idx = this.idsToIdxs[layer._leaflet_id];
+				const feature = item.featureCollection.features[idx];
 				item.on[eventName](e, {idx, layer, feature: this.formatFeatureOut(feature, layer)});
 			});
 		});

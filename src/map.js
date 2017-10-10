@@ -679,12 +679,12 @@ export default class LajiMap {
 		};
 	}
 
-	_initializeDataItemEvents(item, layer) {
+	_initializeDataItemEvents(item, layerGroup) {
 		if (item.on) Object.keys(item.on).forEach(eventName => {
-			layer.on(eventName, (e) => {
+			layerGroup.on(eventName, (e) => {
 				const {layer} = e;
-				const idx = this.idsToIdxs[layer._leaflet_id];
-				const feature = item.featureCollection.features[idx];
+				const {feature} = layer;
+				const idx = feature.properties.lajiMapIdx;
 				item.on[eventName](e, {idx, layer, feature: this.formatFeatureOut(feature, layer)});
 			});
 		});

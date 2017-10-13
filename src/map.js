@@ -704,8 +704,9 @@ export default class LajiMap {
 				case "Point":
 				case "Polygon":
 				case "LineString":
-				case "GeometryCollection":
 					return {type: "FeatureCollection", features: [{type: "Feature", geometry: geoJSON}]};
+				case "GeometryCollection":
+					return {type: "FeatureCollection", features: geoJSON.geometries.map(geom => {return { type: "Feature", geometry: geom}; })};
 				}
 			};
 			item = {
@@ -1056,7 +1057,7 @@ export default class LajiMap {
 
 		function openPopup(content) {
 			if (!latlng) return;
-			if (data === that.draw.data && that.editIdx === idx) return;
+			if (that.draw && data === that.draw.data && that.editIdx === idx) return;
 
 			const offset = (layer instanceof L.Marker) ? (-that.markerPopupOffset  || 0) : (-that.featurePopupOffset || 0);
 
@@ -1081,7 +1082,8 @@ export default class LajiMap {
 			let {popupCounter} = that;
 
 			// Allow either returning content or firing a callback with content.
-			const content = data.getPopup(idx, that.formatFeatureOut(layer.toGeoJSON(), layer).geometry, callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
+
+			const content = data.getPopup(idx, that.formatFeatureOut(layer.feature, layer), callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
 			if (content !== undefined && typeof content !== "function") openPopup(content);
 		}
 
@@ -1118,7 +1120,7 @@ export default class LajiMap {
 		}
 
 		// Allow either returning content or firing a callback with content.
-		const content = data.getTooltip(idx, this.formatFeatureOut(layer.toGeoJSON(), layer).geometry, callbackContent => openTooltip(callbackContent));
+		const content = data.getTooltip(idx, this.formatFeatureOut(layer.feature, layer), callbackContent => openTooltip(callbackContent));
 		if (content !== undefined && typeof content !== "function") openTooltip(content);
 	}
 

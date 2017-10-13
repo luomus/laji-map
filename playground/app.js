@@ -71,7 +71,7 @@ class App {
 				}
 			},
 			{
-				geoData: {"type":"Point","coordinates":[22.24,60.42]},
+				geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
 				getFeatureStyle: (e) => {
 					const {featureIdx} = e;
 					return {

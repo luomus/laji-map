@@ -1083,7 +1083,7 @@ export default class LajiMap {
 
 			// Allow either returning content or firing a callback with content.
 
-			const content = data.getPopup(idx, that.formatFeatureOut(layer.feature, layer), callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
+			const content = data.getPopup(idx, that.formatFeatureOut(layer.toGeoJSON(), layer), callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
 			if (content !== undefined && typeof content !== "function") openPopup(content);
 		}
 
@@ -1120,7 +1120,7 @@ export default class LajiMap {
 		}
 
 		// Allow either returning content or firing a callback with content.
-		const content = data.getTooltip(idx, this.formatFeatureOut(layer.feature, layer), callbackContent => openTooltip(callbackContent));
+		const content = data.getTooltip(idx, this.formatFeatureOut(layer.toGeoJSON(), layer), callbackContent => openTooltip(callbackContent));
 		if (content !== undefined && typeof content !== "function") openTooltip(content);
 	}
 
@@ -1231,6 +1231,8 @@ export default class LajiMap {
 		const idx = features.length;
 		const feature = this.formatFeatureOut(this._initializeDrawLayer(layer, features.length).toGeoJSON(), layer);
 		feature.properties.lajiMapIdx = idx;
+		layer.feature = feature;
+
 		const id = layer._leaflet_id;
 		this.idsToIdxs[id] = idx;
 		this.idxsToIds[idx] = id;

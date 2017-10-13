@@ -395,7 +395,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._pointLayerGroup.on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
 
-			this._getPoint(this.getIdxsFromEvent(e).i,  LTIdx => this._setLTPointEditable(...parseIdxsFromLTIdx(LTIdx)));
+			this._getPoint(this.getIdxsFromEvent(e).i, LTIdx => this._setLTPointEditable(...parseIdxsFromLTIdx(LTIdx)));
 		});
 
 		this._corridorLayerGroup.on("click", e => {

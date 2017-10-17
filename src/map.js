@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert, stringifyLajiMapError, isPolyline } from "./utils";
+import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert, stringifyLajiMapError, isPolyline, isObject } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -783,7 +783,7 @@ export default class LajiMap {
 	setDraw(options) {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
-		const drawAllowed = (options === true || typeof options === "object" && options !== null && !Array.isArray(options) && options.constructor === Object);
+		const drawAllowed = options !== false;
 
 		this.draw = {
 			...([
@@ -794,7 +794,9 @@ export default class LajiMap {
 				"circle",
 				"marker"
 			].reduce((_options, key) => {
-				const optionValue = (typeof options === "object" && options !== null && options.constructor === Object && !Array.isArray(options)) ? options[key] !== false : drawAllowed === true;
+				let optionValue = {};
+				if (options === false || isObject(options) && options[key] === false) optionValue = false;
+				else if (isObject(options) && isObject(options[key])) optionValue = options[key];
 				_options[key] = optionValue;
 				return _options;
 			}, {}))
@@ -802,7 +804,6 @@ export default class LajiMap {
 		this.draw = {
 			...this.draw,
 			...{
-				polygon: this.draw.polygon ? {showArea: true} : false,
 				activeIdx: undefined,
 				...(drawAllowed ? (options || {}) : {})
 			}
@@ -1223,13 +1224,30 @@ export default class LajiMap {
 
 	_decoratePolyline(layer) {
 		if (isPolyline(layer)) {
-			if (layer.getLatLngs().length < 2) return;
+			if (!this.draw.polyline || this.draw.polyline.showDirection !== false) {
+				const {clickable} = layer;
+				layer.options.clickable = false;
+				layer.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+				layer.options.clickable = clickable;
+			}
 
-			const {clickable} = layer;
-			layer.options.clickable = false;
-			layer.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
-			layer.options.clickable = clickable;
+			if (this.draw.polyline && this.draw.polyline.showStart) {
+				layer._startCircle = L.circleMarker(layer.getLatLngs()[0], this._getStartCircleStyle(layer)).addTo(this.map);
+				layer.on("editdrag", () => {
+					layer._startCircle.setLatLng(layer.getLatLngs()[0])
+				});
+			}
 		}
+	}
+
+	_getStartCircleStyle(lineLayer) {
+		return {
+			...lineLayer.options,
+			weight: 0,
+			radius: 5,
+			fill: true,
+			fillOpacity: 1,
+		};
 	}
 
 	_onAdd(layer, coordinateVerbatim) {
@@ -1464,6 +1482,7 @@ export default class LajiMap {
 			}
 		} else {
 			layer.setStyle(style);
+			if (layer._startCircle) layer._startCircle.setStyle(this._getStartCircleStyle(layer));
 		}
 	}
 
@@ -1617,12 +1636,27 @@ export default class LajiMap {
 			break;
 		case "polygon":
 			additionalOptions = {
-				allowIntersection: false,
+				allowIntersection: false
 			};
 			break;
 		}
 
-		return {shapeOptions: {...baseStyle, ...(additionalOptions.shapeOptions || {})}, ...additionalOptions};
+		const userDefined = this.draw[featureType] || {};
+
+		return {
+			metric: true,
+			showLength: true,
+			allowIntersection: false,
+			showRadius: true,
+			...additionalOptions,
+			...userDefined,
+			shapeOptions: {
+				showArea: true,
+				...baseStyle,
+				...(additionalOptions.shapeOptions || {}),
+				...userDefined
+			}
+		};
 	}
 
 	triggerDrawing(featureType) {

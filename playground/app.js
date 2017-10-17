@@ -132,6 +132,16 @@ class App {
 					}
 				}
 			},
+			polyline: {
+				showStart: true,
+				showDirection: true
+			},
+			polygon: {
+				showArea: true,
+				shapeOptions: {
+					showArea: true
+				}
+			},
 			hasActive: true,
 			onChange: this.onMapChange
 		};

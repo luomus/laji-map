@@ -92,6 +92,12 @@ class App {
 				featureCollection: {
 					type: "FeatureCollection",
 					features: [
+						{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":
+							[
+								[22.207004189222086,60.47430300256853],
+								[22.311658377997933,60.43453495634962]
+							]
+						}},
 						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},
 						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}},
 						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,61.43453495634962]}},
@@ -126,6 +132,7 @@ class App {
 					}
 				}
 			},
+			hasActive: true,
 			onChange: this.onMapChange
 		};
 

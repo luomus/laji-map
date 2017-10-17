@@ -559,3 +559,8 @@ export function createTextArea(rows = 10, cols = 10) {
 	input.className = "form-control laji-map-input";
 	return input;
 }
+
+export function isPolyline(layer) {
+	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
+};
+

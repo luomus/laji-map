@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert, stringifyLajiMapError } from "./utils";
+import { convertAnyToWGS84GeoJSON, detectFormat, detectCRS, convert, stringifyLajiMapError, isPolyline } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -735,6 +735,7 @@ export default class LajiMap {
 				onEachFeature: (feature, layer) => {
 					this._initializePopup(item, layer, feature.properties.lajiMapIdx);
 					this._initializeTooltip(item, layer, feature.properties.lajiMapIdx);
+					this._decoratePolyline(layer);
 				}
 			}
 		);
@@ -868,6 +869,7 @@ export default class LajiMap {
 					this._initializeDrawLayer(layer, idx);
 					this._initializePopup(this.draw.data, layer, idx);
 					this._initializeTooltip(this.draw.data, layer, idx);
+					this._decoratePolyline(layer);
 				}
 			});
 
@@ -1219,10 +1221,19 @@ export default class LajiMap {
 		if (handler) handler(e);
 	}
 
-	_onAdd(layer, coordinateVerbatim) {
-		if (layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type])) && layer.getLatLngs().length < 2) {
-			return;
+	_decoratePolyline(layer) {
+		if (isPolyline(layer)) {
+			if (layer.getLatLngs().length < 2) return;
+
+			const {clickable} = layer;
+			layer.options.clickable = false;
+			layer.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+			layer.options.clickable = clickable;
 		}
+	}
+
+	_onAdd(layer, coordinateVerbatim) {
+		if (isPolyline(layer) && layer.getLatLngs().length < 2) return;
 
 		this.updateLayerStyle(layer, this._getStyleForLayer(layer));
 
@@ -1256,6 +1267,7 @@ export default class LajiMap {
 
 		this._triggerEvent(event, this.draw.onChange);
 
+		this._decoratePolyline(layer);
 		this._initializePopup(this.draw.data, layer, idx);
 		this._initializeTooltip(this.draw.data, layer, idx);
 	}

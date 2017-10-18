@@ -1232,7 +1232,11 @@ export default class LajiMap {
 			if (!this.draw.polyline || this.draw.polyline.showDirection !== false) {
 				const {clickable} = layer;
 				layer.options.clickable = false;
-				layer.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+				try {
+					layer.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+				} catch (e) {
+					console.warn("laji-map polyline text decorating failed");
+				}
 				layer.options.clickable = clickable;
 			}
 

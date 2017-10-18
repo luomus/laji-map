@@ -480,9 +480,9 @@
 		sv: "Segmenten måste vara från samma linjekropp!"
 	},
 	confirmDrawClear: {
-		fi: "Tuhotaanko kaikki piirretyt kuviot?",
-		en: "Delete all drawn data?",
-		sv: "Radera alla ritade data?"
+		fi: "Haluatko varmasti tyhjentää kartalta kaikki kuviot?",
+		en: "Are you sure you want to remove all the features from the map?",
+		sv: "Är du säker på att du vill ta bort alla figurer från kartan"
 	},
 	yes: {
 		fi: "Kyllä",

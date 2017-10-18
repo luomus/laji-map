@@ -562,7 +562,7 @@ export function createTextArea(rows = 10, cols = 10) {
 
 export function isPolyline(layer) {
 	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
-};
+}
 
 export function isObject(obj) {
 	return typeof obj === "object" && obj !== null && !Array.isArray(obj) && obj.constructor === Object;

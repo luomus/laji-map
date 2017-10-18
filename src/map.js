@@ -1239,7 +1239,7 @@ export default class LajiMap {
 			if (this.draw.polyline && this.draw.polyline.showStart) {
 				layer._startCircle = L.circleMarker(layer.getLatLngs()[0], this._getStartCircleStyle(layer)).addTo(this.map);
 				layer.on("editdrag", () => {
-					layer._startCircle.setLatLng(layer.getLatLngs()[0])
+					layer._startCircle.setLatLng(layer.getLatLngs()[0]);
 				});
 				layer.on("remove", () => {
 					layer._startCircle.remove();

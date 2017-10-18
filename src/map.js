@@ -1261,8 +1261,6 @@ export default class LajiMap {
 	_onAdd(layer, coordinateVerbatim) {
 		if (isPolyline(layer) && layer.getLatLngs().length < 2) return;
 
-		this.updateLayerStyle(layer, this._getStyleForLayer(layer));
-
 		const {featureCollection: {features}} = this.draw.data;
 
 		const idx = features.length;
@@ -1293,6 +1291,12 @@ export default class LajiMap {
 
 		this._triggerEvent(event, this.draw.onChange);
 
+		if (layer instanceof L.Marker) {
+			const icon =  this._createIcon(this._getStyleForType());
+			layer.setIcon(icon);
+		}
+
+		this.updateLayerStyle(layer, this._getStyleForLayer(layer));
 		this._decoratePolyline(layer);
 		this._initializePopup(this.draw.data, layer, idx);
 		this._initializeTooltip(this.draw.data, layer, idx);
@@ -1477,6 +1481,7 @@ export default class LajiMap {
 	updateLayerStyle(layer, style) {
 		if (!layer) return;
 
+		window.layer = layer;
 		if (layer instanceof L.Marker) {
 			if (style.opacity !== undefined) layer.options.opacity = style.opacity;
 

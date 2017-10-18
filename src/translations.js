@@ -478,5 +478,20 @@
 		fi: "Pätkien täytyy olla samalta kokonaisuudelta!",
 		en: "The segments must be from the same line body!",
 		sv: "Segmenten måste vara från samma linjekropp!"
+	},
+	confirmDrawClear: {
+		fi: "Tuhotaanko kaikki piirretyt kuviot?",
+		en: "Delete all drawn data?",
+		sv: "Radera alla ritade data?"
+	},
+	yes: {
+		fi: "Kyllä",
+		en: "Yes",
+		sv: "Ja"
+	},
+	no: {
+		fi: "Ei",
+		en: "No",
+		sv: "Nej"
 	}
 };

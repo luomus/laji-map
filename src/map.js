@@ -1300,6 +1300,8 @@ export default class LajiMap {
 		this._decoratePolyline(layer);
 		this._initializePopup(this.draw.data, layer, idx);
 		this._initializeTooltip(this.draw.data, layer, idx);
+
+		this.setActive(idx);
 	}
 
 	_onEdit(data) {

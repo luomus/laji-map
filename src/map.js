@@ -1241,6 +1241,9 @@ export default class LajiMap {
 				layer.on("editdrag", () => {
 					layer._startCircle.setLatLng(layer.getLatLngs()[0])
 				});
+				layer.on("remove", () => {
+					layer._startCircle.remove();
+				});
 			}
 		}
 	}

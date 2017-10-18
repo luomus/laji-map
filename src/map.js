@@ -911,6 +911,11 @@ export default class LajiMap {
 	}
 
 	clearDrawData() {
+		this._triggerEvent({
+			type: "delete",
+			idxs: Object.keys(this.idxsToIds)
+		}, this.draw.onChange);
+
 		this.setDrawData({...this.draw.data, featureCollection: {type: "FeatureCollection", features: []}});
 	}
 

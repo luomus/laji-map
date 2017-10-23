@@ -1665,7 +1665,6 @@ export default class LajiMap {
 		return {
 			metric: true,
 			showLength: true,
-			allowIntersection: false,
 			showRadius: true,
 			...additionalOptions,
 			...userDefined,

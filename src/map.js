@@ -66,7 +66,6 @@ export default class LajiMap {
 			center: "setCenter",
 			zoom: "setNormalizedZoom",
 			locate: true,
-			onChange: ["setOnDrawChange", () => this.draw ? this.draw.onChange : undefined],
 			onPopupClose: true,
 			markerPopupOffset: true,
 			featurePopupOffset: true,

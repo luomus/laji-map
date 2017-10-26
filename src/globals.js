@@ -2,6 +2,8 @@ export const INCOMPLETE_COLOR = "#36B43A";
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";
 export const DATA_LAYER_COLOR = "#AAAAAA";
+export const EDITABLE_DATA_LAYER_COLOR = "#81A3CE";
+export const ACTIVE_DATA_LAYER_COLOR = "#81CE97";
 export const USER_LOCATION_COLOR = "#FF0000";
 
 export const MAASTOKARTTA = "maastokartta";

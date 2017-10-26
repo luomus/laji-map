@@ -454,11 +454,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 
 			function dependenciesAreOk(controlName) {
-				return (dependencies[controlName] || []).every(dependency => 
+				return (dependencies[controlName] || []).every(dependency =>
 					(typeof dependency === "function") ? dependency() : controlIsOk(dependency)
 				);
 			}
-			
+
 			if (!splitted) {
 				const controlItem = controlSettings[controlName];
 				return (
@@ -512,7 +512,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const drawOptions = {
 			position: "topright",
 			edit: {
-				featureGroup: this.drawLayerGroup,
+				featureGroup: this.draw.group,
 				edit: false,
 				remove: false
 			}
@@ -706,7 +706,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
 
 		this.layerControl = layerControl;
-		
+
 		return layerControl;
 	}
 
@@ -921,10 +921,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				].map(convert)];
 			}
 
-			const layer = this._featureToLayer(this.draw.data.getFeatureStyle)(feature);
+			const layer = this._featureToLayer(this.draw.getFeatureStyle)(feature);
 			const isMarker = layer instanceof L.Marker;
 
-			this._onAdd(layer, latInput.value + ":" + lngInput.value);
+			this._onAdd(this.drawIdx, layer, latInput.value + ":" + lngInput.value);
 			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
 			this.map.setView(center, this.map.zoom, {animate: false});
 			if (isMarker) {
@@ -958,8 +958,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		HTMLInput.setAttribute("readonly", "readonly");
 		HTMLInput.addEventListener("focus", HTMLInput.select);
 
-		const features = this.draw.data.featureCollection.features.map(this.formatFeatureOut);
-		const originalGeoJSON = {...this.draw.data.featureCollection, features};
+		const features = this.draw.featureCollection.features.map(this.formatFeatureOut);
+		const originalGeoJSON = {...this.draw.featureCollection, features};
 
 		function converterFor(proj) {
 			return input => {
@@ -1047,7 +1047,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		updateOutput();
 
 		function updateOutput() {
-			HTMLInput.value = pipeline.reduce((_output, {commands}, idx) => 
+			HTMLInput.value = pipeline.reduce((_output, {commands}, idx) =>
 				commands[activeCommands[idx]](_output), originalGeoJSON
 			);
 			HTMLInput.focus();
@@ -1055,7 +1055,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		}
 
 		const rows = [
-			[undefined, topTabs], 
+			[undefined, topTabs],
 			[leftTabs, HTMLInput]
 		];
 
@@ -1171,13 +1171,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function convertText(e) {
 			e.preventDefault();
 			try {
-				that.setDrawData({...that.draw.data, featureCollection: undefined, geoData: textarea.value});
+				that.setDraw({...that.draw, featureCollection: undefined, geoData: textarea.value});
 				that._closeDialog(e);
 			} catch (e) {
 				updateAlert(e);
 				throw e;
 			}
-			const bounds = that.drawLayerGroup.getBounds();
+			const bounds = that.draw.group.getBounds();
 			if (Object.keys(bounds).length) that.map.fitBounds(bounds);
 		}
 

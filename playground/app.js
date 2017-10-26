@@ -64,74 +64,68 @@ class App {
 				cluster: true,
 				on: {
 					click: (e, {idx, feature, layer}) => {
-						console.info(idx);
-						console.info(feature);
-						console.info(layer);
+						console.info("clicked", idx, feature, layer);
 					},
-				}
-			},
-			{
-				geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
-				getFeatureStyle: (e) => {
-					const {featureIdx} = e;
-					return {
-						weight: featureIdx,
-						opacity: 1,
-						fillOpacity: 1,
-						color: "#0f0"
-					};
 				},
-				getPopup: (idx) => {
-					return `green ${idx}`;
-				}
-			}
+				activeIdx: 0,
+				editable: true,
+				//getFeatureStyle: (e) => {
+				//	const {featureIdx, item} = e;
+				//	return {
+				//		weight: featureIdx,
+				//		opacity: 1,
+				//		fillOpacity: 1,
+				//		color: featureIdx === item && item.activeIdx ? "#ff0" : "#00f"
+				//	};
+				//},
+			},
+
 		];
 
 		this.drawOptions = {
-			data: {
-				featureCollection: {
-					type: "FeatureCollection",
-					features: [
-						{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":
-						[
-							[22.207004189222086,60.47430300256853],
-							[22.311658377997933,60.43453495634962]
-						]
-						}},
-						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},
-						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}},
-						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,61.43453495634962]}},
-						{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[23.311658377997933,61.43453495634962], "radius": 2000}},
-						{
-							"type": "Feature",
-							"properties": {},
-							"geometry": {
-								"type": "Point",
-								"coordinates": [
-									22.104264017028992,
-									60.40403173483798
-								],
-								radius: 4000
-							}
+			featureCollection: {
+				type: "FeatureCollection",
+				features: [
+					{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":
+					[
+						[22.207004189222086,60.47430300256853],
+						[22.311658377997933,60.43453495634962]
+					]
+					}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,61.43453495634962]}},
+					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[23.311658377997933,61.43453495634962], "radius": 2000}},
+					{
+						"type": "Feature",
+						"properties": {},
+						"geometry": {
+							"type": "Point",
+							"coordinates": [
+								22.104264017028992,
+								60.40403173483798
+							],
+							radius: 4000
 						}
-					],
-				},
-				getPopup: (idx, geometry, callback) => {
-					setTimeout(() => callback(`${idx}`), 2000);
-				},
-				getTooltip: (idx, geometry) => {
-					return geometry.type;
-				},
-				cluster: true,
-				on: {
-					click: (e, idx) => {
-						console.info(idx);
-					},
-					mouseenter: (e, idx) => {
-						console.info(idx);
 					}
+				],
+			},
+			getPopup: (idx, geometry, callback) => {
+				setTimeout(() => callback(`${idx}`), 2000);
+			},
+			getTooltip: (idx, geometry) => {
+				return geometry.type;
+			},
+			cluster: true,
+			on: {
+				click: (e, idx) => {
+					console.info(idx);
+				},
+				mouseenter: (e, idx) => {
+					console.info(idx);
 				}
 			},
+			onChange: this.onMapChange,
 			polyline: {
 				showStart: true,
 				showDirection: true
@@ -142,15 +136,12 @@ class App {
 					showArea: true
 				}
 			},
-			hasActive: true,
-			onChange: this.onMapChange
 		};
 
 		this.activeIdx = 0;
 
 		const options = {
 			rootElem: document.getElementById("root"),
-			activeIdx: 0,
 			draw: this.drawOptions,
 			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
 			lang: "fi",
@@ -173,15 +164,32 @@ class App {
 			}
 		};
 
+
 		const map = new LajiMap(options);
 		this.map = map;
-		new LajiMap({...options,
+		const map2 = new LajiMap({...options,
 			rootElem: document.getElementById("root2"),
 			lang: "en",
 			lineTransect: undefined,
 			center: [60.40403173483798, 22.104264017028992],
 			zoom: 7,
 			tileLayerName: "taustakartta"
+		});
+
+		map2.addData({
+			geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
+			getFeatureStyle: (e) => {
+				const {featureIdx} = e;
+				return {
+					weight: featureIdx,
+					opacity: 1,
+					fillOpacity: 1,
+					color: "#0f0"
+				};
+			},
+			getPopup: (idx) => {
+				return `green ${idx}`;
+			}
 		});
 
 		["fi", "en", "sv"].forEach(lang => {
@@ -205,7 +213,7 @@ class App {
 	}
 
 	onMapChange = (events) => {
-		let drawData = this.drawOptions.data;
+		let drawData = this.drawOptions;
 		events.forEach(e => {
 			console.info(e);
 			switch (e.type) {

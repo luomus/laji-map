@@ -718,9 +718,9 @@ export default class LajiMap {
 			this.data[itemIdx].groupContainer.clearLayers();
 		}
 		
-		 const format = (geoData) ? detectFormat(geoData) : undefined;
-		 const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
-		 this._setOnChangeForItem(item, format, crs);
+		const format = (geoData) ? detectFormat(geoData) : undefined;
+		const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
+		this._setOnChangeForItem(item, format, crs);
 
 		this.data[itemIdx] = item;
 
@@ -1213,6 +1213,10 @@ export default class LajiMap {
 
 	_decoratePolyline(itemIdx, layer) {
 		const item = this.data[itemIdx];
+
+		function warn() {
+			console.warn("Failed to add a starting point to line");
+		}
 		if (isPolyline(layer)) {
 			if (!item.polyline || item.polyline.showDirection !== false) {
 				const {clickable} = layer;
@@ -1226,7 +1230,26 @@ export default class LajiMap {
 			}
 
 			if (item.polyline && item.polyline.showStart) {
-				layer._startCircle = L.circleMarker(layer.getLatLngs()[0], this._getStartCircleStyle(layer)).addTo(this.map);
+				let firstPoint = undefined;
+
+				if (!layer.feature.geometry.type) {
+					warn();
+					return;
+				}
+				switch(layer.feature.geometry.type) {
+				case "MultiLineString":
+					firstPoint = layer.getLatLngs()[0][0];
+					break;
+				case "LineString":
+					firstPoint = layer.getLatLngs()[0];
+				}
+
+				if (!firstPoint) {
+					warn();
+					return;
+				}
+
+				layer._startCircle = L.circleMarker(firstPoint, this._getStartCircleStyle(layer)).addTo(this.map);
 				layer.on("editdrag", () => {
 					layer._startCircle.setLatLng(layer.getLatLngs()[0]);
 				});

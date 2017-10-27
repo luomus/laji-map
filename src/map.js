@@ -669,8 +669,8 @@ export default class LajiMap {
 		return featuresClone;
 	}
 
-	initializeDataItem(item, idx) {
-		idx = idx === undefined ? this.data.length : idx;
+	initializeDataItem(item, itemIdx) {
+		itemIdx = itemIdx === undefined ? this.data.length : itemIdx;
 
 		let {geoData, ..._item} = item;
 		if (geoData) {
@@ -696,7 +696,7 @@ export default class LajiMap {
 					features: this.cloneFeatures(anyToFeatureCollection(geoJSON).features)
 				},
 			};
-			this.initializeDataItem(item, idx);
+			this.initializeDataItem(item, itemIdx);
 			return;
 		}
 
@@ -709,30 +709,30 @@ export default class LajiMap {
 				type: "FeatureCollection",
 				features: this.cloneFeatures(item.featureCollection.features)
 			},
-			idx
+			idx: itemIdx
 		};
 
 		item.hasActive = "activeIdx" in item;
 
-		if (this.data[idx]) {
-			this.data[idx].groupContainer.clearLayers();
+		if (this.data[itemIdx]) {
+			this.data[itemIdx].groupContainer.clearLayers();
 		}
 		
 		 const format = (geoData) ? detectFormat(geoData) : undefined;
 		 const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
 		 this._setOnChangeForItem(item, format, crs);
 
-		this.data[idx] = item;
+		this.data[itemIdx] = item;
 
 		const layer = L.geoJson(
 			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
-				pointToLayer: this._featureToLayer(item.getFeatureStyle, idx),
+				pointToLayer: this._featureToLayer(item.getFeatureStyle, itemIdx),
 				style: feature => {
-					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: idx, feature: feature});
+					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: itemIdx, feature: feature});
 				},
 				onEachFeature: (feature, layer) => {
-					this._initializeLayer(idx, feature.properties.lajiMapIdx, layer); 
+					this._initializeLayer(itemIdx, feature.properties.lajiMapIdx, layer); 
 				}
 			}
 		);
@@ -745,7 +745,7 @@ export default class LajiMap {
 		}
 		item.groupContainer.addTo(this.map);
 
-		this._resetIds(idx);
+		this._resetIds(itemIdx);
 
 		if (item.on) Object.keys(item.on).forEach(eventName => {
 			item.group.on(eventName, (e) => {
@@ -769,18 +769,33 @@ export default class LajiMap {
 		});
 
 		item.group.on("layeradd", e => {
-			const {layer} = e;
-			const {feature: {properties: {lajiMapIdx}}} = layer;
-			this._initializeLayer(idx, lajiMapIdx, layer);
-		});
+			const item = this.data[itemIdx];
 
-		this.setActive(idx, item.activeIdx);
+			const {layer} = e;
+			const {featureCollection: {features}} = item;
+
+			const layerIdx = features.length;
+			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
+			feature.properties.lajiMapIdx = layerIdx;
+			layer.feature = feature;
+
+			const id = layer._leaflet_id;
+			this.idsToIdxs[itemIdx][id] = layerIdx;
+			this.idxsToIds[itemIdx][layerIdx] = id;
+
+			if (item.cluster) {
+				item.groupContainer.clearLayers();
+				item.groupContainer.addLayer(item.group);
+			}
+
+			this._initializeLayer(itemIdx, layerIdx, layer);
+		});
 	}
 
 	_initializeLayer(itemIdx, layerIdx, layer) {
 		this._initializePopup(itemIdx, layerIdx, layer);
 		this._initializeTooltip(itemIdx, layerIdx, layer);
-		this._decoratePolyline(this.data[itemIdx], layer);
+		this._decoratePolyline(itemIdx, layer);
 	}
 
 	@dependsOn("map")
@@ -1187,10 +1202,6 @@ export default class LajiMap {
 		return this.data[itemIdx].group.getLayer(id);
 	}
 
-	_getLayerByItemAndLayerId(item, id) {
-		return this._getLayerByItemIdxAndLayerId(item.idx, id);
-	}
-
 	_getDrawLayerById(id) {
 		return this._getLayerByItemIdxAndLayerId(this.drawIdx, id);
 	}
@@ -1200,7 +1211,8 @@ export default class LajiMap {
 		if (handler) handler(e);
 	}
 
-	_decoratePolyline(item, layer) {
+	_decoratePolyline(itemIdx, layer) {
+		const item = this.data[itemIdx];
 		if (isPolyline(layer)) {
 			if (!item.polyline || item.polyline.showDirection !== false) {
 				const {clickable} = layer;
@@ -1240,26 +1252,15 @@ export default class LajiMap {
 
 		const item = this.data[itemIdx];
 		const {featureCollection: {features}} = item;
-
 		const idx = features.length;
 		const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
-		feature.properties.lajiMapIdx = idx;
-		layer.feature = feature;
 
-		this.data[itemIdx].group.addLayer(layer);
-
-		const id = layer._leaflet_id;
-		this.idsToIdxs[itemIdx][id] = idx;
-		this.idxsToIds[itemIdx][idx] = id;
-
-		if (item.cluster) {
-			item.groupContainer.clearLayers();
-			item.groupContainer.addLayer(this.data[itemIdx].group);
-		}
 		if (coordinateVerbatim && feature.geometry) {
 			feature.geometry.coordinateVerbatim = coordinateVerbatim;
 		}
 		features.push(feature);
+
+		item.group.addLayer(layer);
 
 		const event = [
 			{

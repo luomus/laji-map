@@ -831,7 +831,8 @@ export default class LajiMap {
 	setDraw(options) {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
-		if (!this.drawIdx) this.drawIdx = this.data.length;
+		 // Using a negative idx lets us keep the original data indices.
+		if (!this.drawIdx) this.drawIdx = -1;
 
 		const drawAllowed = options !== false;
 
@@ -1042,6 +1043,7 @@ export default class LajiMap {
 
 	redraw() {
 		this.redrawData();
+		this.redrawDrawData();
 	}
 
 	_initializePopup(itemIdx, layerIdx, layer) {

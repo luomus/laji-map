@@ -700,6 +700,10 @@ export default class LajiMap {
 			return;
 		}
 
+		const features = item.featureCollection && item.featureCollection.features ?
+			item.featureCollection.features :
+			[] ;
+
 		item = {
 			getFeatureStyle: (...params) => this._getDefaultDataStyle(item)(...params),
 			getClusterStyle: (...params) => this._getDefaultDataClusterStyle(item)(...params),
@@ -707,7 +711,7 @@ export default class LajiMap {
 			...item,
 			featureCollection: {
 				type: "FeatureCollection",
-				features: this.cloneFeatures(item.featureCollection.features)
+				features: this.cloneFeatures(features)
 			},
 			idx: itemIdx
 		};

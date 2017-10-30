@@ -167,7 +167,7 @@ class App {
 			zoom: 7,
 			tileLayerName: "taustakartta"
 		});
-		this.map2 = map2
+		this.map2 = map2;
 
 		map2.addData({
 			geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},

@@ -548,7 +548,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setNormalizedZoom(zoom, options) {
+	setNormalizedZoom(zoom, options = {animate: false}) {
 		if (!depsProvided(this, "setNormalizedZoom", arguments)) return;
 
 		this.zoom = zoom;
@@ -561,7 +561,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "setCenter", arguments)) return;
 
 		this.center = center;
-		if (this.map) this.map.setView(center, this.getDenormalizedZoom(this.zoom));
+		if (this.map) this.map.setView(center, this.getDenormalizedZoom(this.zoom), {animate: false});
 		provide(this, "center");
 	}
 
@@ -611,7 +611,7 @@ export default class LajiMap {
 	}
 
 
-	@dependsOn("map", "data", "draw")
+	@dependsOn("map")
 	setLang(lang) {
 		if (!depsProvided(this, "setLang", arguments)) return;
 
@@ -622,15 +622,9 @@ export default class LajiMap {
 				this.lang = "en";
 			}
 			this.translations = this.dictionary[this.lang];
-
-			provide(this, "translations");
-
-			[...this.data, this.draw].forEach((item) => Object.keys(this.idxsToIds[item.idx]).forEach(featureIdx =>  {
-				this._updateContextMenuForLayer(this._getLayerByIdxs(item.idx, featureIdx));
-			}));
-
 			this.onSetLangHooks.forEach(hook => hook());
 
+			provide(this, "translations");
 		}
 	}
 
@@ -720,7 +714,7 @@ export default class LajiMap {
 			idx: dataIdx
 		};
 
-		item.hasActive = "activeIdx" in item;
+		item.hasActive = ("activeIdx" in item);
 
 		if (this.data[dataIdx]) {
 			this.data[dataIdx].groupContainer.clearLayers();
@@ -749,6 +743,9 @@ export default class LajiMap {
 			item.group.addTo(item.groupContainer);
 		}
 		item.groupContainer.addTo(this.map);
+
+		this.idxsToIds[dataIdx] = {};
+		this.idsToIdxs[dataIdx] = {};
 
 		layer.eachLayer(layer => {
 			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx); 
@@ -799,10 +796,11 @@ export default class LajiMap {
 		this._setIdForLayer(layer, ...indexTuple);
 		this._initializePopup(layer);
 		this._initializeTooltip(layer);
+		this._updateContextMenuForLayer(layer);
 		this._decoratePolyline(layer);
 	}
 
-	@dependsOn("map")
+	@dependsOn("map", "translations")
 	setData(data) {
 		if (!depsProvided(this, "setData", arguments)) return;
 
@@ -810,10 +808,11 @@ export default class LajiMap {
 			this.data = [];
 		} else {
 			this.data.forEach((item, idx) => {
-				(idx !== this.drawIdx) && item.groupContainer.clearLayers();
+				(idx !== this.drawIdx && item) && item.groupContainer.clearLayers();
 			});
 		}
-		(data || []).forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
+		if (!Array.isArray(data)) data = [data];
+		data.filter(item => item).forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
 		provide(this, "data");
 	}
 
@@ -825,6 +824,13 @@ export default class LajiMap {
 
 	updateData(idx, item) {
 		this.initializeDataItem(item, idx);
+	}
+
+	removeData(idx) {
+		if (this.data[idx]) {
+			this.data[idx].groupContainer.clearLayers();
+			this.data[idx] = undefined;
+		}
 	}
 
 	@dependsOn("map", "data")
@@ -854,7 +860,6 @@ export default class LajiMap {
 		this.draw = {
 			...this.draw,
 			...{
-				activeIdx: undefined,
 				...(drawAllowed ? (options || {}) : {})
 			}
 		};
@@ -877,7 +882,6 @@ export default class LajiMap {
 		this.draw = this.data[this.drawIdx];
 
 		provide(this, "draw");
-		return;
 	}
 
 	@dependsOn("data")
@@ -1206,7 +1210,8 @@ export default class LajiMap {
 		return item.group.getLayer(id);
 	}
 
-	_getLayerByItemIdxAndLayerId(dataIdx, id) {
+	_getLayerById(id) {
+		const [dataIdx] = this.idsToIdxTuples[id];
 		return this.data[dataIdx].group.getLayer(id);
 	}
 
@@ -1215,7 +1220,7 @@ export default class LajiMap {
 	}
 
 	_getDrawLayerById(id) {
-		return this._getLayerByItemIdxAndLayerId(this.drawIdx, id);
+		return this._getLayerById(id);
 	}
 
 	_triggerEvent(e, handler) {
@@ -1249,6 +1254,7 @@ export default class LajiMap {
 					warn();
 					return;
 				}
+
 				switch(layer.feature.geometry.type) {
 				case "MultiLineString":
 					firstPoint = layer.getLatLngs()[0][0];
@@ -1268,6 +1274,9 @@ export default class LajiMap {
 				});
 				layer.on("remove", () => {
 					layer._startCircle.remove();
+				});
+				layer.on("add", () => {
+					layer._startCircle.addTo(this.map);
 				});
 			}
 		}
@@ -1318,7 +1327,7 @@ export default class LajiMap {
 		}
 
 		for (let id in data) {
-			const layer = this._getLayerByItemIdxAndLayerId(dataIdx, id);
+			const layer = this._getLayerById(id);
 
 			if (layer) {
 				layer.closePopup().closeTooltip();
@@ -1331,13 +1340,6 @@ export default class LajiMap {
 			type: "edit",
 			features: eventData
 		}, item.onChange);
-
-		for (let id in data) {
-			const layer = this._getLayerByItemIdxAndLayerId(dataIdx, id);
-
-			this._initializePopup(layer);
-			this._initializeTooltip(layer);
-		}
 	}
 
 	_onDelete(dataIdx, deleteIds) {
@@ -1387,7 +1389,10 @@ export default class LajiMap {
 		item.featureCollection.features = features.filter((item, i) => !deleteIdxs.includes(i));
 
 		deleteIds.forEach(id => {
-			item.group.removeLayer(id);
+			if (item.group !== item.groupContainer) {
+				item.groupContainer.removeLayer(this._getLayerById(id));
+			}
+			item.group.removeLayer(this._getLayerById(id));
 		});
 
 		this._resetIds(dataIdx);
@@ -1396,14 +1401,14 @@ export default class LajiMap {
 			this._updateContextMenuForLayer(layer);
 		});
 
-		this._reclusterData(dataIdx);
+		this._reclusterDataItem(dataIdx);
 
 		const event = [{
 			type: "delete",
 			idxs: deleteIdxs
 		}];
 
-		if (changeActive) event.push(this._getOnActiveChangeEvent(dataIdx, this.idsToIdxs[dataIdx][newActiveId]));
+		if (newActiveId !== undefined && changeActive) event.push(this._getOnActiveChangeEvent(dataIdx, this.idsToIdxs[dataIdx][newActiveId]));
 
 		this._triggerEvent(event, item.onChange);
 	}

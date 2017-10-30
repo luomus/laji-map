@@ -69,15 +69,6 @@ class App {
 				},
 				activeIdx: 0,
 				editable: true,
-				//getFeatureStyle: (e) => {
-				//	const {featureIdx, item} = e;
-				//	return {
-				//		weight: featureIdx,
-				//		opacity: 1,
-				//		fillOpacity: 1,
-				//		color: featureIdx === item && item.activeIdx ? "#ff0" : "#00f"
-				//	};
-				//},
 			},
 
 		];
@@ -126,7 +117,7 @@ class App {
 				}
 			},
 			onChange: this.onMapChange,
-			activeIdx: 0,
+			//activeIdx: 0,
 			polyline: {
 				showStart: true,
 				showDirection: true
@@ -176,6 +167,7 @@ class App {
 			zoom: 7,
 			tileLayerName: "taustakartta"
 		});
+		this.map2 = map2
 
 		map2.addData({
 			geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
@@ -238,7 +230,8 @@ class App {
 
 const app = new App();
 if (process.env.NODE_ENV !== "production") {
-	window.lajiMap = app.map;
+	window.ltMap = app.map;
+	window.drawMap = app.map2;
 	window.lajiMapUtils = utils;
 }
 

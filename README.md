@@ -21,9 +21,9 @@ Option                                          | Type                      |  D
 ------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
 rootElem                                        | HTML elem                 | -                                   | The node where to mount.
 lang                                            | String                    | "en"                                | one of "en", "fi", "sv".
-data                                            | Data options[]            | -                                   | Noneditable data to draw on map.
-draw                                            | Draw options              | -                                   | Options for the editable feature collection.
-controlSettings                                 | Control options           | -                                   | An option object that defines which control should be shown.
+data                                            | Data options[]            | -                                   | Data to draw on map.
+draw                                            | Draw options              | -                                   | options for data that can be controlled with the draw control buttons.
+controls                                        | Control options           | -                                   | An option object that defines which control should be shown.
 customControls                                  | Object               | -                                        | An array of custom controls. See custom control options.
 tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap" or "googleSatellite".
 overlayNames                                    | String[]                  | -                                   | The default overlay layers. Possible values:  "geobiologicalProvinces", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "ykjGrid" and "ykjGridLabels".
@@ -46,32 +46,34 @@ on                                              | Object                    | - 
 ### Data options ###
 
 
-Option                                          | Type                      |  Default                            | Description
-------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
-featureCollection                               | GeoJSON featureCollection | Empty feature collection            | The feature collection to render.
-getPopup(idx, geometry, callback)               | Function                  | -                                   | Function that returns a popup string, or calls the callback with the popup string.
-getTooltip(idx, geometry, callback)             | Function                  | -                                   | Function that returns a tooltip string, or calls the callback with the tooltip string.
-getFeatureStyle({dataIdx, featureIdx, feature}) | Function                  | see `lajiMap._getDefaultDataStyle()`| A function that returns a Path style to use for the feature described by the input parameters. (Note that draw data doesn't receive `dataIdx` input).
-cluster                                         | Boolean                   | false                               | Controls whether the features should cluster.
-getClusterStyle({count))                        | Function                  | see `lajiMap._getClusterIcon()`     | A function that returns a Path style to use for feature clusters. The returned path style extends the default style. the `count` parameter is the number of features in the cluster.
-on                                              | Object                    | -                                   | An object containing event name -> event handler pairs. Event handler arguments look like this: (e, {idx, layer, feature}). Example: {click: function(e, {idx, layer, feature}) { //handle event }}
+Option                                                           | Type                      |  Default                            | Description
+-----------------------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
+featureCollection                                                | GeoJSON featureCollection | Empty feature collection            | The feature collection to render.
+getPopup(idx, geometry, callback)                                | Function                  | -                                   | Function that returns a popup string, or calls the callback with the popup string.
+getTooltip(idx, geometry, callback)                              | Function                  | -                                   | Function that returns a tooltip string, or calls the callback with the tooltip string.
+getFeatureStyle({dataIdx, featureIdx, feature, item})            | Function                  | see `lajiMap._getDefaultDataStyle()`| A function that returns a Path style to use for the feature described by the input parameters. (Note that draw data doesn't receive `dataIdx` input).
+cluster                                                          | Boolean                   | false                               | Controls whether the features should cluster.
+getClusterStyle({count))                                         | Function                  | see `lajiMap._getClusterIcon()`     | A function that returns a Path style to use for feature clusters. The returned path style extends the default style. the `count` parameter is the number of features in the cluster.
+getDraftStyle                                                    | Function                  | true                                | A function that returns a Path style to use for the feature during drawing & editing a feature.
+on                                                               | Object                    | -                                   | An object containing event name -> event handler pairs. Event handler arguments look like this: (e, {idx, layer, feature}). Example: {click: function(e, {idx, layer, feature}) { //handle event }}
+editable                                                         | Boolean                   | true                                | Controls whether the data is editable.
+activeIdx                                                        | Integer                   | -                                   | The initial active idx. If not given, the data doesn't allow activating any feature. If 'undefined', features can be activated but there is initially no active features.
+polygon                                                          | Object                    | -                                   | Polygon options: {allowIntersection: Boolean}
+polyline                                                         | Object                    | -                                   | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true).
+onChange                                                         | Function                  | -                                   | A callback function that fires events for draw data changes. Receives an array of event objects.
 
 
 ### Draw options ###
 
+Draw options extend data options.
+
 Option                                          | Type                 |  Default                                 | Description
 ------------------------------------------------|----------------------|------------------------------------------|------------------------------------
-data                                            | Data options         | Data with empty feature collection       | The GeoJSON feature collection to use as the data.
-editable                                        | Boolean              | true                                     | Controls whether the data is editable.
-hasActive                                       | Boolean              | false                                    | Controls whether a feature can be activated. Activating is controlled by clicking a feature and `lajiMap.setActiveIdx(idx)`
-activeIdx                                       | Integer              | -                                        | The initial active idx. Works only if `hasActive` is `true`.
 rectangle                                       | Boolean              | true                                     | Controls whether the draw data can contain a rectangle. Adding new rectangles is prevented. Map controls are affected by this option.
 polygon                                         | Boolean              | true                                     | Controls whether the draw data can contain a polygon. Adding new polygons is prevented. Map controls are affected by this option.
 polyline                                        | Boolean              | true                                     | Controls whether the draw data can contain a polyline. Adding new polylines is prevented. Map controls are affected by this option.
 circle                                          | Boolean              | true                                     | Controls whether the draw data can contain a circle. Adding new circles is prevented. Map controls are affected by this option.
 marker                                          | Boolean              | true                                     | Controls whether the draw data can contain a marker. Adding new markers is prevented. Map controls are affected by this option.
-getDraftStyle                                   | Function             | true                                     | A function that returns a Path style to use for the feature during drawing & editing a feature.
-onChange                                        | Function             | -                                        | A callback function that fires events for draw data changes. Receives an array of event objects.
 
 ### Line transect options ###
 

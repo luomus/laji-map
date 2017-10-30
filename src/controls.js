@@ -17,7 +17,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	getOptionKeys() {
 		return {
 			...super.getOptionKeys(),
-			controlSettings: "setControlSettings",
+			controlSettings: "setControlsWarn",
+			controls: "setControls",
 			customControls: "setCustomControls"
 		};
 	}
@@ -364,7 +365,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._updateMapControls();
 	}
 
-	setControlSettings(controlSettings) {
+	setControlsWarn(...params) {
+		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls");
+		this.setControls(...params);
+	}
+
+	setControls(controlSettings) {
 		this.controlSettings = {
 			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
 			layer: true,

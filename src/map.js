@@ -233,6 +233,10 @@ export default class LajiMap {
 
 			this._initializeMapEvents();
 
+			this.idxsToIds = [];
+			this.idsToIdxs = [];
+			this.idsToIdxTuples = {};
+
 			provide(this, "map");
 		} catch (e) {
 			if (e._lajiMapError) {
@@ -621,8 +625,8 @@ export default class LajiMap {
 
 			provide(this, "translations");
 
-			this.data.forEach((item, itemIdx) => Object.keys(this.idxsToIds[itemIdx]).forEach(layerIdx =>  {
-				this._updateContextMenuForLayer(itemIdx, layerIdx);
+			[...this.data, this.draw].forEach((item) => Object.keys(this.idxsToIds[item.idx]).forEach(featureIdx =>  {
+				this._updateContextMenuForLayer(this._getLayerByIdxs(item.idx, featureIdx));
 			}));
 
 			this.onSetLangHooks.forEach(hook => hook());
@@ -669,8 +673,8 @@ export default class LajiMap {
 		return featuresClone;
 	}
 
-	initializeDataItem(item, itemIdx) {
-		itemIdx = itemIdx === undefined ? this.data.length : itemIdx;
+	initializeDataItem(item, dataIdx) {
+		dataIdx = dataIdx === undefined ? this.data.length : dataIdx;
 
 		let {geoData, ..._item} = item;
 		if (geoData) {
@@ -696,7 +700,7 @@ export default class LajiMap {
 					features: this.cloneFeatures(anyToFeatureCollection(geoJSON).features)
 				},
 			};
-			this.initializeDataItem(item, itemIdx);
+			this.initializeDataItem(item, dataIdx);
 			return;
 		}
 
@@ -713,31 +717,28 @@ export default class LajiMap {
 				type: "FeatureCollection",
 				features: this.cloneFeatures(features)
 			},
-			idx: itemIdx
+			idx: dataIdx
 		};
 
 		item.hasActive = "activeIdx" in item;
 
-		if (this.data[itemIdx]) {
-			this.data[itemIdx].groupContainer.clearLayers();
+		if (this.data[dataIdx]) {
+			this.data[dataIdx].groupContainer.clearLayers();
 		}
 		
 		const format = (geoData) ? detectFormat(geoData) : undefined;
 		const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
 		this._setOnChangeForItem(item, format, crs);
 
-		this.data[itemIdx] = item;
+		this.data[dataIdx] = item;
 
 		const layer = L.geoJson(
 			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
-				pointToLayer: this._featureToLayer(item.getFeatureStyle, itemIdx),
+				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
 				style: feature => {
-					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: itemIdx, feature: feature});
+					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: dataIdx, feature: feature});
 				},
-				onEachFeature: (feature, layer) => {
-					this._initializeLayer(itemIdx, feature.properties.lajiMapIdx, layer); 
-				}
 			}
 		);
 
@@ -749,7 +750,9 @@ export default class LajiMap {
 		}
 		item.groupContainer.addTo(this.map);
 
-		this._resetIds(itemIdx);
+		layer.eachLayer(layer => {
+			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx); 
+		});
 
 		if (item.on) Object.keys(item.on).forEach(eventName => {
 			item.group.on(eventName, (e) => {
@@ -767,39 +770,36 @@ export default class LajiMap {
 
 		item.group.on("dblclick", e => {
 			if (item.editable) {
-				const {layer: {feature: {properties: {lajiMapIdx}}}} = e;
-				this._setEditable(item.idx, lajiMapIdx);
+				const {layer} = e;
+				this._setEditable(layer);
 			}
 		});
 
 		item.group.on("layeradd", e => {
-			const item = this.data[itemIdx];
+			const item = this.data[dataIdx];
 
 			const {layer} = e;
 			const {featureCollection: {features}} = item;
 
-			const layerIdx = features.length;
+			const featureIdx = features.length;
 			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
-			feature.properties.lajiMapIdx = layerIdx;
+			feature.properties.lajiMapIdx = featureIdx;
 			layer.feature = feature;
-
-			const id = layer._leaflet_id;
-			this.idsToIdxs[itemIdx][id] = layerIdx;
-			this.idxsToIds[itemIdx][layerIdx] = id;
 
 			if (item.cluster) {
 				item.groupContainer.clearLayers();
 				item.groupContainer.addLayer(item.group);
 			}
 
-			this._initializeLayer(itemIdx, layerIdx, layer);
+			this._initializeLayer(layer, dataIdx, featureIdx);
 		});
 	}
 
-	_initializeLayer(itemIdx, layerIdx, layer) {
-		this._initializePopup(itemIdx, layerIdx, layer);
-		this._initializeTooltip(itemIdx, layerIdx, layer);
-		this._decoratePolyline(itemIdx, layer);
+	_initializeLayer(layer, ...indexTuple) {
+		this._setIdForLayer(layer, ...indexTuple);
+		this._initializePopup(layer);
+		this._initializeTooltip(layer);
+		this._decoratePolyline(layer);
 	}
 
 	@dependsOn("map")
@@ -962,36 +962,40 @@ export default class LajiMap {
 		};
 	}
 
-	setActive(itemIdx, layerIdx) {
-		const item = this.data[itemIdx];
+	setActive(layer) {
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		const item = this.data[dataIdx];
 		if (!item.hasActive) return;
 		const prevActiveIdx = item.activeIdx;
-		item.activeIdx = layerIdx;
-		this._updateLayerStyle(itemIdx, prevActiveIdx);
-		this._updateLayerStyle(itemIdx, layerIdx);
+		item.activeIdx = featureIdx;
+		const prevActiveLayer =  this._getLayerByIdxs(dataIdx, prevActiveIdx);
+		prevActiveLayer && this._updateLayerStyle(prevActiveLayer);
+		this._updateLayerStyle(layer);
 	}
 
 	_resetIds(idx) {
 		// Maps item indices to internal ids and the other way around.
 		// We use leaflet ids as internal ids.
 		//
-		if (!this.idxsToIds) {
-			this.idxsToIds = [];
-		}
-		if (!this.idsToIdxs) {
-			this.idsToIdxs = [];
-		}
-
 		this.idxsToIds[idx] = {};
 		this.idsToIdxs[idx] = {};
 
 		let counter = 0;
 		if (this.data[idx].group) this.data[idx].group.eachLayer(layer => {
-			const id = layer._leaflet_id;
-			this.idxsToIds[idx][counter] = id;
-			this.idsToIdxs[idx][id] = counter;
+			this._setIdForLayer(layer, idx, counter);
 			counter++;
 		});
+	}
+
+	_setIdForLayer(layer, dataIdx, featureIdx) {
+		if (!this.idxsToIds[dataIdx]) {
+			this.idxsToIds[dataIdx] = {};
+			this.idsToIdxs[dataIdx] = {};
+		}
+		const id = layer._leaflet_id;
+		this.idxsToIds[dataIdx][featureIdx] = id;
+		this.idsToIdxs[dataIdx][id] = featureIdx;
+		this.idsToIdxTuples[id] = [dataIdx, featureIdx];
 	}
 
 	recluster() {
@@ -1027,11 +1031,9 @@ export default class LajiMap {
 
 		this._updateDataLayerGroupStyle(idx);
 
-		let _idx = 0;
-		dataItem.group.eachLayer(() => {
-			this._initializePopup(idx, _idx);
-			this._initializeTooltip(idx, _idx);
-			_idx++;
+		dataItem.group.eachLayer(layer => {
+			this._initializePopup(layer);
+			this._initializeTooltip(layer);
 		});
 	}
 
@@ -1046,11 +1048,11 @@ export default class LajiMap {
 		this.redrawDrawData();
 	}
 
-	_initializePopup(itemIdx, layerIdx, layer) {
-		const item = this.data[itemIdx];
-		if (!item.getPopup) return;
+	_initializePopup(layer) {
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 
-		layer = layer || this._getLayerByIdxs(itemIdx, layerIdx);
+		const item = this.data[dataIdx];
+		if (!item.getPopup) return;
 
 		const that = this;
 
@@ -1058,7 +1060,7 @@ export default class LajiMap {
 
 		function openPopup(content) {
 			if (!latlng) return;
-			if (that.editIdx && that.editIdx[0] === itemIdx && that.editIdx[1] ===  layerIdx) return;
+			if (that.editIdx && that.editIdx[0] === dataIdx && that.editIdx[1] ===  featureIdx) return;
 
 			const offset = (layer instanceof L.Marker) ? (-that.markerPopupOffset  || 0) : (-that.featurePopupOffset || 0);
 
@@ -1084,7 +1086,7 @@ export default class LajiMap {
 
 			// Allow either returning content or firing a callback with content.
 
-			const content = item.getPopup(layerIdx, that.formatFeatureOut(layer.toGeoJSON(), layer), callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
+			const content = item.getPopup(featureIdx, that.formatFeatureOut(layer.toGeoJSON(), layer), callbackContent => {if (that.popupCounter == popupCounter) openPopup(callbackContent);});
 			if (content !== undefined && typeof content !== "function") openPopup(content);
 		}
 
@@ -1113,42 +1115,42 @@ export default class LajiMap {
 		}
 	}
 
-	_initializeTooltip(itemIdx, layerIdx, layer) {
-		const item = this.data[itemIdx];
-		if (!item.getTooltip) return;
+	_initializeTooltip(layer) {
+		const [dataIdx] = this._getIdxTupleByLayer(layer);
 
-		layer = layer || this._getLayerByIdxs(itemIdx, layerIdx);
+		const item = this.data[dataIdx];
+		if (!item.getTooltip) return;
 
 		function openTooltip(content) {
 			layer.bindTooltip(content, item.tooltipOptions);
 		}
 
 		// Allow either returning content or firing a callback with content.
-		const content = item.getTooltip(itemIdx, this.formatFeatureOut(layer.toGeoJSON(), layer), callbackContent => openTooltip(callbackContent));
+		const content = item.getTooltip(dataIdx, this.formatFeatureOut(layer.toGeoJSON(), layer), callbackContent => openTooltip(callbackContent));
 		if (content !== undefined && typeof content !== "function") openTooltip(content);
 	}
 
 	@dependsOn("translations")
-	_updateContextMenuForLayer(itemIdx, layerIdx, layer) {
+	_updateContextMenuForLayer(layer) {
 		if (!depsProvided(this, "_updateContextMenuForLayer", arguments)) return;
 
-		layer = layer || this._getLayerByIdxs(itemIdx, layerIdx);
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 
 		const { translations } = this;
 		layer.unbindContextMenu();
 
 		let contextmenuItems = [];
 
-		if (this.data[itemIdx] && this.data[itemIdx].editable) {
+		if (this.data[dataIdx] && this.data[dataIdx].editable) {
 			contextmenuItems = [
 				{
 					text: translations.EditFeature,
-					callback: () => this._setEditable(itemIdx, layerIdx),
+					callback: () => this._setEditable(layer),
 					iconCls: "glyphicon glyphicon-pencil"
 				},
 				{
 					text: translations.DeleteFeature,
-					callback: () => this._onDelete(itemIdx, this.idxsToIds[itemIdx][layerIdx]),
+					callback: () => this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]),
 					iconCls: "glyphicon glyphicon-trash"
 				}
 			];
@@ -1198,14 +1200,18 @@ export default class LajiMap {
 		if (this.initializeViewAfterLocateFail) this._initializeView();
 	}
 
-	_getLayerByIdxs(itemIdx, layerIdx) {
-		const item = this.data[itemIdx];
-		const id = this.idxsToIds[itemIdx][layerIdx];
+	_getLayerByIdxs(dataIdx, featureIdx) {
+		const item = this.data[dataIdx];
+		const id = this.idxsToIds[dataIdx][featureIdx];
 		return item.group.getLayer(id);
 	}
 
-	_getLayerByItemIdxAndLayerId(itemIdx, id) {
-		return this.data[itemIdx].group.getLayer(id);
+	_getLayerByItemIdxAndLayerId(dataIdx, id) {
+		return this.data[dataIdx].group.getLayer(id);
+	}
+
+	_getIdxTupleByLayer(layer) {
+		return this.idsToIdxTuples[layer._leaflet_id];
 	}
 
 	_getDrawLayerById(id) {
@@ -1217,8 +1223,9 @@ export default class LajiMap {
 		if (handler) handler(e);
 	}
 
-	_decoratePolyline(itemIdx, layer) {
-		const item = this.data[itemIdx];
+	_decoratePolyline(layer) {
+		const [dataIdx] = this._getIdxTupleByLayer(layer);
+		const item = this.data[dataIdx];
 
 		function warn() {
 			console.warn("Failed to add a starting point to line");
@@ -1276,12 +1283,11 @@ export default class LajiMap {
 		};
 	}
 
-	_onAdd(itemIdx, layer, coordinateVerbatim) {
+	_onAdd(dataIdx, layer, coordinateVerbatim) {
 		if (isPolyline(layer) && layer.getLatLngs().length < 2) return;
 
-		const item = this.data[itemIdx];
+		const item = this.data[dataIdx];
 		const {featureCollection: {features}} = item;
-		const idx = features.length;
 		const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
 
 		if (coordinateVerbatim && feature.geometry) {
@@ -1296,37 +1302,30 @@ export default class LajiMap {
 				type: "create",
 				feature
 			},
-			this._getOnActiveChangeEvent(itemIdx, features.length - 1)
+			this._getOnActiveChangeEvent(dataIdx, features.length)
 		];
 
 		this._triggerEvent(event, item.onChange);
-
-		if (layer instanceof L.Marker) {
-			const icon =  this._createIcon(this._getStyleForType(itemIdx, idx, feature, undefined, ));
-			layer.setIcon(icon);
-		}
-
-		this.setActive(itemIdx, idx);
 	}
 
-	_onEdit(itemIdx, data) {
+	_onEdit(dataIdx, data) {
 		const eventData = {};
 		for (let id in data) {
 			const feature = this.formatFeatureOut(data[id].toGeoJSON(), data[id]);
-			const idx = this.idsToIdxs[itemIdx][id];
+			const idx = this.idsToIdxs[dataIdx][id];
 			eventData[idx] = feature;
-			this.data[itemIdx].featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
+			this.data[dataIdx].featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
 		}
 
 		for (let id in data) {
-			const layer = this._getLayerByItemIdxAndLayerId(itemIdx, id);
+			const layer = this._getLayerByItemIdxAndLayerId(dataIdx, id);
 
 			if (layer) {
 				layer.closePopup().closeTooltip();
 			}
 		}
 
-		const item = this.data[itemIdx];
+		const item = this.data[dataIdx];
 
 		this._triggerEvent({
 			type: "edit",
@@ -1334,30 +1333,29 @@ export default class LajiMap {
 		}, item.onChange);
 
 		for (let id in data) {
-			const layer = this._getLayerByItemIdxAndLayerId(itemIdx, id);
-			const idx = this.idsToIdxs[itemIdx][id];
+			const layer = this._getLayerByItemIdxAndLayerId(dataIdx, id);
 
-			this._initializePopup(itemIdx, idx, layer);
-			this._initializeTooltip(itemIdx, idx, layer);
+			this._initializePopup(layer);
+			this._initializeTooltip(layer);
 		}
 	}
 
-	_onDelete(itemIdx, deleteIds) {
+	_onDelete(dataIdx, deleteIds) {
 		this._clearEditable();
 
 		if (!Array.isArray(deleteIds)) deleteIds = [deleteIds];
-		const deleteIdxs = deleteIds.map(id => this.idsToIdxs[itemIdx][id]);
+		const deleteIdxs = deleteIds.map(id => this.idsToIdxs[dataIdx][id]);
 
-		const item = this.data[itemIdx];
+		const item = this.data[dataIdx];
 		const activeIdx = item.activeIdx;
 
 		const {featureCollection: {features}} = item;
 
-		const survivingIds = Object.keys(this.idsToIdxs[itemIdx]).map(id => parseInt(id)).filter(id => !deleteIds.includes(id));
+		const survivingIds = Object.keys(this.idsToIdxs[dataIdx]).map(id => parseInt(id)).filter(id => !deleteIds.includes(id));
 
 		let changeActive = false;
 		let newActiveId = undefined;
-		const activeId = this.idxsToIds[itemIdx][activeIdx];
+		const activeId = this.idxsToIds[dataIdx][activeIdx];
 		if (features && survivingIds.length === 0) {
 			changeActive = true;
 		} else if (activeIdx !== undefined && deleteIds.includes(activeId)) {
@@ -1369,7 +1367,7 @@ export default class LajiMap {
 			let closestNegDistance = undefined;
 
 			survivingIds.forEach(id => {
-				const dist = activeIdx - this.idsToIdxs[itemIdx][id];
+				const dist = activeIdx - this.idsToIdxs[dataIdx][id];
 				if (dist > 0 && (closestDistance === undefined || dist < closestDistance)) {
 					closestDistance = dist;
 					closestSmallerId = id;
@@ -1392,26 +1390,26 @@ export default class LajiMap {
 			item.group.removeLayer(id);
 		});
 
-		this._resetIds(itemIdx);
+		this._resetIds(dataIdx);
 
 		item.group.eachLayer(layer => {
-			this._updateContextMenuForLayer(itemIdx, this.idsToIdxs[itemIdx][layer._leaflet_id]);
+			this._updateContextMenuForLayer(layer);
 		});
 
-		this._reclusterData(itemIdx);
+		this._reclusterData(dataIdx);
 
 		const event = [{
 			type: "delete",
 			idxs: deleteIdxs
 		}];
 
-		if (changeActive) event.push(this._getOnActiveChangeEvent(itemIdx, this.idsToIdxs[itemIdx][newActiveId]));
+		if (changeActive) event.push(this._getOnActiveChangeEvent(dataIdx, this.idsToIdxs[dataIdx][newActiveId]));
 
 		this._triggerEvent(event, item.onChange);
 	}
 
 	_getOnActiveChangeEvent(...idxTuple) {
-		this.setActive(...idxTuple);
+		this.setActive(this._getLayerByIdxs(...idxTuple));
 		return {
 			type: "active",
 			idx: idxTuple[1]
@@ -1419,8 +1417,8 @@ export default class LajiMap {
 	}
 
 	_onActiveChange(...idxTuple) {
-		const [itemIdx] = idxTuple;
-		const item = this.data[itemIdx];
+		const [dataIdx] = idxTuple;
+		const item = this.data[dataIdx];
 		if (item.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(...idxTuple), item.onChange);
 	}
 
@@ -1444,11 +1442,12 @@ export default class LajiMap {
 		this._onActiveChange(idx);
 	}
 
-	_setEditable(itemIdx, layerIdx) {
-		const item = this.data[itemIdx];
+	_setEditable(layer) {
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		const item = this.data[dataIdx];
 		if (!item.editable) return;
 		this._clearEditable();
-		this.editIdx = [itemIdx, layerIdx];
+		this.editIdx = [dataIdx, featureIdx];
 		const editLayer = this._getLayerByIdxs(...this.editIdx);
 		if (item.cluster) {
 			item.groupContainer.removeLayer(editLayer);
@@ -1456,7 +1455,7 @@ export default class LajiMap {
 		}
 		editLayer.editing.enable();
 		editLayer.closePopup();
-		this.updateLayerStyle(editLayer, item.getDraftStyle(itemIdx));
+		this.updateLayerStyle(editLayer, item.getDraftStyle(dataIdx));
 	}
 
 	_clearEditable() {
@@ -1474,12 +1473,12 @@ export default class LajiMap {
 
 	_commitEdit() {
 		const {editIdx} = this;
-		const [itemIdx, layerIdx] = editIdx;
-		const editId = this.idxsToIds[itemIdx][layerIdx];
+		const [dataIdx, featureIdx] = editIdx;
+		const editId = this.idxsToIds[dataIdx][featureIdx];
 		this._clearEditable();
 		const editLayer = this._getLayerByIdxs(...editIdx);
-		this.updateLayerStyle(editLayer, this._getStyleForLayer(...editIdx, editLayer));
-		this._onEdit(itemIdx, {[editId]: editLayer});
+		this.updateLayerStyle(editLayer, this._getStyleForLayer(editLayer));
+		this._onEdit(dataIdx, {[editId]: editLayer});
 	}
 
 	_interceptClick() {
@@ -1539,11 +1538,12 @@ export default class LajiMap {
 		return this._getStyleForType(this.drawIdx, undefined, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
 	}
 
-	_getStyleForType(itemIdx, layerIdx, feature, overrideStyles) {
-		const item = this.data[itemIdx];
+	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles) {
+		const item = this.data[dataIdx];
 		const dataStyles = item.getFeatureStyle({
-			featureIdx: layerIdx,
-			feature: feature || item.featureCollection.features[layerIdx],
+			dataIdx,
+			featureIdx: featureIdx,
+			feature: feature || item.featureCollection.features[featureIdx],
 			item
 		});
 
@@ -1557,25 +1557,25 @@ export default class LajiMap {
 		};
 	}
 
-	_getStyleForLayer(itemIdx, layerIdx, layer, overrideStyles) {
-		return this._getStyleForType(itemIdx, layerIdx, undefined, overrideStyles);
+	_getStyleForLayer(layer, overrideStyles) {
+		return this._getStyleForType(...this._getIdxTupleByLayer(layer), undefined, overrideStyles);
 	}
 
-	_updateLayerStyle(...idxTuple) {
-		const layer = this._getLayerByIdxs(...idxTuple);
+	_updateLayerStyle(layer) {
+		const idxTuple = this._getIdxTupleByLayer(layer);
 
 		if (!layer) return;
 
 		let style = {};
 		if (layer instanceof L.Marker) {
-			const [itemIdx, layerIdx] = idxTuple;
-			const item = this.data[itemIdx];
+			const [dataIdx, featureIdx] = idxTuple;
+			const item = this.data[dataIdx];
 			style = item.getFeatureStyle({
-				featureIdx: layerIdx,
-				feature: item.featureCollection.features[layerIdx]});
+				featureIdx: featureIdx,
+				feature: item.featureCollection.features[featureIdx]});
 		} else {
 			const style =  {};
-			layer.setStyle(this._getStyleForLayer(...idxTuple, layer, style));
+			layer.setStyle(this._getStyleForLayer(layer, style));
 		}
 
 		this.updateLayerStyle(layer, style);
@@ -1606,8 +1606,8 @@ export default class LajiMap {
 		return {color: item.editable ? EDITABLE_DATA_LAYER_COLOR : DATA_LAYER_COLOR, opacity: 1};
 	}
 
-	_getDefaultDraftStyle(itemIdx) {
-		return this._getStyleForType(itemIdx, undefined, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
+	_getDefaultDraftStyle(dataIdx) {
+		return this._getStyleForType(dataIdx, undefined, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
 	}
 
 	_updateDataLayerGroupStyle(idx) {

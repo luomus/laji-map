@@ -157,7 +157,7 @@ class App {
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
-			controlSettings: {
+			controls: {
 				coordinates: true,
 				drawCopy: true,
 				drawUpload: true,

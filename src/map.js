@@ -813,7 +813,7 @@ export default class LajiMap {
 				(idx !== this.drawIdx) && item.groupContainer.clearLayers();
 			});
 		}
-		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
+		(data || []).forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
 		provide(this, "data");
 	}
 

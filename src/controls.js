@@ -366,7 +366,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	setControlsWarn(...params) {
-		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls");
+		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'");
 		this.setControls(...params);
 	}
 

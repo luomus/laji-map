@@ -1156,8 +1156,16 @@ export default class LajiMap {
 					text: translations.DeleteFeature,
 					callback: () => this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]),
 					iconCls: "glyphicon glyphicon-trash"
-				}
+				},
 			];
+		}
+
+		if (isPolyline(layer)) {
+			contextmenuItems.push({
+				text: translations.ReverseFeature,
+				callback: () => this._reversePolyline(layer),
+				iconCls: "glyphicon glyphicon-sort"
+			});
 		}
 
 		layer.bindContextMenu({
@@ -1268,6 +1276,9 @@ export default class LajiMap {
 					return;
 				}
 
+				if (layer._startCircle) {
+					layer._startCircle.remove();
+				}
 				layer._startCircle = L.circleMarker(firstPoint, this._getStartCircleStyle(layer)).addTo(this.map);
 				layer.on("editdrag", () => {
 					layer._startCircle.setLatLng(layer.getLatLngs()[0]);
@@ -1279,6 +1290,18 @@ export default class LajiMap {
 					layer._startCircle.addTo(this.map);
 				});
 			}
+		}
+	}
+
+	_reversePolyline(layer) {
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		const id = this.idxsToIds[dataIdx][featureIdx];
+		const {type} = layer.feature.geometry;
+
+		if (type === "LineString") {
+			layer.setLatLngs(layer.getLatLngs().slice(0).reverse());
+			this._onEdit(dataIdx, {[id]: layer});
+			this._decoratePolyline(layer);
 		}
 	}
 

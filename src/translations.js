@@ -493,5 +493,10 @@
 		fi: "Ei",
 		en: "No",
 		sv: "Nej"
-	}
+	},
+	reverseFeature: {
+		fi: "Käännä kuvio",
+		en: "Reverse feature",
+		sv: "Omvänd figuren"
+	},
 };

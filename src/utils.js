@@ -567,3 +567,42 @@ export function isPolyline(layer) {
 export function isObject(obj) {
 	return typeof obj === "object" && obj !== null && !Array.isArray(obj) && obj.constructor === Object;
 }
+
+export function combineColors(...colors) {
+	function toDecimal(hex) {
+		return parseInt(hex, 16);
+	}
+
+	let max = undefined;
+	const last = colors[colors.length - 1];
+	if (typeof last === "number") {
+		max = last;
+		colors = colors.slice(0);
+		colors.pop();
+	}
+
+	const rv = colors.map(color => color.substring(1,3));
+	const gv = colors.map(color => color.substring(3,5));
+	const bv = colors.map(color => color.substring(5,7));
+	return [rv, gv, bv].reduce((rgb, hexVector) => {
+		 let value = hexVector.reduce((combinedDecimal, hex) => {
+			if (combinedDecimal === undefined) {
+				return toDecimal(hex);
+			}
+			const decimal = toDecimal(hex);
+			const newCombined = parseInt(combinedDecimal - ((combinedDecimal - decimal) / 2));
+			return Math.max(Math.min(newCombined, 255), 0);
+		}, undefined);
+
+		if (max !== undefined) {
+			const initial = toDecimal(hexVector[0]);
+			if (value > initial + max) {
+				value = initial + max;
+			} else if (value < initial - max) {
+				value = initial - max;
+			}
+			value = Math.min(value, initial + max);
+		}
+		return rgb + value.toString(16);
+	}, "#");
+}

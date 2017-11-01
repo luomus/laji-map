@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import { convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject } from "./utils";
+import { convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject, combineColors } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -236,6 +236,7 @@ export default class LajiMap {
 			this.idxsToIds = [];
 			this.idsToIdxs = [];
 			this.idsToIdxTuples = {};
+			this._idxsToHovered = {};
 
 			provide(this, "map");
 		} catch (e) {
@@ -746,6 +747,7 @@ export default class LajiMap {
 
 		this.idxsToIds[dataIdx] = {};
 		this.idsToIdxs[dataIdx] = {};
+		this._idxsToHovered[dataIdx] = [];
 
 		layer.eachLayer(layer => {
 			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx); 
@@ -769,6 +771,25 @@ export default class LajiMap {
 			if (item.editable) {
 				const {layer} = e;
 				this._setEditable(layer);
+			}
+		});
+
+		item.group.on("mouseover", e => {
+			console.log("over");
+			if (item.editable || item.hasActive) {
+				const {layer} = e;
+				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+				this._idxsToHovered[dataIdx][featureIdx] = true;
+				this._updateLayerStyle(layer);
+			}
+		});
+
+		item.group.on("mouseout", e => {
+			if (item.editable || item.hasActive) {
+				const {layer} = e;
+				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+				this._idxsToHovered[dataIdx][featureIdx] = false;
+				this._updateLayerStyle(layer);
 			}
 		});
 
@@ -1520,7 +1541,6 @@ export default class LajiMap {
 	updateLayerStyle(layer, style) {
 		if (!layer) return;
 
-		window.layer = layer;
 		if (layer instanceof L.Marker) {
 			if (style.opacity !== undefined) layer.options.opacity = style.opacity;
 
@@ -1575,7 +1595,7 @@ export default class LajiMap {
 			item
 		});
 
-		return {
+		let style = {
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
@@ -1583,6 +1603,18 @@ export default class LajiMap {
 			...(dataStyles || {}),
 			...(overrideStyles || {})
 		};
+
+
+		if (dataIdx === featureIdx !== undefined && this._idxsToHovered[dataIdx][featureIdx]) {
+			style = {...style};
+			["color", "fillColor"].forEach(prop => {
+				if (style[prop]) {
+					style[prop] = combineColors(style[prop], "#ffffff", 30);
+				}
+			});
+		}
+
+		return style;
 	}
 
 	_getStyleForLayer(layer, overrideStyles) {
@@ -1590,17 +1622,11 @@ export default class LajiMap {
 	}
 
 	_updateLayerStyle(layer) {
-		const idxTuple = this._getIdxTupleByLayer(layer);
-
 		if (!layer) return;
 
 		let style = {};
 		if (layer instanceof L.Marker) {
-			const [dataIdx, featureIdx] = idxTuple;
-			const item = this.data[dataIdx];
-			style = item.getFeatureStyle({
-				featureIdx: featureIdx,
-				feature: item.featureCollection.features[featureIdx]});
+			style = this._getStyleForLayer(layer, style);
 		} else {
 			const style =  {};
 			layer.setStyle(this._getStyleForLayer(layer, style));

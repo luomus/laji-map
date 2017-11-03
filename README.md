@@ -29,6 +29,7 @@ tileLayerName                                   | String                    | "t
 overlayNames                                    | String[]                  | -                                   | The default overlay layers. Possible values:  "geobiologicalProvinces", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "ykjGrid" and "ykjGridLabels".
 center                                          | LatLng                    | [65, 26]                            | The coordinates for the initial center of the map.
 zoom                                            | Int                       | 2                                   | The initial zoom level for the map.
+zoomToData                                      | Boolean                   | false                               | Zooms the map to given data & draw data
 locate                                          | Boolean                   | false                               | The map is centered to the user location if found.
 onPopupClose()                                  | Function                  | -                                   | Function to call when a popup is closed
 markerPopupOffset                               | Int                       | 0                                   | Offset (towards up) for popups for markers.
@@ -138,20 +139,6 @@ eventName                                       | String                   | -  
 iconCls                                         | String                   | -                                    | A class that is added to the button icon.
 onAdd                                           | Function                 | -                                    | A callback that is called when the control is added to the map.
 contextMenu                                     | Boolean                  | true                                 | If true, control is added to the context menu.
-
-Option                                          | Type                     |  Default                             | Description
-------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
-draw                                            | Draw control options     | true                                 | Shows a map control for adding new features.
-layer                                           | Boolean                  | true                                 | Shows a tile/baselayer control.
-zoom                                            | Boolean                  | true                                 | Shows a zoom control.
-scale                                           | Integer                  | true                                 | Shows a scale control as meters.
-location                                        | Location control options | true                                 | Shows a location control.
-coordinateInput                                 | Boolean                  | true                                 | Shows a control for entering a new feature to the draw layer by coordinates. Only shown if main options  `draw` option is set.
-drawCopy                                        | Boolean                  | false                                | Shows a control for copying the draw data. Only shown if `draw` option is set.
-drawClear                                       | Boolean                  | false                                | Shows a control for clearing all draw data. Only shown if `draw` option is set.
-coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
-lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
-layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
 
 #### Line transect control options ####
 

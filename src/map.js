@@ -65,6 +65,7 @@ export default class LajiMap {
 			tileLayerOpacity: "setTileLayerOpacity",
 			center: "setCenter",
 			zoom: "setNormalizedZoom",
+			zoomToData: "zoomToData",
 			locate: true,
 			onPopupClose: true,
 			markerPopupOffset: true,
@@ -804,6 +805,19 @@ export default class LajiMap {
 
 			this._initializeLayer(layer, dataIdx, featureIdx);
 		});
+	}
+
+	@dependsOn("data", "draw")
+	zoomToData() {
+		if (!depsProvided(this, "zoomToData", arguments)) return;
+
+		const featureGroup = L.featureGroup([this.draw, ...this.data].reduce((layers, item) => {
+			const newLayers = item.group.getLayers().filter(layer => !(layer instanceof L.Circle)); // getBounds fails with circles
+			layers = [...layers, ...newLayers];
+			return layers;
+		}, []));
+
+		this.map.fitBounds(featureGroup.getBounds());
 	}
 
 	_onLayerMouseOver(layer) {

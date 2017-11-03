@@ -818,7 +818,8 @@ export default class LajiMap {
 			return layers;
 		}, []));
 
-		this.map.fitBounds(featureGroup.getBounds());
+		const bounds = featureGroup.getBounds();
+		if (bounds.isValid()) this.map.fitBounds(bounds);
 	}
 
 	_onLayerMouseOver(layer) {

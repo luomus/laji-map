@@ -1696,7 +1696,7 @@ export default class LajiMap {
 		return {...(featureTypeStyle || {}), ...(dataStyles || {})};
 	}
 
-	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles) {
+	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles = {}) {
 		const item = this.data[dataIdx];
 		const dataStyles = feature ?
 			this._fillStyleWithGlobals(dataIdx, featureIdx, feature) : 
@@ -1713,6 +1713,7 @@ export default class LajiMap {
 			color: NORMAL_COLOR,
 			fillColor: NORMAL_COLOR,
 			...dataStyles,
+			...overrideStyles
 		};
 
 		const colors = [];
@@ -1748,12 +1749,15 @@ export default class LajiMap {
 			colors.push(["#ffffff", 30]);
 		}
 
+		let layer = undefined;
+		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
+
 		if (colors.length) {
 			style = {...style};
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
 					let finalColor = undefined;
-					if (hovered && (this._drawRemoveOnClick || this._drawReverseOnClick && isPolyline(layer))) {
+					if (hovered && (this._drawRemoveOnClick || this._drawReverseOnClick && (layer && isPolyline(layer) || feature && feature.geometry.type === "LineString" || feature.geometr.type === "MultiLineString" ))) {
 						finalColor = "#ff0000";
 					} else {
 						finalColor = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);

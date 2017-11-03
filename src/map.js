@@ -966,7 +966,6 @@ export default class LajiMap {
 		this._drawRemoveOnClick = true;
 
 		this._onDrawRemoveOn = this.draw.group.on("click", ({layer}) => {
-			console.log("delete");
 			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 			this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]);
 		});

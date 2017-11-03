@@ -42,7 +42,8 @@ export default class LajiMap {
 			locate: false,
 			center:  [65, 26],
 			zoom: 2,
-			popupOnHover: false
+			popupOnHover: false,
+			draw: false
 		};
 
 		this.options = {};
@@ -807,7 +808,7 @@ export default class LajiMap {
 		});
 	}
 
-	@dependsOn("data", "draw")
+	@dependsOn("data", "draw", "center", "zoom")
 	zoomToData() {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 

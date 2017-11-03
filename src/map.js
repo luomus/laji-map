@@ -152,8 +152,7 @@ export default class LajiMap {
 				zoomControl: false,
 				attributionControl: false,
 				noWrap: true,
-				continuousWorld: false,
-				doubleClickZoom: false
+				continuousWorld: false
 			});
 
 			this.tileLayers = {};
@@ -264,15 +263,6 @@ export default class LajiMap {
 
 		this.map.addEventListener({
 			click: () => this._interceptClick(),
-			dblclick: e => {
-				if (this.editIdx !== undefined || this.drawing) return;
-				if ((typeof this.draw === "object" && this.draw.marker !== false)
-				) {
-					const icon =  this._createIcon(this._getStyleForType(this.drawIdx));
-					const marker = new L.marker(e.latlng, ({icon}));
-					this._onAdd(this.drawIdx, marker);
-				}
-			},
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => { this.drawing = true; },
 			"draw:drawstop": () => { this.drawing = false; },

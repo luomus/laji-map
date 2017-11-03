@@ -586,6 +586,7 @@ export function combineColors(...colors) {
 	const bv = colors.map(color => color.substring(5,7));
 	return [rv, gv, bv].reduce((rgb, hexVector) => {
 		 let value = hexVector.reduce((combinedDecimal, hex) => {
+			 if (hex === "--") return combinedDecimal;
 			if (combinedDecimal === undefined) {
 				return toDecimal(hex);
 			}

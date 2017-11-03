@@ -237,6 +237,7 @@ export default class LajiMap {
 			this.idsToIdxs = [];
 			this.idsToIdxTuples = {};
 			this._idxsToHovered = {};
+			this._idxsToContextMenuOpen = {};
 
 			provide(this, "map");
 		} catch (e) {
@@ -291,7 +292,15 @@ export default class LajiMap {
 			},
 			locationfound: (...params) => this._onLocationFound(...params),
 			locationerror: (...params) => this._onLocationNotFound(...params),
-			"contextmenu.show": this._interceptClick,
+			"contextmenu.show": (e) => {
+				this._hoveredlayer = e.relatedTarget;
+				this._onLayerMouseOver(e.relatedTarget);
+				this._interceptClick();
+			},
+			"contextmenu.hide": () => {
+				if (!this._hoveredlayer) return;
+				this._onLayerMouseOut(this._hoveredlayer);
+			}
 		});
 
 		this._addDocumentEventListener("click", e => {
@@ -748,10 +757,15 @@ export default class LajiMap {
 		this.idxsToIds[dataIdx] = {};
 		this.idsToIdxs[dataIdx] = {};
 		this._idxsToHovered[dataIdx] = [];
+		this._idxsToContextMenuOpen[dataIdx] = [];
 
 		layer.eachLayer(layer => {
 			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx); 
 		});
+
+		if (item.hasActive) {
+			this.updateLayerStyle(this._getLayerByIdxs(dataIdx, item.activeIdx));
+		}
 
 		if (item.on) Object.keys(item.on).forEach(eventName => {
 			item.group.on(eventName, (e) => {
@@ -775,21 +789,16 @@ export default class LajiMap {
 		});
 
 		item.group.on("mouseover", e => {
-			console.log("over");
 			if (item.editable || item.hasActive) {
 				const {layer} = e;
-				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-				this._idxsToHovered[dataIdx][featureIdx] = true;
-				this._updateLayerStyle(layer);
+				this._onLayerMouseOver(layer);
 			}
 		});
 
 		item.group.on("mouseout", e => {
 			if (item.editable || item.hasActive) {
 				const {layer} = e;
-				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-				this._idxsToHovered[dataIdx][featureIdx] = false;
-				this._updateLayerStyle(layer);
+				this._onLayerMouseOut(layer);
 			}
 		});
 
@@ -811,6 +820,20 @@ export default class LajiMap {
 
 			this._initializeLayer(layer, dataIdx, featureIdx);
 		});
+	}
+
+	_onLayerMouseOver(layer) {
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		this._idxsToHovered[dataIdx][featureIdx] = true;
+		this._idxsToContextMenuOpen[dataIdx][featureIdx] = true;
+		this.updateLayerStyle(layer);
+	}
+
+	_onLayerMouseOut(layer) {
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		this._idxsToHovered[dataIdx][featureIdx] = false;
+		this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
+		this.updateLayerStyle(layer);
 	}
 
 	_initializeLayer(layer, ...indexTuple) {
@@ -994,8 +1017,8 @@ export default class LajiMap {
 		const prevActiveIdx = item.activeIdx;
 		item.activeIdx = featureIdx;
 		const prevActiveLayer =  this._getLayerByIdxs(dataIdx, prevActiveIdx);
-		prevActiveLayer && this._updateLayerStyle(prevActiveLayer);
-		this._updateLayerStyle(layer);
+		prevActiveLayer && this.updateLayerStyle(prevActiveLayer);
+		this.updateLayerStyle(layer);
 	}
 
 	_resetIds(idx) {
@@ -1193,6 +1216,7 @@ export default class LajiMap {
 			contextmenuInheritItems: false,
 			contextmenuItems
 		});
+
 	}
 
 	@dependsOn("map")
@@ -1504,7 +1528,7 @@ export default class LajiMap {
 		}
 		editLayer.editing.enable();
 		editLayer.closePopup();
-		this.updateLayerStyle(editLayer, item.getDraftStyle(dataIdx));
+		this.updateLayerStyle(editLayer);
 	}
 
 	_clearEditable() {
@@ -1526,7 +1550,7 @@ export default class LajiMap {
 		const editId = this.idxsToIds[dataIdx][featureIdx];
 		this._clearEditable();
 		const editLayer = this._getLayerByIdxs(...editIdx);
-		this.updateLayerStyle(editLayer, this._getStyleForLayer(editLayer));
+		this.updateLayerStyle(editLayer);
 		this._onEdit(dataIdx, {[editId]: editLayer});
 	}
 
@@ -1538,7 +1562,7 @@ export default class LajiMap {
 		}
 	}
 
-	updateLayerStyle(layer, style) {
+	setLayerStyle(layer, style) {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
@@ -1604,12 +1628,38 @@ export default class LajiMap {
 			...(overrideStyles || {})
 		};
 
+		const colors = [];
 
-		if (dataIdx === featureIdx !== undefined && this._idxsToHovered[dataIdx][featureIdx]) {
+		let editable = false;
+		if (this.editIdx) {
+			const [_dataIdx, _featureIdx] = this.editIdx;
+
+			if (_dataIdx === dataIdx && _featureIdx === featureIdx) {
+				editable = true;
+			}
+		}
+
+		let active = false;
+		if (item.activeIdx === featureIdx) {
+			active = true;
+			colors.push(["#00ff00", 80]);
+		}
+
+		if (editable) {
+			const r = active ? "--" : "00";
+			const b = r;
+			colors.push([`#${r}ff${b}`, 30]);
+		}
+
+		if (dataIdx !== undefined && featureIdx !== undefined && this._idxsToHovered[dataIdx][featureIdx] || this._idxsToContextMenuOpen[dataIdx][featureIdx]) {
+			colors.push(["#ffffff", 30]);
+		}
+
+		if (colors.length) {
 			style = {...style};
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
-					style[prop] = combineColors(style[prop], "#ffffff", 30);
+					style[prop] = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);
 				}
 			});
 		}
@@ -1621,37 +1671,26 @@ export default class LajiMap {
 		return this._getStyleForType(...this._getIdxTupleByLayer(layer), undefined, overrideStyles);
 	}
 
-	_updateLayerStyle(layer) {
+	updateLayerStyle(layer) {
 		if (!layer) return;
 
-		let style = {};
-		if (layer instanceof L.Marker) {
-			style = this._getStyleForLayer(layer, style);
-		} else {
-			const style =  {};
-			layer.setStyle(this._getStyleForLayer(layer, style));
-		}
+		let style = this._getStyleForLayer(layer, style);
 
-		this.updateLayerStyle(layer, style);
+		this.setLayerStyle(layer, style);
 	}
 
-	_getDefaultDrawStyle(options) {
-		const featureIdx = options ? options.featureIdx : undefined;
-		const color = (featureIdx !== undefined && featureIdx === this.data[this.drawIdx].activeIdx) ? ACTIVE_COLOR : NORMAL_COLOR;
-		return {color: color, fillColor: color, opacity: 1, fillOpacity: 0.7};
+	_getDefaultDrawStyle() {
+		return {color: NORMAL_COLOR, fillColor: NORMAL_COLOR, opacity: 1, fillOpacity: 0.7};
 	}
 
 	_getDefaultDrawClusterStyle() {
 		return {color: this.data[this.drawIdx].getFeatureStyle({}).color, opacity: 1};
 	}
 
-	_getDefaultDataStyle = item => (options) => {
-		const {featureIdx} = options;
-		const color =  (item && item.activeIdx === featureIdx) ?
-			ACTIVE_DATA_LAYER_COLOR :
-			(item && item.editable) ?
-				EDITABLE_DATA_LAYER_COLOR :
-				DATA_LAYER_COLOR;
+	_getDefaultDataStyle = item => () => {
+		const color = (item && item.editable) ?
+			EDITABLE_DATA_LAYER_COLOR :
+			DATA_LAYER_COLOR;
 		return {color, fillColor: color, opacity: 1, fillOpacity: 0.7};
 	}
 
@@ -1668,16 +1707,8 @@ export default class LajiMap {
 		const item = this.data[idx];
 		if (!item) return;
 
-		let i = 0;
 		item.group.eachLayer(layer => {
-			this.updateLayerStyle(layer,
-				item.getFeatureStyle({
-					dataIdx: idx,
-					featureIdx: i,
-					feature: this.data[idx].featureCollection.features[i]
-				})
-			);
-			i++;
+			this.updateLayerStyle(layer);
 		});
 	}
 

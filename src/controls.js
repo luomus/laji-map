@@ -460,6 +460,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawClear: [
 				() => this.draw
 			],
+			drawDelete: [
+				() => this.draw
+			],
+			drawReverse: [
+				() => this.draw
+			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect")
 			]

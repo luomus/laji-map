@@ -736,7 +736,7 @@ export default class LajiMap {
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
 				style: feature => {
-					return item.getFeatureStyle({featureIdx: feature.properties.lajiMapIdx, dataIdx: dataIdx, feature: feature});
+					return this._fillStyleWithGlobals(dataIdx, feature.properties.lajiMapIdx, feature);
 				},
 			}
 		);
@@ -1653,7 +1653,7 @@ export default class LajiMap {
 		return this._getStyleForType(this.drawIdx, undefined, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
 	}
 
-	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles) {
+	_fillStyleWithGlobals(dataIdx, featureIdx, feature) {
 		const item = this.data[dataIdx];
 		const dataStyles = item.getFeatureStyle({
 			dataIdx,
@@ -1662,29 +1662,57 @@ export default class LajiMap {
 			item
 		});
 
-		const layer = this._getLayerByIdxs(dataIdx, featureIdx);
+		let layer = undefined;
+		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
 
 		let featureTypeStyle = undefined;
-		if (layer instanceof L.Marker) {
-			featureTypeStyle = this.marker;
-		} else if (isPolyline(layer)) {
-			featureTypeStyle = this.polyline;
-		} else if (layer instanceof L.Rectangle) {
-			featureTypeStyle = this.rectangle;
-		} else if (layer instanceof L.Polygon) {
-			featureTypeStyle = this.polygon;
-		} else if (layer instanceof L.Circle) {
-			featureTypeStyle = this.circle;
+		if (layer) {
+			if (layer instanceof L.Marker) {
+				featureTypeStyle = this.marker;
+			} else if (isPolyline(layer)) {
+				featureTypeStyle = this.polyline;
+			} else if (layer instanceof L.Rectangle) {
+				featureTypeStyle = this.rectangle;
+			} else if (layer instanceof L.Polygon) {
+				featureTypeStyle = this.polygon;
+			} else if (layer instanceof L.Circle) {
+				featureTypeStyle = this.circle;
+			}
+		} else {
+			switch(feature.geometry.type) {
+			case "LineString":
+			case "MultiLineString":
+				featureTypeStyle = this.polyline;
+				break;
+			case "Polygon":
+				featureTypeStyle = this.polygon;
+				break;
+			case "Point":
+				featureTypeStyle = (feature.geometry.radius) ? this.circle : this.marker;
+				break;
+			}
 		}
+
+		return {...(featureTypeStyle || {}), ...(dataStyles || {})};
+	}
+
+	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles) {
+		const item = this.data[dataIdx];
+		const dataStyles = feature ?
+			this._fillStyleWithGlobals(dataIdx, featureIdx, feature) : 
+			item.getFeatureStyle({
+				dataIdx,
+				featureIdx: featureIdx,
+				feature: feature || item.featureCollection.features[featureIdx],
+				item
+			});
 
 		let style = {
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
 			fillColor: NORMAL_COLOR,
-			...(featureTypeStyle || {}),
-			...(dataStyles || {}),
-			...(overrideStyles || {})
+			...dataStyles,
 		};
 
 		const colors = [];

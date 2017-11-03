@@ -116,11 +116,8 @@ class App {
 					console.info(idx);
 				}
 			},
-			polyline: {
-				showStart: true,
-			},
 			onChange: this.onMapChange,
-			activeIdx: 0,
+			//activeIdx: 0,
 		};
 
 		this.activeIdx = 0;

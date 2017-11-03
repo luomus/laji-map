@@ -73,7 +73,12 @@ export default class LajiMap {
 			featurePopupOffset: true,
 			popupOnHover: true,
 			onInitializeDrawLayer: true,
-			on: "setEventListeners"
+			on: "setEventListeners",
+			polyline: true,
+			polygon: true,
+			rectangle: true,
+			circle: true,
+			marker: true,
 		};
 	}
 
@@ -1331,7 +1336,9 @@ export default class LajiMap {
 				layer.options.clickable = clickable;
 			}
 
-			if (item.polyline && item.polyline.showStart) {
+			const {showStart} = {...item, ...(this.polyline || {})};
+
+			if (showStart) {
 				let firstPoint = undefined;
 
 				if (!layer.feature.geometry.type) {
@@ -1382,10 +1389,15 @@ export default class LajiMap {
 	}
 
 	_getStartCircleStyle(lineLayer) {
-		return {
+		let options = {
+			...(this.polyline || {}),
 			...lineLayer.options,
+		};
+
+		return {
+			...options,
 			weight: 0,
-			radius: 5,
+			radius: options.weight + 1,
 			fill: true,
 			fillOpacity: 1,
 		};
@@ -1652,11 +1664,25 @@ export default class LajiMap {
 
 		const layer = this._getLayerByIdxs(dataIdx, featureIdx);
 
+		let featureTypeStyle = undefined;
+		if (layer instanceof L.Marker) {
+			featureTypeStyle = this.marker;
+		} else if (isPolyline(layer)) {
+			featureTypeStyle = this.polyline;
+		} else if (layer instanceof L.Rectangle) {
+			featureTypeStyle = this.rectangle;
+		} else if (layer instanceof L.Polygon) {
+			featureTypeStyle = this.polygon;
+		} else if (layer instanceof L.Circle) {
+			featureTypeStyle = this.circle;
+		}
+
 		let style = {
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
 			fillColor: NORMAL_COLOR,
+			...(featureTypeStyle || {}),
 			...(dataStyles || {}),
 			...(overrideStyles || {})
 		};

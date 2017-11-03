@@ -116,18 +116,11 @@ class App {
 					console.info(idx);
 				}
 			},
-			onChange: this.onMapChange,
-			activeIdx: 0,
 			polyline: {
 				showStart: true,
-				showDirection: true
 			},
-			polygon: {
-				showArea: true,
-				shapeOptions: {
-					showArea: true
-				}
-			},
+			onChange: this.onMapChange,
+			activeIdx: 0,
 		};
 
 		this.activeIdx = 0;
@@ -153,7 +146,19 @@ class App {
 				drawCopy: true,
 				drawUpload: true,
 				drawClear: true,
-			}
+			},
+			polyline: {
+				opacity: 0.1,
+				weight: 10,
+				showStart: true,
+				showDirection: false
+			},
+			polygon: {
+				showArea: true,
+				shapeOptions: {
+					showArea: true
+				}
+			},
 		};
 
 

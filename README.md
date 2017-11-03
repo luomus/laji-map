@@ -43,6 +43,11 @@ availableOverlayNamesWhitelist                  | String[]                  | - 
 availableOverlayNamesBlacklist                  | String[]                  | -                                   | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
 tileLayerOpacity                                | Float                     | -                                   | Tile layer opacity. Range: 0.0-1.0
 on                                              | Object                    | -                                   | Leaflet events to listen for. Must be an object with event names as keys and value as callbacks. You can also use setEventListeners().
+polygon                                         | Object                    | -                                   | Polygon options: {allowIntersection: Boolean, Path style options}
+polyline                                        | Object                    | -                                   | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true), Path style options}.
+rectangle                                       | Object                    | -                                   | Global path style options.
+circle                                          | Object                    | -                                   | Global Path style options.
+marker                                          | Object                    | -                                   | Global Path style options.
 
 ### Data options ###
 

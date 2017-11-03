@@ -575,8 +575,8 @@ export function combineColors(...colors) {
 
 	let max = undefined;
 	const last = colors[colors.length - 1];
-	if (typeof last === "number") {
-		max = last;
+	if (typeof last === "number" || last === undefined) {
+		max = typeof last === "number" ? last : 255;
 		colors = colors.slice(0);
 		colors.pop();
 	}

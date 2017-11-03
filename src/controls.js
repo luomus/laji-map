@@ -174,6 +174,24 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 							yesButton.focus();
 						}
+					},
+					{
+						name: "drawDelete",
+						text: this.translations.DeleteFeature,
+						iconCls: "glyphicon glyphicon-remove-sign",
+						fn: (...params) => {
+							this._startDrawRemove(...params);
+						},
+						stopFn: (...params) => this._stopDrawRemove(...params)
+					},
+					{
+						name: "drawReverse",
+						iconCls: "glyphicon glyphicon-sort",
+						text: this.translations.ReverseFeature,
+						fn: (...params) => {
+							this._startDrawReverse(...params);
+						},
+						stopFn: (...params) => this._stopDrawReverse(...params)
 					}
 				]
 			},
@@ -242,7 +260,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				fn();
 				that._removeKeyListener(ESC, stop);
 				_that.container.removeChild(cont);
-				that.map.off(eventName);
+				if (eventName) that.map.off(eventName);
 			}
 
 			if (!cont) {
@@ -250,12 +268,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				cont = this.cancelHandlers[name];
 				const buttonWrapper = L.DomUtil.create("li");
 				const button = that._createControlButton(this, buttonWrapper, stop);
-				that.addTranslationHook(button, "Cancel");
+				that.addTranslationHook(button, "Finish");
 				cont.appendChild(buttonWrapper);
 			}
 
 			that._addKeyListener(ESC, stop, !!"high priority");
-			that.map.on(eventName, stop);
+			if (eventName) that.map.on(eventName, stop);
 
 			const parentBtn = that._controlButtons[name];
 			cont.style.top = `${parentBtn.offsetTop}px`;

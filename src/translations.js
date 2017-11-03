@@ -495,8 +495,18 @@
 		sv: "Nej"
 	},
 	reverseFeature: {
-		fi: "Käännä kuvio",
-		en: "Reverse feature",
-		sv: "Omvänd figuren"
+		fi: "Käännä viiva",
+		en: "Reverse line",
+		sv: "Omvänd raden"
 	},
+	removeFeatureOnClick: {
+		fi: "Klikkaa kuviota poistaakseesi sen",
+		en: "Click a feature in order to remove it",
+		sv: "Klicka på en featuren för att ta bort den"
+	},
+	reverseLineOnClick: {
+		fi: "Klikkaa viivaa kääntääksesi sen",
+		en: "Click a line in order to reverse it",
+		sv: "Klicka på en rad för att vända den"
+	}
 };

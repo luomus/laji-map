@@ -12,10 +12,8 @@ import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils
 import {
 	INCOMPLETE_COLOR,
 	NORMAL_COLOR,
-	ACTIVE_COLOR,
 	DATA_LAYER_COLOR,
 	EDITABLE_DATA_LAYER_COLOR,
-	ACTIVE_DATA_LAYER_COLOR,
 	USER_LOCATION_COLOR,
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
@@ -772,6 +770,7 @@ export default class LajiMap {
 				const {layer} = e;
 				const {feature} = layer;
 				const idx = feature.properties.lajiMapIdx;
+				if (eventName === "click" && this._interceptClick) return;
 				item.on[eventName](e, {idx, layer, feature: this.formatFeatureOut(feature, layer)});
 			});
 		});
@@ -781,12 +780,7 @@ export default class LajiMap {
 			if (!this._interceptClick()) this._onActiveChange(item.idx, lajiMapIdx);
 		});
 
-		item.group.on("dblclick", e => {
-			if (item.editable) {
-				const {layer} = e;
-				this._setEditable(layer);
-			}
-		});
+		item.group.on("dblclick", ({layer}) => this._setEditable(layer));
 
 		item.group.on("mouseover", e => {
 			if (item.editable || item.hasActive) {
@@ -961,6 +955,38 @@ export default class LajiMap {
 
 	clearDrawData() {
 		this.clearItemData(this.data[this.drawIdx]);
+	}
+
+	_startDrawRemove() {
+		this._createTooltip("RemoveFeatureOnClick");
+		this._drawRemoveOnClick = true;
+
+		this._onDrawRemoveOn = this.draw.group.on("click", ({layer}) => {
+			console.log("delete");
+			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+			this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]);
+		});
+	}
+
+	_stopDrawRemove() {
+		this.map.removeEventListener("click", this._onDrawRemoveOn);
+		this._drawRemoveOnClick = false;
+		this._disposeTooltip();
+	}
+
+	_startDrawReverse() {
+		this._createTooltip("ReverseLineOnClick");
+		this._drawReverseOnClick = true;
+
+		this._onDrawReverse = this.draw.group.on("click", ({layer}) => {
+			this._reversePolyline(layer);
+		});
+	}
+
+	_stopDrawReverse() {
+		this.map.removeEventListener("click", this._onDrawReverseOn);
+		this._drawReverseOnClick = false;
+		this._disposeTooltip();
 	}
 
 	_createIcon(options = {}) {
@@ -1518,7 +1544,7 @@ export default class LajiMap {
 	_setEditable(layer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		const item = this.data[dataIdx];
-		if (!item.editable) return;
+		if (!item.editable || this._drawRemoveOnClick || this._drawReverseOnClick) return;
 		this._clearEditable();
 		this.editIdx = [dataIdx, featureIdx];
 		const editLayer = this._getLayerByIdxs(...this.editIdx);
@@ -1555,7 +1581,7 @@ export default class LajiMap {
 	}
 
 	_interceptClick() {
-		if (this.drawing) return true;
+		if (this._drawRemoveOnClick || this._drawReverseOnClick || this.drawing) return true;
 		if (this.editIdx !== undefined) {
 			this._commitEdit();
 			return true;
@@ -1619,6 +1645,8 @@ export default class LajiMap {
 			item
 		});
 
+		const layer = this._getLayerByIdxs(dataIdx, featureIdx);
+
 		let style = {
 			opacity: 1,
 			fillOpacity: 0.4,
@@ -1651,7 +1679,13 @@ export default class LajiMap {
 			colors.push([`#${r}ff${b}`, 30]);
 		}
 
-		if (dataIdx !== undefined && featureIdx !== undefined && this._idxsToHovered[dataIdx][featureIdx] || this._idxsToContextMenuOpen[dataIdx][featureIdx]) {
+		const hovered = (
+			dataIdx !== undefined && 
+			featureIdx !== undefined && 
+			this._idxsToHovered[dataIdx][featureIdx] || this._idxsToContextMenuOpen[dataIdx][featureIdx]
+		);
+
+		if (hovered) {
 			colors.push(["#ffffff", 30]);
 		}
 
@@ -1659,7 +1693,13 @@ export default class LajiMap {
 			style = {...style};
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
-					style[prop] = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);
+					let finalColor = undefined;
+					if (hovered && (this._drawRemoveOnClick || this._drawReverseOnClick && isPolyline(layer))) {
+						finalColor = "#ff0000";
+					} else {
+						finalColor = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);
+					}
+					style[prop] = finalColor;
 				}
 			});
 		}

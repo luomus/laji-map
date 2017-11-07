@@ -972,14 +972,15 @@ export default class LajiMap {
 		this._createTooltip("RemoveFeatureOnClick");
 		this._drawRemoveOnClick = true;
 
-		this._onDrawRemoveOn = this.draw.group.on("click", ({layer}) => {
+		this._onDrawRemoveOn = ({layer}) => {
 			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 			this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]);
-		});
+		};
+		this.draw.group.on("click", this._onDrawRemoveOn);
 	}
 
 	_stopDrawRemove() {
-		this.map.removeEventListener("click", this._onDrawRemoveOn);
+		this.draw.group.removeEventListener("click", this._onDrawRemoveOn);
 		this._drawRemoveOnClick = false;
 		this._disposeTooltip();
 	}
@@ -987,14 +988,14 @@ export default class LajiMap {
 	_startDrawReverse() {
 		this._createTooltip("ReverseLineOnClick");
 		this._drawReverseOnClick = true;
-
-		this._onDrawReverse = this.draw.group.on("click", ({layer}) => {
+		this._onDrawReverse = ({layer}) => {
 			this._reversePolyline(layer);
-		});
+		};
+		this.draw.group.on("click", this._onDrawReverse);
 	}
 
 	_stopDrawReverse() {
-		this.map.removeEventListener("click", this._onDrawReverseOn);
+		this.draw.group.removeEventListener("click", this._onDrawReverse);
 		this._drawReverseOnClick = false;
 		this._disposeTooltip();
 	}

@@ -74,7 +74,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const cancelDraw = ({name}) => {
 			if (name === "draw") return;
 			this.getFeatureTypes().forEach(featureType => {
-				if (this.drawControl._toolbars.draw._modes[featureType].handler._enabled) {
+				const handlerContainer = this.drawControl._toolbars.draw._modes[featureType];
+				if (handlerContainer && handlerContainer.handler._enabled) {
 					this.drawControl._toolbars.draw._modes[featureType].handler.disable();
 				}
 			});

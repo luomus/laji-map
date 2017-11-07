@@ -291,13 +291,19 @@ export default class LajiMap {
 			locationfound: (...params) => this._onLocationFound(...params),
 			locationerror: (...params) => this._onLocationNotFound(...params),
 			"contextmenu.show": (e) => {
-				this._hoveredlayer = e.relatedTarget;
-				this._onLayerMouseOver(e.relatedTarget);
+				if (e.relatedTarget) {
+					this._hoveredLayer = e.relatedTarget;
+					const [dataIdx, featureIdx] = this._getIdxTupleByLayer(this._hoveredLayer);
+					this._idxsToContextMenuOpen[dataIdx][featureIdx] = true;
+					this.updateLayerStyle(e.relatedTarget);
+				}
 				this._interceptClick();
 			},
 			"contextmenu.hide": () => {
-				if (!this._hoveredlayer) return;
-				this._onLayerMouseOut(this._hoveredlayer);
+				if (!this._hoveredLayer) return;
+				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(this._hoveredLayer);
+				this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
+				this.updateLayerStyle(this._hoveredLayer);
 			}
 		});
 
@@ -785,14 +791,18 @@ export default class LajiMap {
 		item.group.on("mouseover", e => {
 			if (item.editable || item.hasActive) {
 				const {layer} = e;
-				this._onLayerMouseOver(layer);
+				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+				this._idxsToHovered[dataIdx][featureIdx] = true;
+				this.updateLayerStyle(layer);
 			}
 		});
 
 		item.group.on("mouseout", e => {
 			if (item.editable || item.hasActive) {
 				const {layer} = e;
-				this._onLayerMouseOut(layer);
+				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+				this._idxsToHovered[dataIdx][featureIdx] = false;
+				this.updateLayerStyle(layer);
 			}
 		});
 
@@ -828,20 +838,6 @@ export default class LajiMap {
 
 		const bounds = featureGroup.getBounds();
 		if (bounds.isValid()) this.map.fitBounds(bounds);
-	}
-
-	_onLayerMouseOver(layer) {
-		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-		this._idxsToHovered[dataIdx][featureIdx] = true;
-		this._idxsToContextMenuOpen[dataIdx][featureIdx] = true;
-		this.updateLayerStyle(layer);
-	}
-
-	_onLayerMouseOut(layer) {
-		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-		this._idxsToHovered[dataIdx][featureIdx] = false;
-		this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
-		this.updateLayerStyle(layer);
 	}
 
 	_initializeLayer(layer, ...indexTuple) {

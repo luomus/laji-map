@@ -1663,7 +1663,7 @@ export default class LajiMap {
 		});
 
 		let layer = undefined;
-		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
+		if (this.idxsToIds[dataIdx] && item.group) layer = this._getLayerByIdxs(dataIdx, featureIdx);
 
 		let featureTypeStyle = undefined;
 		if (layer) {

@@ -271,7 +271,10 @@ export default class LajiMap {
 		this.map.addEventListener({
 			click: () => this._interceptClick(),
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
-			"draw:drawstart": () => { this.drawing = true; },
+			"draw:drawstart": () => { 
+				this.drawing = true; 
+				this.map.fire("controlClick", {name: "draw"});
+			},
 			"draw:drawstop": () => { this.drawing = false; },
 			"draw:drawvertex": (e) => {
 				const layers = e.layers._layers;
@@ -969,6 +972,7 @@ export default class LajiMap {
 	}
 
 	_startDrawRemove() {
+		if (this._drawRemoveOnClick) return;
 		this._createTooltip("RemoveFeatureOnClick");
 		this._drawRemoveOnClick = true;
 
@@ -986,6 +990,7 @@ export default class LajiMap {
 	}
 
 	_startDrawReverse() {
+		if (this._drawReverseOnClick) return;
 		this._createTooltip("ReverseLineOnClick");
 		this._drawReverseOnClick = true;
 		this._onDrawReverse = ({layer}) => {
@@ -1758,7 +1763,7 @@ export default class LajiMap {
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
 					let finalColor = undefined;
-					if (hovered && (this._drawRemoveOnClick || this._drawReverseOnClick && (layer && isPolyline(layer) || feature && feature.geometry.type === "LineString" || feature.geometr.type === "MultiLineString" ))) {
+					if (hovered && (this._drawRemoveOnClick || (this._drawReverseOnClick && (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString") )))) {
 						finalColor = "#ff0000";
 					} else {
 						finalColor = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);
@@ -1892,10 +1897,12 @@ export default class LajiMap {
 			}
 			layer.disable();
 			this._removeKeyListener(ESC, abort);
+			this.map.off("controlClick", abort);
 			this.map.removeEventListener("draw:created", abort);
 		};
 
 		this.map.on("draw:created", abort);
+		this.map.on("controlClick", abort);
 
 		return layer;
 	}

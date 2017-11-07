@@ -69,6 +69,20 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._setLang(lang);
 	}
 
+	_initializeMapEvents() {
+		super._initializeMapEvents();
+		const cancelDraw = ({name}) => {
+			if (name === "draw") return;
+			this.getFeatureTypes().forEach(featureType => {
+				if (this.drawControl._toolbars.draw._modes[featureType].handler._enabled) {
+					this.drawControl._toolbars.draw._modes[featureType].handler.disable();
+				}
+			});
+		}
+		this.map.on("draw:created", cancelDraw);
+		this.map.on("controlClick", cancelDraw);
+	}
+
 	@reflect()
 	@dependsOn("map", "translations", "controlSettings")
 	_updateMapControls() {
@@ -258,9 +272,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const _that = this;
 			function stop() {
 				fn();
+				that.map.off("controlClick", stopOnControlClick);
 				that._removeKeyListener(ESC, stop);
 				_that.container.removeChild(cont);
 				if (eventName) that.map.off(eventName);
+			}
+
+			function stopOnControlClick({name: _name}) {
+				if (name !== _name) stop();
 			}
 
 			if (!cont) {
@@ -270,6 +289,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				const button = that._createControlButton(this, buttonWrapper, stop);
 				that.addTranslationHook(button, "Finish");
 				cont.appendChild(buttonWrapper);
+				that.map.on("controlClick", stopOnControlClick);
 			}
 
 			that._addKeyListener(ESC, stop, !!"high priority");
@@ -291,6 +311,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			} else {
 				fn(...params);
 			}
+			that.map.fire("controlClick", {name});
 		};}
 
 		this.controlItems.filter(({control, name}) => {

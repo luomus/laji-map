@@ -78,7 +78,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					this.drawControl._toolbars.draw._modes[featureType].handler.disable();
 				}
 			});
-		}
+		};
 		this.map.on("draw:created", cancelDraw);
 		this.map.on("controlClick", cancelDraw);
 	}

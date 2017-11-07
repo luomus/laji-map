@@ -121,7 +121,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			},
 			{
 				name: "scale",
-				control: () =>  L.control.scale({metric: true, imperial: false})
+				control: () => L.control.scale({metric: true, imperial: false})
 			},
 			{
 				name: "coordinates",
@@ -422,6 +422,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawCopy: false,
 			drawUpload: false,
 			drawClear: false,
+			drawReverse: false,
+			drawDelete: false,
 			coordinates: false,
 			scale: true,
 			lineTransect: {split: true, splitByMeters: true, deleteSegment: true, deletePoints: true, undo: true, redo: true},
@@ -466,7 +468,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_controlIsAllowed(name) {
 		const dependencies = {
 			coordinateInput: [
-				() => this.draw,
+				() => this.drawAllowed,
 				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
 			],
 			draw: [

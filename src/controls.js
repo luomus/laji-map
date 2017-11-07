@@ -468,7 +468,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_controlIsAllowed(name) {
 		const dependencies = {
 			coordinateInput: [
-				() => this.drawAllowed,
+				() => this.draw,
 				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
 			],
 			draw: [

@@ -770,7 +770,7 @@ export default class LajiMap {
 				const {layer} = e;
 				const {feature} = layer;
 				const idx = feature.properties.lajiMapIdx;
-				if (eventName === "click" && this._interceptClick) return;
+				if (eventName === "click" && this._interceptClick()) return;
 				item.on[eventName](e, {idx, layer, feature: this.formatFeatureOut(feature, layer)});
 			});
 		});

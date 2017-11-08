@@ -197,7 +197,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						fn: (...params) => {
 							this._startDrawRemove(...params);
 						},
-						stopFn: (...params) => this._stopDrawRemove(...params)
+						finishFn: (...params) => this._finishDrawRemove(...params),
+						cancelFn: (...params) => this._cancelDrawRemove(...params)
 					},
 					{
 						name: "drawReverse",
@@ -206,7 +207,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						fn: (...params) => {
 							this._startDrawReverse(...params);
 						},
-						stopFn: (...params) => this._stopDrawReverse(...params)
+						finishFn: (...params) => this._finishDrawReverse(...params),
+						cancelFn: (...params) => this._cancelDrawReverse(...params)
 					}
 				]
 			},
@@ -218,7 +220,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.SplitLine,
 						iconCls: "glyphicon glyphicon-scissors",
 						fn: (...params) => this.startLTLineSplit(...params),
-						stopFn: (...params) => this.stopLTLineSplit(...params),
+						finishFn: (...params) => this.stopLTLineSplit(...params),
 						eventName: "lineTransect:split"
 					},
 					{
@@ -226,7 +228,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.SplitLineByMeters,
 						iconCls: "laji-map-line-transect-split-by-meters-glyph",
 						fn: (...params) => this.startSplitByMetersLTSegmentMode(...params),
-						stopFn: (...params) => this.stopSelectLTSegmentMode(...params),
+						finishFn: (...params) => this.stopSelectLTSegmentMode(...params),
 						eventName: "lineTransect:split"
 					},
 					{
@@ -234,7 +236,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.DeleteLineSegment,
 						iconCls: "laji-map-line-transect-remove-segment-glyph",
 						fn: (...params) => this.startRemoveLTSegmentMode(...params),
-						stopFn: (...params) => this.stopSelectLTSegmentMode(...params),
+						finishFn: (...params) => this.stopSelectLTSegmentMode(...params),
 						eventName: "lineTransect:delete"
 					},
 					{
@@ -242,7 +244,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.ConnectSegments,
 						iconCls: "laji-map-line-transect-remove-point-glyph",
 						fn: (...params) => this.startRemoveLTPointMode(...params),
-						stopFn: (...params) => this.stopRemoveLTPointMode(...params),
+						finishFn: (...params) => this.stopRemoveLTPointMode(...params),
 						eventName: "lineTransect:delete"
 					},
 					{
@@ -267,8 +269,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		const that = this;
 
-		function _createCancelHandler(name, fn, eventName) {
-			let cont = this.cancelHandlers[name];
+		function _createActionHandler(name, fn, eventName, text) {
+			let cont = this.buttonActionContainer[name];
 
 			const _that = this;
 			function stop() {
@@ -284,13 +286,17 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 
 			if (!cont) {
-				this.cancelHandlers[name] = L.DomUtil.create("ul", "leaflet-draw-actions");
-				cont = this.cancelHandlers[name];
+				this.buttonActionContainer[name] = L.DomUtil.create("ul", "leaflet-draw-actions");
+				cont = this.buttonActionContainer[name];
+			}
+
+			if (!this.buttonActions[text]) {
 				const buttonWrapper = L.DomUtil.create("li");
 				const button = that._createControlButton(this, buttonWrapper, stop);
-				that.addTranslationHook(button, "Finish");
+				that.addTranslationHook(button, text);
 				cont.appendChild(buttonWrapper);
 				that.map.on("controlClick", stopOnControlClick);
+				this.buttonActions[text] = buttonWrapper;
 			}
 
 			that._addKeyListener(ESC, stop, !!"high priority");
@@ -303,12 +309,25 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			this.container.appendChild(cont);
 		}
 
+		function _createFinishHandler(name, fn, eventName) {
+			this._createActionHandler(name, fn, eventName, "Finish");
+		}
+
+		function _createCancelHandler(name, fn, eventName) {
+			console.log("create cancnel");
+			this._createActionHandler(name, fn, eventName, "Cancel");
+		}
+
 		this._controlButtons = {};
 
-		function callback(fn, stopFn, name, eventName) { return (...params) => {
-			if (stopFn) {
+		function callback(fn, finishFn, cancelFn, name, eventName) { return (...params) => {
+			if (finishFn) {
 				fn(...params);
-				this._createCancelHandler(name, stopFn, eventName);
+				this._createFinishHandler(name, finishFn, eventName);
+				if (cancelFn) {
+					console.log("cancelFn");
+				}
+				cancelFn && this._createCancelHandler(name, cancelFn, eventName);
 			} else {
 				fn(...params);
 			}
@@ -317,25 +336,26 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		this.controlItems.filter(({control, name}) => {
 			return !control || this._controlIsAllowed(name);
-		}).forEach(({name, control, controls, position, iconCls, fn, stopFn, text, eventName, onAdd: _onAdd}) => {
+		}).forEach(({name, control, controls, position, iconCls, fn, finishFn, cancelFn, text, eventName, onAdd: _onAdd}) => {
 			const leafletControl = (control ? control() : undefined) || (() => {
 				const onAdd = (controls) ?
 					function() {
 						this.container = L.DomUtil.create("div", "leaflet-control laji-map-control leaflet-draw");
 						this.buttonContainer = L.DomUtil.create("div", "leaflet-bar laji-map-control", this.container);
-						this.cancelHandlers = {};
+						this.buttonActionContainer = {};
+						this.buttonActions = {};
 
-						controls.forEach(({name: subName, iconCls, text, fn, stopFn, eventName, onAdd: _onAdd}) => {
+						controls.forEach(({name: subName, iconCls, text, fn, finishFn, cancelFn, eventName, onAdd: _onAdd}) => {
 							const buttonName = getSubControlName(name, subName);
 							if (!that._controlIsAllowed(buttonName)) return;
-							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, stopFn, buttonName, eventName]));
+							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, buttonName, eventName]));
 							if (_onAdd) _onAdd();
 						});
 
 						return this.container;
 					} : function() {
 						const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-						that._controlButtons[name] = that._createControlItem(this, container, iconCls, text, callback.apply(this, [fn, stopFn, name, eventName]));
+						that._controlButtons[name] = that._createControlItem(this, container, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, name, eventName]));
 						if (_onAdd) _onAdd();
 						return container;
 					};
@@ -347,6 +367,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				const Control = L.Control.extend({
 					options: position ? {position} : undefined,
 					onAdd,
+					_createActionHandler,
+					_createFinishHandler,
 					_createCancelHandler
 				});
 				return new Control();

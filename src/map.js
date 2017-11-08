@@ -271,7 +271,7 @@ export default class LajiMap {
 		this.map.addEventListener({
 			click: () => this._interceptClick(),
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
-			"draw:drawstart": () => { 
+			"draw:drawstart": () => {
 				this.drawing = true; 
 				this.map.fire("controlClick", {name: "draw"});
 			},
@@ -808,12 +808,11 @@ export default class LajiMap {
 
 		item.group.on("layeradd", e => {
 			const item = this.data[dataIdx];
-
 			const {layer} = e;
 			const {featureCollection: {features}} = item;
-
 			const featureIdx = features.length;
 			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
+
 			feature.properties.lajiMapIdx = featureIdx;
 			layer.feature = feature;
 
@@ -823,6 +822,13 @@ export default class LajiMap {
 			}
 
 			this._initializeLayer(layer, dataIdx, featureIdx);
+		});
+
+		item.group.on("layerremove", e => {
+			const {layer} = e;
+			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+			this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
+			this._idxsToHovered[dataIdx][featureIdx] = false;
 		});
 	}
 
@@ -968,28 +974,45 @@ export default class LajiMap {
 	}
 
 	_startDrawRemove() {
-		if (this._drawRemoveOnClick) return;
+		if (this._onDrawRemove) return;
 		this._createTooltip("RemoveFeatureOnClick");
-		this._drawRemoveOnClick = true;
 
-		this._onDrawRemoveOn = ({layer}) => {
-			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-			this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]);
+		this._drawRemoveLayers = [];
+		this._onDrawRemove = ({layer}) => {
+			this._drawRemoveLayers.push(layer);
+			this._removeLayerFromItem(this.draw, layer);
 		};
-		this.draw.group.on("click", this._onDrawRemoveOn);
+		this.draw.group.on("click", this._onDrawRemove);
 	}
 
 	_stopDrawRemove() {
-		this.draw.group.removeEventListener("click", this._onDrawRemoveOn);
-		this._drawRemoveOnClick = false;
+		this.draw.group.removeEventListener("click", this._onDrawRemove);
+		this._onDrawRemove = undefined;
 		this._disposeTooltip();
+		this._drawRemoveLayers = undefined;
+	}
+
+	_finishDrawRemove() {
+		const layers = this._drawRemoveLayers;
+		this._stopDrawRemove();
+		this._onDelete(this.drawIdx, layers.map(layer => layer._leaflet_id));
+	}
+
+	_cancelDrawRemove() {
+		const layers = this._drawRemoveLayers;
+		this._stopDrawRemove();
+		layers.forEach(layer => {
+			this.draw.group.addLayer(layer);
+			this.updateLayerStyle(layer);
+		});
 	}
 
 	_startDrawReverse() {
-		if (this._drawReverseOnClick) return;
+		if (this._onDrawReverse) return;
 		this._createTooltip("ReverseLineOnClick");
-		this._drawReverseOnClick = true;
+		this._drawReverseLayers = [];
 		this._onDrawReverse = ({layer}) => {
+			this._drawReverseLayers.push(layer);
 			this._reversePolyline(layer);
 		};
 		this.draw.group.on("click", this._onDrawReverse);
@@ -997,8 +1020,29 @@ export default class LajiMap {
 
 	_stopDrawReverse() {
 		this.draw.group.removeEventListener("click", this._onDrawReverse);
-		this._drawReverseOnClick = false;
+		this._onDrawReverse = undefined;
+		this._drawReverseLayers = undefined;
 		this._disposeTooltip();
+	}
+
+	_finishDrawReverse() {
+		const layers = this._drawReverseLayers;
+		this._stopDrawReverse();
+		const editData = layers.reduce((idToLayer, layer) => {
+			idToLayer[layer._leaflet_id] = layer;
+			return idToLayer;
+		}, {});
+		this._onEdit(this.drawIdx, editData);
+	}
+
+	_cancelDrawReverse() {
+		const layers = this._drawReverseLayers;
+		this._stopDrawReverse();
+		layers.forEach(layer => {
+			layer.setLatLngs(layer._origLatLngs);
+			this._decoratePolyline(layer);
+			delete layer._origLatLngs;
+		}, {});
 	}
 
 	_createIcon(options = {}) {
@@ -1245,7 +1289,11 @@ export default class LajiMap {
 		if (isPolyline(layer)) {
 			contextmenuItems.push({
 				text: translations.ReverseFeature,
-				callback: () => this._reversePolyline(layer),
+				callback: () => {
+					this._reversePolyline(layer)
+					const id = this.idxsToIds[dataIdx][featureIdx];
+					this._onEdit(dataIdx, {[id]: layer});
+				},
 				iconCls: "glyphicon glyphicon-sort"
 			});
 		}
@@ -1380,12 +1428,11 @@ export default class LajiMap {
 
 	_reversePolyline(layer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-		const id = this.idxsToIds[dataIdx][featureIdx];
 		const {type} = layer.feature.geometry;
 
 		if (type === "LineString") {
+			if (!layer._origLatLngs) layer._origLatLngs = layer.getLatLngs();
 			layer.setLatLngs(layer.getLatLngs().slice(0).reverse());
-			this._onEdit(dataIdx, {[id]: layer});
 			this._decoratePolyline(layer);
 		}
 	}
@@ -1502,10 +1549,7 @@ export default class LajiMap {
 		item.featureCollection.features = features.filter((item, i) => !deleteIdxs.includes(i));
 
 		deleteIds.forEach(id => {
-			if (item.group !== item.groupContainer) {
-				item.groupContainer.removeLayer(this._getLayerById(id));
-			}
-			item.group.removeLayer(this._getLayerById(id));
+			this._removeLayerFromItem(item, this._getLayerById(id));
 		});
 
 		this._resetIds(dataIdx);
@@ -1524,6 +1568,15 @@ export default class LajiMap {
 		if (newActiveId !== undefined && changeActive) event.push(this._getOnActiveChangeEvent(dataIdx, this.idsToIdxs[dataIdx][newActiveId]));
 
 		this._triggerEvent(event, item.onChange);
+	}
+
+	_removeLayerFromItem(item, layer) {
+		if (item.group !== item.groupContainer && item.groupContainer.hasLayer(layer)) {
+			item.groupContainer.removeLayer(layer);
+		}
+		if (item.group.hasLayer(layer)) {
+			item.group.removeLayer(layer);
+		}
 	}
 
 	_getOnActiveChangeEvent(...idxTuple) {
@@ -1563,7 +1616,7 @@ export default class LajiMap {
 	_setEditable(layer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		const item = this.data[dataIdx];
-		if (!item.editable || this._drawRemoveOnClick || this._drawReverseOnClick) return;
+		if (!item.editable || this._onDrawRemove || this._onDrawReverse) return;
 		this._clearEditable();
 		this.editIdx = [dataIdx, featureIdx];
 		const editLayer = this._getLayerByIdxs(...this.editIdx);
@@ -1600,7 +1653,7 @@ export default class LajiMap {
 	}
 
 	_interceptClick() {
-		if (this._drawRemoveOnClick || this._drawReverseOnClick || this.drawing) return true;
+		if (this._onDrawRemove || this._onDrawReverse || this.drawing) return true;
 		if (this.editIdx !== undefined) {
 			this._commitEdit();
 			return true;
@@ -1759,7 +1812,7 @@ export default class LajiMap {
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
 					let finalColor = undefined;
-					if (hovered && (this._drawRemoveOnClick || (this._drawReverseOnClick && (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString") )))) {
+					if (hovered && (this._onDrawRemove || (this._onDrawReverse && (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString") )))) {
 						finalColor = "#ff0000";
 					} else {
 						finalColor = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);

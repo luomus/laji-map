@@ -143,6 +143,8 @@ class App {
 				drawCopy: true,
 				drawUpload: true,
 				drawClear: true,
+				drawReverse: true,
+				drawDelete: true
 			},
 			polyline: {
 				opacity: 0.1,

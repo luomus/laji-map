@@ -318,7 +318,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		}
 
 		function _createCancelHandler(name, fn, eventName) {
-			console.log("create cancnel");
 			this._createActionHandler(name, fn, eventName, "Cancel");
 		}
 
@@ -328,9 +327,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (finishFn) {
 				fn(...params);
 				this._createFinishHandler(name, finishFn, eventName);
-				if (cancelFn) {
-					console.log("cancelFn");
-				}
 				cancelFn && this._createCancelHandler(name, cancelFn, eventName);
 			} else {
 				fn(...params);

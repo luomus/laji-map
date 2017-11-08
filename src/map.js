@@ -1290,7 +1290,7 @@ export default class LajiMap {
 			contextmenuItems.push({
 				text: translations.ReverseFeature,
 				callback: () => {
-					this._reversePolyline(layer)
+					this._reversePolyline(layer);
 					const id = this.idxsToIds[dataIdx][featureIdx];
 					this._onEdit(dataIdx, {[id]: layer});
 				},
@@ -1427,7 +1427,6 @@ export default class LajiMap {
 	}
 
 	_reversePolyline(layer) {
-		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		const {type} = layer.feature.geometry;
 
 		if (type === "LineString") {

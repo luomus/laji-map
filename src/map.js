@@ -272,7 +272,7 @@ export default class LajiMap {
 			click: () => this._interceptClick(),
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => {
-				this.drawing = true; 
+				this.drawing = true;
 				this.map.fire("controlClick", {name: "draw"});
 			},
 			"draw:drawstop": () => { this.drawing = false; },
@@ -733,7 +733,7 @@ export default class LajiMap {
 		if (this.data[dataIdx]) {
 			this.data[dataIdx].groupContainer.clearLayers();
 		}
-		
+
 		const format = (geoData) ? detectFormat(geoData) : undefined;
 		const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
 		this._setOnChangeForItem(item, format, crs);
@@ -764,7 +764,7 @@ export default class LajiMap {
 		this._idxsToContextMenuOpen[dataIdx] = [];
 
 		layer.eachLayer(layer => {
-			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx); 
+			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx);
 		});
 
 		if (item.hasActive) {
@@ -918,7 +918,7 @@ export default class LajiMap {
 			}
 		};
 
-		if (options.data) { 
+		if (options.data) {
 			console.warn("laji-map warning: draw.data is deprecated and will be removed in the future. Please move it's content to draw");
 		}
 
@@ -1368,14 +1368,15 @@ export default class LajiMap {
 	}
 
 	_decoratePolyline(layer) {
-		const [dataIdx] = this._getIdxTupleByLayer(layer);
-		const item = this.data[dataIdx];
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+
+		const {showStart, showDirection = true} = this._fillStyleWithGlobals(dataIdx, featureIdx);
 
 		function warn() {
 			console.warn("Failed to add a starting point to line");
 		}
 		if (isPolyline(layer)) {
-			if (!item.polyline || item.polyline.showDirection !== false) {
+			if (showDirection !== false) {
 				const {clickable} = layer;
 				layer.options.clickable = false;
 				try {
@@ -1386,7 +1387,6 @@ export default class LajiMap {
 				layer.options.clickable = clickable;
 			}
 
-			const {showStart} = {...item, ...(this.polyline || {})};
 
 			if (showStart) {
 				let firstPoint = undefined;
@@ -1719,30 +1719,34 @@ export default class LajiMap {
 		let layer = undefined;
 		if (this.idxsToIds[dataIdx] && item.group) layer = this._getLayerByIdxs(dataIdx, featureIdx);
 
+		const mergeOptions = (type) => {
+			return {...(this[type] || {}), ...(item[type] || {})};
+		}
+
 		let featureTypeStyle = undefined;
 		if (layer) {
 			if (layer instanceof L.Marker) {
-				featureTypeStyle = this.marker;
+				featureTypeStyle = mergeOptions("marker");
 			} else if (isPolyline(layer)) {
-				featureTypeStyle = this.polyline;
+				featureTypeStyle = mergeOptions("polyline");
 			} else if (layer instanceof L.Rectangle) {
-				featureTypeStyle = this.rectangle;
+				featureTypeStyle = mergeOptions("rectangle");
 			} else if (layer instanceof L.Polygon) {
-				featureTypeStyle = this.polygon;
+				featureTypeStyle = mergeOptions("polygon");
 			} else if (layer instanceof L.Circle) {
-				featureTypeStyle = this.circle;
+				featureTypeStyle = mergeOptions("circle");
 			}
 		} else {
 			switch(feature.geometry.type) {
 			case "LineString":
 			case "MultiLineString":
-				featureTypeStyle = this.polyline;
+				featureTypeStyle = mergeOptions("polyline");
 				break;
 			case "Polygon":
-				featureTypeStyle = this.polygon;
+				featureTypeStyle = mergeOptions("polygon");
 				break;
 			case "Point":
-				featureTypeStyle = (feature.geometry.radius) ? this.circle : this.marker;
+				featureTypeStyle = (feature.geometry.radius) ? mergeOptions("circle") : mergeOptions("marker");
 				break;
 			}
 		}
@@ -1753,7 +1757,7 @@ export default class LajiMap {
 	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles = {}) {
 		const item = this.data[dataIdx];
 		const dataStyles = feature ?
-			this._fillStyleWithGlobals(dataIdx, featureIdx, feature) : 
+			this._fillStyleWithGlobals(dataIdx, featureIdx, feature) :
 			item.getFeatureStyle({
 				dataIdx,
 				featureIdx: featureIdx,
@@ -1794,8 +1798,8 @@ export default class LajiMap {
 		}
 
 		const hovered = (
-			dataIdx !== undefined && 
-			featureIdx !== undefined && 
+			dataIdx !== undefined &&
+			featureIdx !== undefined &&
 			this._idxsToHovered[dataIdx][featureIdx] || this._idxsToContextMenuOpen[dataIdx][featureIdx]
 		);
 

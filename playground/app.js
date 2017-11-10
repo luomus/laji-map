@@ -117,6 +117,9 @@ class App {
 				}
 			},
 			onChange: this.onMapChange,
+			polyline: {
+				showStart: true
+			}
 			//activeIdx: 0,
 		};
 
@@ -148,8 +151,6 @@ class App {
 			},
 			polyline: {
 				opacity: 0.1,
-				weight: 10,
-				showStart: true,
 				showDirection: false
 			},
 			polygon: {

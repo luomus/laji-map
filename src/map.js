@@ -1721,7 +1721,7 @@ export default class LajiMap {
 
 		const mergeOptions = (type) => {
 			return {...(this[type] || {}), ...(item[type] || {})};
-		}
+		};
 
 		let featureTypeStyle = undefined;
 		if (layer) {

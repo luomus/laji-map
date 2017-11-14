@@ -789,7 +789,7 @@ export default class LajiMap {
 		item.group.on("dblclick", ({layer}) => this._setEditable(layer));
 
 		item.group.on("mouseover", e => {
-			if (item.editable || item.hasActive) {
+			if (item.editable || item.hasActive || item.highlightOnHover) {
 				const {layer} = e;
 				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 				this._idxsToHovered[dataIdx][featureIdx] = true;
@@ -798,7 +798,7 @@ export default class LajiMap {
 		});
 
 		item.group.on("mouseout", e => {
-			if (item.editable || item.hasActive) {
+			if (item.editable || item.hasActive || item.highlightOnHover) {
 				const {layer} = e;
 				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 				this._idxsToHovered[dataIdx][featureIdx] = false;
@@ -1800,7 +1800,7 @@ export default class LajiMap {
 		const hovered = (
 			dataIdx !== undefined &&
 			featureIdx !== undefined &&
-			this._idxsToHovered[dataIdx][featureIdx] || this._idxsToContextMenuOpen[dataIdx][featureIdx]
+			this._idxsToHovered[dataIdx][featureIdx]
 		);
 
 		if (hovered) {
@@ -1810,12 +1810,15 @@ export default class LajiMap {
 		let layer = undefined;
 		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
 
-		if (colors.length) {
+		if (colors.length || this._idxsToContextMenuOpen[dataIdx][featureIdx]) {
 			style = {...style};
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
 					let finalColor = undefined;
-					if (hovered && (this._onDrawRemove || (this._onDrawReverse && (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString") )))) {
+					if (
+						this._idxsToContextMenuOpen[dataIdx][featureIdx] || (
+						hovered && (this._onDrawRemove || (this._onDrawReverse && (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString")))))
+					) {
 						finalColor = "#ff0000";
 					} else {
 						finalColor = colors.reduce((combined, [color, amount]) => combineColors(combined, color, amount), style[prop]);

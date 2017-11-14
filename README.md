@@ -67,6 +67,7 @@ activeIdx                                                        | Integer      
 polygon                                                          | Object                    | -                                   | Polygon options: {allowIntersection: Boolean}
 polyline                                                         | Object                    | -                                   | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true).
 onChange                                                         | Function                  | -                                   | A callback function that fires events for draw data changes. Receives an array of event objects.
+highlightOnHover                                                 | Boolean                   | false                               | Hightlights layers on hover even if the item isn't editable or doesn't have an active idx.
 
 
 ### Draw options ###

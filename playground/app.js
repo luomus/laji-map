@@ -67,8 +67,9 @@ class App {
 						console.info("clicked", idx, feature, layer);
 					},
 				},
-				activeIdx: 0,
-				editable: true,
+				//activeIdx: 0,
+				//editable: true,
+				highlightOnHover: true 
 			},
 
 		];

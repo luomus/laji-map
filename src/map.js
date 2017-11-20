@@ -293,17 +293,27 @@ export default class LajiMap {
 			"contextmenu.show": (e) => {
 				if (e.relatedTarget) {
 					this._hoveredLayer = e.relatedTarget;
-					const [dataIdx, featureIdx] = this._getIdxTupleByLayer(this._hoveredLayer);
-					this._idxsToContextMenuOpen[dataIdx][featureIdx] = true;
-					this.updateLayerStyle(e.relatedTarget);
+					const tuple = this._getIdxTupleByLayer(this._hoveredLayer);
+					if (tuple) {
+						const [dataIdx, featureIdx] = tuple;
+						if (this.data[dataIdx] && this.data[dataIdx].editable) {
+							this._idxsToContextMenuOpen[dataIdx][featureIdx] = true;
+							this.updateLayerStyle(e.relatedTarget);
+						}
+					}
 				}
 				this._interceptClick();
 			},
 			"contextmenu.hide": () => {
 				if (!this._hoveredLayer) return;
-				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(this._hoveredLayer);
-				this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
-				this.updateLayerStyle(this._hoveredLayer);
+				const tuple = this._getIdxTupleByLayer(this._hoveredLayer);
+				if (tuple) {
+					const [dataIdx, featureIdx] = tuple;
+					if (this.data[dataIdx] && this.data[dataIdx].editable) {
+						this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
+						this.updateLayerStyle(this._hoveredLayer);
+					}
+				}
 			}
 		});
 

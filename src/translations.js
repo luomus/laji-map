@@ -35,7 +35,7 @@
 		sv: "Ritning"
 	},
 	polyline: {
-		fi: "Viiva",
+		fi: "Linja",
 		en: "A line",
 		sv: "En linje"
 	},
@@ -87,7 +87,7 @@
 	click: {
 		fi: "Klikkaa",
 		en: "Click",
-		sv: "Klick"
+		sv: "Klicka"
 	},
 	drag: {
 		fi: "Raahaa",
@@ -100,9 +100,9 @@
 		sv: "Och"
 	},
 	toDrawCircle: {
-		fi: "Piirtääksesi ympyrän",
-		en: "To draw a circle",
-		sv: "För att rita en cirkel"
+		fi: "Piirtääksesi ympyrän.",
+		en: "To draw a circle.",
+		sv: "För att rita en cirkel."
 	},
 	toDrawRectangle: {
 		fi: "Piirtääksesi suorakulmion",
@@ -110,54 +110,54 @@
 		sv: "För att rita en rektangel"
 	},
 	clickMapToPlaceMarker: {
-		fi: "Klikkaa karttaa asettaaksesi nastan",
-		en: "Click the map to place a marker",
-		sv: "Klick kartan för att sätta en markör"
+		fi: "Klikkaa karttaa asettaaksesi nastan.",
+		en: "Click the map to place a marker.",
+		sv: "Klicka på kartan för att sätta en markör."
 	},
 	clickToStartDrawingShape: {
-		fi: "Klikkaa aloittaaksesi muodon piirtäminen",
-		en: "Click to start drawing a shape",
-		sv: "Klick för att börja rita en form"
+		fi: "Klikkaa aloittaaksesi muodon piirtäminen.",
+		en: "Click to start drawing a shape.",
+		sv: "Klicka på för att börja rita en form."
 	},
 	clickToContinueDrawingShape: {
-		fi: "Klikkaa jatkaaksesi muodon piirtämistä",
-		en: "Click to continue drawing a shape",
-		sv: "Klick för att fortsätta rita formen"
+		fi: "Klikkaa jatkaaksesi muodon piirtämistä.",
+		en: "Click to continue drawing a shape.",
+		sv: "Klicka på för att fortsätta rita formen."
 	},
 	clickToEndDrawingShape: {
-		fi: "Klikkaa ensimmäistä pistettä viimeistelläksesi muodon",
-		en: "Click the first point to close this shape",
-		sv: "Klick den första punkten för att stänga formen"
+		fi: "Klikkaa ensimmäistä pistettä viimeistelläksesi muodon.",
+		en: "Click the first point to close this shape.",
+		sv: "Klicka på den första punkten för att stänga formen."
 	},
 	clickToStartDrawingPolyline: {
-		fi: "Klikkaa aloittaaksesi viivan piirtäminen",
-		en: "Click to start drawing a line",
-		sv: "Klick för att börja rita en linje"
+		fi: "Klikkaa aloittaaksesi viivan piirtäminen.",
+		en: "Click to start drawing a line.",
+		sv: "Klicka på för att börja rita en linje."
 	},
 	clickToContinueDrawingPolyline: {
-		fi: "Klikkaa jatkaaksesi viivan piirtämistä",
-		en: "Click to continue drawing a line",
-		sv: "Klick för att fortsätta rita linjen"
+		fi: "Klikkaa jatkaaksesi viivan piirtämistä.",
+		en: "Click to continue drawing a line.",
+		sv: "Klicka på för att fortsätta rita linjen."
 	},
 	clickToEndDrawingPolyline: {
-		fi: "Klikkaa viimeistä pistettä viimeistelläksesi viivan",
-		en: "Click the last point to finish this line",
-		sv: "Klick den senaste punkten för att stänga linjen"
+		fi: "Klikkaa viimeistä pistettä viimeistelläksesi viivan.",
+		en: "Click the last point to finish this line.",
+		sv: "Klicka på den sista punkten för att stänga linjen."
 	},
 	polylineError: {
-		fi: "$errorHTML Viiva ei saa leikata itseään",
-		en: "$errorHTML Shape edges cannot cross",
-		sv: "$errorHTML Linjen får inte korsa sig"
+		fi: "$errorHTML Viiva ei saa leikata itseään.",
+		en: "$errorHTML Shape edges cannot cross.",
+		sv: "$errorHTML Linjen får inte korsa sig."
 	},
 	simpleShapeEnd: {
-		fi: "Päästä irti hiirestä lopettaaksesi piirtämisen",
-		en: "Release the mouse to finish drawing",
-		sv: "Släpp musen för att avsluta ritning"
+		fi: "Päästä irti hiirestä lopettaaksesi piirtämisen.",
+		en: "Release the mouse to finish drawing.",
+		sv: "Släpp musen för att avsluta ritning."
 	},
 	save: {
 		fi: "Tallenna",
 		en: "Save",
-		sv: "Lagra"
+		sv: "Spara"
 	},
 	changes: {
 		fi: "Muutokset",
@@ -220,9 +220,9 @@
 		sv: "<strong>Fel:</strong>"
 	},
 	addFeatureByCoordinates: {
-		fi: "Lisää kuvio koordinaattien perusteella",
-		en: "Add a feature according to coordinates",
-		sv: "Lägg till en figur på basis av koordinater"
+		fi: "Lisää kuvio koordinaattien perusteella.",
+		en: "Add a feature according to coordinates.",
+		sv: "Lägg till en figur på basis av koordinater."
 	},
 	geobiologicalProvinces: {
 		fi: "Eliömaakunnat",
@@ -242,10 +242,10 @@
 	shapeEdgesCannotCross: {
 		fi: "$errorHTML kuvion särmät eivät saa leikata itseään",
 		en: "$errorHTML shape's edges cannot cross",
-		sv: "$errorHTML formens kanter kan inte korsa"
+		sv: "$errorHTML formens kanter kan inte korsa sig"
 	},
 	errorMsg: {
-		fi: "$errorHTML Sattui virhe. Ole hyvä ja koita myöhemmin uudestaan.",
+		fi: "$errorHTML Tapahtui virhe. Ole hyvä ja yritä myöhemmin uudelleen.",
 		en: "$errorHTML An error occurred. Please try again later.",
 		sv: "$errorHTML Ett fel uppstod. Försök igen senare."
 	},
@@ -280,14 +280,14 @@
 		sv: "Varning: Kartbibliotek är instabil med den nyaste Chrome version 55. Problemet kommer att lösas inom en snar framtid av utvecklarna av biblioteket."
 	},
 	ykjGrid: {
-		fi: "YKJ ruudukko",
+		fi: "YKJ-ruudukko",
 		en: "Finnish Uniform Grid",
 		sv: "EKS rutnät"
 	},
 	copyDrawnFeatures: {
-		fi: "Kopioi piirrettyjen kuvioiden koordinaatit",
-		en: "Copy the coordinates of the drawn features",
-		sv: "Kopiera koordinaterna för de dragna figurerna"
+		fi: "Kopioi piirrettyjen kuvioiden koordinaatit.",
+		en: "Copy the coordinates of the drawn features.",
+		sv: "Kopiera koordinaterna för de dragna figurerna."
 	},
 	clearMap: {
 		fi: "Tyhjennä kartta",
@@ -315,24 +315,24 @@
 		sv: "Den sista"
 	},
 	splitLine: {
-		fi: "Pätkäise linja",
-		en: "Split line transect",
-		sv: "Dela line transekt"
+		fi: "Katkaise linja.",
+		en: "Split line transect.",
+		sv: "Bryta av linjen."
 	},
 	deleteLineSegment: {
-		fi: "Poista linjan pätkä",
-		en: "Delete a segment of the line transect",
-		sv: "Ta bort ett segment av linjen transekt"
+		fi: "Poista linjan osa.",
+		en: "Delete a segment of the line transect.",
+		sv: "Radera ett segment av linjen."
 	},
 	splitLineTooltip: {
-		fi: "Klikkaa karttaa pätkäistäksesi linjan",
-		en: "Click the map to split the line",
-		sv: "Klicka på kartan för att dela linjen"
+		fi: "Klikkaa karttaa katkaistaksesi linjan.",
+		en: "Click the map to split the line.",
+		sv: "Klicka på kartan för att bryta av linjen."
 	},
 	deleteLineSegmentTooltip: {
-		fi: "Klikkaa pätkää jonka haluat poistaa",
-		en: "Click the segment that you want to delete",
-		sv: "Klicka det segment som du vill ta bort"
+		fi: "Klikkaa poistettavaa linjan osaa.",
+		en: "Click the segment that you want to delete.",
+		sv: "Klicka på segmentet som du vill radera."
 	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",
@@ -340,14 +340,14 @@
 		sv: "Från början av linjen"
 	},
 	overlappingPoints: {
-		fi: "Päällekkäisiä pistettä",
+		fi: "Päällekkäisiä pisteitä",
 		en: "Overlapping points",
 		sv: "Överlappande punkter"
 	},
 	ykjGridLabels: {
-		fi: "YKJ selitteet",
+		fi: "YKJ-selitteet",
 		en: "Finnish Uniform Grid legends",
-		sv: "EKS rutnät legends"
+		sv: "EKS rutnät beskrivningar"
 	},
 	pohjakartta: {
 		fi: "Suomen pohjakartta",
@@ -362,12 +362,12 @@
 	undo: {
 		fi: "Kumoa",
 		en: "Undo",
-		sv: "Göra ogjord"
+		sv: "Ångra"
 	},
 	redo: {
 		fi: "Tee uudelleen",
 		en: "Redo",
-		sv: "Görä om"
+		sv: "Göra om"
 	},
 	removePoint: {
 		fi: "Poista piste",
@@ -377,7 +377,7 @@
 	removeFirstOrLastPoint: {
 		fi: "Poistetaanko ensimmäinen vai viimeinen piste?",
 		en: "Do you want to remove the first or the last point?",
-		sv: "Vill du radera förstä eller den sista punkten?"
+		sv: "Vill du radera den första eller den sista punkten?"
 	},
 	first: {
 		fi: "Ensimmäinen",
@@ -390,19 +390,19 @@
 		sv: "Den sista"
 	},
 	uploadDrawnFeatures: {
-		fi: "Tuo kuviot tekstinä",
-		en: "Upload textual coordinates",
-		sv: "Ladda upp textkoordinater"
+		fi: "Tuo kuviot tekstinä.",
+		en: "Upload textual coordinates.",
+		sv: "Ladda upp textkoordinater."
 	},
 	geoDataFormatDetectionError: {
-		fi: "Formaatin tunnistus epäonnistui",
-		en: "Format detection failed",
-		sv: "Formatdetektering misslyckades"
+		fi: "Formaatin tunnistus epäonnistui.",
+		en: "Format detection failed.",
+		sv: "Formatdetektering misslyckades."
 	},
 	GeoDataCRSDetectionError: {
-		fi: "Koordinaattijärjestelmän tunnistus epäonnistui",
-		en: "Coordinate system detection failed",
-		sv: "Koordinatesystemet misslyckades"
+		fi: "Koordinaattijärjestelmän tunnistus epäonnistui.",
+		en: "Coordinate system detection failed.",
+		sv: "Detektering av koordinatsystemet misslyckades."
 	},
 	jsonParseError: {
 		fi: "JSON:in purku epäonnistui",
@@ -412,22 +412,22 @@
 	detectedFormat: {
 		fi: "Tunnistettu formaatti",
 		en: "Detected format",
-		sv: "Detekterade formatet"
+		sv: "Detekterad format"
 	},
 	detectedCRS: {
 		fi: "Tunnistettu koordinaattijärjestelmä",
 		en: "Detected coordinate system",
-		sv: "Detekterade koordinatesystemet"
+		sv: "Detekterad koordinatsystem"
 	},
 	coordinateParsingError: {
-		fi: "Koordinaattien purku epäonnistui",
-		en: "Parsing coordinates failed",
-		sv: "Analysera misslyckade koordinater"
+		fi: "Koordinaattien purku epäonnistui.",
+		en: "Parsing coordinates failed.",
+		sv: "Parsing av koordinater misslyckades."
 	},
 	lineGeoDataFormatError: {
-		fi: "Kuvion purku tekstisyötteestä epäonnistui",
-		en: "Parsing feature from text input failed",
-		sv: "Parsing figuren från textinmatning misslyckades"
+		fi: "Kuvion purku tekstisyötteestä epäonnistui.",
+		en: "Parsing feature from text input failed.",
+		sv: "Parsing av figuren från textinmatning misslyckades."
 	},
 	line: {
 		fi: "Rivi",
@@ -445,9 +445,9 @@
 		sv: "ETRS-TM35FIN"
 	},
 	splitLineByMeters: {
-		fi: "Pätkäise linja metriluvulla",
-		en: "Split line transect by meters",
-		sv: "Dela line transekt metrisk talet"
+		fi: "Katkaise linja metriluvulla.",
+		en: "Split line transect by meters.",
+		sv: "Bryta av linjen gemon meter."
 	},
 	segmentSplitByLengthHelp: {
 		fi: "Syötä uusi pituus. Nykyisen linjan pituus",
@@ -455,34 +455,34 @@
 		sv: "Ange en ny längd. Längden på det aktuella segmentet"
 	},
 	splitLineByMetersTooltip: {
-		fi: "Klikkaa pätkää jonka haluat pätkäistä",
+		fi: "Klikkaa linjan osaa, jonka haluat katkaista.",
 		en: "Click the segment that you want to split",
-		sv: "Klicka det segment som du vill ta dela"
+		sv: "Klicka på segmentet som du vill bryta av."
 	},
 	connectSegments: {
-		fi: "Yhdistä linjan pätkät",
-		en: "Connect line transect segments",
-		sv: "Koppla linje transekt segment"
+		fi: "Yhdistä linjan osat.",
+		en: "Connect line transect segments.",
+		sv: "Koppla ihop linjesegmentet."
 	},
 	startLineConnectFirstPointHelp: {
-		fi: "Klikkaa ensimmäistä pätkää jonka haluat yhdistää",
-		en: "Click the first segment you want to connect",
-		sv: "Klicka på det första segmentet du vill ansluta"
+		fi: "Klikkaa ensimmäistä yhdistettävää osaa.",
+		en: "Click the first segment you want to connect.",
+		sv: "Klicka på det första segmentet du vill koppla ihop."
 	},
 	startLineConnectLastPointHelp: {
-		fi: "Klikkaa viimeistä pätkää jonka haluat yhdistää",
-		en: "Click the last segment you want to connect",
-		sv: "Klicka på den sista segmentet du vill ansluta"
+		fi: "Klikkaa viimeistä yhdistettävää osaa.",
+		en: "Click the last segment you want to connect.",
+		sv: "Klicka på det sista segmentet du vill koppla ihop."
 	},
 	SegmentsMustBeOfSameLine: {
-		fi: "Pätkien täytyy olla samalta kokonaisuudelta!",
+		fi: "Osien täytyy olla samasta linjasta!",
 		en: "The segments must be from the same line body!",
-		sv: "Segmenten måste vara från samma linjekropp!"
+		sv: "Segmenten måste vara från samma linjen!"
 	},
 	confirmDrawClear: {
-		fi: "Haluatko varmasti tyhjentää kartalta kaikki kuviot?",
+		fi: "Haluatko varmasti poistaa kartalta kaikki kuviot?",
 		en: "Are you sure you want to remove all the features from the map?",
-		sv: "Är du säker på att du vill ta bort alla figurer från kartan"
+		sv: "Är du säker på att du vill radera alla figurer från kartan?"
 	},
 	yes: {
 		fi: "Kyllä",
@@ -495,18 +495,18 @@
 		sv: "Nej"
 	},
 	reverseFeature: {
-		fi: "Käännä viiva",
+		fi: "Käännä linjan suunta",
 		en: "Reverse line",
 		sv: "Omvänd raden"
 	},
 	removeFeatureOnClick: {
-		fi: "Klikkaa kuviota poistaakseesi sen",
-		en: "Click a feature in order to remove it",
-		sv: "Klicka på en featuren för att ta bort den"
+		fi: "Klikkaa kuviota poistaakseesi sen.",
+		en: "Click a feature in order to remove it.",
+		sv: "Klicka på en figur för att radera den."
 	},
 	reverseLineOnClick: {
-		fi: "Klikkaa viivaa kääntääksesi sen",
-		en: "Click a line in order to reverse it",
-		sv: "Klicka på en rad för att vända den"
+		fi: "Klikkaa linjaa kääntääksesi sen suunnan.",
+		en: "Click a line in order to reverse it.",
+		sv: "Klicka på en rad för att vända den."
 	}
 };

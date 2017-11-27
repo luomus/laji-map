@@ -1005,13 +1005,13 @@ export default class LajiMap {
 	_finishDrawRemove() {
 		const layers = this._drawRemoveLayers;
 		this._stopDrawRemove();
-		this._onDelete(this.drawIdx, layers.map(layer => layer._leaflet_id));
+		if (layers) this._onDelete(this.drawIdx, layers.map(layer => layer._leaflet_id));
 	}
 
 	_cancelDrawRemove() {
 		const layers = this._drawRemoveLayers;
 		this._stopDrawRemove();
-		layers.forEach(layer => {
+		if (layers) layers.forEach(layer => {
 			this.draw.group.addLayer(layer);
 			this.updateLayerStyle(layer);
 		});

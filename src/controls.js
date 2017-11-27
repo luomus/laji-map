@@ -281,7 +281,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				fn();
 				that.map.off("controlClick", stopOnControlClick);
 				that._removeKeyListener(ESC, stop);
-				_that.container.removeChild(cont);
+				if (_that.container.contains(cont)) _that.container.removeChild(cont);
 				if (eventName) that.map.off(eventName);
 			}
 

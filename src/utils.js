@@ -604,6 +604,8 @@ export function combineColors(...colors) {
 			}
 			value = Math.min(value, initial + max);
 		}
-		return rgb + value.toString(16);
+		let hex = value.toString(16);
+		if (hex.length === 1) hex = `0${hex}`;
+		return rgb + hex;
 	}, "#");
 }

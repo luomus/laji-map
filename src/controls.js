@@ -93,6 +93,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_updateMapControls() {
 		if (!depsProvided(this, "_updateMapControls", arguments)) return;
 
+		const controlContainerNode = this.container.querySelector(".leaflet-control-container");
+
+		if (!controlContainerNode.className.includes("leaflet-touch")) {
+			controlContainerNode.className += " leaflet-touch";
+		}
+
 		(this.controls || []).forEach(control => {
 			if (control) this.map.removeControl(control);
 		});

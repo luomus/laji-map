@@ -289,6 +289,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				that._removeKeyListener(ESC, stop);
 				if (_that.container.contains(cont)) _that.container.removeChild(cont);
 				if (eventName) that.map.off(eventName);
+				if (_that.container.contains(cont)) _that.container.removeChild(cont);
+				Object.keys(_that.buttonActions[name]).forEach(text => {
+					cont.removeChild(_that.buttonActions[name][text]);
+				});
+				_that.buttonActions[name] = {};
 			}
 
 			function stopOnControlClick({name: _name}) {
@@ -300,13 +305,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				cont = this.buttonActionContainer[name];
 			}
 
-			if (!this.buttonActions[text]) {
+			if (!this.buttonActions[name][text]) {
 				const buttonWrapper = L.DomUtil.create("li");
 				const button = that._createControlButton(this, buttonWrapper, stop);
 				that.addTranslationHook(button, text);
 				cont.appendChild(buttonWrapper);
 				that.map.on("controlClick", stopOnControlClick);
-				this.buttonActions[text] = buttonWrapper;
+				this.buttonActions[name][text] = buttonWrapper;
 			}
 
 			that._addKeyListener(ESC, stop, !!"high priority");
@@ -330,6 +335,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._controlButtons = {};
 
 		function callback(fn, finishFn, cancelFn, name, eventName) { return (...params) => {
+			that.map.fire("controlClick", {name});
 			if (finishFn) {
 				fn(...params);
 				this._createFinishHandler(name, finishFn, eventName);
@@ -337,7 +343,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			} else {
 				fn(...params);
 			}
-			that.map.fire("controlClick", {name});
 		};}
 
 		this.controlItems.filter(({control, name}) => {
@@ -353,6 +358,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 						controls.forEach(({name: subName, iconCls, text, fn, finishFn, cancelFn, eventName, onAdd: _onAdd}) => {
 							const buttonName = getSubControlName(name, subName);
+							this.buttonActions[buttonName] = {};
 							if (!that._controlIsAllowed(buttonName)) return;
 							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, buttonName, eventName]));
 							if (_onAdd) _onAdd();

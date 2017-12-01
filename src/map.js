@@ -1005,7 +1005,7 @@ export default class LajiMap {
 	_finishDrawRemove() {
 		const layers = this._drawRemoveLayers;
 		this._stopDrawRemove();
-		if (layers) this._onDelete(this.drawIdx, layers.map(layer => layer._leaflet_id));
+		if (layers && layers.length) this._onDelete(this.drawIdx, layers.map(layer => layer._leaflet_id));
 	}
 
 	_cancelDrawRemove() {
@@ -1029,6 +1029,7 @@ export default class LajiMap {
 	}
 
 	_stopDrawReverse() {
+		if (!this._onDrawReverse) return;
 		this.draw.group.removeEventListener("click", this._onDrawReverse);
 		this._onDrawReverse = undefined;
 		this._drawReverseLayers = undefined;
@@ -1038,6 +1039,7 @@ export default class LajiMap {
 	_finishDrawReverse() {
 		const layers = this._drawReverseLayers;
 		this._stopDrawReverse();
+		if (!layers || !layers.length) return;
 		const editData = layers.reduce((idToLayer, layer) => {
 			idToLayer[layer._leaflet_id] = layer;
 			return idToLayer;
@@ -1048,6 +1050,7 @@ export default class LajiMap {
 	_cancelDrawReverse() {
 		const layers = this._drawReverseLayers;
 		this._stopDrawReverse();
+		if (!layers)  return;
 		layers.forEach(layer => {
 			layer.setLatLngs(layer._origLatLngs);
 			this._decoratePolyline(layer);

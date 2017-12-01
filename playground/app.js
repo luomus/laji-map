@@ -69,7 +69,7 @@ class App {
 				},
 				//activeIdx: 0,
 				//editable: true,
-				highlightOnHover: true 
+				highlightOnHover: true
 			},
 
 		];

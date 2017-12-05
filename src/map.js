@@ -43,7 +43,8 @@ export default class LajiMap {
 			center:  [65, 26],
 			zoom: 2,
 			popupOnHover: false,
-			draw: false
+			draw: false,
+			availableOverlayNameBlacklist: ["pohjakartta"],
 		};
 
 		this.options = {};

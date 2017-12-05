@@ -40,7 +40,7 @@ lineTransect                                    | Linetransect options      | - 
 availableTileLayerNamesWhitelist                | String[]                  | -                                   | List of tile layer names to show in the layer control. See the possible values of tileLayerName option.
 availableTileLayerNamesBlacklist                | String[]                  | -                                   | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
 availableOverlayNamesWhitelist                  | String[]                  | -                                   | List of overlay names to show in the layer control. See the possible values of overlayNames option.
-availableOverlayNamesBlacklist                  | String[]                  | -                                   | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
+availableOverlayNamesBlacklist                  | String[]                  | ["pohjakartta"]                     | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
 tileLayerOpacity                                | Float                     | -                                   | Tile layer opacity. Range: 0.0-1.0
 on                                              | Object                    | -                                   | Leaflet events to listen for. Must be an object with event names as keys and value as callbacks. You can also use setEventListeners().
 polygon                                         | Object                    | -                                   | Polygon options: {allowIntersection: Boolean, Path style options}

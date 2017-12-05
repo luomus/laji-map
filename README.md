@@ -38,7 +38,7 @@ popupOnHover                                    | Boolean                   | fa
 onInitializeDrawLayer                           | Function                  | -                                   | A callback function that is triggered after the draw layer is initialized.
 lineTransect                                    | Linetransect options      | -                                   | Options for a line transect layer.
 availableTileLayerNamesWhitelist                | String[]                  | -                                   | List of tile layer names to show in the layer control. See the possible values of tileLayerName option.
-availableTileLayerNamesBlacklist                | String[]                  | ["pohjakartta"]                     | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
+availableTileLayerNamesBlacklist                | String[]                  | -                                   | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
 availableOverlayNamesWhitelist                  | String[]                  | -                                   | List of overlay names to show in the layer control. See the possible values of overlayNames option.
 availableOverlayNamesBlacklist                  | String[]                  |                                     | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
 tileLayerOpacity                                | Float                     | -                                   | Tile layer opacity. Range: 0.0-1.0

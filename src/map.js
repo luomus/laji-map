@@ -402,7 +402,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableTileLayers(names, condition) {
+	setAvailableTileLayers(names = [], condition) {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
 		const list = names.reduce((list, name) => {
 			list[name] = true;
@@ -551,7 +551,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableOverlays(overlayNames, condition) {
+	setAvailableOverlays(overlayNames = [], condition) {
 		if (!depsProvided(this, "setAvailableOverlays", arguments)) return;
 		const list = overlayNames.reduce((list, name) => {
 			list[name] = true;

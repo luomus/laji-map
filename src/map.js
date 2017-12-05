@@ -44,7 +44,7 @@ export default class LajiMap {
 			zoom: 2,
 			popupOnHover: false,
 			draw: false,
-			availableOverlayNameBlacklist: ["pohjakartta"],
+			availableTileLayerNamesBlacklist: ["pohjakartta"],
 		};
 
 		this.options = {};

@@ -443,8 +443,10 @@ export default class LajiMap {
 			projectionChanged = true;
 		}
 
-		this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
-		this.map.setView(center, zoom, {animate: false});
+		if (projectionChanged) {
+			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+			this.map.setView(center, zoom, {animate: false});
+		}
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 

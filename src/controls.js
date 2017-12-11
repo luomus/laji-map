@@ -503,26 +503,26 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_controlIsAllowed(name) {
 		const dependencies = {
 			coordinateInput: [
-				() => this.draw,
-				() => (["marker", "rectangle"].some(type => {return this.draw[type] !== false;}))
+				() => this.getDraw(),
+				() => (["marker", "rectangle"].some(type => {return this.getDraw()[type] !== false;}))
 			],
 			draw: [
-				() => this.draw
+				() => this.getDraw()
 			],
 			drawCopy: [
-				() => this.draw
+				() => this.getDraw()
 			],
 			drawUpload: [
-				() => this.draw
+				() => this.getDraw()
 			],
 			drawClear: [
-				() => this.draw
+				() => this.getDraw()
 			],
 			drawDelete: [
-				() => this.draw
+				() => this.getDraw()
 			],
 			drawReverse: [
-				() => this.draw
+				() => this.getDraw()
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect")
@@ -600,14 +600,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		const drawOptions = {
 			position: "topright",
 			edit: {
-				featureGroup: this.draw.group,
+				featureGroup: this.getDraw().group,
 				edit: false,
 				remove: false
 			}
 		};
 
 		drawOptions.draw = this.getFeatureTypes().reduce((options, type) => {
-			options[type] = (!this.draw ||this.draw[type] === false || this.controlSettings.draw[type] === false) ?
+			options[type] = (!this.getDraw() ||this.getDraw()[type] === false || this.controlSettings.draw[type] === false) ?
 				false : this._getDrawOptionsForType(type);
 			return options;
 		}, {});
@@ -893,8 +893,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};}
 
-		const ykjAllowed = that.draw.rectangle;
-		const wgs84Allowed = that.draw.marker;
+		const ykjAllowed = that.getDraw().rectangle;
+		const wgs84Allowed = that.getDraw().marker;
 
 		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
 
@@ -932,9 +932,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		function getHelpTxt() {
 			let help = "";
-			const rectangleAllowed = that.draw.rectangle;
+			const rectangleAllowed = that.getDraw().rectangle;
 			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
-			if (that.draw.marker) {
+			if (that.getDraw().marker) {
 				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
 				else help = that.translations.EnterWgs84Coordinates;
 			}
@@ -992,7 +992,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				properties: {}
 			};
 
-			if (isYKJ && (latlngStr[0].length < 7 || this.draw.marker === false)) {
+			if (isYKJ && (latlngStr[0].length < 7 || this.getDraw().marker === false)) {
 				const latStart = toYKJFormat(latlng[0]);
 				const latEnd = toYKJFormat(latlng[0] + 1);
 
@@ -1009,7 +1009,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				].map(convert)];
 			}
 
-			const layer = this._featureToLayer(this.draw.getFeatureStyle)(feature);
+			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);
 			const isMarker = layer instanceof L.Marker;
 
 			this._onAdd(this.drawIdx, layer, latInput.value + ":" + lngInput.value);
@@ -1046,8 +1046,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		HTMLInput.setAttribute("readonly", "readonly");
 		HTMLInput.addEventListener("focus", HTMLInput.select);
 
-		const features = this.draw.featureCollection.features.map(this.formatFeatureOut);
-		const originalGeoJSON = {...this.draw.featureCollection, features};
+		const features = this.getDraw().featureCollection.features.map(this.formatFeatureOut);
+		const originalGeoJSON = {...this.getDraw().featureCollection, features};
 
 		function converterFor(proj) {
 			return input => {
@@ -1259,13 +1259,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function convertText(e) {
 			e.preventDefault();
 			try {
-				that.setDraw({...that.draw, featureCollection: undefined, geoData: textarea.value});
+				that.setDraw({...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
 				that._closeDialog(e);
 			} catch (e) {
 				updateAlert(e);
 				throw e;
 			}
-			const bounds = that.draw.group.getBounds();
+			const bounds = that.getDraw().group.getBounds();
 			if (Object.keys(bounds).length) that.map.fitBounds(bounds);
 		}
 
@@ -1305,7 +1305,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.getFeatureTypes().forEach(featureType => {
 			const text = join("Draw", featureType);
 
-			if (this.draw && this.draw[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
+			if (this.getDraw() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
 				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
 					text: text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,

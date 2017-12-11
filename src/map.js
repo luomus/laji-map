@@ -822,7 +822,7 @@ export default class LajiMap {
 			const item = this.data[dataIdx];
 			const {layer} = e;
 			const {featureCollection: {features}} = item;
-			const featureIdx = features.length;
+			const featureIdx = features.length - 1;
 			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
 
 			feature.properties.lajiMapIdx = featureIdx;
@@ -848,7 +848,7 @@ export default class LajiMap {
 	zoomToData() {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
-		const featureGroup = L.featureGroup([this.draw, ...this.data].reduce((layers, item) => {
+		const featureGroup = L.featureGroup([this.getDraw(), ...this.data].reduce((layers, item) => {
 			const newLayers = item.group.getLayers().filter(layer => !(layer instanceof L.Circle)); // getBounds fails with circles
 			layers = [...layers, ...newLayers];
 			return layers;
@@ -908,7 +908,7 @@ export default class LajiMap {
 
 		const drawAllowed = options !== false;
 
-		this.draw = {
+		let draw = {
 			...([
 				"rectangle",
 				"polyline",
@@ -923,8 +923,8 @@ export default class LajiMap {
 				return _options;
 			}, {}))
 		};
-		this.draw = {
-			...this.draw,
+		draw = {
+			...draw,
 			...{
 				...(drawAllowed ? (options || {}) : {})
 			}
@@ -934,20 +934,23 @@ export default class LajiMap {
 			console.warn("laji-map warning: draw.data is deprecated and will be removed in the future. Please move it's content to draw");
 		}
 
-		const draw = {
+		draw = {
 			getFeatureStyle: (...params) => this._getDefaultDrawStyle(...params),
 			getClusterStyle: (...params) => this._getDefaultDrawClusterStyle(...params),
 			getDraftStyle: (...params) => this._getDefaultDrawDraftStyle(...params),
 			editable: true,
 			onChange: options.onChange || (options.data || {}).onChange,
-			...this.draw,
+			...draw,
 			...(options.data || {})
 		};
 
 		this.updateData(this.drawIdx, draw);
-		this.draw = this.data[this.drawIdx];
 
 		provide(this, "draw");
+	}
+
+	getDraw() {
+		return this.data[this.drawIdx];
 	}
 
 	@dependsOn("data")
@@ -979,10 +982,11 @@ export default class LajiMap {
 		}, item.onChange);
 
 		this.updateData(item.idx, {...item, geoData: undefined, featureCollection: {type: "FeatureCollection", features: []}});
+		this._resetIds(item.idx);
 	}
 
 	clearDrawData() {
-		this.clearItemData(this.data[this.drawIdx]);
+		this.clearItemData(this.getDraw());
 	}
 
 	_startDrawRemove() {
@@ -992,13 +996,13 @@ export default class LajiMap {
 		this._drawRemoveLayers = [];
 		this._onDrawRemove = ({layer}) => {
 			this._drawRemoveLayers.push(layer);
-			this._removeLayerFromItem(this.draw, layer);
+			this._removeLayerFromItem(this.getDraw(), layer);
 		};
-		this.draw.group.on("click", this._onDrawRemove);
+		this.getDraw().group.on("click", this._onDrawRemove);
 	}
 
 	_stopDrawRemove() {
-		this.draw.group.removeEventListener("click", this._onDrawRemove);
+		this.getDraw().group.removeEventListener("click", this._onDrawRemove);
 		this._onDrawRemove = undefined;
 		this._disposeTooltip();
 		this._drawRemoveLayers = undefined;
@@ -1014,7 +1018,7 @@ export default class LajiMap {
 		const layers = this._drawRemoveLayers;
 		this._stopDrawRemove();
 		if (layers) layers.forEach(layer => {
-			this.draw.group.addLayer(layer);
+			this.getDraw().group.addLayer(layer);
 			this.updateLayerStyle(layer);
 		});
 	}
@@ -1027,12 +1031,12 @@ export default class LajiMap {
 			this._drawReverseLayers.push(layer);
 			this._reversePolyline(layer);
 		};
-		this.draw.group.on("click", this._onDrawReverse);
+		this.getDraw().group.on("click", this._onDrawReverse);
 	}
 
 	_stopDrawReverse() {
 		if (!this._onDrawReverse) return;
-		this.draw.group.removeEventListener("click", this._onDrawReverse);
+		this.getDraw().group.removeEventListener("click", this._onDrawReverse);
 		this._onDrawReverse = undefined;
 		this._drawReverseLayers = undefined;
 		this._disposeTooltip();
@@ -1121,7 +1125,6 @@ export default class LajiMap {
 	_resetIds(idx) {
 		// Maps item indices to internal ids and the other way around.
 		// We use leaflet ids as internal ids.
-		//
 		this.idxsToIds[idx] = {};
 		this.idsToIdxs[idx] = {};
 
@@ -1149,7 +1152,7 @@ export default class LajiMap {
 	}
 
 	_reclusterDrawData() {
-		this._reclusterDataItem(this.data[this.drawIdx]);
+		this._reclusterDataItem(this.getDraw());
 	}
 
 	_reclusterData() {
@@ -1485,7 +1488,7 @@ export default class LajiMap {
 				type: "create",
 				feature
 			},
-			this._getOnActiveChangeEvent(dataIdx, features.length)
+			this._getOnActiveChangeEvent(dataIdx, features.length - 1)
 		];
 
 		this._triggerEvent(event, item.onChange);
@@ -1863,7 +1866,7 @@ export default class LajiMap {
 	}
 
 	_getDefaultDrawClusterStyle() {
-		return {color: this.data[this.drawIdx].getFeatureStyle({}).color, opacity: 1};
+		return {color: this.getDraw().getFeatureStyle({}).color, opacity: 1};
 	}
 
 	_getDefaultDataStyle = item => () => {
@@ -1923,13 +1926,13 @@ export default class LajiMap {
 
 	_getDrawOptionsForType(featureType) {
 		featureType = featureType.toLowerCase();
-		const baseStyle = this.data[this.drawIdx].getDraftStyle();
+		const baseStyle = this.getDraw().getDraftStyle();
 		let additionalOptions = {};
 
 		switch (featureType) {
 		case "marker":
 			additionalOptions = {
-				icon: this._createIcon({...this.data[this.drawIdx].getDraftStyle()})
+				icon: this._createIcon({...this.getDraw().getDraftStyle()})
 			};
 			break;
 		case "polygon":
@@ -1939,7 +1942,7 @@ export default class LajiMap {
 			break;
 		}
 
-		const userDefined = this.draw[featureType] || {};
+		const userDefined = this.getDraw()[featureType] || {};
 
 		return {
 			metric: true,

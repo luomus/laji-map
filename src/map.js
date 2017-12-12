@@ -1610,11 +1610,12 @@ export default class LajiMap {
 		if (item.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(...idxTuple), item.onChange);
 	}
 
-	focusToLayer(idx) {
-		const id = this.idxsToIds[idx];
+	focusToLayerByIdxs(...idxTuple) {
+		const [dataIdx, featureIdx] = idxTuple;
+		const id = this.idxsToIds[dataIdx][featureIdx];
 
-		if (idx === undefined) {
-			this.activeId = this.idxsToIds[idx];
+		if (featureIdx === undefined) {
+			this.activeId = this.idxsToIds[featureIdx];
 			return;
 		}
 
@@ -1627,7 +1628,11 @@ export default class LajiMap {
 			this.map.fitBounds(layer.getBounds());
 		}
 
-		this._onActiveChange(idx);
+		this._onActiveChange(...idxTuple);
+	}
+
+	focusToDrawLayer(idx) {
+		this.focusToLayerByIdxs(this.drawIdx, idx);
 	}
 
 	_setEditable(layer) {

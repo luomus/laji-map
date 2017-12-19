@@ -119,7 +119,8 @@ class App {
 			},
 			onChange: this.onMapChange,
 			polyline: {
-				showStart: true
+				showStart: true,
+				showDirection: true
 			}
 			//activeIdx: 0,
 		};

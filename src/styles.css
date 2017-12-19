@@ -299,3 +299,7 @@
     top: 5px;
     width: 4px;
 }
+
+.laji-map text {
+	user-select: none;
+}

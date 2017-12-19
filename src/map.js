@@ -798,7 +798,11 @@ export default class LajiMap {
 			if (!this._interceptClick()) this._onActiveChange(item.idx, lajiMapIdx);
 		});
 
-		item.group.on("dblclick", ({layer}) => this._setEditable(layer));
+		item.group.on("dblclick", ({layer}) => {
+			this.map.doubleClickZoom.disable();
+			this._setEditable(layer);
+			setImmediate(() => this.map.doubleClickZoom.enable());
+		});
 
 		item.group.on("mouseover", e => {
 			if (item.editable || item.hasActive || item.highlightOnHover) {

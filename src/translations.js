@@ -495,7 +495,7 @@
 		sv: "Nej"
 	},
 	reverseFeature: {
-		fi: "Käännä linjan suunta",
+		fi: "Käännä viivan suunta",
 		en: "Reverse line",
 		sv: "Omvänd raden"
 	},

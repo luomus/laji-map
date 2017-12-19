@@ -126,10 +126,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			},
 			{
 				name: "zoom",
-				control: () => L.control.zoom({
-					zoomInTitle: this.translations.ZoomIn,
-					zoomOutTitle: this.translations.ZoomOut
-				})
+				control: () => this.getZoomControl()
 			},
 			{
 				name: "scale",
@@ -706,6 +703,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		const that = this;
 		const LayerControl = L.Control.Layers.extend({
+			onAdd: function(map) {
+				const container = L.Control.Layers.prototype.onAdd.call(this, map);
+				L.DomEvent.disableClickPropagation(container);
+				return container;
+			},
 			_onInputClick: function(e) {
 				if (!e) return;
 
@@ -793,10 +795,22 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		});
 
 		const layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
-
 		this.layerControl = layerControl;
-
 		return layerControl;
+	}
+
+	getZoomControl() {
+		const ZoomControl = L.Control.Zoom.extend({
+			onAdd: function(map) {
+				const container = L.Control.Zoom.prototype.onAdd.call(this, map);
+				L.DomEvent.disableClickPropagation(container);
+				return container;
+			}
+		});
+		return new ZoomControl({
+			zoomInTitle: this.translations.ZoomIn,
+			zoomOutTitle: this.translations.ZoomOut
+		});
 	}
 
 	setTileLayerOpacity(opacity, triggerEvent) {

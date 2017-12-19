@@ -1402,7 +1402,8 @@ export default class LajiMap {
 				const {clickable} = layer;
 				layer.options.clickable = false;
 				try {
-					layer.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+					layer.setText(null)
+					     .setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
 				} catch (e) {
 					console.warn("laji-map polyline text decorating failed");
 				}

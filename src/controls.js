@@ -79,6 +79,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					this.drawControl._toolbars.draw._modes[featureType].handler.disable();
 				}
 			});
+			this._clearEditable();
 		};
 		// TODO Poista kommentit kun laji.fi havaintokartan neliöllä rajaus bugi korjattu. Jostain syystä draw:created -> this._onAdd ei triggeröidy.
 		//this.map.on("draw:created", e => {

@@ -121,15 +121,14 @@ class App {
 			polyline: {
 				showStart: true,
 				showDirection: true
-			}
-			//activeIdx: 0,
+			},
+			activeIdx: 0,
 		};
 
 		this.activeIdx = 0;
 
 		const options = {
 			rootElem: document.getElementById("root"),
-			draw: this.drawOptions,
 			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
 			lang: "fi",
 			popupOnHover: true,
@@ -140,6 +139,7 @@ class App {
 			zoom: 11,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
+			draw: this.drawOptions,
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
@@ -161,22 +161,14 @@ class App {
 					showArea: true
 				}
 			},
+			zoomToData: true
 		};
 
 
 		const map = new LajiMap(options);
 		this.map = map;
-		const map2 = new LajiMap({...options,
-			rootElem: document.getElementById("root2"),
-			lang: "en",
-			lineTransect: undefined,
-			center: [60.40403173483798, 22.104264017028992],
-			zoom: 7,
-			tileLayerName: "taustakartta"
-		});
-		this.map2 = map2;
 
-		map2.addData({
+		map.addData({
 			geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
 			getFeatureStyle: (e) => {
 				const {featureIdx} = e;
@@ -230,6 +222,10 @@ class App {
 				break;
 			case "active":
 				this.activeIdx = e.idx;
+				break;
+			case "insert":
+				drawData.featureCollection.features.splice(e.idx, 0, e.feature);
+				break;
 			}
 		});
 	}
@@ -237,8 +233,7 @@ class App {
 
 const app = new App();
 if (process.env.NODE_ENV !== "production") {
-	window.ltMap = app.map;
-	window.drawMap = app.map2;
+	window.map = app.map;
 	window.lajiMapUtils = utils;
 }
 

@@ -149,7 +149,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._LTHistory = [feature.geometry];
 		this._LTHistoryPointer = 0;
 
-
 		this.setLineTransectGeometry(feature.geometry);
 		this._origLineTransect = L.featureGroup(this._allLines.map(line => 
 			L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})

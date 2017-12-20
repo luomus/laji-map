@@ -950,11 +950,40 @@ export default class LajiMap {
 
 		this.updateData(this.drawIdx, draw);
 
+		this._drawHistory = [{featureCollection: {
+			type: "FeatureCollection",
+			features: this.cloneFeatures(this.getDraw().featureCollection.features)
+		}}];
+		this._drawHistoryPointer = 0;
+
 		provide(this, "draw");
 	}
 
 	getDraw() {
 		return this.data[this.drawIdx];
+	}
+
+	drawUndo() {
+		if (this._drawHistoryPointer <= 0) return;
+		const {events} = this._drawHistory[this._drawHistoryPointer];
+		this._drawHistoryPointer--;
+		const {featureCollection} = this._drawHistory[this._drawHistoryPointer];
+		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection: featureCollection});
+		if (events) {
+			events.some(e => {
+				if (e.type === "active") {
+					this.setActive(this._getLayerByIdxs(this.drawIdx, e.idx));
+					return true;
+				}
+			});
+			this._triggerEvent(events, this.getDraw().onChange);
+		}
+	}
+
+	drawRedo() {
+		if (this._drawHistoryPointer >= this._drawHistory.length - 1) return;
+		this._drawHistoryPointer++;
+		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection: this._drawHistory[this._drawHistoryPointer].featureCollection});
 	}
 
 	@dependsOn("data")
@@ -980,13 +1009,16 @@ export default class LajiMap {
 	}
 
 	clearItemData(item) {
-		this._triggerEvent({
+		const prevFeatureCollection = {type: "FeatureCollection", features: this.cloneFeatures(this.data[item.idx].featureCollection.features)};
+		const event = {
 			type: "delete",
 			idxs: Object.keys(this.idxsToIds[item.idx])
-		}, item.onChange);
+		};
+		this._triggerEvent(event, item.onChange);
 
 		this.updateData(item.idx, {...item, geoData: undefined, featureCollection: {type: "FeatureCollection", features: []}});
 		this._resetIds(item.idx);
+		this._updateDrawUndoStack(event, prevFeatureCollection);
 	}
 
 	clearDrawData() {
@@ -1477,6 +1509,8 @@ export default class LajiMap {
 	_onAdd(dataIdx, layer, coordinateVerbatim) {
 		if (isPolyline(layer) && layer.getLatLngs().length < 2) return;
 
+		const prevActiveIdx = this.data[dataIdx].activeIdx;
+
 		const item = this.data[dataIdx];
 		const {featureCollection: {features}} = item;
 		const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
@@ -1497,10 +1531,66 @@ export default class LajiMap {
 		];
 
 		this._triggerEvent(event, item.onChange);
+
+		if (dataIdx === this.drawIdx) {
+			this._updateDrawUndoStack(event, undefined, prevActiveIdx);
+		}
+	}
+
+	_updateDrawUndoStack(events, prevFeatureCollection, prevActiveIdx) {
+		if (this._drawHistoryPointer < this._drawHistory.length - 1) {
+			this._drawHistory = this._drawHistory.splice(0).splice(0, this._drawHistoryPointer + 1);
+		}
+
+		const featureCollection = {
+			type: "FeatureCollection",
+			features: this.cloneFeatures(this.getDraw().featureCollection.features)
+		};
+
+		let reverseEvents = [];
+		(Array.isArray(events) ? events : [events]).forEach(e => {
+			switch (e.type) {
+			case "create": 
+				reverseEvents.push({
+					"type": "delete",
+					idxs: [featureCollection.features.length - 1]
+				});
+				break;
+			case "edit": 
+				reverseEvents.push({
+					"type": "edit",
+					features: Object.keys(e.features).reduce((features, idx) => {
+						features[idx] = prevFeatureCollection.features[idx];
+						return features;
+					}, {}),
+					idxs: [featureCollection.features.length - 1]
+				});
+				break;
+			case "delete": 
+				e.idxs.sort().reverse().forEach(idx => reverseEvents.push({
+					"type": "insert",
+					idx,
+					feature: prevFeatureCollection.features[idx]
+				}));
+				break;
+			case "active":
+				reverseEvents.push({
+					type: "active",
+					idx: prevActiveIdx
+				});
+				break;
+			}
+		});
+
+		this._drawHistory.push({featureCollection, events: reverseEvents});
+		this._drawHistoryPointer++;
 	}
 
 	_onEdit(dataIdx, data) {
 		const eventData = {};
+
+		const prevFeatureCollection = {type: "FeatureCollection", features: this.cloneFeatures(this.data[dataIdx].featureCollection.features)};
+
 		for (let id in data) {
 			const feature = this.formatFeatureOut(data[id].toGeoJSON(), data[id]);
 			const idx = this.idsToIdxs[dataIdx][id];
@@ -1518,14 +1608,23 @@ export default class LajiMap {
 
 		const item = this.data[dataIdx];
 
-		this._triggerEvent({
+		const event = {
 			type: "edit",
 			features: eventData
-		}, item.onChange);
+		};
+
+		this._triggerEvent(event, item.onChange);
+
+		if (dataIdx === this.drawIdx) {
+			this._updateDrawUndoStack(event, prevFeatureCollection);
+		}
+
 	}
 
 	_onDelete(dataIdx, deleteIds) {
 		this._clearEditable();
+
+		const prevFeatureCollection = {type: "FeatureCollection", features: this.cloneFeatures(this.data[dataIdx].featureCollection.features)};
 
 		if (!Array.isArray(deleteIds)) deleteIds = [deleteIds];
 		const deleteIdxs = deleteIds.map(id => this.idsToIdxs[dataIdx][id]);
@@ -1590,6 +1689,10 @@ export default class LajiMap {
 		if (newActiveId !== undefined && changeActive) event.push(this._getOnActiveChangeEvent(dataIdx, this.idsToIdxs[dataIdx][newActiveId]));
 
 		this._triggerEvent(event, item.onChange);
+
+		if (dataIdx === this.drawIdx) {
+			this._updateDrawUndoStack(event, prevFeatureCollection, newActiveId ? activeIdx : undefined);
+		}
 	}
 
 	_removeLayerFromItem(item, layer) {
@@ -1765,7 +1868,7 @@ export default class LajiMap {
 				featureTypeStyle = mergeOptions("circle");
 			}
 		} else {
-			switch(feature.geometry.type) {
+			switch (feature.geometry.type) {
 			case "LineString":
 			case "MultiLineString":
 				featureTypeStyle = mergeOptions("polyline");

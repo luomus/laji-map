@@ -164,39 +164,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						name: "drawClear",
 						text: this.translations.ClearMap,
 						iconCls: "glyphicon glyphicon-trash",
-						fn: (...params) => {
-
-							const container = document.createElement("div");
-							const translateHooks = [];
-
-							const yesButton = document.createElement("button");
-							yesButton.className = "btn btn-block btn-primary";
-							translateHooks.push(this.addTranslationHook(yesButton, "Yes"));
-							yesButton.addEventListener("click", e => {
-								this.clearDrawData(...params);
-								this._closeDialog(e);
-							});
-
-							const noButton = document.createElement("button");
-							noButton.className = "btn btn-block btn-primary";
-							translateHooks.push(this.addTranslationHook(noButton, "No"));
-							noButton.addEventListener("click", e => this._closeDialog(e));
-
-							const question = document.createElement("h5");
-							translateHooks.push(this.addTranslationHook(question, "ConfirmDrawClear"));
-
-							container.appendChild(question);
-							container.appendChild(yesButton);
-							container.appendChild(noButton);
-
-							this._showDialog(container, () => {
-								translateHooks.forEach(hook => {
-									that.removeTranslationHook(hook);
-								});
-							});
-
-							yesButton.focus();
-						}
+						fn: (...params) => this.clearDrawData(...params)
 					},
 					{
 						name: "drawDelete",
@@ -205,8 +173,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						fn: (...params) => {
 							this._startDrawRemove(...params);
 						},
-						finishFn: (...params) => this._finishDrawRemove(...params),
-						cancelFn: (...params) => this._cancelDrawRemove(...params)
+						finishFn: (...params) => this._finishDrawRemove(...params)
 					},
 					{
 						name: "drawReverse",
@@ -215,8 +182,21 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						fn: (...params) => {
 							this._startDrawReverse(...params);
 						},
-						finishFn: (...params) => this._finishDrawReverse(...params),
-						cancelFn: (...params) => this._cancelDrawReverse(...params)
+						finishFn: (...params) => this._finishDrawReverse(...params)
+					},
+					{
+						name: "drawUndo",
+						text: this.translations.Undo,
+						iconCls: "laji-map-line-transect-undo-glyph",
+						fn: (...params) => this.drawUndo(...params),
+						onAdd: () => this.updateDrawUndoButton()
+					},
+					{
+						name: "drawRedo",
+						text: this.translations.Redo,
+						iconCls: "laji-map-line-transect-redo-glyph",
+						fn: (...params) => this.drawRedo(...params),
+						onAdd: () => this.updateDrawRedoButton()
 					}
 				]
 			},
@@ -260,14 +240,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
 						fn: (...params) => this.LTUndo(...params),
-						onAdd: () => this.updateUndoButton()
+						onAdd: () => this.updateLTUndoButton()
 					},
 					{
 						name: "redo",
 						text: this.translations.Redo,
 						iconCls: "laji-map-line-transect-redo-glyph",
 						fn: (...params) => this.LTRedo(...params),
-						onAdd: () => this.updateRedoButton()
+						onAdd: () => this.updateLTRedoButton()
 					}
 				]
 			}
@@ -457,6 +437,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawClear: false,
 			drawReverse: false,
 			drawDelete: false,
+			drawUndo: true,
+			drawRedo: true,
 			coordinates: false,
 			scale: true,
 			lineTransect: {split: true, splitByMeters: true, deleteSegment: true, deletePoints: true, undo: true, redo: true},
@@ -823,44 +805,82 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	setLineTransectGeometry(feature, undo) {
 		super.setLineTransectGeometry(feature, undo);
-		this.updateUndoButton();
-		this.updateRedoButton();
+		this.updateLTUndoButton();
+		this.updateLTRedoButton();
 	}
 
-	@dependsOn("controls", "contextMenu")
-	updateUndoButton() {
-		if (!depsProvided(this, "updateUndoButton", arguments)) return;
+	_updateDrawUndoStack(...params) {
+		super._updateDrawUndoStack(...params);
+		this.updateDrawUndoButton();
+		this.updateDrawRedoButton();
+	}
 
-		const undoButton = this._controlButtons && this._controlButtons["lineTransect.undo"];
+	drawUndo(...params) {
+		super.drawUndo(...params);
+		this.updateDrawUndoButton();
+		this.updateDrawRedoButton();
+	}
+
+	drawRedo(...params) {
+		super.drawRedo(...params);
+		this.updateDrawUndoButton();
+		this.updateDrawRedoButton();
+	}
+
+	_updateUndoButton(buttonName, history, historyPointer) {
+		const undoButton = this._controlButtons && this._controlButtons[buttonName];
 		if (!undoButton) return;
-		if (this._LTHistoryPointer <= 0 && !undoButton.className.includes("leaflet-disabled")) {
+
+		if (historyPointer <= 0 && !undoButton.className.includes("leaflet-disabled")) {
 			undoButton.className += " leaflet-disabled";
-		} else if (this._LTHistoryPointer > 0 && this._LTHistoryPointer < this._LTHistory.length && undoButton.className.includes("leaflet-disabled")) {
+		} else if (historyPointer > 0 && historyPointer < history.length && undoButton.className.includes("leaflet-disabled")) {
 			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
 		}
 
 		if (this._contextMenuItems) {
-			const contextMenuItem = this._contextMenuItems["lineTransect.undo"];
-			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, this._LTHistoryPointer <= 0);
+			const contextMenuItem = this._contextMenuItems[buttonName];
+			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, historyPointer <= 0);
 		}
 	}
 
-	@dependsOn("controls", "contextMenu")
-	updateRedoButton() {
-		if (!depsProvided(this, "updateRedoButton", arguments)) return;
-
-		const redoButton = this._controlButtons && this._controlButtons["lineTransect.redo"];
+	_updateRedoButton(buttonName, history, historyPointer) {
+		const redoButton = this._controlButtons && this._controlButtons[buttonName];
 		if (!redoButton) return;
-		if (this._LTHistoryPointer >= this._LTHistory.length - 1 && !redoButton.className.includes("leaflet-disabled")) {
+
+		if (historyPointer >= history.length - 1 && !redoButton.className.includes("leaflet-disabled")) {
 			redoButton.className += " leaflet-disabled";
-		} else if (this._LTHistoryPointer >= 0 && this._LTHistoryPointer < this._LTHistory.length - 1 && redoButton.className.includes("leaflet-disabled")) {
+		} else if (historyPointer >= 0 && historyPointer < history.length - 1 && redoButton.className.includes("leaflet-disabled")) {
 			redoButton.className = redoButton.className.replace(" leaflet-disabled", "");
 		}
 
 		if (this._contextMenuItems) {
-			const contextMenuItem = this._contextMenuItems["lineTransect.redo"];
-			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, this._LTHistoryPointer >= this._LTHistory.length - 1);
+			const contextMenuItem = this._contextMenuItems[buttonName];
+			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, historyPointer >= history.length - 1);
 		}
+	}
+
+	@dependsOn("controls", "contextMenu")
+	updateLTUndoButton() {
+		if (!depsProvided(this, "updateLTUndoButton", arguments)) return;
+		this._updateUndoButton("lineTransect.undo", this._LTHistory, this._LTHistoryPointer);
+	}
+
+	@dependsOn("controls", "contextMenu")
+	updateLTRedoButton() {
+		if (!depsProvided(this, "updateLTRedoButton", arguments)) return;
+		this._updateRedoButton("lineTransect.redo", this._LTHistory, this._LTHistoryPointer);
+	}
+
+	@dependsOn("controls", "contextMenu")
+	updateDrawUndoButton() {
+		if (!depsProvided(this, "updateDrawUndoButton", arguments)) return;
+		this._updateUndoButton("drawUndo", this._drawHistory, this._drawHistoryPointer);
+	}
+
+	@dependsOn("controls", "contextMenu")
+	updateDrawRedoButton() {
+		if (!depsProvided(this, "updateDrawRedoButton", arguments)) return;
+		this._updateRedoButton("drawRedo", this._drawHistory, this._drawHistoryPointer);
 	}
 
 	_showDialog(container, onClose) {

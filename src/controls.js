@@ -189,14 +189,16 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
 						fn: (...params) => this.drawUndo(...params),
-						onAdd: () => this.updateDrawUndoButton()
+						onAdd: () => this.updateDrawUndoButton(),
+						disabled: this._drawHistoryPointer <= 0
 					},
 					{
 						name: "drawRedo",
 						text: this.translations.Redo,
 						iconCls: "laji-map-line-transect-redo-glyph",
 						fn: (...params) => this.drawRedo(...params),
-						onAdd: () => this.updateDrawRedoButton()
+						onAdd: () => this.updateDrawRedoButton(),
+						disabled: this._drawHistoryPointer >= this._drawHistory.length - 1
 					}
 				]
 			},
@@ -502,6 +504,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				() => this.getDraw()
 			],
 			drawReverse: [
+				() => this.getDraw()
+			],
+			drawUndo: [
+				() => this.getDraw()
+			],
+			drawRedo: [
 				() => this.getDraw()
 			],
 			lineTransect: [
@@ -836,7 +844,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		} else if (historyPointer > 0 && historyPointer < history.length && undoButton.className.includes("leaflet-disabled")) {
 			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
 		}
-
 		if (this._contextMenuItems) {
 			const contextMenuItem = this._contextMenuItems[buttonName];
 			if (contextMenuItem) this.map.contextmenu.setDisabled(contextMenuItem, historyPointer <= 0);

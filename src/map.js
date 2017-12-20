@@ -49,6 +49,8 @@ export default class LajiMap {
 		this.options = {};
 		this.setOptions({...options, ...props});
 		this._initializeMap();
+		this._stopDrawRemove = this._stopDrawRemove.bind(this);
+		this._stopDrawReverse = this._stopDrawReverse.bind(this);
 	}
 
 	getOptionKeys() {
@@ -1035,6 +1037,8 @@ export default class LajiMap {
 			this._removeLayerFromItem(this.getDraw(), layer);
 		};
 		this.getDraw().group.on("click", this._onDrawRemove);
+
+		this._addKeyListener(ESC, this._stopDrawRemove);
 	}
 
 	_stopDrawRemove() {
@@ -1042,6 +1046,7 @@ export default class LajiMap {
 		this._onDrawRemove = undefined;
 		this._disposeTooltip();
 		this._drawRemoveLayers = undefined;
+		this._removeKeyListener(ESC, this._stopDrawRemove);
 	}
 
 	_finishDrawRemove() {
@@ -1068,6 +1073,7 @@ export default class LajiMap {
 			this._reversePolyline(layer);
 		};
 		this.getDraw().group.on("click", this._onDrawReverse);
+		this._addKeyListener(ESC, this._stopDrawReverse);
 	}
 
 	_stopDrawReverse() {
@@ -1076,6 +1082,7 @@ export default class LajiMap {
 		this._onDrawReverse = undefined;
 		this._drawReverseLayers = undefined;
 		this._disposeTooltip();
+		this._removeKeyListener(ESC, this._stopDrawReverse);
 	}
 
 	_finishDrawReverse() {

@@ -970,7 +970,7 @@ export default class LajiMap {
 		const {events} = this._drawHistory[this._drawHistoryPointer];
 		this._drawHistoryPointer--;
 		const {featureCollection} = this._drawHistory[this._drawHistoryPointer];
-		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection: featureCollection});
+		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection});
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
@@ -1020,7 +1020,7 @@ export default class LajiMap {
 
 		this.updateData(item.idx, {...item, geoData: undefined, featureCollection: {type: "FeatureCollection", features: []}});
 		this._resetIds(item.idx);
-		this._updateDrawUndoStack(event, prevFeatureCollection);
+		if (item.idx === this.drawIdx) this._updateDrawUndoStack(event, prevFeatureCollection);
 	}
 
 	clearDrawData() {

@@ -1301,7 +1301,17 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function convertText(e) {
 			e.preventDefault();
 			try {
-				that.setDraw({...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
+				const prevFeatureCollection = {type: "FeatureCollection", features: that.cloneFeatures(that.getDraw().featureCollection.features)};
+				const events = [{
+					type: "delete",
+					idxs: Object.keys(that.idxsToIds[that.drawIdx])
+				}];
+				that.updateData(that.drawIdx, {...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
+				that.getDraw().featureCollection.features.forEach(feature => {
+					events.push({type: "create", feature});
+				});
+				that._triggerEvent(events, that.getDraw().onChange);
+				that._updateDrawUndoStack(events, prevFeatureCollection);
 				that._closeDialog(e);
 			} catch (e) {
 				updateAlert(e);

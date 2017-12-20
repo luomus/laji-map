@@ -5,7 +5,6 @@ import {
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
-//import rangeSlider from "rangeslider-js";
 import noUiSlider from "nouislider";
 
 function getSubControlName(name, subName) {
@@ -572,6 +571,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
 		L.DomEvent.on(elem, "click", that._refocusOnMap, that);
 		L.DomEvent.on(elem, "click", fn);
+		L.DomEvent.disableClickPropagation(container);
 
 		return elem;
 	}

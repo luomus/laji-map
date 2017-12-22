@@ -163,7 +163,38 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						name: "drawClear",
 						text: this.translations.ClearMap,
 						iconCls: "glyphicon glyphicon-trash",
-						fn: (...params) => this.clearDrawData(...params)
+						fn: (...params) => {
+							const container = document.createElement("div");
+							const translateHooks = [];
+
+							const yesButton = document.createElement("button");
+							yesButton.className = "btn btn-block btn-primary";
+							translateHooks.push(this.addTranslationHook(yesButton, "Yes"));
+							yesButton.addEventListener("click", e => {
+								this.clearDrawData(...params);
+								this._closeDialog(e);
+							});
+
+							const noButton = document.createElement("button");
+							noButton.className = "btn btn-block btn-primary";
+							translateHooks.push(this.addTranslationHook(noButton, "No"));
+							noButton.addEventListener("click", e => this._closeDialog(e));
+
+							const question = document.createElement("h5");
+							translateHooks.push(this.addTranslationHook(question, "ConfirmDrawClear"));
+
+							container.appendChild(question);
+							container.appendChild(yesButton);
+							container.appendChild(noButton);
+
+							this._showDialog(container, () => {
+								translateHooks.forEach(hook => {
+									that.removeTranslationHook(hook);
+								});
+							});
+
+							yesButton.focus();
+						}
 					},
 					{
 						name: "drawDelete",

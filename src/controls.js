@@ -817,6 +817,12 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.updateLTRedoButton();
 	}
 
+	resetDrawUndoStack() {
+		super.resetDrawUndoStack();
+		this.updateDrawUndoButton();
+		this.updateDrawRedoButton();
+	}
+
 	_updateDrawUndoStack(...params) {
 		super._updateDrawUndoStack(...params);
 		this.updateDrawUndoButton();

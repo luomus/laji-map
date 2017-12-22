@@ -122,7 +122,7 @@ class App {
 				showStart: true,
 				showDirection: true
 			},
-			activeIdx: 0,
+			//activeIdx: 0,
 		};
 
 		this.activeIdx = 0;

@@ -854,7 +854,7 @@ export default class LajiMap {
 	zoomToData() {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
-		const featureGroup = L.featureGroup([this.getDraw(), ...this.data].reduce((layers, item) => {
+		const featureGroup = L.featureGroup([this.getDraw(), ...this.data].filter(item => item).reduce((layers, item) => {
 			const newLayers = item.group.getLayers().filter(layer => !(layer instanceof L.Circle)); // getBounds fails with circles
 			layers = [...layers, ...newLayers];
 			return layers;
@@ -898,6 +898,10 @@ export default class LajiMap {
 		this.initializeDataItem(item, idx);
 	}
 
+	updateDrawData(item) {
+		this.updateData(this.drawIdx, this.getDrawOptions(item));
+	}
+
 	removeData(idx) {
 		if (this.data[idx]) {
 			this.data[idx].groupContainer.clearLayers();
@@ -905,13 +909,7 @@ export default class LajiMap {
 		}
 	}
 
-	@dependsOn("map", "data")
-	setDraw(options) {
-		if (!depsProvided(this, "setDraw", arguments)) return;
-
-		 // Using a negative idx lets us keep the original data indices.
-		if (!this.drawIdx) this.drawIdx = -1;
-
+	getDrawOptions = (options) => {
 		const drawAllowed = options !== false;
 
 		let draw = {
@@ -950,13 +948,21 @@ export default class LajiMap {
 			...(options.data || {})
 		};
 
+		return draw;
+	}
+
+	@dependsOn("map", "data")
+	setDraw(options) {
+		if (!depsProvided(this, "setDraw", arguments)) return;
+
+		 // Using a negative idx lets us keep the original data indices.
+		if (!this.drawIdx) this.drawIdx = -1;
+
+		const draw = this.getDrawOptions(options);
+
 		this.updateData(this.drawIdx, draw);
 
-		this._drawHistory = [{featureCollection: {
-			type: "FeatureCollection",
-			features: this.cloneFeatures(this.getDraw().featureCollection.features)
-		}}];
-		this._drawHistoryPointer = 0;
+		this.resetDrawUndoStack();
 
 		provide(this, "draw");
 	}
@@ -965,9 +971,17 @@ export default class LajiMap {
 		return this.data[this.drawIdx];
 	}
 
+	resetDrawUndoStack() {
+		this._drawHistory = [{featureCollection: {
+			type: "FeatureCollection",
+			features: this.cloneFeatures(this.getDraw().featureCollection.features)
+		}}];
+		this._drawHistoryPointer = 0;
+	}
+
 	drawUndo() {
 		if (this._drawHistoryPointer <= 0) return;
-		const {events} = this._drawHistory[this._drawHistoryPointer];
+		const {undoEvents: events} = this._drawHistory[this._drawHistoryPointer];
 		this._drawHistoryPointer--;
 		const {featureCollection} = this._drawHistory[this._drawHistoryPointer];
 		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection});
@@ -985,7 +999,17 @@ export default class LajiMap {
 	drawRedo() {
 		if (this._drawHistoryPointer >= this._drawHistory.length - 1) return;
 		this._drawHistoryPointer++;
-		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection: this._drawHistory[this._drawHistoryPointer].featureCollection});
+		const {featureCollection, redoEvents: events} = this._drawHistory[this._drawHistoryPointer];
+		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection});
+		if (events) {
+			events.some(e => {
+				if (e.type === "active") {
+					this.setActive(this._getLayerByIdxs(this.drawIdx, e.idx));
+					return true;
+				}
+			});
+			this._triggerEvent(events, this.getDraw().onChange);
+		}
 	}
 
 	@dependsOn("data")
@@ -1534,8 +1558,8 @@ export default class LajiMap {
 				type: "create",
 				feature
 			},
-			this._getOnActiveChangeEvent(dataIdx, features.length - 1)
 		];
+		if (item.hasActive) event.push(this._getOnActiveChangeEvent(dataIdx, features.length - 1));
 
 		this._triggerEvent(event, item.onChange);
 
@@ -1589,7 +1613,7 @@ export default class LajiMap {
 			}
 		});
 
-		this._drawHistory.push({featureCollection, events: reverseEvents});
+		this._drawHistory.push({featureCollection, undoEvents: reverseEvents, redoEvents: Array.isArray(events) ? events : [events]});
 		this._drawHistoryPointer++;
 	}
 
@@ -1646,32 +1670,34 @@ export default class LajiMap {
 		let changeActive = false;
 		let newActiveId = undefined;
 		const activeId = this.idxsToIds[dataIdx][activeIdx];
-		if (features && survivingIds.length === 0) {
-			changeActive = true;
-		} else if (activeIdx !== undefined && deleteIds.includes(activeId)) {
-			changeActive = true;
+		if (item.hasActive) {
+			if (features && survivingIds.length === 0) {
+				changeActive = true;
+			} else if (activeIdx !== undefined && deleteIds.includes(activeId)) {
+				changeActive = true;
 
-			let closestSmallerId = undefined;
-			let closestGreaterId = undefined;
-			let closestDistance = undefined;
-			let closestNegDistance = undefined;
+				let closestSmallerId = undefined;
+				let closestGreaterId = undefined;
+				let closestDistance = undefined;
+				let closestNegDistance = undefined;
 
-			survivingIds.forEach(id => {
-				const dist = activeIdx - this.idsToIdxs[dataIdx][id];
-				if (dist > 0 && (closestDistance === undefined || dist < closestDistance)) {
-					closestDistance = dist;
-					closestSmallerId = id;
-				} else if (dist < 0 && (closestNegDistance === undefined || dist > closestNegDistance)) {
-					closestNegDistance = dist;
-					closestGreaterId = id;
-				}
-			});
+				survivingIds.forEach(id => {
+					const dist = activeIdx - this.idsToIdxs[dataIdx][id];
+					if (dist > 0 && (closestDistance === undefined || dist < closestDistance)) {
+						closestDistance = dist;
+						closestSmallerId = id;
+					} else if (dist < 0 && (closestNegDistance === undefined || dist > closestNegDistance)) {
+						closestNegDistance = dist;
+						closestGreaterId = id;
+					}
+				});
 
-			if (closestGreaterId !== undefined) newActiveId = closestGreaterId;
-			else if (closestSmallerId !== undefined) newActiveId = closestSmallerId;
-		} else {
-			newActiveId = activeId;
-			changeActive = true;
+				if (closestGreaterId !== undefined) newActiveId = closestGreaterId;
+				else if (closestSmallerId !== undefined) newActiveId = closestSmallerId;
+			} else {
+				newActiveId = activeId;
+				changeActive = true;
+			}
 		}
 
 		item.featureCollection.features = features.filter((item, i) => !deleteIdxs.includes(i));

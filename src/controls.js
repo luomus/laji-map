@@ -132,6 +132,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				control: () => L.control.scale({metric: true, imperial: false})
 			},
 			{
+				name: "attribution",
+				control: () => L.control.attribution({prefix: ""})
+			},
+			{
 				name: "coordinates",
 				control: () => this._getCoordinatesControl()
 			},
@@ -473,6 +477,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			drawRedo: true,
 			coordinates: false,
 			scale: true,
+			attribution: true,
 			lineTransect: {split: true, splitByMeters: true, deleteSegment: true, deletePoints: true, undo: true, redo: true},
 			layerOpacity: true
 		};
@@ -833,7 +838,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			zoomOutTitle: this.translations.ZoomOut
 		});
 	}
-
+	
 	setTileLayerOpacity(opacity, triggerEvent) {
 		super.setTileLayerOpacity(opacity, triggerEvent);
 		if (!this._opacitySetBySlide && this._slider) {

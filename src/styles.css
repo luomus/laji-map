@@ -25,10 +25,6 @@
 	color: #464646;
 }
 
-.laji-map .leaflet-right .leaflet-control {
-	float: none;
-}
-
 .laji-map .leaflet-contextmenu a.leaflet-contextmenu-item:hover {
 	background-color: #f4f4f4;
 	border-top: 1px solid #f0f0f0;

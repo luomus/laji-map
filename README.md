@@ -101,16 +101,13 @@ layer                                           | Boolean                  | tru
 zoom                                            | Boolean                  | true                                 | Shows a zoom control.
 scale                                           | Integer                  | true                                 | Shows a scale control as meters.
 location                                        | Location control options | true                                 | Shows a location control.
-coordinateInput                                 | Boolean                  | true                                 | Shows a control for entering a new feature to the draw layer by coordinates. Only shown if main options  `draw` option is set.
-drawCopy                                        | Boolean                  | false                                | Shows a control for copying the draw data. Only shown if `draw` option is set.
-drawClear                                       | Boolean                  | false                                | Shows a control for clearing all draw data. Only shown if `draw` option is set.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
 layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
 
 #### Draw control options ####
 
-If draw control is `true`, it is interpreted as a draw control options object with all default options.
+If draw control is `true`, it is interpreted as a draw control options object with all default options. If draw-option isn't set, the draw controls won't be shown.
 
 Option                                          | Type                     |  Default                             | Description
 ------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
@@ -119,6 +116,13 @@ polygon                                         | Boolean                  | tru
 polyline                                        | Boolean                  | true                                 | Controls whether to show the polyline drawing button. Shown only if main options `draw.polyline` is `true`.
 circle                                          | Boolean                  | true                                 | Controls whether to show the circle drawing button. Shown only if main options `draw.circle` is `true`.
 marker                                          | Boolean                  | true                                 | Controls whether to show the marker drawing button. Shown only if main options `draw.marker` is `true`.
+coordinateInput                                 | Boolean                  | true                                 | Shows a control for entering a new feature to the draw layer by coordinates.
+copy                                            | Boolean                  | false                                | Shows a control for copying the draw data.
+clear                                           | Boolean                  | false                                | Shows a control for clearing all draw data.
+reverse                                         | Boolean                  | false                                | Shows a control for reversing polyline features.
+delete                                          | Boolean                  | false                                | Shows a control for deleting features.
+undo                                            | Boolean                  | true                                 | Shows a control for undoing draw actions.
+redo                                            | Boolean                  | true                                 | Shows a control for redoing draw actions.
 
 #### Location control options ####
 

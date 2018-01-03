@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridValidator, wgs84Validator, stringifyLajiMapError, createTextInput, createTextArea } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridValidator, wgs84Validator, stringifyLajiMapError, createTextInput, createTextArea, isObject } from "./utils";
 import {
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
@@ -144,6 +144,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				control: () => this._getDrawControl()
 			},
 			{
+				name: "drawUtils",
 				controls: [
 					{
 						name: "coordinateInput",
@@ -152,19 +153,19 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						fn: (...params) => this.openCoordinatesInputDialog(...params)
 					},
 					{
-						name: "drawCopy",
+						name: "copy",
 						text: this.translations.CopyDrawnFeatures,
 						iconCls: "glyphicon glyphicon-floppy-save",
 						fn: (...params) => this.openDrawCopyDialog(...params)
 					},
 					{
-						name: "drawUpload",
+						name: "upload",
 						text: this.translations.UploadDrawnFeatures,
 						iconCls: "glyphicon glyphicon-floppy-open",
 						fn: (...params) => this.openDrawUploadDialog(...params)
 					},
 					{
-						name: "drawClear",
+						name: "clear",
 						text: this.translations.ClearMap,
 						iconCls: "glyphicon glyphicon-trash",
 						fn: (...params) => {
@@ -201,7 +202,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						}
 					},
 					{
-						name: "drawDelete",
+						name: "delete",
 						text: this.translations.DeleteFeature,
 						iconCls: "glyphicon glyphicon-remove-sign",
 						fn: (...params) => {
@@ -210,7 +211,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						finishFn: (...params) => this._finishDrawRemove(...params)
 					},
 					{
-						name: "drawReverse",
+						name: "reverse",
 						iconCls: "glyphicon glyphicon-sort",
 						text: this.translations.ReverseFeature,
 						fn: (...params) => {
@@ -219,7 +220,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						finishFn: (...params) => this._finishDrawReverse(...params)
 					},
 					{
-						name: "drawUndo",
+						name: "undo",
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
 						fn: (...params) => this.drawUndo(...params),
@@ -227,7 +228,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						disabled: this._drawHistoryPointer <= 0
 					},
 					{
-						name: "drawRedo",
+						name: "redo",
 						text: this.translations.Redo,
 						iconCls: "laji-map-line-transect-redo-glyph",
 						fn: (...params) => this.drawRedo(...params),
@@ -460,7 +461,22 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	setControls(controlSettings) {
 		this.controlSettings = {
-			draw: {marker: true, circle: true, rectangle: true, polygon: true, polyline: true},
+			draw: {
+				marker: true,
+				circle: true,
+				rectangle: true,
+				polygon: true,
+				polyline: true,
+			},
+			drawUtils: {
+				copy: false,
+				upload: false,
+				clear: false,
+				reverse: false,
+				delete: false,
+				undo: true,
+				redo: true,
+			},
 			layer: true,
 			zoom: true,
 			location: {
@@ -468,19 +484,20 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				search: true
 			},
 			coordinateInput: true,
-			drawCopy: false,
-			drawUpload: false,
-			drawClear: false,
-			drawReverse: false,
-			drawDelete: false,
-			drawUndo: true,
-			drawRedo: true,
 			coordinates: false,
 			scale: true,
 			attribution: true,
-			lineTransect: {split: true, splitByMeters: true, deleteSegment: true, deletePoints: true, undo: true, redo: true},
+			lineTransect: {
+				split: true,
+				splitByMeters: true,
+				deleteSegment: true,
+				deletePoints: true,
+				undo: true,
+				redo: true
+			},
 			layerOpacity: true
 		};
+
 
 		if (!controlSettings) {
 			controlSettings = Object.keys(this.controlSettings).reduce((settings, key) => {
@@ -489,7 +506,29 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}, {});
 		}
 
-		if (typeof controlSettings === "object" && !Array.isArray(controlSettings) && controlSettings !== null) {
+		if (isObject(controlSettings)) {
+			if ("draw" in controlSettings && !isObject(controlSettings.draw)) controlSettings.drawUtils = controlSettings.draw;
+			// BW compability for drawCopy etc, which were moved under controlSettings.draw
+			["copy", "upload", "clear", "reverse", "delete", "undo", "redo"].forEach(name => {
+				const oldName = `draw${name[0].toUpperCase()}${name.slice(1)}`;
+				if (oldName in controlSettings) {
+					if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
+					controlSettings.drawUtils[name] = controlSettings[oldName];
+					delete controlSettings[oldName];
+					console.warn(`laji-map warning: controls.${oldName} is deprecated and will be removed in the future. Please use controls.draw.${name}`);
+				}
+				// Internally we use 'drawUtils' namespace, but for easier API we allow using 'draw' namespace for the utils.
+				if (isObject(controlSettings.draw) && name in controlSettings.draw) {
+					if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
+					controlSettings.drawUtils[name] = controlSettings.draw[name];
+				}
+			});
+			if ("coordinateInput" in controlSettings) {
+				if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
+				controlSettings.drawUtils.coordinateInput = controlSettings.coordinateInput;
+				console.warn("laji-map warning: controls.coordinateInput is deprecated and will be removed in the future. Please use controls.draw.coordinateInput");
+			}
+
 			for (let setting in controlSettings) {
 				if (!(setting in this.controlSettings)) continue;
 
@@ -526,25 +565,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			draw: [
 				() => this.getDraw()
 			],
-			drawCopy: [
-				() => this.getDraw()
-			],
-			drawUpload: [
-				() => this.getDraw()
-			],
-			drawClear: [
-				() => this.getDraw()
-			],
-			drawDelete: [
-				() => this.getDraw()
-			],
-			drawReverse: [
-				() => this.getDraw()
-			],
-			drawUndo: [
-				() => this.getDraw()
-			],
-			drawRedo: [
+			drawUtils: [
 				() => this.getDraw()
 			],
 			lineTransect: [

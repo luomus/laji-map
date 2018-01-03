@@ -145,11 +145,13 @@ class App {
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
 				coordinates: true,
-				drawCopy: true,
-				drawUpload: true,
-				drawClear: true,
-				drawReverse: true,
-				drawDelete: true
+				draw: {
+					copy: true,
+					upload: false,
+					clear: true,
+					reverse: true,
+					delete: true,
+				}
 			},
 			polyline: {
 				opacity: 0.1,

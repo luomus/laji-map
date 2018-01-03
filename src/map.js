@@ -960,7 +960,7 @@ export default class LajiMap {
 		 // Using a negative idx lets us keep the original data indices.
 		if (!this.drawIdx) this.drawIdx = -1;
 
-		this.updateDrawData(this.drawIdx, options);
+		this.updateDrawData(options);
 
 		this.resetDrawUndoStack();
 

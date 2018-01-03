@@ -915,19 +915,13 @@ export default class LajiMap {
 		const drawAllowed = options !== false;
 
 		let draw = {
-			...([
-				"rectangle",
-				"polyline",
-				"polygon",
-				"circle",
-				"marker"
-			].reduce((_options, key) => {
+			...this.getFeatureTypes().reduce((_options, key) => {
 				let optionValue = {};
 				if (options === false || isObject(options) && options[key] === false) optionValue = false;
 				else if (isObject(options) && isObject(options[key])) optionValue = options[key];
 				_options[key] = optionValue;
 				return _options;
-			}, {}))
+			}, {})
 		};
 		draw = {
 			...draw,
@@ -969,6 +963,11 @@ export default class LajiMap {
 
 	getDraw() {
 		return this.data[this.drawIdx];
+	}
+
+	drawIsAllowed = () => {
+		const draw = this.getDraw();
+		return this.getFeatureTypes().some(type => draw[type]);
 	}
 
 	resetDrawUndoStack() {

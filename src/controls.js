@@ -566,13 +566,16 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_controlIsAllowed(name) {
 		const dependencies = {
 			draw: [
-				() => this.getDraw()
+				() => this.drawIsAllowed()
 			],
 			drawUtils: [
-				() => this.getDraw()
+				() => this.drawIsAllowed()
 			],
 			"drawUtils.coordinateInput": [
 				() => (["marker", "rectangle"].some(type => {return this.getDraw()[type] !== false;}))
+			],
+			"drawUtils.reverse": [
+				() => this.getDraw().polyline !== false
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect")
@@ -610,7 +613,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					controlSettings[parentControl] === true ||
 					(controlSettings[parentControl].constructor === Object && controlSettings[parentControl][subControl])
 				) && (
-					dependenciesAreOk(parentControl) && dependenciesAreOk(subControl)
+					dependenciesAreOk(parentControl) && dependenciesAreOk(`${parentControl}.${subControl}`)
 				);
 			}
 		}

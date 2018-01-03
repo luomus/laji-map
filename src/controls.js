@@ -17,7 +17,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		return {
 			...super.getOptionKeys(),
 			controlSettings: "setControlsWarn",
-			controls: "setControls",
+			controls: ["setControls", () => this.controlSettings],
 			customControls: "setCustomControls"
 		};
 	}
@@ -82,7 +82,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		};
 		// TODO Poista kommentit kun laji.fi havaintokartan neliöllä rajaus bugi korjattu. Jostain syystä draw:created -> this._onAdd ei triggeröidy.
 		//this.map.on("draw:created", e => {
-		//	console.log("draw created now cancel");
 		//	cancelDraw(e);
 		//});
 		this.map.on("controlClick", cancelDraw);
@@ -433,6 +432,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._updateMapControls();
 	}
 
+	updateDrawData(...params) {
+		super.updateDrawData(...params);
+		if (isProvided(this, "draw")) {
+			this._updateMapControls();
+		}
+	}
+
 	@reflect()
 	@dependsOn("customControls")
 	_updateCustomControls() {
@@ -460,6 +466,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	setControls(controlSettings) {
+		controlSettings = JSON.parse(JSON.stringify(controlSettings));
 		this.controlSettings = {
 			draw: {
 				marker: true,
@@ -476,6 +483,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				delete: false,
 				undo: true,
 				redo: true,
+				coordinateInput: true,
 			},
 			layer: true,
 			zoom: true,
@@ -483,7 +491,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				userLocation: true,
 				search: true
 			},
-			coordinateInput: true,
 			coordinates: false,
 			scale: true,
 			attribution: true,
@@ -558,15 +565,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	_controlIsAllowed(name) {
 		const dependencies = {
-			coordinateInput: [
-				() => this.getDraw(),
-				() => (["marker", "rectangle"].some(type => {return this.getDraw()[type] !== false;}))
-			],
 			draw: [
 				() => this.getDraw()
 			],
 			drawUtils: [
 				() => this.getDraw()
+			],
+			"drawUtils.coordinateInput": [
+				() => (["marker", "rectangle"].some(type => {return this.getDraw()[type] !== false;}))
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect")

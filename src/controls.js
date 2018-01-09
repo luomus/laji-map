@@ -532,7 +532,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			});
 			if ("coordinateInput" in controlSettings) {
 				if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
-				controlSettings.drawUtils.coordinateInput = controlSettings.coordinateInput;
 				console.warn("laji-map warning: controls.coordinateInput is deprecated and will be removed in the future. Please use controls.draw.coordinateInput");
 			}
 
@@ -551,6 +550,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					}
 				}
 				this.controlSettings[setting] = newSetting;
+			}
+
+			if (this.controlSettings.draw && "coordinateInput" in this.controlSettings.draw) {
+				this.controlSettings.drawUtils.coordinateInput = this.controlSettings.draw.coordinateInput;
 			}
 		}
 

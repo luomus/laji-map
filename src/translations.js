@@ -508,5 +508,10 @@
 		fi: "Klikkaa linjaa kääntääksesi sen suunnan.",
 		en: "Click a line in order to reverse it.",
 		sv: "Klicka på en rad för att vända den."
+	},
+	ortokuva: {
+		fi: "Suomen ortokuva",
+		en: "Ortographic image of Finland",
+		sv: "Finlands Ortographic bild"
 	}
 };

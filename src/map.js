@@ -166,7 +166,7 @@ export default class LajiMap {
 
 			this.tileLayers = {};
 
-			[MAASTOKARTTA, TAUSTAKARTTA, POHJAKARTTA].forEach(tileLayerName => {
+			[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
 				this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 					layer: tileLayerName
 				});
@@ -179,6 +179,8 @@ export default class LajiMap {
 				version: "1.1.0",
 				attribution: "LUOMUS"
 			});
+
+			this.tileLayers.ortokuva = L.tileLayer.mml("Ortokuva");
 
 			this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 				attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors"
@@ -391,7 +393,7 @@ export default class LajiMap {
 	}
 
 	_getDefaultCRSLayers() {
-		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
+		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite, this.tileLayers.ortokuva];
 	}
 
 	_getMMLCRSLayers() {

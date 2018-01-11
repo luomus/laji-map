@@ -1,4 +1,4 @@
-﻿export default {
+export default {
 	draw: {
 		fi: "Piirrä",
 		en: "Draw",
@@ -513,5 +513,10 @@
 		fi: "Suomen ortokuva",
 		en: "Ortographic image of Finland",
 		sv: "Finlands Ortographic bild"
+	},
+	laser: {
+		fi: "Suomen lasermaastokartta",
+		en: "Topographic laser map of Finland",
+		sv: "Finlands terränglaserkarta"
 	}
 };

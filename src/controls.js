@@ -871,7 +871,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			zoomOutTitle: this.translations.ZoomOut
 		});
 	}
-	
+
 	setTileLayerOpacity(opacity, triggerEvent) {
 		super.setTileLayerOpacity(opacity, triggerEvent);
 		if (!this._opacitySetBySlide && this._slider) {

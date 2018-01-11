@@ -176,10 +176,18 @@ export default class LajiMap {
 				format: "image/png",
 				transparent: false,
 				version: "1.1.0",
-				attribution: "LUOMUS"
+				attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>"
 			});
 
-			this.tileLayers.ortokuva = L.tileLayer.mml("Ortokuva");
+			this.tileLayers.ortokuva = L.tileLayer.mml("Ortokuva_3067");
+
+			this.tileLayers.laser = new L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
+				maxZoom: 19,
+				minZoom: 0,
+				tileSize: 256,
+				continuousWorld: true,
+				attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>, <a href=\"http://www.mapant.fi\"target=\"_blank\" rel=\"noopener noreferrer\">Mapant</a>"
+			});
 
 			this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 				attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors"
@@ -197,7 +205,6 @@ export default class LajiMap {
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
-					attribution: "LUOMUS"
 				}).setOpacity(1),
 				forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					layers: "Metsakasvillisuusvyohykkeet",
@@ -222,14 +229,12 @@ export default class LajiMap {
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
-					attribution: "LUOMUS"
 				}),
 				ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
 					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
-					attribution: "LUOMUS"
 				})
 			};
 
@@ -394,11 +399,11 @@ export default class LajiMap {
 	}
 
 	_getDefaultCRSLayers() {
-		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite, this.tileLayers.ortokuva];
+		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
 	}
 
 	_getMMLCRSLayers() {
-		return [this.tileLayers.maastokartta, this.tileLayers.taustakartta, this.tileLayers.pohjakartta];
+		return [this.tileLayers.maastokartta, this.tileLayers.taustakartta, this.tileLayers.pohjakartta, this.tileLayers.ortokuva, this.tileLayers.laser];
 	}
 
 	@dependsOn("map")
@@ -436,8 +441,7 @@ export default class LajiMap {
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
 		const center = this.map.getCenter();
-		this.map.options.crs = (defaultCRSLayers.includes(layer)) ? L.CRS.EPSG3857 : this.getMMLProj();
-
+		this.map.options.crs = defaultCRSLayers.includes(layer) ? L.CRS.EPSG3857 : this.getMMLProj();
 		this.map.setView(center);
 
 		let projectionChanged = false;
@@ -1583,13 +1587,13 @@ export default class LajiMap {
 		let reverseEvents = [];
 		(Array.isArray(events) ? events : [events]).forEach(e => {
 			switch (e.type) {
-			case "create": 
+			case "create":
 				reverseEvents.push({
 					"type": "delete",
 					idxs: [featureCollection.features.length - 1]
 				});
 				break;
-			case "edit": 
+			case "edit":
 				reverseEvents.push({
 					"type": "edit",
 					features: Object.keys(e.features).reduce((features, idx) => {
@@ -1599,7 +1603,7 @@ export default class LajiMap {
 					idxs: [featureCollection.features.length - 1]
 				});
 				break;
-			case "delete": 
+			case "delete":
 				e.idxs.sort().reverse().forEach(idx => reverseEvents.push({
 					"type": "insert",
 					idx,

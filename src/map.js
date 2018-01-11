@@ -192,12 +192,14 @@ export default class LajiMap {
 			this.availableTileLayers = this.tileLayers;
 
 			this.overlaysByNames = {
-				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
-					layers: "INSPIRE:fi_fmnh_br_extended",
+				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/INSPIRE/wms", {
+					layers: "INSPIRE:fi_fmnh_br",
+					styles: "harmaaviiva",
 					format: "image/png",
 					transparent: true,
-					version: "1.3.0"
-				}).setOpacity(0.5),
+					version: "1.1.0",
+					attribution: "LUOMUS"
+				}).setOpacity(1),
 				forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					layers: "Metsakasvillisuusvyohykkeet",
 					format: "image/png",

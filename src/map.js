@@ -5,7 +5,7 @@ import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
-import { convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject, combineColors } from "./utils";
+import { convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject, combineColors, circleToPolygon } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -864,7 +864,14 @@ export default class LajiMap {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
 		const featureGroup = L.featureGroup([this.getDraw(), ...this.data].filter(item => item).reduce((layers, item) => {
-			const newLayers = item.group.getLayers().filter(layer => !(layer instanceof L.Circle)); // getBounds fails with circles
+			const newLayers = item.group.getLayers().map(layer => {
+				if (layer instanceof L.Circle) {  // getBounds fails for circles
+					const {lat, lng} = layer.getLatLng();
+					const polygonGeoJSON = circleToPolygon([lat, lng], layer.getRadius(), 4);
+					return L.polygon(polygonGeoJSON.coordinates.map(c => c.reverse()));
+				}
+				return layer;
+			});
 			layers = [...layers, ...newLayers];
 			return layers;
 		}, []));

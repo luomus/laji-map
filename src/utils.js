@@ -59,7 +59,7 @@ export function convertGeoJSON(geoJSON, from, to) {
 /** Taken from https://github.com/arg20/circle-to-radius
  *  (Copied here because the library didn't act nice with exporting)
 **/
-function circleToPolygon(center, radius, numberOfSegments) {
+export function circleToPolygon(center, radius, numberOfSegments) {
 	function toRadians(angleInDegrees) {
 		return angleInDegrees * Math.PI / 180;
 	}
@@ -224,7 +224,7 @@ export function geoJSONToISO6709(geoJSON) {
 	return ISOGeo;
 }
 
-export function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, crsPrefix) {
+function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, crsPrefix) {
 	const _lineToCoordinates = (line, idx) => {
 		try  {
 			const coords = lineToCoordinates(line);

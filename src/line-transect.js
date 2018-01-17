@@ -671,7 +671,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			});
 			this.map.on("mouseup", this._stopLTDragCorridorHandler);
 
-
 			this._pointLayers.forEach(points => points.forEach(point => {
 				point.closeTooltip()
 					.unbindTooltip();
@@ -792,7 +791,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (pointIdx < pointLayer.length - 1) {
 			followingLineIdx = lineIdx;
 			followingIdx = pointIdx;
-		} else if (lineIdx + 1 < this._lineLayers.length - 1) {
+		} else if (lineIdx + 1 <= this._lineLayers.length - 1) {
 			const followingLineLayer = this._lineLayers[lineIdx + 1];
 			if (followingLineLayer[0].getLatLngs()[0].equals(point.getLatLng())) {
 				followingLineIdx = lineIdx + 1;

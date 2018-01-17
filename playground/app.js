@@ -129,18 +129,18 @@ class App {
 
 		const options = {
 			rootElem: document.getElementById("root"),
-			lineTransect: {feature: lineTransects.features[2], activeIdx: 3, onChange: this.onLTChange},
+			lineTransect: {feature: lineTransects.features[2], activeIdx: 0, onChange: this.onLTChange},
 			lang: "fi",
 			popupOnHover: true,
 			center: {
 				"lat": 60.3499057749654,
 				"lng": 21.160612106323246
 			},
-			zoom: 11,
+			zoom: 12,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			draw: this.drawOptions,
-			data: this.data,
+			//draw: this.drawOptions,
+			//data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {

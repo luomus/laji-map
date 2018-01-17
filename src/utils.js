@@ -322,23 +322,28 @@ export function WKTToGeoJSON(WKT) {
 }
 
 
-export function latLngSegmentsToGeoJSONGeometry(segments) {
-	const segmentPairs = segments.map((segment, i) => {
-		const next = segments[i + 1];
-		return [segment, next];
+export function latLngSegmentsToGeoJSONGeometry(_lines) {
+	let lines = [];
+	_lines.forEach(segments => {
+		lines.push([]);
+		const segmentPairs = segments.map((segment, i) => {
+			const next = segments[i + 1];
+			return [segment, next];
+		});
+
+		segmentPairs.forEach(pair => {
+			const line = lines[lines.length - 1];
+			line.push(pair[0][0]);
+			if (pair[1] && !L.latLng(pair[0][1]).equals(L.latLng(pair[1][0]))) {
+				line.push(pair[0][1]);
+				lines.push([]);
+			} else if (!pair[1]) {
+				line.push(pair[0][1]);
+			}
+		});
 	});
 
-	const lines = [[]];
-	segmentPairs.forEach(pair => {
-		const line = lines[lines.length - 1];
-		line.push(pair[0][0]);
-		if (pair[1] && !L.latLng(pair[0][1]).equals(L.latLng(pair[1][0]))) {
-			line.push(pair[0][1]);
-			lines.push([]);
-		} else if (!pair[1]) {
-			line.push(pair[0][1]);
-		}
-	});
+	lines = lines.filter(line => line.length);
 
 	// TODO we aren't checking for length of zero
 	const isMulti = lines.length > 1;

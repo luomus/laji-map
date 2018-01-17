@@ -315,24 +315,24 @@ export default {
 		sv: "Den sista"
 	},
 	splitLine: {
-		fi: "Katkaise linja.",
-		en: "Split line transect.",
-		sv: "Bryta av linjen."
+		fi: "Katkaise linja",
+		en: "Split line transect",
+		sv: "Bryta av linjen"
 	},
 	deleteLineSegment: {
-		fi: "Poista linjan osa.",
-		en: "Delete a segment of the line transect.",
-		sv: "Radera ett segment av linjen."
+		fi: "Poista linjan osa",
+		en: "Delete a segment of the line transect",
+		sv: "Radera ett segment av linjen"
 	},
 	splitLineTooltip: {
-		fi: "Klikkaa karttaa katkaistaksesi linjan.",
-		en: "Click the map to split the line.",
-		sv: "Klicka på kartan för att bryta av linjen."
+		fi: "Klikkaa karttaa katkaistaksesi linjan",
+		en: "Click the map to split the line",
+		sv: "Klicka på kartan för att bryta av linjen"
 	},
 	deleteLineSegmentTooltip: {
-		fi: "Klikkaa poistettavaa linjan osaa.",
-		en: "Click the segment that you want to delete.",
-		sv: "Klicka på segmentet som du vill radera."
+		fi: "Klikkaa poistettavaa linjan osaa",
+		en: "Click the segment that you want to delete",
+		sv: "Klicka på segmentet som du vill radera"
 	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",
@@ -445,9 +445,9 @@ export default {
 		sv: "ETRS-TM35FIN"
 	},
 	splitLineByMeters: {
-		fi: "Katkaise linja metriluvulla.",
-		en: "Split line transect by meters.",
-		sv: "Bryta av linjen gemon meter."
+		fi: "Katkaise linja metriluvulla",
+		en: "Split line transect by meters",
+		sv: "Bryta av linjen gemon meter"
 	},
 	segmentSplitByLengthHelp: {
 		fi: "Syötä uusi pituus. Nykyisen linjan pituus",
@@ -460,24 +460,19 @@ export default {
 		sv: "Klicka på segmentet som du vill bryta av."
 	},
 	connectSegments: {
-		fi: "Yhdistä linjan osat.",
-		en: "Connect line transect segments.",
-		sv: "Koppla ihop linjesegmentet."
+		fi: "Yhdistä linjan osat",
+		en: "Connect line transect segments",
+		sv: "Koppla ihop linjesegmentet"
 	},
 	startLineConnectFirstPointHelp: {
-		fi: "Klikkaa ensimmäistä yhdistettävää osaa.",
-		en: "Click the first segment you want to connect.",
-		sv: "Klicka på det första segmentet du vill koppla ihop."
+		fi: "Klikkaa ensimmäistä yhdistettävää osaa",
+		en: "Click the first segment you want to connect",
+		sv: "Klicka på det första segmentet du vill koppla ihop"
 	},
 	startLineConnectLastPointHelp: {
-		fi: "Klikkaa viimeistä yhdistettävää osaa.",
-		en: "Click the last segment you want to connect.",
-		sv: "Klicka på det sista segmentet du vill koppla ihop."
-	},
-	SegmentsMustBeOfSameLine: {
-		fi: "Osien täytyy olla samasta linjasta!",
-		en: "The segments must be from the same line body!",
-		sv: "Segmenten måste vara från samma linjen!"
+		fi: "Klikkaa viimeistä yhdistettävää osaa",
+		en: "Click the last segment you want to connect",
+		sv: "Klicka på det sista segmentet du vill koppla ihop"
 	},
 	confirmDrawClear: {
 		fi: "Haluatko varmasti poistaa kartalta kaikki kuviot?",
@@ -500,14 +495,14 @@ export default {
 		sv: "Omvänd raden"
 	},
 	removeFeatureOnClick: {
-		fi: "Klikkaa kuviota poistaakseesi sen.",
-		en: "Click a feature in order to remove it.",
-		sv: "Klicka på en figur för att radera den."
+		fi: "Klikkaa kuviota poistaakseesi sen",
+		en: "Click a feature in order to remove it",
+		sv: "Klicka på en figur för att radera den"
 	},
 	reverseLineOnClick: {
-		fi: "Klikkaa linjaa kääntääksesi sen suunnan.",
-		en: "Click a line in order to reverse it.",
-		sv: "Klicka på en rad för att vända den."
+		fi: "Klikkaa linjaa kääntääksesi sen suunnan",
+		en: "Click a line in order to reverse it",
+		sv: "Klicka på en rad för att vända den"
 	},
 	ortokuva: {
 		fi: "Suomen ortokuva",

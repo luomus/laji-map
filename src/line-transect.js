@@ -149,7 +149,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._LTActiveIdx = activeIdx;
 		this.keepActiveTooltipOpen = keepActiveTooltipOpen;
 
-		this._LTHistory = [feature.geometry];
+		this._LTHistory = [{geometry: feature.geometry}];
 		this._LTHistoryPointer = 0;
 
 		this.setLineTransectGeometry(feature.geometry);
@@ -170,12 +170,39 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
 	}
 
-	setLineTransectGeometry(geometry, undoable) {
-		if (undoable) {
+	setLineTransectGeometry(geometry, undoData) {
+		if (undoData) {
 			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
 				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
 			}
-			this._LTHistory.push(geometry);
+			const events = undoData.events.map(e => {
+				switch(e.type) {
+				case "edit": {
+					return {
+						type: "edit",
+						idx: e.idx,
+						feature: undoData.prevFeature,
+						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idx]}
+					};
+				}
+				case "insert": {
+					return {
+						type: "delete",
+						idx: e.idx,
+						feature: undoData.prevFeature
+					};
+				}
+				case "delete": {
+					return {
+						type: "insert",
+						idx: e.idx,
+						feature: undoData.prevFeature,
+						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idx]}
+					};
+				}
+				}
+			});
+			this._LTHistory.push({geometry, events, featureCollection: undoData.prevFeature});
 			this._LTHistoryPointer++;
 		}
 
@@ -278,14 +305,23 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	LTUndo() {
 		if (this._LTHistoryPointer <= 0) return;
+		const {events} = this._LTHistory[this._LTHistoryPointer];
 		this._LTHistoryPointer--;
-		this.setLineTransectGeometry(this._LTHistory[this._LTHistoryPointer]);
+		const {geometry} = this._LTHistory[this._LTHistoryPointer];
+		this.setLineTransectGeometry(geometry);
+		if (events) {
+			this._triggerEvent(events, this._onLTChange);
+		}
 	}
 
 	LTRedo() {
 		if (this._LTHistoryPointer >= this._LTHistory.length - 1) return;
 		this._LTHistoryPointer++;
-		this.setLineTransectGeometry(this._LTHistory[this._LTHistoryPointer]);
+		const {geometry, events} = this._LTHistory[this._LTHistoryPointer];
+		this.setLineTransectGeometry(geometry);
+		if (events) {
+			this._triggerEvent(events, this._onLTChange);
+		}
 	}
 
 	_openTooltipFor(lineIdx) {
@@ -552,6 +588,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	removeLTPoint(lineIdx, segmentIdx, commit = true, removeSeamPoint = true) {
 		let events = [];
 
+		const prevFeature = this._formatLTFeatureOut();
+
 		const line = this._lineLayers[lineIdx];
 		const precedingSegment = line[segmentIdx - 1];
 		const followingSegment = line[segmentIdx];
@@ -593,10 +631,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 
 		if (commit) {
-			this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, !!"undoable");
 			if (Array.isArray(commit)) {
 				events = [...commit, ...events];
 			}
+			this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, {events, prevFeature});
 			this._triggerEvent(events, this._onLTChange);
 		} else {
 			return events;
@@ -619,6 +657,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 
 		this.lineTransectEditIdx = [lineIdx, pointIdx];
+		this._featureBeforePointDrag = this._formatLTFeatureOut();
 		if (pointIdx !== undefined) {
 			const layer = this._pointLayers[lineIdx][pointIdx];
 			layer.setStyle(editablePointStyle)
@@ -646,8 +685,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.lineTransectEditIdx = undefined;
 
 		const feature = this._formatLTFeatureOut();
-		this.setLineTransectGeometry(feature.geometry, !!"undoable");
-
 		const events = [];
 		let prevLineIdx = undefined;
 		[this._precedingLTDragIdx, this._followingLTDragIdx].forEach(idx => {
@@ -662,6 +699,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				});
 			}
 		});
+
+		this.setLineTransectGeometry(feature.geometry, {events, prevFeature: this._featureBeforePointDrag});
 
 		this._triggerEvent(events, this._onLTChange);
 		this.map.fire("lineTransect:pointdrag");
@@ -893,6 +932,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_commitLTLineSplit(lineIdx, segmentIdx, splitPoint) {
 		this.stopLTLineSplit();
 
+		const prevFeature = this._formatLTFeatureOut();
+
 		const splitLine = this._lineLayers[lineIdx][segmentIdx];
 
 		const [start, end] = splitLine.getLatLngs();
@@ -909,7 +950,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineLayers.splice(lineIdx + 1, 0, splittedLineHead);
 
 		const feature = this._formatLTFeatureOut();
-		this.setLineTransectGeometry(feature.geometry, !!"undoable");
 
 		const events = [
 			{
@@ -929,6 +969,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx + 1));
 		}
 
+		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
 		this._triggerEvent(events, this._onLTChange);
 
 		this.map.fire("lineTransect:split");
@@ -1022,7 +1063,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopRemoveLTPointMode(...params) {
 		const idxTuple = this._firstLTSegmentToRemoveIdx;
 		this._firstLTSegmentToRemoveIdx = undefined;
-		this._updateLTStyleForIdx(...idxTuple);
+		if (idxTuple) this._updateLTStyleForIdx(...idxTuple);
 		this.stopSelectLTSegmentMode(...params);
 	}
 
@@ -1053,6 +1094,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	commitRemoveLTSegment(lineIdx, segmentIdx) {
+		const prevFeature = this._formatLTFeatureOut();
 		this._lineLayers[lineIdx].splice(segmentIdx, 1);
 		const length = this._lineLayers[lineIdx].length;
 		const feature = this._formatLTFeatureOut();
@@ -1095,7 +1137,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 
 		this._triggerEvent(events, this._onLTChange);
-		this.setLineTransectGeometry(feature.geometry, !!"undoable");
+		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
 		this.map.fire("lineTransect:delete");
 	}
 

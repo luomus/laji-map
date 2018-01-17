@@ -17,13 +17,18 @@ const hoverLineStyle = {...lineStyle, color: INCOMPLETE_COLOR};
 const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
 const editLineStyle = {...lineStyle, color: "#f00"};
 const origLineStyle = {...lineStyle, weight: 1, fill: "#99b"};
+
 const corridorStyle = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
 const oddCorridorStyle = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)};
 const activeCorridorStyle = {...corridorStyle, fillColor: activeLineStyle.color};
 const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
 const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
+
 const pointStyle = {weight: 0, radius: 3, fillColor: "#154EAA", fillOpacity: 1};
 const oddPointStyle = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)};
+const activePointStyle = {...pointStyle, fillColor: activeLineStyle.color};
+const editPointStyle = {...pointStyle, fillColor: editLineStyle.color};
+const hoverPointStyle = {...pointStyle, fillColor: hoverLineStyle.color};
 const editablePointStyle = {...pointStyle, radius: 7, fillColor: "#f00", fillOpacity: 0.7};
 const overlappingPointStyle = {...pointStyle, radius: 5, weight: 3, color: "#000"};
 const seamPointStyle = {...pointStyle, radius: 7};
@@ -99,7 +104,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.splitLTByMeters = this.splitLTByMeters.bind(this);
 
 		this._addKeyListener(ESC, () => {
-			if (this.lineTransectEditIdx) {
+			if (this.LTEditPointIdx) {
 				this._commitPointDrag();
 				return true;
 			} else if (this._lineCutting) {
@@ -128,7 +133,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_interceptClick() {
 		return super._interceptClick() || (() => {
-			if (this.lineTransectEditIdx !== undefined && !this._LTDragging) {
+			if (this.LTEditPointIdx !== undefined && !this._LTDragging) {
 				this._commitPointDrag();
 				return true;
 			} else if (this._lineCutting) {
@@ -235,7 +240,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				);
 
 				const even = lineIdx % 2 === 0;
-				pointLayer.push(L.circleMarker(segment[0], even ? pointStyle : oddPointStyle));
+				pointLayer.push(L.circleMarker(segment[0],
+					lineIdx === this._LTActiveIdx
+					? activePointStyle
+					: even
+						? pointStyle
+						: oddPointStyle));
 
 				corridorLayer.push(L.polygon(
 					this._getCorridorCoordsForLine(segment),
@@ -346,23 +356,23 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (lineIdx !== this._LTActiveIdx || !this.keepActiveTooltipOpen) segment.closeTooltip().unbindTooltip();
 	}
 
+	flatIdxToIdxTuple(idx) {
+		let lineIdx = 0;
+		let line = this._pointLayers[lineIdx];
+		while (idx >= line.length) {
+			idx -= line.length;
+			lineIdx++;
+			line = this._pointLayers[lineIdx];
+		}
+		return [lineIdx, idx];
+	}
+
+
 	// Opens a dialog and asks which point to use, if points are overlapping.
 	_getPoint(i, callback, questionTranslationKey = "FirstOrLastPoint", firstTranslationKey = "FirstPartitive", lastTranslationKey = "LastPartitive" ) {
-
-		const flatIdxToIdxTuple = (idx) => {
-			let lineIdx = 0;
-			let line = this._pointLayers[lineIdx];
-			while (idx >= line.length) {
-				idx -= line.length;
-				lineIdx++;
-				line = this._pointLayers[lineIdx];
-			}
-			return [lineIdx, idx];
-		};
-
 		if (this._overlappingPointIdxs[i] !== undefined) {
-			const firstIdxTuple = flatIdxToIdxTuple(this._overlappingPointIdxs[i]);
-			const lastIdxTuple = flatIdxToIdxTuple(i);
+			const firstIdxTuple = this.flatIdxToIdxTuple(this._overlappingPointIdxs[i]);
+			const lastIdxTuple = this.flatIdxToIdxTuple(i);
 			const firstPoint = this._allPoints[this._overlappingPointIdxs[i]];
 			const lastPoint = this._allPoints[i];
 
@@ -406,7 +416,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				lastPoint.unbindPopup();
 			});
 		} else {
-			callback(flatIdxToIdxTuple(i));
+			callback(this.flatIdxToIdxTuple(i));
 		}
 	}
 
@@ -423,8 +433,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			};
 		};
 		if (layer instanceof L.CircleMarker) {
+			const i = this.leafletIdsToFlatPointIdxs[_leaflet_id];
+			const [lineIdx, segmentIdx] = this.flatIdxToIdxTuple(i);
 			return {
-				i: this.leafletIdsToFlatPointIdxs[_leaflet_id]
+				i,
+				lineIdx,
+				segmentIdx,
+				idxTuple: [lineIdx, segmentIdx]
 			};
 		} else if (isPolyline(layer)) {
 			const corridorId = this.lineIdsToCorridorIds[layer._leaflet_id];
@@ -642,8 +657,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_setLTPointEditable(lineIdx, pointIdx) {
-		if (this.lineTransectEditIdx !== undefined) {
-			const [_lineIdx, _segmentIdx] = this.lineTransectEditIdx;
+		if (this.LTEditPointIdx !== undefined) {
+			const [_lineIdx, _segmentIdx] = this.LTEditPointIdx;
 			const editableLayer = this._pointLayers[_lineIdx][_segmentIdx];
 			editableLayer.setStyle(pointStyle);
 			this._commitPointDrag();
@@ -656,7 +671,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			overlappingPoint.remove();
 		}
 
-		this.lineTransectEditIdx = [lineIdx, pointIdx];
+		this.LTEditPointIdx = [lineIdx, pointIdx];
 		this._featureBeforePointDrag = this._formatLTFeatureOut();
 		if (pointIdx !== undefined) {
 			const layer = this._pointLayers[lineIdx][pointIdx];
@@ -681,7 +696,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_commitPointDrag() {
 		this.map.off("mouseup", this._stopLTDragCorridorHandler);
 		this._stopLTDragPointHandler();
-		this.lineTransectEditIdx = undefined;
+		this.LTEditPointIdx = undefined;
 
 		const feature = this._formatLTFeatureOut();
 		const events = [];
@@ -737,7 +752,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_startLTDragCorridorHandler({latlng}) {
 		this._startLTDragHandler(this._dragLTCorridorHandler);
 
-		const [lineIdx, pointIdx] = this.lineTransectEditIdx;
+		const [lineIdx, pointIdx] = this.LTEditPointIdx;
 		const point = this._pointLayers[lineIdx][pointIdx];
 
 		this._dragPointStart = point.getLatLng();
@@ -760,7 +775,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_dragLTHandler(latlng) {
-		const idxs = this.lineTransectEditIdx;
+		const idxs = this.LTEditPointIdx;
 		const [lineIdx, pointIdx] = idxs;
 
 		const pointLayer = this._pointLayers[lineIdx];
@@ -861,10 +876,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const {lineIdx, segmentIdx, idxTuple} = this.getIdxsFromLayer(layer);
 		const isActive = lineIdx === this._LTActiveIdx;
 		const [hoveredLineIdx, hoveredSegmentIdx] = this._hoveredIdxTuple || [];
+		const isEditPoint = (layer instanceof L.CircleMarker && this.LTEditPointIdx && idxTuplesEqual(idxTuple, this.LTEditPointIdx));
 		const isEdit = idxTuplesEqual(idxTuple, this._splitIdxTuple) ||
 			idxTuplesEqual(idxTuple, this._firstLTSegmentToRemoveIdx) ||
 			(this._selectLTMode === "segment" && lineIdx === hoveredLineIdx && segmentIdx === hoveredSegmentIdx) ||
-			(this._selectLTMode === "line" && lineIdx === hoveredLineIdx);
+			(this._selectLTMode === "line" && lineIdx === hoveredLineIdx) ||
+			isEditPoint;
 		const isHover = !isEdit && lineIdx === hoveredLineIdx;
 
 		const lineStyles = {
@@ -883,14 +900,27 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			hover: hoverCorridorStyle,
 		};
 
+		const pointStyles = {
+			normal: pointStyle,
+			odd: oddPointStyle,
+			active: activePointStyle,
+			edit: editPointStyle,
+			editPoint: editablePointStyle,
+			hover: hoverPointStyle,
+		};
+
 		let styleObject = undefined;
 		if (layer instanceof L.Polygon) {
 			styleObject = corridorStyles;
 		} else if (layer instanceof L.Polyline) {
 			styleObject = lineStyles;
+		} else if (layer instanceof L.CircleMarker) {
+			styleObject = pointStyles;
 		}
 
-		if (isEdit) {
+		if (isEditPoint) {
+			return styleObject.editPoint;
+		}	else if (isEdit) {
 			return styleObject.edit;
 		} else if (isHover) {
 			return styleObject.hover;
@@ -905,22 +935,19 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (lineIdx === undefined) return;
 		this._corridorLayers[lineIdx].forEach(corridorLayer => {
 			const {segmentIdx} = this.getIdxsFromLayer(corridorLayer);
-			this._updateLTStyleForIdx(lineIdx, segmentIdx);
+			this.updateLTStyleForIdxTuple(lineIdx, segmentIdx);
 		});
 	}
 
-	_updateLTStyleForIdx(lineIdx, segmentIdx) {
+	updateLTStyleForIdxTuple(lineIdx, segmentIdx) {
 		if (lineIdx === undefined || segmentIdx === undefined) return;
-		[this._lineLayers, this._corridorLayers].forEach(layerGroup => {
+		[this._lineLayers, this._corridorLayers, this._pointLayers].forEach(layerGroup => {
+			if (layerGroup === this._pointLayers && segmentIdx === 0) return;
 			const lineGroup = layerGroup[lineIdx] || [];
 			const layer = lineGroup[segmentIdx];
 			if (layer) layer.setStyle(this._getStyleForLTLayer(layer));
 		});
 		(lineIdx === this._LTActiveIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(lineIdx) : this._closeTooltipFor(lineIdx);
-	}
-
-	_updateLTStyleForIdxTuple(...idxTuple) {
-		this._updateLTStyleForIdx(...idxTuple);
 	}
 
 	_idxTupleToFlatIdx(lineIdx, segmentIdx) {
@@ -982,7 +1009,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineCutIdx = undefined;
 		this._splitIdxTuple = undefined;
 		this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
-		this._updateLTStyleForIdx(lastLineCutIdx);
+		this.updateLTStyleForIdxTuple(lastLineCutIdx);
 		this._disposeTooltip();
 	}
 
@@ -1001,8 +1028,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		const prevCutIdx = this._splitIdxTuple;
 		this._splitIdxTuple = closestIdx;
-		if (prevCutIdx) this._updateLTStyleForIdx(...prevCutIdx);
-		if (this._splitIdxTuple) this._updateLTStyleForIdx(...this._splitIdxTuple);
+		if (prevCutIdx) this.updateLTStyleForIdxTuple(...prevCutIdx);
+		if (this._splitIdxTuple) this.updateLTStyleForIdxTuple(...this._splitIdxTuple);
 
 		// Update cut line.
 		const closestLatLngOnLine = L.GeometryUtil.closest(this.map, closestLine, latlng);
@@ -1043,7 +1070,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopSelectLTSegmentMode(lineIdx, segmentIdx) {
 		this._selectLTMode = undefined;
 		this._onSelectLT = undefined;
-		if (lineIdx !== undefined && segmentIdx !== undefined) this._updateLTStyleForIdx(lineIdx, segmentIdx);
+		if (lineIdx !== undefined && segmentIdx !== undefined) this.updateLTStyleForIdxTuple(lineIdx, segmentIdx);
 		this._disposeTooltip();
 	}
 
@@ -1062,13 +1089,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopRemoveLTPointMode(...params) {
 		const idxTuple = this._firstLTSegmentToRemoveIdx;
 		this._firstLTSegmentToRemoveIdx = undefined;
-		if (idxTuple) this._updateLTStyleForIdx(...idxTuple);
+		if (idxTuple) this.updateLTStyleForIdxTuple(...idxTuple);
 		this.stopSelectLTSegmentMode(...params);
 	}
 
 	chooseFirstSegmentToConnect(...idxTuple) {
 		this._firstLTSegmentToRemoveIdx = idxTuple;
-		this._updateLTStyleForIdx(...idxTuple);
+		this.updateLTStyleForIdxTuple(...idxTuple);
 		this.startSelectLTSegmentMode(this.chooseLastSegmentToConnectAndCommit, "startLineConnectLastPointHelp");
 		return false;
 	}

@@ -160,7 +160,8 @@ export default class LajiMap {
 				zoomControl: false,
 				attributionControl: false,
 				noWrap: true,
-				continuousWorld: false
+				continuousWorld: false,
+				doubleClickZoom: false
 			});
 
 			this.tileLayers = {};
@@ -281,6 +282,15 @@ export default class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
+			dblclick: (e) => { // We have to handle dblclick zoom manually, since the default event can't be cancelled.
+				setImmediate(() => {
+					if (this._disableDblClickZoom) return;
+					const oldZoom = this.map.getZoom();
+					const delta = this.map.options.zoomDelta;
+					const zoom = e.originalEvent.shiftKey ? oldZoom - delta : oldZoom + delta;
+					this.map.setZoomAround(e.containerPoint, zoom);
+				});
+			},
 			click: () => this._interceptClick(),
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => {
@@ -809,10 +819,13 @@ export default class LajiMap {
 			if (!this._interceptClick()) this._onActiveChange(item.idx, lajiMapIdx);
 		});
 
-		item.group.on("dblclick", ({layer}) => {
-			this.map.doubleClickZoom.disable();
+		item.group.on("dblclick", e => {
+			this._disableDblClickZoom = true;
+			const{layer} = e;
 			this._setEditable(layer);
-			setImmediate(() => this.map.doubleClickZoom.enable());
+			setTimeout(() => {
+				this._disableDblClickZoom = false;
+			}, 10);
 		});
 
 		item.group.on("mouseover", e => {

@@ -9,7 +9,7 @@ import {
 	ESC
 } from "./globals";
 
-const POINT_DIST_TRESHOLD = 100;
+const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;
 
 const lineStyle = {color: NORMAL_COLOR, weight: 2};
@@ -564,11 +564,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const closestPoint = L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
 			const {idxTuple, i} = this.getIdxsFromLayer(closestPoint);
 			const prevClosestPointIdxTuple = this._closebyPointIdxTuple;
-			this._closebyPointIdxTuple = closestPoint.getLatLng().distanceTo(latlng) <= POINT_DIST_TRESHOLD ? idxTuple : undefined;
+			const closestPointPixelPoint = this.map.latLngToLayerPoint(closestPoint.getLatLng());
+			const latLngPixelPoint = this.map.latLngToLayerPoint(latlng);
+			this._closebyPointIdxTuple = closestPointPixelPoint.distanceTo(latLngPixelPoint) <= POINT_DIST_TRESHOLD ? idxTuple : undefined;
 			if (prevClosestPointIdxTuple !== this._closebyPointIdxTuple) {
 				if (this._closebyPointIdxTuple) {
 					const layer = this._getLayerForIdxTuple(this._pointLayers, ...this._closebyPointIdxTuple);
 					if (layer && this.map.hasLayer(layer)) layer.bringToFront();
+					if (this._LTdragPoint) this._LTdragPoint.bringToFront();
 				}
 				[prevClosestPointIdxTuple, this._closebyPointIdxTuple].forEach(idxTuple => {
 					if (idxTuple) {
@@ -724,7 +727,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (pointIdx !== undefined) {
 			const point = this._getLayerForIdxTuple(this._pointLayers, lineIdx, pointIdx);
 			const style = {color: "#ff0000", opacity: 0.5, fillColor:  "#ffffff", fillOpacity: 0.3};
-			this._LTdragPoint = new L.Circle(point.getLatLng(), {radius: POINT_DIST_TRESHOLD, ...style});
+			this._LTdragPoint = new L.CircleMarker(point.getLatLng(), {radius: POINT_DIST_TRESHOLD, ...style});
 			this._LTdragPoint.addTo(this.map)
 				.bringToFront()
 				.on("mouseover", () => {
@@ -764,6 +767,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();
 		this.LTEditPointIdx = undefined;
 		this._LTdragPoint.remove();
+		this._LTdragPoint = undefined;
 
 		const feature = this._formatLTFeatureOut();
 		const events = [];

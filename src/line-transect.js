@@ -524,7 +524,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				return false;
 			}
 			return true;
-		}
+		};
 
 		this._pointLayerGroup.on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
@@ -720,13 +720,16 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_commitPointDrag() {
 		this.map.off("mouseup", this._stopLTDragCorridorHandler);
 		this._stopLTDragPointHandler();
+		const precedingIdxTuple = this._getIdxTuplePrecedingEditPoint();
+		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();
 		this.LTEditPointIdx = undefined;
 
 		const feature = this._formatLTFeatureOut();
 		const events = [];
 		let prevLineIdx = undefined;
-		[this._precedingLTDragIdx, this._followingLTDragIdx].forEach(idx => {
-			const {lineIdx} = this.getIdxsFromLayer(this._allSegments[idx]);
+		[precedingIdxTuple, followingIdxTuple].forEach(idxTuple => {
+			if (!idxTuple) return;
+			const [lineIdx] = idxTuple;
 			if (lineIdx !== undefined && lineIdx !== prevLineIdx) {
 				prevLineIdx = lineIdx;
 				events.push({
@@ -805,6 +808,48 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const pointLayer = this._pointLayers[lineIdx];
 		const point = pointLayer[pointIdx];
 
+		const precedingIdxTuple = this._getIdxTuplePrecedingEditPoint();
+
+		let precedingLine, precedingCorridor, precedingPoint;
+		if (precedingIdxTuple) {
+			precedingLine = this._getLayerForIdxTuple(this._lineLayers, ...precedingIdxTuple);
+			precedingCorridor = this._getLayerForIdxTuple(this._corridorLayers, ...precedingIdxTuple);
+			precedingPoint = this._getLayerForIdxTuple(this._pointLayers, ...precedingIdxTuple);
+		}
+
+		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();
+
+		let followingLine, followingCorridor, followingPoint;
+		if (followingIdxTuple) {
+			const [followingLineIdx, followingSegmentIdx] = followingIdxTuple;
+			followingLine = this._getLayerForIdxTuple(this._lineLayers, ...followingIdxTuple);
+			followingCorridor = this._getLayerForIdxTuple(this._corridorLayers, ...followingIdxTuple);
+			followingPoint = this._getLayerForIdxTuple(this._pointLayers, followingLineIdx, followingSegmentIdx + 1);
+		}
+
+		if (precedingIdxTuple) {
+			const lineCoords = [precedingLine.getLatLngs()[0], latlng];
+			precedingLine.setLatLngs(lineCoords).openTooltip();
+			precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords));
+		}
+
+		if (followingIdxTuple) {
+			const lineCoords = [latlng, followingLine.getLatLngs()[1]];
+			followingLine.setLatLngs(lineCoords).openTooltip();
+			followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords));
+		}
+
+		point.setLatLng(latlng);
+		[precedingPoint, point, followingPoint].forEach(p => p && p.bringToFront());
+	}
+
+	_getIdxTuplePrecedingEditPoint() {
+		if (!this.LTEditPointIdx) return undefined;
+		const [lineIdx, pointIdx] = this.LTEditPointIdx;
+
+		const pointLayer = this._pointLayers[lineIdx];
+		const point = pointLayer[pointIdx];
+
 		let precedingLineIdx, precedingIdx = undefined;
 
 		if (pointIdx - 1 >= 0) {
@@ -818,12 +863,19 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		}
 
-		let precedingLine, precedingCorridor, precedingPoint;
-		if (precedingIdx !== undefined) {
-			precedingLine = this._lineLayers[precedingLineIdx][precedingIdx];
-			precedingCorridor = this._corridorLayers[precedingLineIdx][precedingIdx];
-			precedingPoint = this._pointLayers[precedingLineIdx][precedingIdx];
-		}
+		return [precedingLineIdx, precedingIdx];
+	}
+
+	_getLayerForIdxTuple(layer, lineIdx, segmentIdx) {
+		return layer[lineIdx][segmentIdx];
+	}
+
+	_getIdxTupleFollowingEditPoint() {
+		if (!this.LTEditPointIdx) return undefined;
+		const [lineIdx, pointIdx] = this.LTEditPointIdx;
+
+		const pointLayer = this._pointLayers[lineIdx];
+		const point = pointLayer[pointIdx];
 
 		let followingLineIdx, followingIdx = undefined;
 
@@ -838,29 +890,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		}
 
-		let followingLine, followingCorridor, followingPoint;
-		if (followingIdx !== undefined) {
-			followingLine = this._lineLayers[followingLineIdx][followingIdx];
-			followingCorridor = this._corridorLayers[followingLineIdx][followingIdx];
-			followingPoint = this._pointLayers[followingLineIdx][followingIdx + 1];
-		}
-
-		if (precedingIdx !== undefined) {
-			this._precedingLTDragIdx = precedingIdx;
-			const lineCoords = [precedingLine.getLatLngs()[0], latlng];
-			precedingLine.setLatLngs(lineCoords).openTooltip();
-			precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
-		}
-
-		if (followingIdx !== undefined) {
-			this._followingLTDragIdx = this.getIdxsFromLayer(this._lineLayers[followingLineIdx][followingIdx]).i;
-			const lineCoords = [latlng, followingLine.getLatLngs()[1]];
-			followingLine.setLatLngs(lineCoords).openTooltip();
-			followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords, precedingIdx));
-		}
-
-		point.setLatLng(latlng);
-		[precedingPoint, point, followingPoint].forEach(p => p && p.bringToFront());
+		return [followingLineIdx, followingIdx];
 	}
 
 	_degreesFromNorth(lineCoords) {
@@ -895,7 +925,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return {type: "active", idx: this._LTActiveIdx};
 	}
 
-	// Doesn't handle points.
 	_getStyleForLTLayer(layer) {
 		const {lineIdx, segmentIdx, idxTuple} = this.getIdxsFromLayer(layer);
 		const isActive = lineIdx === this._LTActiveIdx;

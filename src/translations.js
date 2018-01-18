@@ -513,5 +513,15 @@ export default {
 		fi: "Suomen lasermaastokartta",
 		en: "Topographic laser map of Finland",
 		sv: "Finlands terränglaserkarta"
+	},
+	createPoint: {
+		fi: "Luo piste",
+		en: "Remove point",
+		sv: "Radera punkten"
+	},
+	addPointTooltip: {
+		fi: "Klikkaa karttaa luodaksesi uuden pisteen",
+		en: "Click the map to create a new point",
+		sv: "Klicka på kartan för att skapa en ny punkt"
 	}
 };

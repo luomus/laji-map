@@ -109,7 +109,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (this.LTEditPointIdx) {
 				this._commitPointDrag();
 				return true;
-			} else if (this._lineCutting) {
+			} else if (this._lineSplitFn) {
 				this.stopLTLineSplit();
 				return true;
 			} else if (this._selectLTMode) {
@@ -138,8 +138,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (this.LTEditPointIdx !== undefined && !this._LTDragging) {
 				this._commitPointDrag();
 				return true;
-			} else if (this._lineCutting) {
-				this._commitLTLineSplit(...this._splitIdxTuple, this._splitPoint);
+			} else if (this._lineSplitFn) {
+				this._lineSplitFn(...this._splitIdxTuple, this._splitPoint);
 			}
 			return false;
 		})();
@@ -627,7 +627,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 						text: translations.ConnectSegments,
 						callback: () => this.chooseFirstSegmentToConnect(lineIdx, segmentIdx),
 						iconCls: "laji-map-line-transect-remove-point-glyph"
-					}
+					},
+					{
+						text: translations.CreatePoint,
+						callback: () => this.startLTPointAddSplitForIdx(lineIdx, segmentIdx),
+						iconCls: "laji-map-line-transect-create-point-glyph"
+					},
 				]
 			});
 		}));
@@ -1125,9 +1130,41 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.map.fire("lineTransect:split");
 	}
 
+	_commitLTPointAdd(lineIdx, segmentIdx, splitPoint) {
+		this.stopLTLineSplit();
+
+		const prevFeature = this._formatLTFeatureOut();
+
+		const splitLine = this._lineLayers[lineIdx][segmentIdx];
+
+		const [start, end] = splitLine.getLatLngs();
+		// Tail is the part prepending the split and head the following part.
+		const splittedSegmentTail = [start, splitPoint];
+		const splittedSegmentHead = [splitPoint, end];
+
+		splitLine.setLatLngs(splittedSegmentTail);
+		this._lineLayers[lineIdx].splice(segmentIdx + 1, 0, L.polyline(splittedSegmentHead));
+
+		const feature = this._formatLTFeatureOut();
+
+		const events = [
+			{
+				type: "edit",
+				feature,
+				idx: lineIdx,
+				geometry: lineToGeoJSONLine(this._lineLayers[lineIdx])
+			},
+		];
+
+		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
+		this._triggerEvent(events, this._onLTChange);
+
+		this.map.fire("lineTransect:pointadd");
+	}
+
 	stopLTLineSplit() {
 		const lastLineCutIdx = this._splitIdxTuple;
-		this._lineCutting = false;
+		this._lineSplitFn = false;
 		if (this._cutLine) this._cutLine.removeFrom(this.map);
 		this._cutLine = undefined;
 		this._lineCutIdx = undefined;
@@ -1171,14 +1208,27 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	startLTLineSplit() {
-		this._lineCutting = true;
+		this._lineSplitFn = this._commitLTLineSplit;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 		this._createTooltip("SplitLineTooltip");
 	}
 
 	startLTLineSplitForIdx(...idxTuple) {
-		this._lineCutting = true;
 		this._lineCutIdx = idxTuple;
+		this._lineSplitFn = this._commitLTLineSplit;
+		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._createTooltip("SplitLineTooltip");
+	}
+
+	startLTPointAdd() {
+		this._lineSplitFn = this._commitLTPointAdd;
+		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._createTooltip("AddPointTooltip");
+	}
+
+	startLTPointAddSplitForIdx(...idxTuple) {
+		this._lineCutIdx = idxTuple;
+		this._lineSplitFn = this._commitLTPointAdd;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 		this._createTooltip("SplitLineTooltip");
 	}

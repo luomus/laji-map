@@ -498,10 +498,50 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_setLineTransectEvents() {
 
+		const onMouseOver = (e) => {
+			L.DomEvent.stopPropagation(e);
+
+			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
+
+			const prevHoverIdx = this._hoveredIdxTuple;
+			this._hoveredIdxTuple = [lineIdx, segmentIdx];
+			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
+			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
+			this._openTooltipFor(lineIdx);
+		};
+		const onMouseOut = (e) => {
+			L.DomEvent.stopPropagation(e);
+
+			const {lineIdx} = this.getIdxsFromEvent(e);
+
+			this._hoveredIdxTuple = undefined;
+			this._updateLTStyleForLineIdx(lineIdx);
+			if (lineIdx !== this._LTActiveIdx) this._closeTooltipFor(lineIdx);
+		};
+		const pointIsMiddlePoint = (e) => {
+			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
+			if (segmentIdx === 0 || segmentIdx === this._pointLayers[lineIdx].length - 1) {
+				return false;
+			}
+			return true;
+		}
+
 		this._pointLayerGroup.on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
 
 			this._getPoint(this.getIdxsFromEvent(e).i, idxTuple => this._setLTPointEditable(...idxTuple));
+		}).on("click", e => {
+			L.DomEvent.stopPropagation(e);
+
+			const {lineIdx} = this.getIdxsFromEvent(e);
+
+			if (!this._selectLTMode) {
+				this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
+			}
+		}).on("mouseover", e => {
+			pointIsMiddlePoint(e) && onMouseOver(e);
+		}).on("mouseout", e => {
+			pointIsMiddlePoint(e) &&onMouseOut(e);
 		});
 
 		this._corridorLayerGroup.on("click", e => {
@@ -515,37 +555,21 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			} else {
 				this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
 			}
-		}).on("mouseover", e => {
-			L.DomEvent.stopPropagation(e);
+		}).on("mouseover", onMouseOver)
+			.on("mouseout", onMouseOut)
+			.on("dblclick", e => {
+				L.DomEvent.stopPropagation(e);
 
-			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
+				const {latlng} = e;
+				const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
 
-			const prevHoverIdx = this._hoveredIdxTuple;
-			this._hoveredIdxTuple = [lineIdx, segmentIdx];
-			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
-			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
-			this._openTooltipFor(lineIdx);
-		}).on("mouseout", e => {
-			L.DomEvent.stopPropagation(e);
-
-			const {lineIdx} = this.getIdxsFromEvent(e);
-
-			this._hoveredIdxTuple = undefined;
-			this._updateLTStyleForLineIdx(lineIdx);
-			if (lineIdx !== this._LTActiveIdx) this._closeTooltipFor(lineIdx);
-		}).on("dblclick", e => {
-			L.DomEvent.stopPropagation(e);
-
-			const {latlng} = e;
-			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
-
-			const points = [segmentIdx, segmentIdx + 1].map(idx => this._pointLayers[lineIdx][idx]);
-			const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
-			const closerIdx = (closestPoint === points[0]) ? segmentIdx : segmentIdx + 1;
-			if (closestPoint.getLatLng().distanceTo(latlng) <= POINT_DIST_TRESHOLD) {
-				this._setLTPointEditable(lineIdx, closerIdx);
-			}
-		});
+				const points = [segmentIdx, segmentIdx + 1].map(idx => this._pointLayers[lineIdx][idx]);
+				const closestPoint = L.GeometryUtil.closestLayer(this.map, points, latlng).layer;
+				const closerIdx = (closestPoint === points[0]) ? segmentIdx : segmentIdx + 1;
+				if (closestPoint.getLatLng().distanceTo(latlng) <= POINT_DIST_TRESHOLD) {
+					this._setLTPointEditable(lineIdx, closerIdx);
+				}
+			});
 	}
 
 	@reflect()

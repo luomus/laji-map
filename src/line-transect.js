@@ -589,7 +589,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			L.DomEvent.stopPropagation(e);
 			if (this._closebyPointIdxTuple) {
 				this._disableDblClickZoom = true;
-				this._setLTPointEditable(...this._closebyPointIdxTuple);
+				this._getPoint(this.getIdxsFromLayer(this._getLayerForIdxTuple(this._pointLayers, ...this._closebyPointIdxTuple)).i, idxTuple => this._setLTPointEditable(...idxTuple));
 				setTimeout(() => {
 					this._disableDblClickZoom = false;
 				}, 10);
@@ -920,7 +920,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		}
 
-		return [precedingLineIdx, precedingIdx];
+		return precedingLineIdx !== undefined && precedingIdx !== undefined ? [precedingLineIdx, precedingIdx] : undefined;
 	}
 
 	_getLayerForIdxTuple(layer, lineIdx, segmentIdx) {
@@ -947,7 +947,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		}
 
-		return [followingLineIdx, followingIdx];
+		return followingLineIdx !== undefined && followingIdx !== undefined ? [followingLineIdx, followingIdx] : undefined;
 	}
 
 	_degreesFromNorth(lineCoords) {

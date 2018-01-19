@@ -200,6 +200,7 @@ export default class LajiMap {
 
 			this.overlaysByNames = {
 				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/INSPIRE/wms", {
+					maxZoom: 15,
 					layers: "INSPIRE:fi_fmnh_br",
 					styles: "harmaaviiva",
 					format: "image/png",
@@ -207,30 +208,35 @@ export default class LajiMap {
 					version: "1.1.0",
 				}).setOpacity(1),
 				forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+					maxZoom: 15,
 					layers: "Metsakasvillisuusvyohykkeet",
 					format: "image/png",
 					transparent: true,
 					version: "1.3.0"
 				}).setOpacity(0.5),
 				mireVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+					maxZoom: 15,
 					layers: "Suokasvillisuusvyohykkeet",
 					format: "image/png",
 					transparent: true,
 					version: "1.3.0"
 				}).setOpacity(0.5),
 				threatenedSpeciesEvaluationZones: L.tileLayer.wms("http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
+					maxZoom: 15,
 					layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0"
 				}),
 				ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+					maxZoom: 15,
 					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
 				}),
 				ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+					maxZoom: 15,
 					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
 					format: "image/png",
 					transparent: true,

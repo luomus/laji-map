@@ -315,8 +315,8 @@ export default class LajiMap {
 			locationerror: (...params) => this._onLocationNotFound(...params),
 			"contextmenu.show": (e) => {
 				if (e.relatedTarget) {
-					this._hoveredLayer = e.relatedTarget;
-					const tuple = this._getIdxTupleByLayer(this._hoveredLayer);
+					this._contextMenuLayer = e.relatedTarget;
+					const tuple = this._getIdxTupleByLayer(this._contextMenuLayer);
 					if (tuple) {
 						const [dataIdx, featureIdx] = tuple;
 						if (this.data[dataIdx] && this.data[dataIdx].editable) {
@@ -328,15 +328,18 @@ export default class LajiMap {
 				this._interceptClick();
 			},
 			"contextmenu.hide": () => {
-				if (!this._hoveredLayer) return;
-				const tuple = this._getIdxTupleByLayer(this._hoveredLayer);
+				const contextMenuLayer = this._contextMenuLayer;
+				this._contextMenuLayer = undefined;
+				if (!contextMenuLayer) return;
+				const tuple = this._getIdxTupleByLayer(contextMenuLayer);
 				if (tuple) {
 					const [dataIdx, featureIdx] = tuple;
 					if (this.data[dataIdx] && this.data[dataIdx].editable) {
 						this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
-						this.updateLayerStyle(this._hoveredLayer);
+						this.updateLayerStyle(contextMenuLayer);
 					}
 				}
+				this.map.fire("mousemove", {latlng: this._mouseLatLng});
 			}
 		});
 
@@ -2028,10 +2031,7 @@ export default class LajiMap {
 
 	updateLayerStyle(layer) {
 		if (!layer) return;
-
-		let style = this._getStyleForLayer(layer, style);
-
-		this.setLayerStyle(layer, style);
+		this.setLayerStyle(layer, this._getStyleForLayer(layer, style));
 	}
 
 	_getDefaultDrawStyle() {

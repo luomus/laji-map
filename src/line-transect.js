@@ -416,6 +416,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	getIdxsFromLayer(layer) {
+		if (!layer) return undefined;
 		const {_leaflet_id} = layer;
 		const getIdxsForId = id => {
 			const lineIdx = this.leafletIdsToCorridorLineIdxs[id];
@@ -554,19 +555,23 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}).on("mouseover", onMouseOver)
 			.on("mouseout", onMouseOut);
 
-		this.map.on("mousemove", e => {
-			const {latlng} = e;
+		this.map.on("mousemove", ({latlng}) => {
 			const closestPoint = L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
 			const {idxTuple} = this.getIdxsFromLayer(closestPoint);
 			const idxTupleStr = idxTuple ? idxTupleToIdxTupleStr(...idxTuple) : undefined;
 			const prevClosestPointIdxTuple = this._closebyPointIdxTuple;
 			const closestPointPixelPoint = this.map.latLngToLayerPoint(closestPoint.getLatLng());
 			const latLngPixelPoint = this.map.latLngToLayerPoint(latlng);
-			this._closebyPointIdxTuple = closestPointPixelPoint.distanceTo(latLngPixelPoint) <= POINT_DIST_TRESHOLD ? idxTuple : undefined;
+			this._closebyPointIdxTuple = this._contextMenuLayer !== undefined && this._contextMenuLayer === this._LTPointExpander
+				? this._closebyPointIdxTuple
+				: closestPointPixelPoint.distanceTo(latLngPixelPoint) <= POINT_DIST_TRESHOLD
+					? idxTuple
+					: undefined;
 			if (!idxTuplesEqual(prevClosestPointIdxTuple, this._closebyPointIdxTuple)) {
 				if (this._LTPointExpander) {
-					if (this.map.contextmenu.isVisible()) this.map.contextmenu.hide();
-					this._LTPointExpander.remove();
+					const layer = this._LTPointExpander;
+					if (this.map.contextmenu.isVisible() && this._contextMenuLayer === this._LTPointExpander) this.map.contextmenu.hide();
+					setImmediate(() => layer.remove());
 				}
 				if (this._closebyPointIdxTuple) {
 					this._LTPointExpander = new L.CircleMarker(closestPoint.getLatLng(), {radius: POINT_DIST_TRESHOLD, opacity: 0, fillOpacity: 0})
@@ -602,6 +607,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					this._disableDblClickZoom = false;
 				}, 10);
 			}
+		}).on("contextmenu.show", e => {
+			if (e.relatedTarget) this._LTContextMenuLayer = e.relatedTarget;
+		}).on("contextmenu.hide", e => {
+			const {lineIdx} = this.getIdxsFromLayer(this._LTContextMenuLayer) || {};
+			if (lineIdx !== undefined) this._updateLTStyleForLineIdx(lineIdx);
 		});
 	}
 
@@ -1020,22 +1030,24 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const isPoint = layer instanceof L.CircleMarker;
 		const isActive = lineIdx === this._LTActiveIdx && (!isPoint || (segmentIdx !== 0 && segmentIdx !== this._pointLayers[lineIdx].length - 1));
 		const [hoveredLineIdx, hoveredSegmentIdx] = this._hoveredIdxTuple || [];
+		const contextMenuLineIdx = (this.getIdxsFromLayer(this._contextMenuLayer) || {}).lineIdx;
 		const isEditPoint = isPoint && idxTuplesEqual(idxTuple, this.LTEditPointIdx);
 		const isClosebyPoint = isPoint && idxTuplesEqual(idxTuple, this._closebyPointIdxTuple);
 		const isOverlappingEndOrStartPoint = isPoint && this._overlappingNonadjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 		const isSeamPoint = isPoint && this._overlappingAdjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
+
+		const _isHover = lineIdx === hoveredLineIdx || lineIdx === contextMenuLineIdx;
+		const isHover = isPoint
+			? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover
+			: _isHover;
 		const isEdit = isPoint
 			?    isEditPoint
 			:    idxTuplesEqual(idxTuple, this._splitIdxTuple)
 				|| idxTuplesEqual(idxTuple, this._firstLTSegmentToRemoveIdx)
 				|| idxTuplesEqual(idxTuple, this._getIdxTuplePrecedingEditPoint())
 				|| idxTuplesEqual(idxTuple, this._getIdxTupleFollowingEditPoint())
-				|| (this._selectLTMode === "segment" && lineIdx === hoveredLineIdx && segmentIdx === hoveredSegmentIdx)
-				|| (this._selectLTMode === "line" && lineIdx === hoveredLineIdx);
-		const _isHover = !isEdit && lineIdx === hoveredLineIdx;
-		const isHover = isPoint
-			? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover
-			: _isHover;
+				|| (this._selectLTMode === "segment" && isHover && segmentIdx === hoveredSegmentIdx)
+				|| (this._selectLTMode === "line" && isHover);
 
 		const lineStyles = {
 			normal: lineStyle,

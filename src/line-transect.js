@@ -208,7 +208,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					};
 				}
 				}
-			});
+			}).filter(e => e);
 			this._LTHistory.push({geometry, events, featureCollection: undoData.prevFeature});
 			this._LTHistoryPointer++;
 		}
@@ -653,46 +653,53 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		});
 	}
 
-	// Commit can be an array of events that are triggered at the same time as the event that this function triggers.
-	removeLTPoint(lineIdx, segmentIdx, commit = true, removeSeamPoint = true) {
+	// 'commit' can be an array of events that are triggered at the same time as the event that this function triggers.
+	removeLTPoint(lineIdx, pointIdx, commit = true) {
 		let events = [];
+		const that = this;
 
 		const prevFeature = this._formatLTFeatureOut();
 
-		const line = this._lineLayers[lineIdx];
-		const precedingSegment = line[segmentIdx - 1];
-		const followingSegment = line[segmentIdx];
-		if (precedingSegment && followingSegment) {
+		const precedingIdxTuple = this._getIdxTuplePrecedingPoint(lineIdx, pointIdx);
+		const followingIdxTuple = this._getIdxTupleFollowingPoint(lineIdx, pointIdx);
+		const [precedingLineIdx, precedingSegmentIdx] = precedingIdxTuple || [];
+		const [followingLineIdx, followingSegmentIdx] = followingIdxTuple || [];
+
+		let precedingSegment = precedingIdxTuple ? this._getLayerForIdxTuple(this._lineLayers, ...precedingIdxTuple) : undefined;
+		let followingSegment = followingIdxTuple ? this._getLayerForIdxTuple(this._lineLayers, ...followingIdxTuple) : undefined;
+		let precedingLine = this._lineLayers[precedingLineIdx];
+		let followingLine = this._lineLayers[followingLineIdx];
+		if (precedingLine === followingLine) {
 			precedingSegment.setLatLngs([precedingSegment.getLatLngs()[0], followingSegment.getLatLngs()[1]]);
-			this._lineLayers[lineIdx] = line.filter(l => l !== followingSegment);
+			this._lineLayers[precedingLineIdx] = precedingLine.filter(l => l !== followingSegment);
+			addMiddlePointRemoveEvent();
+		} else if (precedingLine && !followingLine) {
+			precedingLine.splice(precedingSegmentIdx, 1);
+			addMiddlePointRemoveEvent();
+		} else if (!precedingLine && followingLine) {
+			followingLine.splice(followingSegmentIdx, 1);
+			addMiddlePointRemoveEvent();
+		} else if (precedingLine && followingLine) {
+			const precedingSegment = precedingLine[precedingSegmentIdx];
+			const followingSegment = followingLine[followingSegmentIdx];
+			precedingSegment.setLatLngs([precedingSegment.getLatLngs()[0], followingSegment.getLatLngs()[1]]);
+			followingLine.splice(followingSegmentIdx, 1);
+			this._lineLayers[precedingLineIdx] = [...precedingLine, ...followingLine];
+			this._lineLayers.splice(followingLineIdx, 1);
 			const feature = this._formatLTFeatureOut();
-			events = [{
-				type: "edit",
-				idx: lineIdx,
-				feature: feature,
-				geometry: {type: "LineString", coordinates: feature.geometry.coordinates[lineIdx]}
-			}];
-		} else {
-			let precedingLine = this._lineLayers[lineIdx - 1];
-			if (followingSegment && precedingLine && precedingLine[precedingLine.length - 1].getLatLngs()[1].equals(followingSegment.getLatLngs()[0])) {
-				this._lineLayers[lineIdx] = [...precedingLine, ...line];
-				this._lineLayers.splice(lineIdx - 1, 1);
-				if (removeSeamPoint) this.removeLTPoint(lineIdx - 1, precedingLine.length, false);
-				const feature = this._formatLTFeatureOut();
-				events = [
-					{
-						type: "edit",
-						idx: lineIdx - 1,
-						feature,
-						geometry: {type: "LineString", coordinates: feature.geometry.coordinates[lineIdx]}
-					},
-					{
-						type: "delete",
-						idx: lineIdx,
-						feature
-					}
-				];
-			}
+			events = [
+				{
+					type: "edit",
+					idx: precedingLineIdx,
+					feature,
+					geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]}
+				},
+				{
+					type: "delete",
+					idx: followingLineIdx,
+					feature
+				}
+			];
 		}
 
 		if (this._LTActiveIdx !== undefined && this._LTActiveIdx > lineIdx) {
@@ -707,6 +714,16 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._triggerEvent(events, this._onLTChange);
 		} else {
 			return events;
+		}
+
+		function addMiddlePointRemoveEvent() {
+			const feature = that._formatLTFeatureOut();
+			events = [{
+				type: "edit",
+				idx: precedingLineIdx,
+				feature: feature,
+				geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]}
+			}];
 		}
 	}
 
@@ -900,10 +917,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._LTdragPoint.setLatLng(latlng);
 	}
 
-	_getIdxTuplePrecedingEditPoint() {
-		if (!this.LTEditPointIdx) return undefined;
-		const [lineIdx, pointIdx] = this.LTEditPointIdx;
+	_getLayerForIdxTuple(layer, lineIdx, segmentIdx) {
+		return layer[lineIdx][segmentIdx];
+	}
 
+	_getIdxTuplePrecedingPoint(lineIdx, pointIdx) {
+		if (lineIdx === undefined || pointIdx === undefined) return undefined;
 		const pointLayer = this._pointLayers[lineIdx];
 		const point = pointLayer[pointIdx];
 
@@ -923,13 +942,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return precedingLineIdx !== undefined && precedingIdx !== undefined ? [precedingLineIdx, precedingIdx] : undefined;
 	}
 
-	_getLayerForIdxTuple(layer, lineIdx, segmentIdx) {
-		return layer[lineIdx][segmentIdx];
+	_getIdxTuplePrecedingEditPoint() {
+		return this._getIdxTuplePrecedingPoint(...(this.LTEditPointIdx || []));
 	}
 
-	_getIdxTupleFollowingEditPoint() {
-		if (!this.LTEditPointIdx) return undefined;
-		const [lineIdx, pointIdx] = this.LTEditPointIdx;
+	_getIdxTupleFollowingPoint(lineIdx, pointIdx) {
+		if (lineIdx === undefined || pointIdx === undefined) return undefined;
 
 		const pointLayer = this._pointLayers[lineIdx];
 		const point = pointLayer[pointIdx];
@@ -948,6 +966,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 
 		return followingLineIdx !== undefined && followingIdx !== undefined ? [followingLineIdx, followingIdx] : undefined;
+	}
+
+	_getIdxTupleFollowingEditPoint() {
+		return this._getIdxTupleFollowingPoint(...(this.LTEditPointIdx || []));
 	}
 
 	_degreesFromNorth(lineCoords) {
@@ -1210,8 +1232,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	startLTLineSplit(e) {
-		console.log(e);
+	startLTLineSplit() {
 		this._lineSplitFn = this._commitLTLineSplit;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});

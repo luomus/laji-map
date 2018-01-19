@@ -1382,19 +1382,19 @@ export default class LajiMap {
 					iconCls: "glyphicon glyphicon-trash"
 				},
 			];
+			if (isPolyline(layer)) {
+				contextmenuItems.push({
+					text: translations.ReverseFeature,
+					callback: () => {
+						this._reversePolyline(layer);
+						const id = this.idxsToIds[dataIdx][featureIdx];
+						this._onEdit(dataIdx, {[id]: layer});
+					},
+					iconCls: "glyphicon glyphicon-sort"
+				});
+			}
 		}
 
-		if (isPolyline(layer)) {
-			contextmenuItems.push({
-				text: translations.ReverseFeature,
-				callback: () => {
-					this._reversePolyline(layer);
-					const id = this.idxsToIds[dataIdx][featureIdx];
-					this._onEdit(dataIdx, {[id]: layer});
-				},
-				iconCls: "glyphicon glyphicon-sort"
-			});
-		}
 
 		layer.bindContextMenu({
 			contextmenuInheritItems: false,

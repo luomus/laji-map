@@ -474,6 +474,11 @@ export default {
 		en: "Click the last segment you want to connect",
 		sv: "Klicka på det sista segmentet du vill koppla ihop"
 	},
+	SegmentsMustBeOfSameLine: {
+		 fi: "Osien täytyy olla samasta linjasta!",
+		 en: "The segments must be from the same line body!",
+		sv: "Segmenten måste vara från samma linjen!"
+	},
 	confirmDrawClear: {
 		fi: "Haluatko varmasti poistaa kartalta kaikki kuviot?",
 		en: "Are you sure you want to remove all the features from the map?",

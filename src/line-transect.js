@@ -564,7 +564,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const latLngPixelPoint = this.map.latLngToLayerPoint(latlng);
 			this._closebyPointIdxTuple = closestPointPixelPoint.distanceTo(latLngPixelPoint) <= POINT_DIST_TRESHOLD ? idxTuple : undefined;
 			if (!idxTuplesEqual(prevClosestPointIdxTuple, this._closebyPointIdxTuple)) {
-				if (this._LTPointExpander) this._LTPointExpander.remove();
+				if (this._LTPointExpander) {
+					if (this.map.contextmenu.isVisible()) this.map.contextmenu.hide();
+					this._LTPointExpander.remove();
+				}
 				if (this._closebyPointIdxTuple) {
 					this._LTPointExpander = new L.CircleMarker(closestPoint.getLatLng(), {radius: POINT_DIST_TRESHOLD, opacity: 0, fillOpacity: 0})
 						.addTo(this.map)
@@ -1153,11 +1156,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		];
 
+		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
+
 		if (lineIdx < this._LTActiveIdx) {
 			events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx + 1));
 		}
-
-		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
 		this._triggerEvent(events, this._onLTChange);
 
 		this.map.fire("lineTransect:split");
@@ -1203,7 +1206,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineCutIdx = undefined;
 		this._splitIdxTuple = undefined;
 		this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
-		this._updateLtStyleForIdxTuple(...lastLineCutIdx);
+		if (lastLineCutIdx) this._updateLtStyleForIdxTuple(...lastLineCutIdx);
 		this._disposeTooltip();
 	}
 
@@ -1313,6 +1316,25 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	chooseLastSegmentToConnectAndCommit(...idxTuple) {
 		const [first, last] = [this._firstLTSegmentToRemoveIdx, idxTuple].map(tuple => this._idxTupleToFlatIdx(...tuple)).sort((a, b) => a - b);
+
+		let timeout = undefined;
+		let prevLatLng = undefined;
+		for (let i = first; i <= last; i++) {
+			const segment = this._allSegments[i];
+			if (!prevLatLng) {
+				prevLatLng = segment.getLatLngs()[1];
+				continue;
+			}
+			if (!segment.getLatLngs()[0].equals(prevLatLng)) {
+				this._createTooltip("SegmentsMustBeOfSameLine", !!"error");
+				timeout = setTimeout(() => {
+					this._createTooltip("startLineConnectLastPointHelp");
+					timeout = undefined;
+				}, 2000);
+				return false;
+			}
+			prevLatLng = segment.getLatLngs()[1];
+		}
 		this._firstLTSegmentToRemoveIdx = undefined;
 
 		const flatIdxToIdxTuple = (idx) => {

@@ -999,7 +999,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				|| idxTuplesEqual(idxTuple, this._getIdxTupleFollowingEditPoint())
 				|| (this._selectLTMode === "segment" && lineIdx === hoveredLineIdx && segmentIdx === hoveredSegmentIdx)
 				|| (this._selectLTMode === "line" && lineIdx === hoveredLineIdx);
-		const isHover = !isEdit && lineIdx === hoveredLineIdx;
+		const _isHover = !isEdit && lineIdx === hoveredLineIdx;
+		const isHover = isPoint
+			? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover
+			: _isHover;
 
 		const lineStyles = {
 			normal: lineStyle,

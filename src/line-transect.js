@@ -1173,7 +1173,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineCutIdx = undefined;
 		this._splitIdxTuple = undefined;
 		this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
-		this._updateLtStyleForIdxTuple(lastLineCutIdx);
+		this._updateLtStyleForIdxTuple(...lastLineCutIdx);
 		this._disposeTooltip();
 	}
 
@@ -1210,9 +1210,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	startLTLineSplit() {
+	startLTLineSplit(e) {
+		console.log(e);
 		this._lineSplitFn = this._commitLTLineSplit;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("SplitLineTooltip");
 	}
 
@@ -1220,12 +1222,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineCutIdx = idxTuple;
 		this._lineSplitFn = this._commitLTLineSplit;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("SplitLineTooltip");
 	}
 
 	startLTPointAdd() {
 		this._lineSplitFn = this._commitLTPointAdd;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("AddPointTooltip");
 	}
 
@@ -1233,6 +1237,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineCutIdx = idxTuple;
 		this._lineSplitFn = this._commitLTPointAdd;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
+		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("SplitLineTooltip");
 	}
 
@@ -1424,6 +1429,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._tooltip = new L.Draw.Tooltip(this.map);
 			this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
 			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
+			if (this._mouseLatLng) this._onMouseMove({latlng: this._mouseLatLng});
 		}
 		this._tooltipTranslationHook = this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
 		if (error) this._tooltip.showAsError();

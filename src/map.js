@@ -292,6 +292,7 @@ export default class LajiMap {
 				});
 			},
 			click: () => this._interceptClick(),
+			mousemove: ({latlng}) => {this._mouseLatLng = latlng;},
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => {
 				this.drawing = true;

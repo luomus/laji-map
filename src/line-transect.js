@@ -567,11 +567,19 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const closestPointPixelPoint = this.map.latLngToLayerPoint(closestPoint.getLatLng());
 			const latLngPixelPoint = this.map.latLngToLayerPoint(latlng);
 			this._closebyPointIdxTuple = closestPointPixelPoint.distanceTo(latLngPixelPoint) <= POINT_DIST_TRESHOLD ? idxTuple : undefined;
-			if (prevClosestPointIdxTuple !== this._closebyPointIdxTuple) {
+			if (!idxTuplesEqual(prevClosestPointIdxTuple, this._closebyPointIdxTuple)) {
+				if (this._LTPointExpander) this._LTPointExpander.remove();
 				if (this._closebyPointIdxTuple) {
+					this._LTPointExpander = new L.CircleMarker(closestPoint.getLatLng(), {radius: POINT_DIST_TRESHOLD, opacity: 0, fillOpacity: 0})
+						.addTo(this.map)
+						.bringToBack()
+						.bindContextMenu(this._getContextMenuForPoint(this.getIdxsFromLayer(closestPoint).i));
+					;
 					const layer = this._getLayerForIdxTuple(this._pointLayers, ...this._closebyPointIdxTuple);
 					if (layer && this.map.hasLayer(layer)) layer.bringToFront();
 					if (this._LTdragPoint) this._LTdragPoint.bringToFront();
+				} else if (this._LTPointExpander) {
+					this._LTPointExpander = undefined;
 				}
 				[prevClosestPointIdxTuple, this._closebyPointIdxTuple].forEach(idxTuple => {
 					if (idxTuple) {
@@ -638,19 +646,23 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}));
 
 		this._allPoints.forEach((point, i) => {
-			point.bindContextMenu({
-				contextmenuInheritItems: false,
-				contextmenuItems: [
-					{
-						text: translations.RemovePoint,
-						callback: () => {
-							this._getPoint(i, idxTuple => this.removeLTPoint(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
-						},
-						iconCls: "glyphicon glyphicon-remove-sign"
-					}
-				]
-			});
+			point.bindContextMenu(this._getContextMenuForPoint(i));
 		});
+	}
+
+	_getContextMenuForPoint(i) {
+		return {
+			contextmenuInheritItems: false,
+			contextmenuItems: [
+				{
+					text: this.translations.RemovePoint,
+					callback: () => {
+						this._getPoint(i, idxTuple => this.removeLTPoint(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
+					},
+					iconCls: "glyphicon glyphicon-remove-sign"
+				}
+			]
+		};
 	}
 
 	// 'commit' can be an array of events that are triggered at the same time as the event that this function triggers.

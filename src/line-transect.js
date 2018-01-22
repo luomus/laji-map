@@ -117,8 +117,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				return this.LTFeature ? {
 					feature: this._formatLTFeatureOut(),
 					activeIdx: this._LTActiveIdx,
-					onChange: this._onLTChange,
-					keepActiveTooltipOpen: this.keepActiveTooltipOpen
+					onChange: this._onLTChange
 				} : undefined;
 			}]
 		};
@@ -141,11 +140,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
 		if (!data) return;
 
-		let {feature, activeIdx, onChange, keepActiveTooltipOpen} = data;
+		let {feature, activeIdx, onChange} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
 		this._LTActiveIdx = activeIdx;
-		this.keepActiveTooltipOpen = keepActiveTooltipOpen;
 
 		this._LTHistory = [{geometry: feature.geometry}];
 		this._LTHistoryPointer = 0;
@@ -302,8 +300,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._setIdxTupleMappings();
 		this._setLineTransectEvents();
 
-		if (this.keepActiveTooltipOpen) this._openTooltipFor(this._LTActiveIdx);
-
 		provide(this, "lineTransect");
 	}
 
@@ -331,8 +327,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_openTooltipFor(lineIdx) {
 		const that = this;
 		function getTooltipFor(lineIdx) {
-			const prevDistance = roundMeters(lineIdx === 0 ? 0 : that.lineIdxsToDistances[lineIdx - 1], 10);
-			const distance = roundMeters(that.lineIdxsToDistances[lineIdx], 10);
+			const [prevDistance, distance] = that.getMetersForLTIdx(lineIdx);
 			return 	`${lineIdx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
 		}
 
@@ -347,7 +342,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const line = this._lineLayers[lineIdx];
 		if (!line) return;
 		const segment = line[0];
-		if (lineIdx !== this._LTActiveIdx || !this.keepActiveTooltipOpen) segment.closeTooltip().unbindTooltip();
+		if (lineIdx !== this._LTActiveIdx) segment.closeTooltip().unbindTooltip();
+	}
+
+	getMetersForLTIdx(lineIdx) {
+		const prevDistance = roundMeters(lineIdx === 0 ? 0 : this.lineIdxsToDistances[lineIdx - 1], 10);
+		const distance = roundMeters(this.lineIdxsToDistances[lineIdx], 10);
+		return [prevDistance, distance];
 	}
 
 	flatIdxToIdxTuple(idx) {
@@ -556,6 +557,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			.on("mouseout", onMouseOut);
 
 		this.map.on("mousemove", ({latlng}) => {
+			if (this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode) {
+				return;
+			}
 			const closestPoint = L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
 			const {idxTuple} = this.getIdxsFromLayer(closestPoint);
 			const idxTupleStr = idxTuple ? idxTupleToIdxTupleStr(...idxTuple) : undefined;
@@ -609,7 +613,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		}).on("contextmenu.show", e => {
 			if (e.relatedTarget) this._LTContextMenuLayer = e.relatedTarget;
-		}).on("contextmenu.hide", e => {
+		}).on("contextmenu.hide", () => {
 			const {lineIdx} = this.getIdxsFromLayer(this._LTContextMenuLayer) || {};
 			if (lineIdx !== undefined) this._updateLTStyleForLineIdx(lineIdx);
 		});
@@ -1037,17 +1041,19 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const isSeamPoint = isPoint && this._overlappingAdjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 
 		const _isHover = lineIdx === hoveredLineIdx || lineIdx === contextMenuLineIdx;
-		const isHover = isPoint
-			? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover
-			: _isHover;
 		const isEdit = isPoint
 			?    isEditPoint
 			:    idxTuplesEqual(idxTuple, this._splitIdxTuple)
 				|| idxTuplesEqual(idxTuple, this._firstLTSegmentToRemoveIdx)
 				|| idxTuplesEqual(idxTuple, this._getIdxTuplePrecedingEditPoint())
 				|| idxTuplesEqual(idxTuple, this._getIdxTupleFollowingEditPoint())
-				|| (this._selectLTMode === "segment" && isHover && segmentIdx === hoveredSegmentIdx)
-				|| (this._selectLTMode === "line" && isHover);
+				|| (this._selectLTMode === "segment" && _isHover && segmentIdx === hoveredSegmentIdx)
+				|| (this._selectLTMode === "line" && _isHover);
+		const isHover = this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode
+			? false
+			: isPoint
+				? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover
+				: _isHover;
 
 		const lineStyles = {
 			normal: lineStyle,
@@ -1124,7 +1130,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const layer = lineGroup[segmentIdx];
 			if (layer) layer.setStyle(this._getStyleForLTLayer(layer));
 		});
-		(lineIdx === this._LTActiveIdx && this.keepActiveTooltipOpen) ? this._openTooltipFor(lineIdx) : this._closeTooltipFor(lineIdx);
+		(lineIdx === this._LTActiveIdx) ? this._openTooltipFor(lineIdx) : this._closeTooltipFor(lineIdx);
 	}
 
 	_idxTupleToFlatIdx(lineIdx, segmentIdx) {
@@ -1296,6 +1302,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopSelectLTSegmentMode(lineIdx, segmentIdx) {
 		this._selectLTMode = undefined;
 		this._onSelectLT = undefined;
+		if (this._hoveredIdxTuple) this._updateLtStyleForIdxTuple(...this._hoveredIdxTuple);
 		if (lineIdx !== undefined && segmentIdx !== undefined) this._updateLtStyleForIdxTuple(lineIdx, segmentIdx);
 		this._disposeTooltip();
 	}
@@ -1339,6 +1346,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 			if (!segment.getLatLngs()[0].equals(prevLatLng)) {
 				this._createTooltip("SegmentsMustBeOfSameLine", !!"error");
+				if (timeout) clearTimeout(timeout);
 				timeout = setTimeout(() => {
 					this._createTooltip("startLineConnectLastPointHelp");
 					timeout = undefined;

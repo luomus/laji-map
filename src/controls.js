@@ -660,14 +660,17 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				featureGroup: this.getDraw().group,
 				edit: false,
 				remove: false
+			},
+			draw: {
+				circlemarker: false
 			}
 		};
 
-		drawOptions.draw = this.getFeatureTypes().reduce((options, type) => {
+		drawOptions.draw = {...drawOptions.draw, ...this.getFeatureTypes().reduce((options, type) => {
 			options[type] = (!this.getDraw() ||this.getDraw()[type] === false || this.controlSettings.draw[type] === false) ?
 				false : this._getDrawOptionsForType(type);
 			return options;
-		}, {});
+		}, {})};
 
 
 		this.drawControl = new L.Control.Draw(drawOptions);

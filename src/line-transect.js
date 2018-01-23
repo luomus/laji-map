@@ -152,6 +152,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._origLineTransect = L.featureGroup(this._allSegments.map(line =>
 			L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
 		)).addTo(this.map).bringToBack();
+		this._openTooltipFor(this._LTActiveIdx);
 	}
 
 	setLTActiveIdx(idx) {
@@ -210,6 +211,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._pointLayers = [];
 		this._lineLayers = [];
 		this._corridorLayers = [];
+		this._tooltipLayers = [];
 
 		const pointLayers = this._pointLayers;
 		const lineLayers = this._lineLayers;
@@ -325,23 +327,25 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_openTooltipFor(lineIdx) {
-		const that = this;
-		function getTooltipFor(lineIdx) {
-			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(that._formatLTFeatureOut(), lineIdx, 10);
-			return 	`${lineIdx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
-		}
+		if (this._tooltipLayers[lineIdx]) return;
+		const getTooltipFor = (lineIdx) => {
+			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx, 10);
+			return 	`${lineIdx + 1}. ${this.translations.interval} (${prevDistance}-${distance}m)`;
+		};
 
 		let tooltip = getTooltipFor(lineIdx);
-		const line = this._lineLayers[lineIdx][0];
-		if (!line._tooltip) line.bindTooltip(tooltip, {direction: "top", permanent: true});
-		line.openTooltip();
+		this._tooltipLayers[lineIdx] = L.geoJson(lineToGeoJSONLine(this._lineLayers[lineIdx]), {style: () => { return {weight: 0}; }})
+			.addTo(this.map)
+			.bringToBack()
+			.bindTooltip(tooltip, {direction: "top", permanent: true})
+			.openTooltip();
 	}
 
 	_closeTooltipFor(lineIdx) {
-		const line = this._lineLayers[lineIdx];
-		if (!line) return;
-		const segment = line[0];
-		if (lineIdx !== this._LTActiveIdx) segment.closeTooltip().unbindTooltip();
+		if (this._tooltipLayers[lineIdx]) {
+			this._tooltipLayers[lineIdx].closeTooltip().unbindTooltip().remove();
+			this._tooltipLayers[lineIdx] = undefined;
+		}
 	}
 
 	flatIdxToIdxTuple(idx) {

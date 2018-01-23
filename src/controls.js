@@ -959,13 +959,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@dependsOn("controls", "contextMenu")
 	updateDrawUndoButton() {
 		if (!depsProvided(this, "updateDrawUndoButton", arguments)) return;
-		this._updateUndoButton("drawUndo", this._drawHistory, this._drawHistoryPointer);
+		this._updateUndoButton("drawUtils.undo", this._drawHistory, this._drawHistoryPointer);
 	}
 
 	@dependsOn("controls", "contextMenu")
 	updateDrawRedoButton() {
 		if (!depsProvided(this, "updateDrawRedoButton", arguments)) return;
-		this._updateRedoButton("drawRedo", this._drawHistory, this._drawHistoryPointer);
+		this._updateRedoButton("drawUtils.redo", this._drawHistory, this._drawHistoryPointer);
 	}
 
 	_showDialog(container, onClose) {

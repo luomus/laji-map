@@ -2031,7 +2031,7 @@ export default class LajiMap {
 
 	updateLayerStyle(layer) {
 		if (!layer) return;
-		this.setLayerStyle(layer, this._getStyleForLayer(layer, style));
+		this.setLayerStyle(layer, this._getStyleForLayer(layer, this._getStyleForLayer(layer)));
 	}
 
 	_getDefaultDrawStyle() {

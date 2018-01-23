@@ -135,6 +135,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		})();
 	}
 
+	_getAllData() {
+		return this._lineLayerGroup ? [...super._getAllData(), {group: this._lineLayerGroup}] : super._getAllData();
+	}
+
 	@dependsOn("map")
 	setLineTransect(data) {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
@@ -153,6 +157,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
 		)).addTo(this.map).bringToBack();
 		this._openTooltipFor(this._LTActiveIdx);
+
+		if (this.getOptions().zoomToData) this.zoomToData();
 	}
 
 	setLTActiveIdx(idx) {

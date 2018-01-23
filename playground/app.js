@@ -163,7 +163,6 @@ class App {
 					showArea: true
 				}
 			},
-			zoomToData: true
 		};
 
 

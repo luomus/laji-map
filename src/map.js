@@ -67,7 +67,7 @@ export default class LajiMap {
 			tileLayerOpacity: "setTileLayerOpacity",
 			center: "setCenter",
 			zoom: "setNormalizedZoom",
-			zoomToData: "zoomToData",
+			zoomToData: ["setZoomToData", "_zoomToData"],
 			locate: true,
 			onPopupClose: true,
 			markerPopupOffset: true,
@@ -107,7 +107,8 @@ export default class LajiMap {
 
 		return Object.keys(optionKeys).reduce((options, key) => {
 			if (Array.isArray(optionKeys[key])) {
-				options[key] = optionKeys[key][1]();
+				const getter = optionKeys[key][1];
+				options[key] = typeof getter === "function" ? getter() : this[getter];
 			} else if (key in this) {
 				options[key] = this[key];
 			}
@@ -876,11 +877,20 @@ export default class LajiMap {
 		});
 	}
 
+	_getAllData() {
+		return [this.getDraw(), ...this.data];
+	}
+
+	setZoomToData(value = false) {
+		this._zoomToData = value;
+		if (value) this.zoomToData();
+	}
+
 	@dependsOn("data", "draw", "center", "zoom")
 	zoomToData() {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
-		const featureGroup = L.featureGroup([this.getDraw(), ...this.data].filter(item => item).reduce((layers, item) => {
+		const featureGroup = L.featureGroup(this._getAllData().filter(item => item).reduce((layers, item) => {
 			const newLayers = item.group.getLayers().map(layer => {
 				if (layer instanceof L.Circle) {  // getBounds fails for circles
 					const {lat, lng} = layer.getLatLng();

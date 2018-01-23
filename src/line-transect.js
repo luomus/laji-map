@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput, isPolyline, combineColors } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -327,7 +327,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_openTooltipFor(lineIdx) {
 		const that = this;
 		function getTooltipFor(lineIdx) {
-			const [prevDistance, distance] = that.getMetersForLTIdx(lineIdx);
+			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(that._formatLTFeatureOut(), lineIdx, 10);
 			return 	`${lineIdx + 1}. ${that.translations.interval} (${prevDistance}-${distance}m)`;
 		}
 
@@ -337,18 +337,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		line.openTooltip();
 	}
 
-
 	_closeTooltipFor(lineIdx) {
 		const line = this._lineLayers[lineIdx];
 		if (!line) return;
 		const segment = line[0];
 		if (lineIdx !== this._LTActiveIdx) segment.closeTooltip().unbindTooltip();
-	}
-
-	getMetersForLTIdx(lineIdx) {
-		const prevDistance = roundMeters(lineIdx === 0 ? 0 : this.lineIdxsToDistances[lineIdx - 1], 10);
-		const distance = roundMeters(this.lineIdxsToDistances[lineIdx], 10);
-		return [prevDistance, distance];
 	}
 
 	flatIdxToIdxTuple(idx) {
@@ -475,26 +468,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			i++;
 		}));
 
-		this.lineIdxsToDistances = {};
 		this.leafletIdsToFlatPointIdxs = {};
 
-		let distance = 0;
 		i = 0;
-		this._pointLayers.forEach((points, lineIdx) => {
-			let prevLatLng = undefined;
+		this._pointLayers.forEach((points) => {
 			points.forEach(point => {
-				const latlng = point.getLatLng();
-				distance += prevLatLng ? latlng.distanceTo(prevLatLng) : 0;
-				prevLatLng = latlng;
 				this.leafletIdsToFlatPointIdxs[point._leaflet_id] = i;
 				i++;
 			});
-			this.lineIdxsToDistances[lineIdx] = distance;
 		});
 	}
 
 	_setLineTransectEvents() {
-
 		const onMouseOver = (e) => {
 			L.DomEvent.stopPropagation(e);
 
@@ -1448,8 +1433,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const translateHooks = [];
 		const container = document.createElement("form");
 
-		const prevDistance = lineIdx === 0 ? 0 : this.lineIdxsToDistances[lineIdx - 1];
-		const length = roundMeters(this.lineIdxsToDistances[lineIdx] - prevDistance);
+		const [start, end] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx);
+		const length = roundMeters(end - start);
 
 		const help = document.createElement("span");
 		help.className = "help-block";

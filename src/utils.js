@@ -547,7 +547,7 @@ export function validateLatLng(latlng, latLngValidator) {
 }
 
 export function roundMeters(meters, accuracy = 1) {
-	return Math.round(parseInt(meters) / accuracy) * accuracy;
+	return accuracy ?  Math.round(parseInt(meters) / accuracy) * accuracy : meters;
 }
 
 export function createTextInput() {
@@ -613,4 +613,24 @@ export function combineColors(...colors) {
 		if (hex.length === 1) hex = `0${hex}`;
 		return rgb + hex;
 	}, "#");
+}
+
+export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
+	const lines = geoJSONLineToLatLngSegmentArrays(LTFeature.geometry);
+	let i = 0;
+	let distance = 0;
+	let prevDistance = distance;
+	lines.some(line => {
+		prevDistance = distance;
+		line.some(segment => {
+			const latLngs = segment.map(c => L.latLng(c));
+			distance += latLngs[0].distanceTo(latLngs[1]);
+		});
+		if (i === idx) {
+			return true;
+		}
+		i++;
+	});
+
+	return [prevDistance, distance].map(m => roundMeters(m, round));
 }

@@ -300,19 +300,19 @@ export default {
 		sv: "Hotbedömningszoner"
 	},
 	firstOrLastPoint: {
-		fi: "Haluatko siirtää ensimmäistä vai viimeistä pistettä?",
-		en: "Do you want to move the first or the last point?",
-		sv: "Vill du flytta den första eller den sista punkten?"
+		fi: "Haluatko siirtää edeltävää vai seuraavaa pistettä?",
+		en: "Do you want to move the preceding or the following point?",
+		sv: "Vill du flytta den föregående eller den följande punkten?"
 	},
 	firstPartitive: {
-		fi: "Ensimmäistä",
-		en: "The first",
-		sv: "Den första"
+		fi: "Edeltävää",
+		en: "preceding",
+		sv: "Föregående"
 	},
 	lastPartitive: {
-		fi: "Viimeistä",
-		en: "The last",
-		sv: "Den sista"
+		fi: "Seuraavaa",
+		en: "Following",
+		sv: "Följande"
 	},
 	splitLine: {
 		fi: "Katkaise linja",

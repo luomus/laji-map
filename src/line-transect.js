@@ -374,7 +374,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (overlappingPointIdxTuple !== undefined) {
 			const firstIdxTuple = overlappingPointIdxTuple;
 			const lastIdxTuple = [lineIdx, pointIdx];
-			const firstPoint = this._getLayerForIdxTuple(this._pointLayers, ...firstIdxTuple);
 			const lastPoint = this._getLayerForIdxTuple(this._pointLayers, ...lastIdxTuple);
 
 			const translateHooks = [];
@@ -385,20 +384,38 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const question = document.createElement("span");
 			translateHooks.push(this.addTranslationHook(question, questionTranslationKey));
 
-			const firstButton = document.createElement("button");
-			firstButton.addEventListener("click", () => {
-				lastPoint.setStyle(pointStyle);
+			const precedingIdxTuple = this._getIdxTuplePrecedingPoint(...firstIdxTuple);
+			const followingIdxTuple = this._getIdxTupleFollowingPoint(lineIdx, pointIdx);
+
+			const onClick = (idxTuple) => () => {
+				const point = this._getLayerForIdxTuple(this._pointLayers, ...idxTuple);
+				point.setStyle(pointStyle);
 				lastPoint.closePopup();
-				callback(...firstIdxTuple);
-			});
+				callback(...idxTuple);
+			};
+
+			const onMouseOver = (idxTuple) => () => {
+				if (!idxTuple) return;
+				this._overlappingPointDialogSegmentIdxTuple = idxTuple;
+				this._updateLtStyleForIdxTuple(...idxTuple);
+			};
+			const onMouseOut = (idxTuple) => () => {
+				if (!idxTuple) return;
+				this._overlappingPointDialogSegmentIdxTuple = undefined;
+				this._updateLtStyleForIdxTuple(...idxTuple);
+			};
+
+			const firstButton = document.createElement("button");
+			firstButton.addEventListener("click", onClick(firstIdxTuple));
+			firstButton.addEventListener("mouseover", onMouseOver(precedingIdxTuple));
+			firstButton.addEventListener("mouseout", onMouseOut(precedingIdxTuple));
+
 			translateHooks.push(this.addTranslationHook(firstButton, firstTranslationKey));
 
 			const lastButton = document.createElement("button");
-			lastButton.addEventListener("click", () => {
-				firstPoint.setStyle(pointStyle);
-				lastPoint.closePopup();
-				callback(...lastIdxTuple);
-			});
+			lastButton.addEventListener("click", onClick(lastIdxTuple));
+			lastButton.addEventListener("mouseover", onMouseOver(followingIdxTuple));
+			lastButton.addEventListener("mouseout", onMouseOut(followingIdxTuple));
 			translateHooks.push(this.addTranslationHook(lastButton, lastTranslationKey));
 
 			const buttonContainer = document.createElement("div");
@@ -1051,6 +1068,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			?    isEditPoint
 			:    idxTuplesEqual(idxTuple, this._splitIdxTuple)
 				|| idxTuplesEqual(idxTuple, this._firstLTSegmentToRemoveIdx)
+				|| idxTuplesEqual(idxTuple, this._overlappingPointDialogSegmentIdxTuple)
 				|| idxTuplesEqual(idxTuple, this._getIdxTuplePrecedingEditPoint())
 				|| idxTuplesEqual(idxTuple, this._getIdxTupleFollowingEditPoint())
 				|| (this._selectLTMode === "segment" && _isHover && segmentIdx === hoveredSegmentIdx)

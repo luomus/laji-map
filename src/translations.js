@@ -224,11 +224,6 @@ export default {
 		en: "Add a feature according to coordinates.",
 		sv: "Lägg till en figur på basis av koordinater."
 	},
-	geobiologicalProvinces: {
-		fi: "Eliömaakunnat",
-		en: "Biogeographical provinces",
-		sv: "Biogeografiska provinser"
-	},
 	forestVegetationZones: {
 		fi: "Metsäkasvillisuusvyöhykkeet",
 		en: "Forest vegetation zones",
@@ -518,5 +513,10 @@ export default {
 		fi: "Suomen lasermaastokartta",
 		en: "Topographic laser map of Finland",
 		sv: "Finlands terränglaserkarta"
+	},
+	geobiologicalProvinces: {
+		fi: "Eliömaakuntien rajat",
+		en: "Borders of biogeographical provinces",
+		sv: "Gränserna av Biogeografiska provinser"
 	}
 };

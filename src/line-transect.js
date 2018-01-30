@@ -86,9 +86,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.startSelectLTSegmentMode = this.startSelectLTSegmentMode.bind(this);
 		this.stopSelectLTSegmentMode = this.stopSelectLTSegmentMode.bind(this);
 
-		this.commitRemoveLTSegment = this.commitRemoveLTSegment.bind(this);
-		this.startRemoveLTSegmentMode = this.startRemoveLTSegmentMode.bind(this);
-		this.startRemoveLTPointMode = this.startRemoveLTPointMode.bind(this);
 		this.stopRemoveLTPointMode = this.stopRemoveLTPointMode.bind(this);
 		this.chooseFirstSegmentToConnect = this.chooseFirstSegmentToConnect.bind(this);
 		this.chooseLastSegmentToConnectAndCommit = this.chooseLastSegmentToConnectAndCommit.bind(this);
@@ -654,11 +651,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 						text: translations.SplitLineByMeters,
 						callback: () => this.splitLTByMeters(lineIdx),
 						iconCls: "laji-map-line-transect-split-by-meters-glyph"
-					},
-					{
-						text: translations.DeleteLineSegment,
-						callback: () => this.commitRemoveLTSegment(lineIdx, segmentIdx),
-						iconCls: "laji-map-line-transect-remove-segment-glyph"
 					},
 					{
 						text: translations.ConnectSegments,
@@ -1333,14 +1325,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._disposeTooltip();
 	}
 
-	startRemoveLTSegmentMode() {
-		this.startSelectLTSegmentMode(this.commitRemoveLTSegment, "DeleteLineSegmentTooltip");
-	}
-
-	startRemoveLTPointMode() {
-		this.startSelectLTSegmentMode(this.chooseFirstSegmentToConnect, "startLineConnectFirstPointHelp");
-	}
-
 	stopRemoveLTPointMode(...params) {
 		const idxTuple = this._firstLTSegmentToRemoveIdx;
 		this._firstLTSegmentToRemoveIdx = undefined;
@@ -1392,54 +1376,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 			i--;
 		}
-	}
-
-	commitRemoveLTSegment(lineIdx, segmentIdx) {
-		const prevFeature = this._formatLTFeatureOut();
-		this._lineLayers[lineIdx].splice(segmentIdx, 1);
-		const length = this._lineLayers[lineIdx].length;
-		const feature = this._formatLTFeatureOut();
-
-		let events = undefined;
-
-		if (length === 0) {
-			events = [
-				{type: "delete", feature, idx: lineIdx},
-			];
-			if (this._LTActiveIdx !== undefined && lineIdx - 1 < this._LTActiveIdx && lineIdx - 1 >= 0) {
-				events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx - 1));
-			}
-		} else if (segmentIdx !== 0 && segmentIdx !== length) { // Removed from the middle
-			events = [
-				{
-					type: "edit",
-					feature,
-					idx: lineIdx,
-					geometry: {type: "LineString", coordinates: feature.geometry.coordinates[lineIdx]}
-				},
-				{
-					type: "insert",
-					idx: lineIdx + 1,
-					geometry: {type: "LineString", coordinates: feature.geometry.coordinates[lineIdx + 1]}
-				}
-			];
-			if (this._LTActiveIdx !== undefined && this._LTActiveIdx > lineIdx) {
-				events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx + 1));
-			}
-		} else {
-			events = [
-				{
-					type: "edit",
-					feature,
-					idx: lineIdx,
-					geometry: {type: "LineString", coordinates: feature.geometry.coordinates[lineIdx]}
-				}
-			];
-		}
-
-		this._triggerEvent(events, this._onLTChange);
-		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
-		this.map.fire("lineTransect:delete");
 	}
 
 	splitLTByMeters() {

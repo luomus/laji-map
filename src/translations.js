@@ -319,20 +319,10 @@ export default {
 		en: "Split line transect",
 		sv: "Bryta av linjen"
 	},
-	deleteLineSegment: {
-		fi: "Poista linjan osa",
-		en: "Delete a segment of the line transect",
-		sv: "Radera ett segment av linjen"
-	},
 	splitLineTooltip: {
 		fi: "Klikkaa karttaa katkaistaksesi linjan",
 		en: "Click the map to split the line",
 		sv: "Klicka på kartan för att bryta av linjen"
-	},
-	deleteLineSegmentTooltip: {
-		fi: "Klikkaa poistettavaa linjan osaa",
-		en: "Click the segment that you want to delete",
-		sv: "Klicka på segmentet som du vill radera"
 	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",

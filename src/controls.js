@@ -256,14 +256,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						eventName: "lineTransect:split"
 					},
 					{
-						name: "deleteSegment",
-						text: this.translations.DeleteLineSegment,
-						iconCls: "laji-map-line-transect-remove-segment-glyph",
-						fn: (...params) => this.startRemoveLTSegmentMode(...params),
-						finishFn: (...params) => this.stopSelectLTSegmentMode(...params),
-						eventName: "lineTransect:deleteSegment"
-					},
-					{
 						name: "deletePoints",
 						text: this.translations.ConnectSegments,
 						iconCls: "laji-map-line-transect-remove-point-glyph",

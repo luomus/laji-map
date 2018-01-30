@@ -387,8 +387,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const precedingIdxTuple = this._getIdxTuplePrecedingPoint(...firstIdxTuple);
 			const followingIdxTuple = this._getIdxTupleFollowingPoint(lineIdx, pointIdx);
 
-			const onClick = (idxTuple) => () => {
+			const onClick = (idxTuple) => (e) => {
+				e.preventDefault();
 				const point = this._getLayerForIdxTuple(this._pointLayers, ...idxTuple);
+				this._overlappingPointDialogSegmentIdxTuple = undefined;
 				point.setStyle(pointStyle);
 				lastPoint.closePopup();
 				callback(...idxTuple);

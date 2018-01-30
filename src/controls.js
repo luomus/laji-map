@@ -670,14 +670,17 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				featureGroup: this.getDraw().group,
 				edit: false,
 				remove: false
+			},
+			draw: {
+				circlemarker: false
 			}
 		};
 
-		drawOptions.draw = this.getFeatureTypes().reduce((options, type) => {
+		drawOptions.draw = {...drawOptions.draw, ...this.getFeatureTypes().reduce((options, type) => {
 			options[type] = (!this.getDraw() ||this.getDraw()[type] === false || this.controlSettings.draw[type] === false) ?
 				false : this._getDrawOptionsForType(type);
 			return options;
-		}, {});
+		}, {})};
 
 
 		this.drawControl = new L.Control.Draw(drawOptions);
@@ -966,13 +969,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	@dependsOn("controls", "contextMenu")
 	updateDrawUndoButton() {
 		if (!depsProvided(this, "updateDrawUndoButton", arguments)) return;
-		this._updateUndoButton("drawUndo", this._drawHistory, this._drawHistoryPointer);
+		this._updateUndoButton("drawUtils.undo", this._drawHistory, this._drawHistoryPointer);
 	}
 
 	@dependsOn("controls", "contextMenu")
 	updateDrawRedoButton() {
 		if (!depsProvided(this, "updateDrawRedoButton", arguments)) return;
-		this._updateRedoButton("drawRedo", this._drawHistory, this._drawHistoryPointer);
+		this._updateRedoButton("drawUtils.redo", this._drawHistory, this._drawHistoryPointer);
 	}
 
 	_showDialog(container, onClose) {

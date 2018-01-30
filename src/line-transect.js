@@ -1,5 +1,5 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, roundMeters, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx } from "./utils";
 import "leaflet-geometryutil";
 import "leaflet-textpath";
 import {
@@ -92,7 +92,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.stopRemoveLTPointMode = this.stopRemoveLTPointMode.bind(this);
 		this.chooseFirstSegmentToConnect = this.chooseFirstSegmentToConnect.bind(this);
 		this.chooseLastSegmentToConnectAndCommit = this.chooseLastSegmentToConnectAndCommit.bind(this);
-		this.startSplitByMetersLTSegmentMode = this.startSplitByMetersLTSegmentMode.bind(this);
 
 		this.splitLTByMeters = this.splitLTByMeters.bind(this);
 
@@ -338,7 +337,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_openTooltipFor(lineIdx) {
 		const getTooltipFor = (lineIdx) => {
 			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx, 10);
-			return 	`${lineIdx + 1}. ${this.translations.interval} (${prevDistance}-${distance}m)`;
+			return 	`${prevDistance}-${distance}m`;
 		};
 
 		this._closeTooltipFor(lineIdx);
@@ -1338,10 +1337,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.startSelectLTSegmentMode(this.commitRemoveLTSegment, "DeleteLineSegmentTooltip");
 	}
 
-	startSplitByMetersLTSegmentMode() {
-		this.startSelectLTSegmentMode(this.splitLTByMeters, "SplitLineByMetersTooltip", "line");
-	}
-
 	startRemoveLTPointMode() {
 		this.startSelectLTSegmentMode(this.chooseFirstSegmentToConnect, "startLineConnectFirstPointHelp");
 	}
@@ -1447,7 +1442,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.map.fire("lineTransect:delete");
 	}
 
-	splitLTByMeters(lineIdx) {
+	splitLTByMeters() {
 		const splitByMeters = (e) => {
 			e.preventDefault();
 
@@ -1456,18 +1451,28 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			let distance = 0;
 			let distanceLessThanLength = 0;
 			let currentSegmentIdx = 0;
+			let currentLineIdx = 0;
 			let currentSegment = undefined;
-			while (distance < value) {
-				currentSegment = this._lineLayers[lineIdx][currentSegmentIdx];
+			while (true) {
+				const currentLine = this._lineLayers[currentLineIdx];
+				currentSegment = currentLine[currentSegmentIdx];
 				const [start, end] = currentSegment.getLatLngs();
 				distanceLessThanLength = distance;
+
 				distance += start.distanceTo(end);
-				currentSegmentIdx++;
+				if (distance >= value) break;
+
+				if (currentSegmentIdx >= currentLine.length - 1) {
+					currentSegmentIdx = 0;
+					currentLineIdx++;
+				} else {
+					currentSegmentIdx++;
+				}
 			}
 			const remainingLength = value - distanceLessThanLength;
 			const lineAngleFromNorth = this._degreesFromNorth(currentSegment.getLatLngs());
 			const splitPoint = L.GeometryUtil.destination(currentSegment.getLatLngs()[0], lineAngleFromNorth, remainingLength);
-			this._commitLTLineSplit(lineIdx, currentSegmentIdx - 1, splitPoint);
+			this._commitLTLineSplit(currentLineIdx, currentSegmentIdx, splitPoint);
 			if (this._selectLTMode) this.stopSelectLTSegmentMode();
 			this._closeDialog(e);
 		};
@@ -1475,12 +1480,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const translateHooks = [];
 		const container = document.createElement("form");
 
-		const [start, end] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx);
-		const length = roundMeters(end - start);
+		const feature = this._formatLTFeatureOut();
+		const [start, length] = getLineTransectStartEndDistancesForIdx(feature, feature.length - 1); // eslint-disable-line no-unused-vars
 
 		const help = document.createElement("span");
 		help.className = "help-block";
-		translateHooks.push(this.addTranslationHook(help, () => `${this.translations.segmentSplitByLengthHelp}: ${length}m`));
+		translateHooks.push(this.addTranslationHook(help, () => `${this.translations.SegmentSplitByLengthHelp}: ${length}m`));
 
 		const input = createTextInput();
 		input.className += " form-group";

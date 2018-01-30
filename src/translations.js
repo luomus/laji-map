@@ -450,14 +450,9 @@ export default {
 		sv: "Bryta av linjen gemon meter"
 	},
 	segmentSplitByLengthHelp: {
-		fi: "Syötä uusi pituus. Nykyisen linjan pituus",
-		en: "Enter a new length. The length of the current segment",
-		sv: "Ange en ny längd. Längden på det aktuella segmentet"
-	},
-	splitLineByMetersTooltip: {
-		fi: "Klikkaa linjan osaa, jonka haluat katkaista.",
-		en: "Click the segment that you want to split",
-		sv: "Klicka på segmentet som du vill bryta av."
+		fi: "Syötä metriluku jonka kohdalta linja pätkäistään. Linjan pituus",
+		en: "Enter a meter where to split. The length of the line",
+		sv: "Ange en mätare var du ska dela. Linjens längd"
 	},
 	connectSegments: {
 		fi: "Yhdistä linjan osat",

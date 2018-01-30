@@ -252,8 +252,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						name: "splitByMeters",
 						text: this.translations.SplitLineByMeters,
 						iconCls: "laji-map-line-transect-split-by-meters-glyph",
-						fn: (...params) => this.startSplitByMetersLTSegmentMode(...params),
-						finishFn: (...params) => this.stopSelectLTSegmentMode(...params),
+						fn: (...params) => this.splitLTByMeters(...params),
 						eventName: "lineTransect:split"
 					},
 					{

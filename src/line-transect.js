@@ -120,15 +120,15 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_interceptClick() {
-		return super._interceptClick() || (() => {
-			if (this._LTEditPointIdxTuple !== undefined && !this._LTDragging) {
-				this._commitPointDrag();
-				return true;
-			} else if (this._lineSplitFn) {
-				this._lineSplitFn(...this._splitIdxTuple, this._splitPoint);
-			}
-			return false;
-		})();
+		if (super._interceptClick()) return;
+		if (this._LTEditPointIdxTuple !== undefined && !this._LTDragging) {
+			this._commitPointDrag();
+			return true;
+		} else if (this._lineSplitFn) {
+			this._lineSplitFn(...this._splitIdxTuple, this._splitPoint);
+			return true;
+		}
+		return false;
 	}
 
 	_getAllData() {
@@ -413,12 +413,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const onMouseOver = (idxTuple) => () => {
 				if (!idxTuple) return;
 				this._overlappingPointDialogSegmentIdxTuple = idxTuple;
-				this._updateLtStyleForIdxTuple(...idxTuple);
+				this._updateLTStyleForIdxTuple(...idxTuple);
 			};
 			const onMouseOut = (idxTuple) => () => {
 				if (!idxTuple) return;
 				this._overlappingPointDialogSegmentIdxTuple = undefined;
-				this._updateLtStyleForIdxTuple(...idxTuple);
+				this._updateLTStyleForIdxTuple(...idxTuple);
 			};
 
 			const firstButton = document.createElement("button");
@@ -576,6 +576,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._getPoint(...idxTuple, (...idxTuple) => this._setLTPointEditable(...idxTuple));
 		}).on("click", e => {
 			L.DomEvent.stopPropagation(e);
+			this._interceptClick();
 			delayClick(() => {
 				const {lineIdx} = this.getIdxsFromEvent(e);
 
@@ -669,43 +670,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}).on("contextmenu.hide", () => {
 			const {lineIdx} = this.getIdxsFromLayer(this._LTContextMenuLayer) || {};
 			if (lineIdx !== undefined) this._updateLTStyleForLineIdx(lineIdx);
+		}).on("controlClick", () => {
+			if (this._LTEditPointIdxTuple) {
+				this._commitPointDrag();
+			}
 		});
+		;
 	}
 
 	@reflect()
 	@dependsOn("lineTransect", "translations")
 	_updateLTLayerContextMenus() {
 		if (!depsProvided(this, "_updateLTLayerContextMenus", arguments)) return;
-
-		const {translations} = this;
-
-		this._corridorLayers.forEach((corridor, lineIdx) => corridor.forEach((corridorSegment, segmentIdx) => {
-			corridorSegment.bindContextMenu({
-				contextmenuInheritItems: false,
-				contextmenuItems: [
-					{
-						text: translations.SplitLine,
-						callback: () => this.startLTLineSplitForIdx(lineIdx, segmentIdx),
-						iconCls: "glyphicon glyphicon-scissors"
-					},
-					{
-						text: translations.SplitLineByMeters,
-						callback: () => this.splitLTByMeters(lineIdx),
-						iconCls: "laji-map-line-transect-split-by-meters-glyph"
-					},
-					{
-						text: translations.ConnectSegments,
-						callback: () => this.chooseFirstSegmentToConnect(lineIdx, segmentIdx),
-						iconCls: "laji-map-line-transect-remove-point-glyph"
-					},
-					{
-						text: translations.CreatePoint,
-						callback: () => this.startLTPointAddSplitForIdx(lineIdx, segmentIdx),
-						iconCls: "laji-map-line-transect-create-point-glyph"
-					},
-				]
-			});
-		}));
 
 		this._pointLayers.forEach((points, lineIdx) => points.forEach((point, pointIdx) => {
 			point.bindContextMenu(this._getContextMenuForPoint(lineIdx, pointIdx));
@@ -720,6 +696,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					text: this.translations.RemovePoint,
 					callback: () => {
 						this._getPoint(lineIdx, pointIdx, (...idxTuple) => this.removeLTPoint(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
+					},
+					iconCls: "glyphicon glyphicon-remove-sign"
+				},
+				{
+					text: this.translations.EditPoint,
+					callback: () => {
+						this._getPoint(lineIdx, pointIdx, (...idxTuple) => this._setLTPointEditable(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
 					},
 					iconCls: "glyphicon glyphicon-remove-sign"
 				}
@@ -868,7 +851,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		[precedingIdxTuple, followingIdxTuple].forEach(tuple => {
 			if (tuple) {
 				this._getLayerForIdxTuple(this._corridorLayers, ...tuple).off("mousedown").off("mouseup");
-				this._updateLtStyleForIdxTuple(...tuple);
+				this._updateLTStyleForIdxTuple(...tuple);
 			}
 		});
 
@@ -1179,15 +1162,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (lineIdx === undefined) return;
 		this._corridorLayers[lineIdx].forEach(corridorLayer => {
 			const {segmentIdx} = this.getIdxsFromLayer(corridorLayer);
-			this._updateLtStyleForIdxTuple(lineIdx, segmentIdx);
+			this._updateLTStyleForIdxTuple(lineIdx, segmentIdx);
 		});
-		const [editLineIdx] = (this._LTEditPointIdxTuple || []);
 	}
 
-	_updateLtStyleForIdxTuple(lineIdx, segmentIdx) {
+	_updateLTStyleForIdxTuple(lineIdx, segmentIdx) {
 		if (lineIdx === undefined || segmentIdx === undefined) return;
 		[this._lineLayers, this._corridorLayers, this._pointLayers].forEach(layerGroup => {
-			if (layerGroup === this._pointLayers && segmentIdx === 0 || segmentIdx === this._pointLayers[lineIdx].length - 1) return;
+			if (layerGroup === this._pointLayers && segmentIdx === 0 || (this._pointLayers[lineIdx] && segmentIdx === this._pointLayers[lineIdx].length - 1)) return;
 			const lineGroup = layerGroup[lineIdx] || [];
 			const layer = lineGroup[segmentIdx];
 			if (layer) layer.setStyle(this._getStyleForLTLayer(layer));
@@ -1285,7 +1267,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._lineCutIdx = undefined;
 		this._splitIdxTuple = undefined;
 		this.map.off("mousemove", this._mouseMoveLTLineSplitHandler);
-		if (lastLineCutIdx) this._updateLtStyleForIdxTuple(...lastLineCutIdx);
+		if (lastLineCutIdx) this._updateLTStyleForIdxTuple(...lastLineCutIdx);
 		this._disposeTooltip();
 	}
 
@@ -1304,8 +1286,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		const prevCutIdx = this._splitIdxTuple;
 		this._splitIdxTuple = closestIdx;
-		if (prevCutIdx) this._updateLtStyleForIdxTuple(...prevCutIdx);
-		if (this._splitIdxTuple) this._updateLtStyleForIdxTuple(...this._splitIdxTuple);
+		if (prevCutIdx) this._updateLTStyleForIdxTuple(...prevCutIdx);
+		if (this._splitIdxTuple) this._updateLTStyleForIdxTuple(...this._splitIdxTuple);
 
 		// Update cut line.
 		const closestLatLngOnLine = L.GeometryUtil.closest(this.map, closestLine, latlng);
@@ -1363,8 +1345,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopSelectLTSegmentMode(lineIdx, segmentIdx) {
 		this._selectLTMode = undefined;
 		this._onSelectLT = undefined;
-		if (this._hoveredIdxTuple) this._updateLtStyleForIdxTuple(...this._hoveredIdxTuple);
-		if (lineIdx !== undefined && segmentIdx !== undefined) this._updateLtStyleForIdxTuple(lineIdx, segmentIdx);
+		if (this._hoveredIdxTuple) this._updateLTStyleForIdxTuple(...this._hoveredIdxTuple);
+		if (lineIdx !== undefined && segmentIdx !== undefined) this._updateLTStyleForIdxTuple(lineIdx, segmentIdx);
 		this._disposeTooltip();
 	}
 
@@ -1375,13 +1357,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	stopRemoveLTPointMode(...params) {
 		const idxTuple = this._firstLTSegmentToRemoveIdx;
 		this._firstLTSegmentToRemoveIdx = undefined;
-		if (idxTuple) this._updateLtStyleForIdxTuple(...idxTuple);
+		if (idxTuple) this._updateLTStyleForIdxTuple(...idxTuple);
 		this.stopSelectLTSegmentMode(...params);
 	}
 
 	chooseFirstSegmentToConnect(...idxTuple) {
 		this._firstLTSegmentToRemoveIdx = idxTuple;
-		this._updateLtStyleForIdxTuple(...idxTuple);
+		this._updateLTStyleForIdxTuple(...idxTuple);
 		this.startSelectLTSegmentMode(this.chooseLastSegmentToConnectAndCommit, "startLineConnectLastPointHelp");
 		return false;
 	}
@@ -1401,6 +1383,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._createTooltip("SegmentsMustBeOfSameLine", !!"error");
 				if (timeout) clearTimeout(timeout);
 				timeout = setTimeout(() => {
+					if (!this._firstLTSegmentToRemoveIdx) return;
 					this._createTooltip("startLineConnectLastPointHelp");
 					timeout = undefined;
 				}, 2000);

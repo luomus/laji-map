@@ -320,9 +320,9 @@ export default {
 		sv: "Bryta av linjen"
 	},
 	splitLineTooltip: {
-		fi: "Klikkaa karttaa katkaistaksesi linjan",
-		en: "Click the map to split the line",
-		sv: "Klicka på kartan för att bryta av linjen"
+		fi: "<b>Klikkaa</b> karttaa katkaistaksesi linjan",
+		en: "<b>Click</b> the map to split the line",
+		sv: "<b>Klicka</b> på kartan för att bryta av linjen"
 	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",
@@ -450,14 +450,14 @@ export default {
 		sv: "Koppla ihop linjesegmentet"
 	},
 	startLineConnectFirstPointHelp: {
-		fi: "Klikkaa ensimmäistä yhdistettävää osaa",
-		en: "Click the first segment you want to connect",
-		sv: "Klicka på det första segmentet du vill koppla ihop"
+		fi: "<b>Klikkaa</b> ensimmäistä yhdistettävää osaa",
+		en: "<b>Click</b> the first segment you want to connect",
+		sv: "<b>Klicka</b> på det första segmentet du vill koppla ihop"
 	},
 	startLineConnectLastPointHelp: {
-		fi: "Klikkaa viimeistä yhdistettävää osaa",
-		en: "Click the last segment you want to connect",
-		sv: "Klicka på det sista segmentet du vill koppla ihop"
+		fi: "<b>Klikkaa</b> viimeistä yhdistettävää osaa",
+		en: "<b>Click</b> the last segment you want to connect",
+		sv: "<b>Klicka</b> på det sista segmentet du vill koppla ihop"
 	},
 	SegmentsMustBeOfSameLine: {
 		 fi: "Osien täytyy olla samasta linjasta!",
@@ -510,9 +510,9 @@ export default {
 		sv: "Radera punkten"
 	},
 	addPointTooltip: {
-		fi: "Klikkaa karttaa luodaksesi uuden pisteen",
-		en: "Click the map to create a new point",
-		sv: "Klicka på kartan för att skapa en ny punkt"
+		fi: "<b>Klikkaa</b> karttaa luodaksesi uuden pisteen",
+		en: "<b>Click</b> the map to create a new point",
+		sv: "<b>Klicka</b> på kartan för att skapa en ny punkt"
 	},
 	dblclick: {
 		fi: "Tuplaklikkaa",
@@ -522,17 +522,22 @@ export default {
 	toMovePoint: {
 		fi: "Liikuttaaksesi pistettä",
 		en: "To move point",
-		sv: "Dubbelklicka"
+		sv: "För att flytta punkten"
 	},
 	toActivate: {
 		fi: "Näyttääksesi pätkän lomakkeella",
 		en: "To show the segment on the form",
-		sv: "Dubbelklicka"
+		sv: "För att visa klippet på formuläret"
 	},
 	toEditPoint: {
 		fi: "Muokataksesi pistettä",
 		en: "To edit the point",
-		sv: "Dubbelklicka"
+		sv: "För att redigera punkten"
+	},
+	editPoint: {
+		fi: "Muokkaa pistettä",
+		en: "Edit point",
+		sv: "Redigera poäng"
 	},
 
 };

@@ -12,8 +12,8 @@ const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;
 
 const lineStyle = {color: NORMAL_COLOR, weight: 2};
-const hoverLineStyle = {...lineStyle, color: "#ec9814"};
 const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
+const hoverLineStyle = {...lineStyle, color: combineColors(lineStyle.color, activeLineStyle.color)};
 const editLineStyle = {...lineStyle, color: "#f00"};
 const origLineStyle = {...lineStyle, weight: 1, fill: "#99b"};
 
@@ -32,7 +32,7 @@ const editablePointStyle = {...pointStyle, radius: 5, fillColor: "#f00", fillOpa
 const overlappingPointStyle = {...pointStyle, radius: 5, weight: 3, color: "#000"};
 const seamPointStyle = {...pointStyle, radius: 7};
 const closebyEditPointStyle = {...editPointStyle, radius: 9};
-const closebyPointStyle = {...pointStyle, fillColor: combineColors(hoverLineStyle.color, "#000000", 40), radius: 9};
+const closebyPointStyle = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity};
 
 const LT_WIDTH_METERS = 25;
 
@@ -1113,8 +1113,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const isHover = this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode
 			? false
 			: isPoint
-				? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover
-				: _isHover;
+				? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover && !isActive
+				: _isHover && !isActive;
 
 		const lineStyles = {
 			normal: lineStyle,

@@ -86,6 +86,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.startSelectLTSegmentMode = this.startSelectLTSegmentMode.bind(this);
 		this.stopSelectLTSegmentMode = this.stopSelectLTSegmentMode.bind(this);
 
+		this.startRemoveLTPointMode = this.startRemoveLTPointMode.bind(this);
 		this.stopRemoveLTPointMode = this.stopRemoveLTPointMode.bind(this);
 		this.chooseFirstSegmentToConnect = this.chooseFirstSegmentToConnect.bind(this);
 		this.chooseLastSegmentToConnectAndCommit = this.chooseLastSegmentToConnectAndCommit.bind(this);
@@ -1337,6 +1338,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (this._hoveredIdxTuple) this._updateLtStyleForIdxTuple(...this._hoveredIdxTuple);
 		if (lineIdx !== undefined && segmentIdx !== undefined) this._updateLtStyleForIdxTuple(lineIdx, segmentIdx);
 		this._disposeTooltip();
+	}
+
+	startRemoveLTPointMode() {
+		this.startSelectLTSegmentMode(this.chooseFirstSegmentToConnect, "startLineConnectFirstPointHelp");
 	}
 
 	stopRemoveLTPointMode(...params) {

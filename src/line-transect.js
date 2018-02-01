@@ -551,19 +551,30 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			return true;
 		};
 
+		const delayClick = (fn) => {
+			if (this._LTClickTimeout) clearTimeout(this._LTClickTimeout);
+			if (this._closebyPointIdxTuple) {
+				this._LTClickTimeout = setTimeout(fn, 500);
+			} else {
+				fn();
+			}
+		};
+
 		this._pointLayerGroup.on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
+			clearTimeout(this._LTClickTimeout);
 
 			const {idxTuple} = this.getIdxsFromEvent(e);
 			this._getPoint(...idxTuple, (...idxTuple) => this._setLTPointEditable(...idxTuple));
 		}).on("click", e => {
 			L.DomEvent.stopPropagation(e);
+			delayClick(() => {
+				const {lineIdx} = this.getIdxsFromEvent(e);
 
-			const {lineIdx} = this.getIdxsFromEvent(e);
-
-			if (!this._selectLTMode) {
-				this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
-			}
+				if (!this._selectLTMode) {
+					this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
+				}
+			});
 		}).on("mouseover", e => {
 			pointIsMiddlePoint(e) && onMouseOver(e);
 		}).on("mouseout", e => {
@@ -572,15 +583,16 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this._corridorLayerGroup.on("click", e => {
 			L.DomEvent.stopPropagation(e);
+			delayClick(() => {
+				const {lineIdx, idxTuple} = this.getIdxsFromEvent(e);
 
-			const {lineIdx, idxTuple} = this.getIdxsFromEvent(e);
-
-			if (this._selectLTMode) {
-				this._hoveredIdxTuple = undefined;
-				if (this._onSelectLT) this._onSelectLT(...idxTuple);
-			} else {
-				this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
-			}
+				if (this._selectLTMode) {
+					this._hoveredIdxTuple = undefined;
+					if (this._onSelectLT) this._onSelectLT(...idxTuple);
+				} else {
+					this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
+				}
+			});
 		}).on("mouseover", onMouseOver)
 			.on("mouseout", onMouseOut);
 
@@ -633,6 +645,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}).on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
 			if (this._closebyPointIdxTuple) {
+				clearTimeout(this._LTClickTimeout);
 				this._disableDblClickZoom = true;
 				this._getPoint(...this._closebyPointIdxTuple, (...idxTuple) => this._setLTPointEditable(...idxTuple));
 				setTimeout(() => {

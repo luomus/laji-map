@@ -13,7 +13,7 @@ const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;
 
 const lineStyle = {color: NORMAL_COLOR, weight: 2};
-const hoverLineStyle = {...lineStyle, color: INCOMPLETE_COLOR};
+const hoverLineStyle = {...lineStyle, color: "#ec9814"};
 const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
 const editLineStyle = {...lineStyle, color: "#f00"};
 const origLineStyle = {...lineStyle, weight: 1, fill: "#99b"};
@@ -26,7 +26,7 @@ const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
 
 const pointStyle = {weight: 0, radius: 3, fillColor: "#154EAA", fillOpacity: 1};
 const oddPointStyle = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)};
-const activePointStyle = {...pointStyle, fillColor: activeLineStyle.color};
+const activePointStyle = {...pointStyle, fillColor: combineColors(activeLineStyle.color, "#000000", 40)};
 const editPointStyle = {...pointStyle, fillColor: editLineStyle.color};
 const hoverPointStyle = {...pointStyle, fillColor: hoverLineStyle.color};
 const editablePointStyle = {...pointStyle, radius: 5, fillColor: "#f00", fillOpacity: 0.7};

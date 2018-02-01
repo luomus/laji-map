@@ -513,5 +513,26 @@ export default {
 		fi: "Klikkaa karttaa luodaksesi uuden pisteen",
 		en: "Click the map to create a new point",
 		sv: "Klicka på kartan för att skapa en ny punkt"
-	}
+	},
+	dblclick: {
+		fi: "Tuplaklikkaa",
+		en: "Double click",
+		sv: "Dubbelklicka"
+	},
+	toMovePoint: {
+		fi: "Liikuttaaksesi pistettä",
+		en: "To move point",
+		sv: "Dubbelklicka"
+	},
+	toActivate: {
+		fi: "Näyttääksesi pätkän lomakkeella",
+		en: "To show the segment on the form",
+		sv: "Dubbelklicka"
+	},
+	toEditPoint: {
+		fi: "Muokataksesi pistettä",
+		en: "To edit the point",
+		sv: "Dubbelklicka"
+	},
+
 };

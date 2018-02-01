@@ -634,3 +634,5 @@ export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
 
 	return [prevDistance, distance].map(m => roundMeters(m, round));
 }
+
+export const capitalizeFirstLetter = string => string.charAt(0).toUpperCase() + string.slice(1);

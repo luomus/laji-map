@@ -140,11 +140,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
 		if (!data) return;
 
-		let {feature, activeIdx, onChange, getFeatureStyle} = data;
+		let {feature, activeIdx, onChange, getFeatureStyle, getTooltip} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
 		this._LTActiveIdx = activeIdx;
 		this._getLTFeatureStyle = getFeatureStyle;
+		this._getLTTooltip = getTooltip;
 
 		this._LTHistory = [{geometry: feature.geometry}];
 		this._LTHistoryPointer = 0;
@@ -323,16 +324,27 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_showTooltipDescriptionFor(lineIdx) {
-		const getPopupFor = (lineIdx) => {
+		const getTooltipDescriptionFor = (lineIdx) => {
 			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx, 10);
 			return 	`<b>${prevDistance}-${distance}m</b>`;
 		};
-		this._updateLTTooltip({text: getPopupFor(lineIdx)});
-		return;
+		const text = getTooltipDescriptionFor(lineIdx);
+		console.log(text);
+		this._updateLTTooltip({text});
+		this._tooltipIdx = lineIdx;
+		if (this._getLTTooltip) {
+			const result = this._getLTTooltip(lineIdx, text, (callbackText) => {
+				if (this._tooltipIdx === lineIdx) this._updateLTTooltip({text: callbackText});
+			});
+			if (result !== undefined && typeof result !== "function") {
+				this._updateLTTooltip({text: result});
+			}
+		}
 	}
 
 	_clearTooltipDescription() {
 		this._updateLTTooltip({text: undefined});
+		this._tooltipIdx = undefined;
 	}
 
 	flatIdxToIdxTuple(idx) {

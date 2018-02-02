@@ -84,12 +84,13 @@ marker                                          | Boolean              | true   
 
 ### Line transect options ###
 
-Option                                          | Type                 |  Default                                 | Description
-------------------------------------------------|----------------------|------------------------------------------|------------------------------------
-feature                                         | GeoJSON Feature      | -                                        | The GeoJSON feature to use as the data.
-activeIdx                                       | Integer              | -                                        | The index of the active line transect segment.
-onChange                                        | Function             | -                                        | A function that fires events for line transect changes. Receives an array of event objects.
-getFeatureStyle                                 | Function             | -                                        | A function that returns a Path style to use for the line layer components. Signature: {lineIdx, segmentIdx, style = <the default style object for this layer>, type = L.Polyline | L.Polygon | L.CircleMarker}
+Option                                                                                                                                    | Type                 |  Default                                 | Description
+------------------------------------------------------------------------------------------------------------------------------------------|----------------------|------------------------------------------|------------------------------------
+feature                                                                                                                                   | GeoJSON Feature      | -                                        | The GeoJSON feature to use as the data.
+activeIdx                                                                                                                                 | Integer              | -                                        | The index of the active line transect segment.
+onChange                                                                                                                                  | Function             | -                                        | A function that fires events for line transect changes. Receives an array of event objects.
+getFeatureStyle({lineIdx, segmentIdx, style = <the default style object for this layer>, type = L.Polyline | L.Polygon | L.CircleMarker}) | Function             | -                                        | A function that returns a Path style to use for the line layer components. Signature: 
+getTooltip(lineIdx, callback)                                                                                                             | Function                  | -                                   | Function that returns a popup string, or calls the callback with the popup string.
 
 ### Control options ###
 

@@ -13,7 +13,7 @@ const ODD_AMOUNT = 30;
 
 const lineStyle = {color: NORMAL_COLOR, weight: 2};
 const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
-const hoverLineStyle = {...lineStyle, color: combineColors(lineStyle.color, activeLineStyle.color)};
+const hoverLineStyle = {...lineStyle, weight: 4};
 const editLineStyle = {...lineStyle, color: "#f00"};
 const origLineStyle = {...lineStyle, weight: 1, fill: "#99b"};
 
@@ -21,7 +21,7 @@ const corridorStyle = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lin
 const oddCorridorStyle = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)};
 const activeCorridorStyle = {...corridorStyle, fillColor: activeLineStyle.color};
 const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
-const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
+const hoverCorridorStyle = {...corridorStyle, color: activeLineStyle.color, weight: 3};
 
 const pointStyle = {weight: 0, radius: 3, fillColor: "#154EAA", fillOpacity: 1};
 const oddPointStyle = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)};

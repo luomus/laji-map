@@ -38,7 +38,9 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 			console.log("turn");
 			const {x, y} = this._map.latLngToLayerPoint(latlng);
 			L.DomUtil.setPosition(this._container, {x: x - width - 30, y});
-			this._container.className += " reversed";
+			if (!this._container.className.includes(" reversed")) {
+				this._container.className += " reversed";
+			}
 		} else if (this._container.className.includes(" reversed")) {
 			this._container.className = this._container.className.replace(" reversed", "");
 		}

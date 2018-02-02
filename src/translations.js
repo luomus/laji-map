@@ -519,6 +519,11 @@ export default {
 		en: "Double click",
 		sv: "Dubbelklicka"
 	},
+	rightclick: {
+		fi: "Klikkaa oikealla",
+		en: "Right click",
+		sv: "Högerklicka"
+	},
 	toMovePoint: {
 		fi: "Liikuttaaksesi pistettä",
 		en: "To move point",
@@ -534,10 +539,14 @@ export default {
 		en: "To edit the point",
 		sv: "För att redigera punkten"
 	},
+	toDeletePoint: {
+		fi: "Poistaakseesi pisteen",
+		en: "Delete point",
+		sv: "För att radera"
+	},
 	editPoint: {
 		fi: "Muokkaa pistettä",
 		en: "Edit point",
 		sv: "Redigera poäng"
 	},
-
 };

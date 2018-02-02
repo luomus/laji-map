@@ -630,9 +630,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					}
 				});
 				if (this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
-					this._updateLTTooltip({dblclick: this.translations.toEditPoint});
+					this._updateLTTooltip({dblclick: this.translations.toEditPoint, rightclick: this.translations.toDeletePoint});
 				} else {
-					this._updateLTTooltip({dblclick: undefined});
+					this._updateLTTooltip({dblclick: undefined, rightclick: undefined});
 				}
 			}
 		}).on("dblclick", e => {
@@ -1515,7 +1515,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (this._tooltip && this._tooltip !== this._ltTooltip) return;
 
 		this.messages = {...this.messages, ...messages};
-		const order = ["text", "drag", "click", "dblclick"];
+		const order = ["text", "drag", "click", "dblclick", "rightclick"];
 		Object.keys(this.messages)
 			.sort((a, b) => order.indexOf(a) - order.indexOf(b))
 			.forEach(key => {

@@ -129,7 +129,11 @@ class App {
 
 		const options = {
 			rootElem: document.getElementById("root"),
-			lineTransect: {feature: lineTransects.features[2], activeIdx: 0, onChange: this.onLTChange},
+			lineTransect: {
+				feature: lineTransects.features[2],
+				activeIdx: 0,
+				onChange: this.onLTChange
+			},
 			lang: "fi",
 			popupOnHover: true,
 			center: {

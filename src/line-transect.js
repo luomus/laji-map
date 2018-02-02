@@ -140,10 +140,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
 		if (!data) return;
 
-		let {feature, activeIdx, onChange} = data;
+		let {feature, activeIdx, onChange, getFeatureStyle} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
 		this._LTActiveIdx = activeIdx;
+		this._getLTFeatureStyle = getFeatureStyle;
 
 		this._LTHistory = [{geometry: feature.geometry}];
 		this._LTHistoryPointer = 0;
@@ -221,7 +222,31 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const lineLayers = this._lineLayers;
 		const corridorLayers = this._corridorLayers;
 
-		let i = 0;
+		this._overlappingNonadjacentPointIdxTuples = {};
+		this._overlappingAdjacentPointIdxTuples = {};
+		const overlappingsCoordsToIdxs = {};
+
+		const indexPoint = (lat, lng, lineIdx, segmentIdx) => {
+			const stringCoords = `${lat}-${lng}`;
+			const overlapping = overlappingsCoordsToIdxs[stringCoords];
+			if (overlapping) {
+				const [overlappingLineIdx] = overlapping;
+
+				const pointIdxTuple = [lineIdx, segmentIdx];
+				const pointIdxTupleStr = idxTupleToIdxTupleStr(...pointIdxTuple);
+				const overlappingPointIdxTuple = overlappingsCoordsToIdxs[stringCoords];
+				const overlappingPointIdxTupleStr = idxTupleToIdxTupleStr(...overlappingPointIdxTuple);
+				if (overlappingLineIdx !== undefined && overlappingLineIdx !== lineIdx - 1) {
+					this._overlappingNonadjacentPointIdxTuples[pointIdxTupleStr] = overlappingPointIdxTuple;
+					this._overlappingNonadjacentPointIdxTuples[overlappingPointIdxTupleStr] = pointIdxTuple;
+				} else {
+					this._overlappingAdjacentPointIdxTuples[pointIdxTupleStr] = overlappingPointIdxTuple;
+					this._overlappingAdjacentPointIdxTuples[overlappingPointIdxTupleStr] = pointIdxTuple;
+				}
+			}
+			overlappingsCoordsToIdxs[stringCoords] = [lineIdx, segmentIdx];
+		};
+
 		wholeLinesAsSegments.forEach((wholeLineAsSegments, lineIdx) => {
 			[pointLayers, lineLayers, corridorLayers].forEach(layers => {
 				layers.push([]);
@@ -230,35 +255,32 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const lineLayer = lineLayers[lineIdx];
 			const corridorLayer = corridorLayers[lineIdx];
 
-			wholeLineAsSegments.forEach((segment) => {
-				lineLayer.push(
-					L.polyline(segment, i === this._LTActiveIdx ? activeLineStyle : lineStyle)
-						.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}})
-				);
-
-				const even = lineIdx % 2 === 0;
-				pointLayer.push(L.circleMarker(segment[0],
-					lineIdx === this._LTActiveIdx
-					? activePointStyle
-					: even
-						? pointStyle
-						: oddPointStyle));
+			wholeLineAsSegments.forEach((segment, segmentIdx) => {
+				lineLayer.push(L.polyline(
+					segment,
+					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polyline)
+				).setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}}));
 
 				corridorLayer.push(L.polygon(
 					this._getCorridorCoordsForLine(segment),
-					lineIdx === this._LTActiveIdx
-					? activeCorridorStyle
-					: even
-						? corridorStyle
-						: oddCorridorStyle
+					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polygon)
 				));
 
-				i++;
+				const lngLat = segment[0];
+				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
+				pointLayer.push(L.circleMarker(
+					segment[0],
+					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.CircleMarker)
+				));
+
+				if (segmentIdx === wholeLineAsSegments.length - 1) {
+					const lngLat = segment[1];
+					indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx + 1);
+					pointLayer.push(L.circleMarker(lngLat, this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx + 1, L.CircleMarker)));
+				}
+
 			});
 
-			pointLayer.push(
-				L.circleMarker(wholeLineAsSegments[wholeLineAsSegments.length - 1][1], pointStyle)
-			);
 		});
 
 		this._allSegments = flattenMatrix(lineLayers);
@@ -273,40 +295,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			return L.featureGroup([...this._lineLayers[lineIdx], ...this._pointLayers[lineIdx], ...this._corridorLayers[lineIdx]]);
 		});
 
-		this._overlappingNonadjacentPointIdxTuples = {};
-		this._overlappingAdjacentPointIdxTuples = {};
-		const overlappingsCoordsToIdxs = {};
-
-		pointLayers.forEach((points, lineIdx) => {
-			points.forEach((point, pointIdx) => {
-				const latlng = point.getLatLng();
-				const stringCoords = `${latlng.lat}-${latlng.lng}`;
-				const overlapping = overlappingsCoordsToIdxs[stringCoords];
-				let overlappingEndOrStart = false;
-				if (overlapping) {
-					const [overlappingLineIdx] = overlapping;
-
-					const pointIdxTuple = [lineIdx, pointIdx];
-					const pointIdxTupleStr = idxTupleToIdxTupleStr(...pointIdxTuple);
-					const overlappingPointIdxTuple = overlappingsCoordsToIdxs[stringCoords];
-					const overlappingPointIdxTupleStr = idxTupleToIdxTupleStr(...overlappingPointIdxTuple);
-					if (overlappingLineIdx !== undefined && overlappingLineIdx !== lineIdx - 1) {
-						this._overlappingNonadjacentPointIdxTuples[pointIdxTupleStr] = overlappingPointIdxTuple;
-						this._overlappingNonadjacentPointIdxTuples[overlappingPointIdxTupleStr] = pointIdxTuple;
-						overlappingEndOrStart = true;
-					} else {
-						this._overlappingAdjacentPointIdxTuples[pointIdxTupleStr] = overlappingPointIdxTuple;
-						this._overlappingAdjacentPointIdxTuples[overlappingPointIdxTupleStr] = pointIdxTuple;
-					}
-				}
-				if (overlappingEndOrStart) {
-					point.setStyle(overlappingPointStyle);
-				} else if (pointIdx === 0 || pointIdx === points.length - 1) {
-					point.setStyle(seamPointStyle);
-				}
-				overlappingsCoordsToIdxs[stringCoords] = [lineIdx, pointIdx];
-			});
-		});
 		this._setIdxTupleMappings();
 		this._setLineTransectEvents();
 
@@ -675,7 +663,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._commitPointDrag();
 			}
 		});
-		;
 	}
 
 	@reflect()
@@ -812,11 +799,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				.on("mouseover", () => {
 					this._LTdragPoint.setStyle(style);
 					point.setStyle(this._getStyleForLTLayer(point));
-					this._updateLTTooltip({drag: this.translations.toMovePoint})
+					this._updateLTTooltip({drag: this.translations.toMovePoint});
 				}).on("mouseout", () => {
 					this._LTdragPoint.setStyle({...style, opacity: 0.3});
 					point.setStyle(this._getStyleForLTLayer(point));
-					this._updateLTTooltip({drag: undefined})
+					this._updateLTTooltip({drag: undefined});
 				})
 				.on("remove", () => point.setStyle(this._getStyleForLTLayer(point)))
 				.on("mousedown", this._startLTDragPointHandler)
@@ -1072,9 +1059,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return {type: "active", idx: this._LTActiveIdx};
 	}
 
-	_getStyleForLTLayer(layer) {
-		const {lineIdx, segmentIdx, idxTuple} = this.getIdxsFromLayer(layer);
-		const isPoint = layer instanceof L.CircleMarker;
+	_getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, type) {
+		const idxTuple = [lineIdx, segmentIdx];
+
+		const isPoint = type === L.CircleMarker;
 		const isActive = lineIdx === this._LTActiveIdx && (!isPoint || (segmentIdx !== 0 && segmentIdx !== this._pointLayers[lineIdx].length - 1));
 		const [hoveredLineIdx, hoveredSegmentIdx] = this._hoveredIdxTuple || [];
 		const contextMenuLineIdx = (this.getIdxsFromLayer(this._contextMenuLayer) || {}).lineIdx;
@@ -1129,11 +1117,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		};
 
 		let styleObject = undefined;
-		if (layer instanceof L.Polygon) {
+		if (type === L.Polygon) {
 			styleObject = corridorStyles;
-		} else if (layer instanceof L.Polyline) {
+		} else if (type === L.Polyline) {
 			styleObject = lineStyles;
-		} else if (layer instanceof L.CircleMarker) {
+		} else if (type === L.CircleMarker) {
 			styleObject = pointStyles;
 		}
 
@@ -1154,8 +1142,17 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		} else if (isSeamPoint) {
 			return styleObject.seam;
 		} else {
+			if (this._getLTFeatureStyle) {
+				const style = this._getLTFeatureStyle({lineIdx, segmentIdx, type, style: styleObject.normal});
+				if (style) return style;
+			}
 			return lineIdx % 2 === 0 ? styleObject.normal : styleObject.odd;
 		}
+	}
+
+	_getStyleForLTLayer(layer) {
+		const {lineIdx, segmentIdx} = this.getIdxsFromLayer(layer);
+		return this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, layer.constructor);
 	}
 
 	_updateLTStyleForLineIdx(lineIdx) {

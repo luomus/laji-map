@@ -211,7 +211,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (this._lineLayerGroup) this.map.removeLayer(this._lineLayerGroup);
 		if (this._corridorLayerGroup) this.map.removeLayer(this._corridorLayerGroup);
 		if (this._tooltipLayers) {
-			Object.keys(this._tooltipLayers).forEach(lineIdx => this._closePopupFor(lineIdx));
+			Object.keys(this._tooltipLayers).forEach(lineIdx => this._clearTooltipDescription(lineIdx));
 		}
 		this._pointLayers = [];
 		this._lineLayers = [];
@@ -322,40 +322,17 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	_openPopupFor(lineIdx) {
+	_showTooltipDescriptionFor(lineIdx) {
 		const getPopupFor = (lineIdx) => {
 			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx, 10);
-			return 	`${prevDistance}-${distance}m`;
+			return 	`<b>${prevDistance}-${distance}m</b>`;
 		};
-
-		const offset = -this.featurePopupOffset || 0;
-		const layer = this._LTGroups[lineIdx];
-
-		let latLng = this._mouseLatLng;
-
-		if (!this._tooltipLayers[lineIdx]) {
-			if (!latLng) {
-				return;
-			}
-			this._tooltipLayers[lineIdx] = new L.Rrose({ offset: new L.Point(0, offset), closeButton: false, autoPan: false })
-				.setContent(getPopupFor(lineIdx))
-				.setLatLng(latLng)
-				.openOn(this.map);
-			layer.on("mousemove", e => {
-				const latlng = e.latlng;
-				this._tooltipLayers[lineIdx].setLatLng(latlng);
-			});
-		} else if (!this.map.hasLayer(this._tooltipLayers[lineIdx])) {
-			this._tooltipLayers[lineIdx].openOn(this.map);
-		}
-
-		if (latLng) {
-			this._tooltipLayers[lineIdx].setLatLng(latLng);
-		}
+		this._updateLTTooltip({text: getPopupFor(lineIdx)});
+		return;
 	}
 
-	_closePopupFor(lineIdx) {
-		this._tooltipLayers[lineIdx] && this._tooltipLayers[lineIdx].remove();
+	_clearTooltipDescription() {
+		this._updateLTTooltip({text: undefined});
 	}
 
 	flatIdxToIdxTuple(idx) {
@@ -522,7 +499,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._hoveredIdxTuple = [lineIdx, segmentIdx];
 			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
 			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
-			this._openPopupFor(lineIdx);
+			this._showTooltipDescriptionFor(lineIdx);
 			const messages = {click: this.translations.toActivate};
 			if ([this._getIdxTuplePrecedingEditPoint(), this._getIdxTupleFollowingEditPoint()].some(idxTuple => idxTuplesEqual(idxTuple, this._hoveredIdxTuple))) {
 				messages.drag = this.translations.dragToMovePoint;
@@ -536,7 +513,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			this._hoveredIdxTuple = undefined;
 			this._updateLTStyleForLineIdx(lineIdx);
-			this._closePopupFor(lineIdx);
+			this._clearTooltipDescription(lineIdx);
 			this._updateLTTooltip({click: undefined, drag: undefined});
 		};
 		const pointIsMiddlePoint = (e) => {
@@ -815,7 +792,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			});
 			this.map.on("mouseup", this._stopLTDragCorridorHandler);
 
-			this._closePopupFor(lineIdx);
+			this._clearTooltipDescription(lineIdx);
 			[
 				this._getIdxTuplePrecedingEditPoint(),
 				this._getIdxTupleFollowingEditPoint()
@@ -1522,12 +1499,17 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (this._tooltip && this._tooltip !== this._ltTooltip) return;
 
 		this.messages = {...this.messages, ...messages};
-		Object.keys(this.messages).forEach(key => {
-			if (this.messages[key]) {
-				const prefix = message ? "<br />" : "";
-				message += `${prefix}<b>${this.translations[capitalizeFirstLetter(key)]} </b>${this.messages[key]}`;
-			}
-		});
+		const order = ["text", "drag", "click", "dblclick"];
+		Object.keys(this.messages)
+			.sort((a, b) => order.indexOf(a) - order.indexOf(b))
+			.forEach(key => {
+				if (this.messages[key]) {
+					const prefix = message ? "<br />" : "";
+					const actionTranslation = this.translations[capitalizeFirstLetter(key)];
+					const actionText = actionTranslation ? `<b>${actionTranslation}</b> ` : "";
+					message += `${prefix}${actionText}${this.messages[key]}`;
+				}
+			});
 
 		if (message && !this._ltTooltip) {
 			this._ltTooltip = this._createTooltip(message);

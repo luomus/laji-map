@@ -511,9 +511,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
 			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
 			this._showTooltipDescriptionFor(lineIdx);
-			const messages = {click: this.translations.toActivate};
+			const messages = {};
+			if (this._LTActiveIdx !== lineIdx) {
+				messages.click = this.translations.toActivate;
+			}
 			if ([this._getIdxTuplePrecedingEditPoint(), this._getIdxTupleFollowingEditPoint()].some(idxTuple => idxTuplesEqual(idxTuple, this._hoveredIdxTuple))) {
-				messages.drag = this.translations.dragToMovePoint;
+				messages.drag = this.translations.toMovePoint;
 			}
 			this._updateLTTooltip(messages);
 		};
@@ -558,6 +561,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 				if (!this._selectLTMode) {
 					this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
+					this._updateLTTooltip({click: undefined});
 				}
 			});
 		}).on("mouseover", e => {
@@ -576,6 +580,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					if (this._onSelectLT) this._onSelectLT(...idxTuple);
 				} else {
 					this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
+					this._updateLTTooltip({click: undefined});
 				}
 			});
 		}).on("mouseover", onMouseOver)

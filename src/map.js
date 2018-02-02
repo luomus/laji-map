@@ -27,6 +27,26 @@ function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+// Override the tooltip to turn when it overflows.
+const tooltipOrigPrototype = L.Draw.Tooltip.prototype;
+L.Draw.Tooltip = L.Draw.Tooltip.extend({
+	updatePosition: function (latlng) {
+		tooltipOrigPrototype.updatePosition.call(this, latlng);
+		const {width, x} = this._container.getBoundingClientRect();
+		const {width: mapWidth, x: mapX} = this._map._container.getBoundingClientRect();
+		if (width + x > mapWidth + mapX) {
+			console.log("turn");
+			const {x, y} = this._map.latLngToLayerPoint(latlng);
+			L.DomUtil.setPosition(this._container, {x: x - width - 30, y});
+			this._container.className += " reversed";
+		} else if (this._container.className.includes(" reversed")) {
+			this._container.className = this._container.className.replace(" reversed", "");
+		}
+
+		return this;
+	}
+});
+
 @HasControls
 @HasLineTransect
 export default class LajiMap {

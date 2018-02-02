@@ -306,3 +306,23 @@
 .laji-map text {
 	user-select: none;
 }
+.leaflet-draw-tooltip.reversed:after {
+	border-left: 6px solid black;
+	border-left-color: rgba(0, 0, 0, 0.5);
+	border-top: 6px solid transparent;
+	border-bottom: 6px solid transparent;
+	content: "";
+	position: absolute;
+	top: 7px;
+	right: -7px;
+}
+.leaflet-draw-tooltip.reversed:before {
+	border-right: initial;
+	border-right-color: initial;
+	border-top: initial;
+	border-bottom: initial;
+	content: initial;
+	position: initial;
+	top: initial;
+	left: initial;
+}

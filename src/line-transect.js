@@ -329,7 +329,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			return 	`<b>${prevDistance}-${distance}m</b>`;
 		};
 		const text = getTooltipDescriptionFor(lineIdx);
-		console.log(text);
 		this._updateLTTooltip({text});
 		this._tooltipIdx = lineIdx;
 		if (this._getLTTooltip) {

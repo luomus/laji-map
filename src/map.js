@@ -1806,6 +1806,7 @@ export default class LajiMap {
 			item.groupContainer.removeLayer(editLayer);
 			this.map.addLayer(editLayer);
 		}
+		editLayer.options.editing || (editLayer.options.editing = {}); // See https://github.com/Leaflet/Leaflet.draw/issues/804
 		editLayer.editing.enable();
 		editLayer.closePopup();
 		this.updateLayerStyle(editLayer);

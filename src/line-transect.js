@@ -587,7 +587,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			.on("mouseout", onMouseOut);
 
 		this.map.on("mousemove", ({latlng}) => {
-			if (this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode) {
+			if (this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode || this.map.contextmenu.isVisible()) {
 				return;
 			}
 			const closestPoint = L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
@@ -604,14 +604,15 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (!idxTuplesEqual(prevClosestPointIdxTuple, this._closebyPointIdxTuple)) {
 				if (this._LTPointExpander) {
 					const layer = this._LTPointExpander;
-					if (this.map.contextmenu.isVisible() && this._contextMenuLayer === this._LTPointExpander) this.map.contextmenu.hide();
-					setImmediate(() => layer.remove());
+					layer.remove();
+					this._updateContextMenu();
 				}
 				if (this._closebyPointIdxTuple) {
 					this._LTPointExpander = new L.CircleMarker(closestPoint.getLatLng(), {radius: POINT_DIST_TRESHOLD, opacity: 0, fillOpacity: 0})
 						.addTo(this.map)
-						.bringToBack()
-						.bindContextMenu(this._getContextMenuForPoint(...this._closebyPointIdxTuple));
+						.bringToBack();
+					this.map.contextmenu.removeAllItems();
+					this._getContextMenuForPoint(...this._closebyPointIdxTuple).contextmenuItems.forEach(item => this.map.contextmenu.addItem(item));
 					const layer = this._getLayerForIdxTuple(this._pointLayers, ...this._closebyPointIdxTuple);
 					if (layer && this.map.hasLayer(layer)) layer.bringToFront();
 					if (this._LTdragPoint) this._LTdragPoint.bringToFront();
@@ -782,40 +783,43 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this._LTEditPointIdxTuple = [lineIdx, pointIdx];
 		this._featureBeforePointDrag = this._formatLTFeatureOut();
-		if (pointIdx !== undefined) {
-			const point = this._getLayerForIdxTuple(this._pointLayers, lineIdx, pointIdx);
-			this._LTPointLatLngBeforeDrag = point.getLatLng();
-			const style = {color: "#ff0000", opacity: 0.5, fillColor:  "#ffffff", fillOpacity: 0.3};
-			this._LTdragPoint = new L.CircleMarker(point.getLatLng(), {radius: POINT_DIST_TRESHOLD, ...style});
-			this._LTdragPoint.addTo(this.map)
-				.bringToFront()
-				.on("mouseover", () => {
-					this._LTdragPoint.setStyle(style);
-					point.setStyle(this._getStyleForLTLayer(point));
-					this._updateLTTooltip({drag: this.translations.toMovePoint});
-				}).on("mouseout", () => {
-					this._LTdragPoint.setStyle({...style, opacity: 0.3});
-					point.setStyle(this._getStyleForLTLayer(point));
-					this._updateLTTooltip({drag: undefined});
-				})
-				.on("remove", () => point.setStyle(this._getStyleForLTLayer(point)))
-				.on("mousedown", this._startLTDragPointHandler)
-				.on("mouseup", this._stopLTDragPointHandler);
 
-			[pointIdx, pointIdx - 1].filter(i => i >= 0).forEach(idx => {
-				const corridor = this._corridorLayers[lineIdx][idx];
-				if (corridor) corridor.on("mousedown", this._startLTDragCorridorHandler);
-			});
-			this.map.on("mouseup", this._stopLTDragCorridorHandler);
-
-			this._clearTooltipDescription(lineIdx);
-			[
-				this._getIdxTuplePrecedingEditPoint(),
-				this._getIdxTupleFollowingEditPoint()
-			].filter(i => i)
-			 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => this._getLayerForIdxTuple(layers, ...idxTuple)))
-			 .forEach(layerPair => layerPair.forEach(layer => layer.setStyle(this._getStyleForLTLayer(layer))));
+		if (pointIdx === undefined) {
+			return;
 		}
+		const point = this._getLayerForIdxTuple(this._pointLayers, lineIdx, pointIdx);
+		this._LTPointLatLngBeforeDrag = point.getLatLng();
+		const style = {color: "#ff0000", opacity: 0.5, fillColor:  "#ffffff", fillOpacity: 0.3};
+		this._LTdragPoint = new L.CircleMarker(point.getLatLng(), {radius: POINT_DIST_TRESHOLD, ...style});
+		this._LTdragPoint.addTo(this.map)
+			.bringToFront()
+			.on("mouseover", () => {
+				this._LTdragPoint.setStyle(style);
+				point.setStyle(this._getStyleForLTLayer(point));
+				this._updateLTTooltip({drag: this.translations.toMovePoint});
+			}).on("mouseout", () => {
+				this._LTdragPoint.setStyle({...style, opacity: 0.3});
+				point.setStyle(this._getStyleForLTLayer(point));
+				this._updateLTTooltip({drag: undefined});
+			})
+			.on("remove", () => point.setStyle(this._getStyleForLTLayer(point)))
+			.on("mousedown", this._startLTDragPointHandler)
+			.on("mouseup", this._stopLTDragPointHandler);
+
+		[pointIdx, pointIdx - 1].filter(i => i >= 0).forEach(idx => {
+			const corridor = this._corridorLayers[lineIdx][idx];
+			if (corridor) corridor.on("mousedown", this._startLTDragCorridorHandler);
+		});
+		this.map.on("mouseup", this._stopLTDragCorridorHandler);
+
+		this._clearTooltipDescription(lineIdx);
+		point.setStyle(this._getStyleForLTLayer(point));
+		[
+			this._getIdxTuplePrecedingEditPoint(),
+			this._getIdxTupleFollowingEditPoint()
+		].filter(i => i)
+		 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => this._getLayerForIdxTuple(layers, ...idxTuple)))
+		 .forEach(layerPair => layerPair.forEach(layer => layer.setStyle(this._getStyleForLTLayer(layer))));
 	}
 
 	_commitPointDrag() {

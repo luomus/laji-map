@@ -759,6 +759,11 @@ export default class LajiMap {
 
 		item.hasActive = ("activeIdx" in item);
 
+		this.idxsToIds[dataIdx] = {};
+		this.idsToIdxs[dataIdx] = {};
+		this._idxsToHovered[dataIdx] = [];
+		this._idxsToContextMenuOpen[dataIdx] = [];
+
 		if (this.data[dataIdx]) {
 			this.data[dataIdx].groupContainer.clearLayers();
 		}
@@ -774,7 +779,8 @@ export default class LajiMap {
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
 				style: feature => {
-					return this._fillStyleWithGlobals(dataIdx, feature.properties.lajiMapIdx, feature);
+					return this._getStyleForType(dataIdx, feature.properties.lajiMapIdx, feature);
+					//return this._fillStyleWithGlobals(dataIdx, feature.properties.lajiMapIdx, feature);
 				},
 			}
 		);
@@ -786,11 +792,6 @@ export default class LajiMap {
 			item.group.addTo(item.groupContainer);
 		}
 		item.groupContainer.addTo(this.map);
-
-		this.idxsToIds[dataIdx] = {};
-		this.idsToIdxs[dataIdx] = {};
-		this._idxsToHovered[dataIdx] = [];
-		this._idxsToContextMenuOpen[dataIdx] = [];
 
 		layer.eachLayer(layer => {
 			this._initializeLayer(layer, dataIdx, layer.feature.properties.lajiMapIdx);
@@ -1439,7 +1440,9 @@ export default class LajiMap {
 				}).addTo(this.userLocationLayer);
 		}
 
-		this.userLocationMarker.on("click", () => { if (!this._interceptClick()) this.map.fitBounds(this.userLocationRadiusMarker.getBounds()); });
+		this.userLocationMarker.on("click", () => {
+			!this._interceptClick() && this.map.fitBounds(this.userLocationRadiusMarker.getBounds());
+		});
 	}
 
 	_onLocationNotFound() {
@@ -1450,7 +1453,7 @@ export default class LajiMap {
 	_getLayerByIdxs(dataIdx, featureIdx) {
 		const item = this.data[dataIdx];
 		const id = this.idxsToIds[dataIdx][featureIdx];
-		return item.group.getLayer(id);
+		return item.group ? item.group.getLayer(id) : undefined;
 	}
 
 	_getLayerById(id) {
@@ -1949,11 +1952,23 @@ export default class LajiMap {
 				item
 			});
 
+		console.log(dataIdx, featureIdx, feature, overrideStyles);
+		let layer = undefined;
+		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
+
+		const isLine = (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString"))
+
 		let style = {
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
 			fillColor: NORMAL_COLOR,
+		};
+		if (isLine) {
+			style.weight = 10;
+		}
+		style = {
+			...style,
 			...dataStyles,
 			...overrideStyles
 		};
@@ -1991,9 +2006,6 @@ export default class LajiMap {
 			colors.push(["#ffffff", 30]);
 		}
 
-		let layer = undefined;
-		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
-
 		if (colors.length || this._idxsToContextMenuOpen[dataIdx][featureIdx]) {
 			style = {...style};
 			["color", "fillColor"].forEach(prop => {
@@ -2001,7 +2013,7 @@ export default class LajiMap {
 					let finalColor = undefined;
 					if (
 						this._idxsToContextMenuOpen[dataIdx][featureIdx] || (
-						hovered && (this._onDrawRemove || (this._onDrawReverse && (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString")))))
+						hovered && (this._onDrawRemove || (this._onDrawReverse && isLine)))
 					) {
 						finalColor = "#ff0000";
 					} else {

@@ -1952,11 +1952,14 @@ export default class LajiMap {
 				item
 			});
 
-		console.log(dataIdx, featureIdx, feature, overrideStyles);
 		let layer = undefined;
 		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
 
-		const isLine = (layer && isPolyline(layer) || feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString"))
+		const isLine = (
+			layer && isPolyline(layer)
+			||
+			feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString")
+		);
 
 		let style = {
 			opacity: 1,

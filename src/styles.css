@@ -141,6 +141,12 @@
 	font-size: 9px;
 	white-space: nowrap;
 }
+.laji-map .laji-map-line-transect-create-point-glyph:before {
+	content: "o";
+	font-weight: bold;
+	font-size: 9px;
+	white-space: nowrap;
+}
 
 .laji-map .laji-map-warning {
 	position: absolute;
@@ -177,7 +183,7 @@
 }
 
 /**
- * Taken from here: 
+ * Taken from here:
  * https://stackoverflow.com/questions/18432577/stacked-tabs-in-bootstrap-3
  */
 .laji-map .tabs-below > .nav-tabs,
@@ -203,7 +209,7 @@
   display: block;
 }
 
-.laji-map .tabs-below > .nav-tabs, 
+.laji-map .tabs-below > .nav-tabs,
 .laji-map-dialog .tabs-below > .nav-tabs {
   border-top: 1px solid #ddd;
 }
@@ -299,4 +305,24 @@
 
 .laji-map text {
 	user-select: none;
+}
+.leaflet-draw-tooltip.reversed:after {
+	border-left: 6px solid black;
+	border-left-color: rgba(0, 0, 0, 0.5);
+	border-top: 6px solid transparent;
+	border-bottom: 6px solid transparent;
+	content: "";
+	position: absolute;
+	top: 7px;
+	right: -7px;
+}
+.leaflet-draw-tooltip.reversed:before {
+	border-right: initial;
+	border-right-color: initial;
+	border-top: initial;
+	border-bottom: initial;
+	content: initial;
+	position: initial;
+	top: initial;
+	left: initial;
 }

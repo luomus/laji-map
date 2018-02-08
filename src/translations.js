@@ -295,39 +295,29 @@ export default {
 		sv: "Hotbedömningszoner"
 	},
 	firstOrLastPoint: {
-		fi: "Haluatko siirtää ensimmäistä vai viimeistä pistettä?",
-		en: "Do you want to move the first or the last point?",
-		sv: "Vill du flytta den första eller den sista punkten?"
+		fi: "Haluatko siirtää edeltävää vai seuraavaa pistettä?",
+		en: "Do you want to move the preceding or the following point?",
+		sv: "Vill du flytta den föregående eller den följande punkten?"
 	},
 	firstPartitive: {
-		fi: "Ensimmäistä",
-		en: "The first",
-		sv: "Den första"
+		fi: "Edeltävää",
+		en: "preceding",
+		sv: "Föregående"
 	},
 	lastPartitive: {
-		fi: "Viimeistä",
-		en: "The last",
-		sv: "Den sista"
+		fi: "Seuraavaa",
+		en: "Following",
+		sv: "Följande"
 	},
 	splitLine: {
-		fi: "Katkaise linja.",
-		en: "Split line transect.",
-		sv: "Bryta av linjen."
-	},
-	deleteLineSegment: {
-		fi: "Poista linjan osa.",
-		en: "Delete a segment of the line transect.",
-		sv: "Radera ett segment av linjen."
+		fi: "Katkaise linja",
+		en: "Split line transect",
+		sv: "Bryta av linjen"
 	},
 	splitLineTooltip: {
-		fi: "Klikkaa karttaa katkaistaksesi linjan.",
-		en: "Click the map to split the line.",
-		sv: "Klicka på kartan för att bryta av linjen."
-	},
-	deleteLineSegmentTooltip: {
-		fi: "Klikkaa poistettavaa linjan osaa.",
-		en: "Click the segment that you want to delete.",
-		sv: "Klicka på segmentet som du vill radera."
+		fi: "<b>Klikkaa</b> karttaa katkaistaksesi linjan",
+		en: "<b>Click</b> the map to split the line",
+		sv: "<b>Klicka</b> på kartan för att bryta av linjen"
 	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",
@@ -440,38 +430,33 @@ export default {
 		sv: "ETRS-TM35FIN"
 	},
 	splitLineByMeters: {
-		fi: "Katkaise linja metriluvulla.",
-		en: "Split line transect by meters.",
-		sv: "Bryta av linjen gemon meter."
+		fi: "Katkaise linja metriluvulla",
+		en: "Split line transect by meters",
+		sv: "Bryta av linjen gemon meter"
 	},
 	segmentSplitByLengthHelp: {
-		fi: "Syötä uusi pituus. Nykyisen linjan pituus",
-		en: "Enter a new length. The length of the current segment",
-		sv: "Ange en ny längd. Längden på det aktuella segmentet"
-	},
-	splitLineByMetersTooltip: {
-		fi: "Klikkaa linjan osaa, jonka haluat katkaista.",
-		en: "Click the segment that you want to split",
-		sv: "Klicka på segmentet som du vill bryta av."
+		fi: "Syötä metriluku jonka kohdalta linja pätkäistään. Linjan pituus",
+		en: "Enter a meter where to split. The length of the line",
+		sv: "Ange en mätare var du ska dela. Linjens längd"
 	},
 	connectSegments: {
-		fi: "Yhdistä linjan osat.",
-		en: "Connect line transect segments.",
-		sv: "Koppla ihop linjesegmentet."
+		fi: "Yhdistä linjan osat",
+		en: "Connect line transect segments",
+		sv: "Koppla ihop linjesegmentet"
 	},
 	startLineConnectFirstPointHelp: {
-		fi: "Klikkaa ensimmäistä yhdistettävää osaa.",
-		en: "Click the first segment you want to connect.",
-		sv: "Klicka på det första segmentet du vill koppla ihop."
+		fi: "<b>Klikkaa</b> ensimmäistä yhdistettävää osaa",
+		en: "<b>Click</b> the first segment you want to connect",
+		sv: "<b>Klicka</b> på det första segmentet du vill koppla ihop"
 	},
 	startLineConnectLastPointHelp: {
-		fi: "Klikkaa viimeistä yhdistettävää osaa.",
-		en: "Click the last segment you want to connect.",
-		sv: "Klicka på det sista segmentet du vill koppla ihop."
+		fi: "<b>Klikkaa</b> viimeistä yhdistettävää osaa",
+		en: "<b>Click</b> the last segment you want to connect",
+		sv: "<b>Klicka</b> på det sista segmentet du vill koppla ihop"
 	},
 	SegmentsMustBeOfSameLine: {
-		fi: "Osien täytyy olla samasta linjasta!",
-		en: "The segments must be from the same line body!",
+		 fi: "Osien täytyy olla samasta linjasta!",
+		 en: "The segments must be from the same line body!",
 		sv: "Segmenten måste vara från samma linjen!"
 	},
 	confirmDrawClear: {
@@ -495,14 +480,14 @@ export default {
 		sv: "Omvänd raden"
 	},
 	removeFeatureOnClick: {
-		fi: "Klikkaa kuviota poistaakseesi sen.",
-		en: "Click a feature in order to remove it.",
-		sv: "Klicka på en figur för att radera den."
+		fi: "Klikkaa kuviota poistaakseesi sen",
+		en: "Click a feature in order to remove it",
+		sv: "Klicka på en figur för att radera den"
 	},
 	reverseLineOnClick: {
-		fi: "Klikkaa linjaa kääntääksesi sen suunnan.",
-		en: "Click a line in order to reverse it.",
-		sv: "Klicka på en rad för att vända den."
+		fi: "Klikkaa linjaa kääntääksesi sen suunnan",
+		en: "Click a line in order to reverse it",
+		sv: "Klicka på en rad för att vända den"
 	},
 	ortokuva: {
 		fi: "Suomen ortokuva",
@@ -518,5 +503,50 @@ export default {
 		fi: "Eliömaakuntien rajat",
 		en: "Borders of biogeographical provinces",
 		sv: "Gränserna av Biogeografiska provinser"
-	}
+	},
+	createPoint: {
+		fi: "Luo piste",
+		en: "Remove point",
+		sv: "Radera punkten"
+	},
+	addPointTooltip: {
+		fi: "<b>Klikkaa</b> karttaa luodaksesi uuden pisteen",
+		en: "<b>Click</b> the map to create a new point",
+		sv: "<b>Klicka</b> på kartan för att skapa en ny punkt"
+	},
+	dblclick: {
+		fi: "Tuplaklikkaa",
+		en: "Double click",
+		sv: "Dubbelklicka"
+	},
+	rightclick: {
+		fi: "Klikkaa oikealla",
+		en: "Right click",
+		sv: "Högerklicka"
+	},
+	toMovePoint: {
+		fi: "Liikuttaaksesi pistettä",
+		en: "To move point",
+		sv: "För att flytta punkten"
+	},
+	toActivate: {
+		fi: "Näyttääksesi pätkän lomakkeella",
+		en: "To show the segment on the form",
+		sv: "För att visa klippet på formuläret"
+	},
+	toEditPoint: {
+		fi: "Muokataksesi pistettä",
+		en: "To edit the point",
+		sv: "För att redigera punkten"
+	},
+	toDeletePoint: {
+		fi: "Poistaakseesi pisteen",
+		en: "Delete point",
+		sv: "För att radera"
+	},
+	editPoint: {
+		fi: "Muokkaa pistettä",
+		en: "Edit point",
+		sv: "Redigera poäng"
+	},
 };

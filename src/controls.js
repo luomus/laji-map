@@ -72,6 +72,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		super._initializeMapEvents();
 		const cancelDraw = ({name}) => {
 			if (name === "draw") return;
+			if (!this.drawControl) return;
 			this.getFeatureTypes().forEach(featureType => {
 				const handlerContainer = this.drawControl._toolbars.draw._modes[featureType];
 				if (handlerContainer && handlerContainer.handler._enabled) {
@@ -251,17 +252,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						name: "splitByMeters",
 						text: this.translations.SplitLineByMeters,
 						iconCls: "laji-map-line-transect-split-by-meters-glyph",
-						fn: (...params) => this.startSplitByMetersLTSegmentMode(...params),
-						finishFn: (...params) => this.stopSelectLTSegmentMode(...params),
+						fn: (...params) => this.splitLTByMeters(...params),
 						eventName: "lineTransect:split"
-					},
-					{
-						name: "deleteSegment",
-						text: this.translations.DeleteLineSegment,
-						iconCls: "laji-map-line-transect-remove-segment-glyph",
-						fn: (...params) => this.startRemoveLTSegmentMode(...params),
-						finishFn: (...params) => this.stopSelectLTSegmentMode(...params),
-						eventName: "lineTransect:delete"
 					},
 					{
 						name: "deletePoints",
@@ -269,7 +261,15 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						iconCls: "laji-map-line-transect-remove-point-glyph",
 						fn: (...params) => this.startRemoveLTPointMode(...params),
 						finishFn: (...params) => this.stopRemoveLTPointMode(...params),
-						eventName: "lineTransect:delete"
+						eventName: "lineTransect:deletePoint"
+					},
+					{
+						name: "createPoint",
+						text: this.translations.CreatePoint,
+						iconCls: "laji-map-line-transect-create-point-glyph",
+						fn: (...params) => this.startLTPointAdd(...params),
+						finishFn: (...params) => this.stopLTLineSplit(...params),
+						eventName: "lineTransect:pointadd"
 					},
 					{
 						name: "undo",
@@ -499,6 +499,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				splitByMeters: true,
 				deleteSegment: true,
 				deletePoints: true,
+				createPoint: true,
 				undo: true,
 				redo: true
 			},

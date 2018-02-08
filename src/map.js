@@ -27,6 +27,27 @@ function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+// Override the tooltip to turn when it overflows.
+const tooltipOrigPrototype = L.Draw.Tooltip.prototype;
+L.Draw.Tooltip = L.Draw.Tooltip.extend({
+	updatePosition: function (latlng) {
+		tooltipOrigPrototype.updatePosition.call(this, latlng);
+		const {width, x} = this._container.getBoundingClientRect();
+		const {width: mapWidth, x: mapX} = this._map._container.getBoundingClientRect();
+		if (width + x > mapWidth + mapX) {
+			const {x, y} = this._map.latLngToLayerPoint(latlng);
+			L.DomUtil.setPosition(this._container, {x: x - width - 30, y});
+			if (!this._container.className.includes(" reversed")) {
+				this._container.className += " reversed";
+			}
+		} else if (this._container.className.includes(" reversed")) {
+			this._container.className = this._container.className.replace(" reversed", "");
+		}
+
+		return this;
+	}
+});
+
 @HasControls
 @HasLineTransect
 export default class LajiMap {
@@ -67,7 +88,7 @@ export default class LajiMap {
 			tileLayerOpacity: "setTileLayerOpacity",
 			center: "setCenter",
 			zoom: "setNormalizedZoom",
-			zoomToData: "zoomToData",
+			zoomToData: ["setZoomToData", "_zoomToData"],
 			locate: true,
 			onPopupClose: true,
 			markerPopupOffset: true,
@@ -107,7 +128,8 @@ export default class LajiMap {
 
 		return Object.keys(optionKeys).reduce((options, key) => {
 			if (Array.isArray(optionKeys[key])) {
-				options[key] = optionKeys[key][1]();
+				const getter = optionKeys[key][1];
+				options[key] = typeof getter === "function" ? getter() : this[getter];
 			} else if (key in this) {
 				options[key] = this[key];
 			}
@@ -160,7 +182,8 @@ export default class LajiMap {
 				zoomControl: false,
 				attributionControl: false,
 				noWrap: true,
-				continuousWorld: false
+				continuousWorld: false,
+				doubleClickZoom: false
 			});
 
 			this.tileLayers = {};
@@ -287,7 +310,17 @@ export default class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
+			dblclick: (e) => { // We have to handle dblclick zoom manually, since the default event can't be cancelled.
+				setImmediate(() => {
+					if (this._disableDblClickZoom) return;
+					const oldZoom = this.map.getZoom();
+					const delta = this.map.options.zoomDelta;
+					const zoom = e.originalEvent.shiftKey ? oldZoom - delta : oldZoom + delta;
+					this.map.setZoomAround(e.containerPoint, zoom);
+				});
+			},
 			click: () => this._interceptClick(),
+			mousemove: ({latlng}) => {this._mouseLatLng = latlng;},
 			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => {
 				this.drawing = true;
@@ -310,8 +343,8 @@ export default class LajiMap {
 			locationerror: (...params) => this._onLocationNotFound(...params),
 			"contextmenu.show": (e) => {
 				if (e.relatedTarget) {
-					this._hoveredLayer = e.relatedTarget;
-					const tuple = this._getIdxTupleByLayer(this._hoveredLayer);
+					this._contextMenuLayer = e.relatedTarget;
+					const tuple = this._getIdxTupleByLayer(this._contextMenuLayer);
 					if (tuple) {
 						const [dataIdx, featureIdx] = tuple;
 						if (this.data[dataIdx] && this.data[dataIdx].editable) {
@@ -323,15 +356,18 @@ export default class LajiMap {
 				this._interceptClick();
 			},
 			"contextmenu.hide": () => {
-				if (!this._hoveredLayer) return;
-				const tuple = this._getIdxTupleByLayer(this._hoveredLayer);
+				const contextMenuLayer = this._contextMenuLayer;
+				this._contextMenuLayer = undefined;
+				if (!contextMenuLayer) return;
+				const tuple = this._getIdxTupleByLayer(contextMenuLayer);
 				if (tuple) {
 					const [dataIdx, featureIdx] = tuple;
 					if (this.data[dataIdx] && this.data[dataIdx].editable) {
 						this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
-						this.updateLayerStyle(this._hoveredLayer);
+						this.updateLayerStyle(contextMenuLayer);
 					}
 				}
+				this.map.fire("mousemove", {latlng: this._mouseLatLng});
 			}
 		});
 
@@ -816,10 +852,13 @@ export default class LajiMap {
 			if (!this._interceptClick()) this._onActiveChange(item.idx, lajiMapIdx);
 		});
 
-		item.group.on("dblclick", ({layer}) => {
-			this.map.doubleClickZoom.disable();
+		item.group.on("dblclick", e => {
+			this._disableDblClickZoom = true;
+			const{layer} = e;
 			this._setEditable(layer);
-			setImmediate(() => this.map.doubleClickZoom.enable());
+			setTimeout(() => {
+				this._disableDblClickZoom = false;
+			}, 10);
 		});
 
 		item.group.on("mouseover", e => {
@@ -866,11 +905,20 @@ export default class LajiMap {
 		});
 	}
 
+	_getAllData() {
+		return [this.getDraw(), ...this.data];
+	}
+
+	setZoomToData(value = false) {
+		this._zoomToData = value;
+		if (value) this.zoomToData();
+	}
+
 	@dependsOn("data", "draw", "center", "zoom")
 	zoomToData() {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
-		const featureGroup = L.featureGroup([this.getDraw(), ...this.data].filter(item => item).reduce((layers, item) => {
+		const featureGroup = L.featureGroup(this._getAllData().filter(item => item).reduce((layers, item) => {
 			const newLayers = item.group.getLayers().map(layer => {
 				if (layer instanceof L.Circle) {  // getBounds fails for circles
 					const {lat, lng} = layer.getLatLng();
@@ -2036,10 +2084,7 @@ export default class LajiMap {
 
 	updateLayerStyle(layer) {
 		if (!layer) return;
-
-		let style = this._getStyleForLayer(layer, style);
-
-		this.setLayerStyle(layer, style);
+		this.setLayerStyle(layer, this._getStyleForLayer(layer, this._getStyleForLayer(layer)));
 	}
 
 	_getDefaultDrawStyle() {

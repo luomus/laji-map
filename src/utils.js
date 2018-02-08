@@ -322,23 +322,28 @@ export function WKTToGeoJSON(WKT) {
 }
 
 
-export function latLngSegmentsToGeoJSONGeometry(segments) {
-	const segmentPairs = segments.map((segment, i) => {
-		const next = segments[i + 1];
-		return [segment, next];
+export function latLngSegmentsToGeoJSONGeometry(_lines) {
+	let lines = [];
+	_lines.forEach(segments => {
+		lines.push([]);
+		const segmentPairs = segments.map((segment, i) => {
+			const next = segments[i + 1];
+			return [segment, next];
+		});
+
+		segmentPairs.forEach(pair => {
+			const line = lines[lines.length - 1];
+			line.push(pair[0][0]);
+			if (pair[1] && !L.latLng(pair[0][1]).equals(L.latLng(pair[1][0]))) {
+				line.push(pair[0][1]);
+				lines.push([]);
+			} else if (!pair[1]) {
+				line.push(pair[0][1]);
+			}
+		});
 	});
 
-	const lines = [[]];
-	segmentPairs.forEach(pair => {
-		const line = lines[lines.length - 1];
-		line.push(pair[0][0]);
-		if (pair[1] && !L.latLng(pair[0][1]).equals(L.latLng(pair[1][0]))) {
-			line.push(pair[0][1]);
-			lines.push([]);
-		} else if (!pair[1]) {
-			line.push(pair[0][1]);
-		}
-	});
+	lines = lines.filter(line => line.length);
 
 	// TODO we aren't checking for length of zero
 	const isMulti = lines.length > 1;
@@ -542,7 +547,7 @@ export function validateLatLng(latlng, latLngValidator) {
 }
 
 export function roundMeters(meters, accuracy = 1) {
-	return Math.round(parseInt(meters) / accuracy) * accuracy;
+	return accuracy ?  Math.round(parseInt(meters) / accuracy) * accuracy : meters;
 }
 
 export function createTextInput() {
@@ -609,3 +614,25 @@ export function combineColors(...colors) {
 		return rgb + hex;
 	}, "#");
 }
+
+export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
+	const lines = geoJSONLineToLatLngSegmentArrays(LTFeature.geometry);
+	let i = 0;
+	let distance = 0;
+	let prevDistance = distance;
+	lines.some(line => {
+		prevDistance = distance;
+		line.some(segment => {
+			const latLngs = segment.map(c => L.latLng(c));
+			distance += latLngs[0].distanceTo(latLngs[1]);
+		});
+		if (i === idx) {
+			return true;
+		}
+		i++;
+	});
+
+	return [prevDistance, distance].map(m => roundMeters(m, round));
+}
+
+export const capitalizeFirstLetter = string => string.charAt(0).toUpperCase() + string.slice(1);

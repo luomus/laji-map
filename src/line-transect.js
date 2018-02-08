@@ -618,17 +618,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					if (this._LTdragPoint) this._LTdragPoint.bringToFront();
 				}
 				[prevClosestPointIdxTuple, this._closebyPointIdxTuple].forEach(idxTuple => {
-					if (idxTuple) {
-						const layers = [this._getLayerForIdxTuple(this._pointLayers, ...idxTuple)];
-						const overlappingNonadjacentIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleStr];
-						const overlappingAdjacentIdxTuple = this._overlappingAdjacentPointIdxTuples[idxTupleStr];
-						if (overlappingNonadjacentIdxTuple) {
-							layers.push(this._getLayerForIdxTuple(this._pointLayers, ...overlappingNonadjacentIdxTuple));
-						} else if (overlappingAdjacentIdxTuple) {
-							layers.push(this._getLayerForIdxTuple(this._pointLayers, ...overlappingAdjacentIdxTuple));
-						}
-						layers.forEach(layer => layer && layer.setStyle(this._getStyleForLTLayer(layer)));
+					if (!idxTuple) return;
+					const layers = this._layerExistsForIdxTuple(this._pointLayers, ...idxTuple)
+						? [this._getLayerForIdxTuple(this._pointLayers, ...idxTuple)]
+						: [];
+					const overlappingNonadjacentIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleStr];
+					const overlappingAdjacentIdxTuple = this._overlappingAdjacentPointIdxTuples[idxTupleStr];
+					if (overlappingNonadjacentIdxTuple) {
+						layers.push(this._getLayerForIdxTuple(this._pointLayers, ...overlappingNonadjacentIdxTuple));
+					} else if (overlappingAdjacentIdxTuple) {
+						layers.push(this._getLayerForIdxTuple(this._pointLayers, ...overlappingAdjacentIdxTuple));
 					}
+					layers.forEach(layer => layer && layer.setStyle(this._getStyleForLTLayer(layer)));
 				});
 				if (this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
 					this._updateLTTooltip({dblclick: this.translations.toEditPoint, rightclick: this.translations.toDeletePoint});
@@ -971,6 +972,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_getLayerForIdxTuple(layer, lineIdx, segmentIdx) {
 		return layer[lineIdx][segmentIdx];
+	}
+
+	_layerExistsForIdxTuple(layer, lineIdx, segmentIdx) {
+		return layer && layer[lineIdx] && layer[lineIdx][segmentIdx];
 	}
 
 	_getIdxTuplePrecedingPoint(lineIdx, pointIdx) {

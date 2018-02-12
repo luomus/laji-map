@@ -1468,6 +1468,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	triggerDrawing(featureType) {
 		try {
 			this.drawControl._toolbars.draw._modes[featureType.toLowerCase()].handler.enable();
+			this.addDrawAbortListeners();
 		} catch (e) {
 			super.triggerDrawing(featureType);
 		}

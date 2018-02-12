@@ -389,7 +389,11 @@ export default class LajiMap {
 			isEscape = (e.keyCode == 27);
 		}
 		if (isEscape) {
-			this._triggerKeyEvent(ESC, e);
+			if (this._triggerKeyEvent(ESC, e)) {
+				e.preventDefault();
+				e.stopPropagation();
+				return true;
+			}
 		}
 	}
 
@@ -421,7 +425,10 @@ export default class LajiMap {
 	_triggerKeyEvent(key, e) {
 		if (this._keyListeners && this._keyListeners[key])  {
 			for (let fn of this._keyListeners[key]) {
-				if (fn(e) === true) break;
+				const result = fn(e);
+				if (result !== false) {
+					return true;
+				}
 			}
 		}
 	}
@@ -1150,10 +1157,14 @@ export default class LajiMap {
 	_cancelDrawRemove() {
 		const layers = this._drawRemoveLayers;
 		this._stopDrawRemove();
-		if (layers) layers.forEach(layer => {
-			this.getDraw().group.addLayer(layer);
-			this.updateLayerStyle(layer);
-		});
+		if (layers) {
+			layers.forEach(layer => {
+				this.getDraw().group.addLayer(layer);
+				this.updateLayerStyle(layer);
+			});
+			return true;
+		}
+		return false;
 	}
 
 	_startDrawReverse() {
@@ -2196,25 +2207,31 @@ export default class LajiMap {
 		};
 	}
 
+	abortDrawing(e) {
+		if (e.preventDefault) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
+		if (this._draftDrawLayer) this._draftDrawLayer.disable();
+		this._draftDrawLayer = undefined;
+		this._removeKeyListener(ESC, this.abortDrawing);
+		this.map.off("controlClick", this.abortDrawing);
+		this.map.removeEventListener("draw:created", this.abortDrawing);
+	}
+
+	addDrawAbortListeners() {
+		this.map.on("draw:created", this.abortDrawing);
+		this.map.on("controlClick", this.abortDrawing);
+		this._addKeyListener(ESC, this.abortDrawing);
+	}
+
 	triggerDrawing(featureType) {
-		const layer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
-		layer.enable();
+		this._draftDrawLayer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
+		this._draftDrawLayer.enable();
 
-		const abort = (e) => {
-			if (e.preventDefault) {
-				e.preventDefault();
-				e.stopPropagation();
-			}
-			layer.disable();
-			this._removeKeyListener(ESC, abort);
-			this.map.off("controlClick", abort);
-			this.map.removeEventListener("draw:created", abort);
-		};
+		this.addDrawAbortListeners();
 
-		this.map.on("draw:created", abort);
-		this.map.on("controlClick", abort);
-
-		return layer;
+		return this._draftDrawLayer;
 	}
 
 	getFeatureTypes() {

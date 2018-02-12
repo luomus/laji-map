@@ -103,6 +103,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this.stopSelectLTSegmentMode();
 				return true;
 			}
+			return false;
 		});
 	}
 

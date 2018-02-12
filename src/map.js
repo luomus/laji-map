@@ -1991,14 +1991,20 @@ export default class LajiMap {
 
 	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles = {}) {
 		const item = this.data[dataIdx];
-		const dataStyles = feature ?
-			this._fillStyleWithGlobals(dataIdx, featureIdx, feature) :
-			item.getFeatureStyle({
+		let dataStyles = undefined;
+		if (item.getFeatureStyle) {
+			dataStyles = item.getFeatureStyle({
 				dataIdx,
 				featureIdx: featureIdx,
 				feature: feature || item.featureCollection.features[featureIdx],
 				item
 			});
+			if (dataStyles.color && !dataStyles.fillColor) {
+				dataStyles.fillColor = dataStyles.color;
+			}
+		} else {
+			dataStyles = this._fillStyleWithGlobals(dataIdx, featureIdx, feature);
+		}
 
 		let layer = undefined;
 		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs(dataIdx, featureIdx);
@@ -2104,7 +2110,12 @@ export default class LajiMap {
 
 
 	_getDefaultDataClusterStyle = (item) => () => {
-		return {color: item.editable ? EDITABLE_DATA_LAYER_COLOR : DATA_LAYER_COLOR, opacity: 1};
+		let color = item.editable ? EDITABLE_DATA_LAYER_COLOR : DATA_LAYER_COLOR;
+		if (item.getFeatureStyle) {
+			const style = item.getFeatureStyle();
+			if (style.color) color = style.color;
+		}
+		return {color, opacity: 1};
 	}
 
 	_getDefaultDraftStyle(dataIdx) {

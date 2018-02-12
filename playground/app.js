@@ -10,6 +10,12 @@ class App {
 				featureCollection: {
 					type: "featureCollection",
 					features: [
+						{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":
+						[
+							[22.207004189222086,60.47430300256853],
+							[22.311658377997933,60.7]
+						]
+						}},
 						{
 							"type": "Feature",
 							"properties": {},
@@ -61,6 +67,9 @@ class App {
 				getPopup: (idx) => {
 					return `gray ${idx}`;
 				},
+				getFeatureStyle: () => {
+					return {color: "#f00"};
+				},
 				cluster: true,
 				on: {
 					click: (e, {idx, feature, layer}) => {
@@ -83,23 +92,7 @@ class App {
 						[22.207004189222086,60.47430300256853],
 						[22.311658377997933,60.43453495634962]
 					]
-					}},
-					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.207004189222086,60.47430300256853]}},
-					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,60.43453495634962]}},
-					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[22.311658377997933,61.43453495634962]}},
-					{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[23.311658377997933,61.43453495634962], "radius": 2000}},
-					{
-						"type": "Feature",
-						"properties": {},
-						"geometry": {
-							"type": "Point",
-							"coordinates": [
-								22.104264017028992,
-								60.40403173483798
-							],
-							radius: 4000
-						}
-					}
+					}}
 				],
 			},
 			getPopup: (idx, geometry, callback) => {
@@ -129,22 +122,23 @@ class App {
 
 		const options = {
 			rootElem: document.getElementById("root"),
-			lineTransect: {
-				feature: lineTransects.features[2],
-				activeIdx: 0,
-				onChange: this.onLTChange
-			},
+			//lineTransect: {
+			//	feature: lineTransects.features[2],
+			//	activeIdx: 0,
+			//	onChange: this.onLTChange
+			//},
 			lang: "fi",
 			popupOnHover: true,
-			center: {
-				"lat": 60.3499057749654,
-				"lng": 21.160612106323246
-			},
-			zoom: 12,
+			//center: {
+			//	"lat": 60.3499057749654,
+			//	"lng": 21.160612106323246
+			//},
+			//zoom: 12,
+			zoomToData: true,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			//draw: this.drawOptions,
-			//data: this.data,
+			draw: this.drawOptions,
+			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {

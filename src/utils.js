@@ -586,6 +586,13 @@ export function combineColors(...colors) {
 		colors.pop();
 	}
 
+	colors = colors.map(color => {
+		if (color.length === 4) {
+			color = `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+		}
+		return color;
+	});
+
 	const rv = colors.map(color => color.substring(1,3));
 	const gv = colors.map(color => color.substring(3,5));
 	const bv = colors.map(color => color.substring(5,7));

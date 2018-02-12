@@ -71,6 +71,7 @@ export default class LajiMap {
 		this._initializeMap();
 		this._stopDrawRemove = this._stopDrawRemove.bind(this);
 		this._stopDrawReverse = this._stopDrawReverse.bind(this);
+		this.abortDrawing = this.abortDrawing.bind(this);
 	}
 
 	getOptionKeys() {

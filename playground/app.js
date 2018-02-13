@@ -125,7 +125,8 @@ class App {
 			lineTransect: {
 				feature: lineTransects.features[2],
 				activeIdx: 0,
-				onChange: this.onLTChange
+				onChange: this.onLTChange,
+				printMode: true
 			},
 			lang: "fi",
 			popupOnHover: true,
@@ -137,8 +138,8 @@ class App {
 			zoomToData: true,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			draw: this.drawOptions,
-			data: this.data,
+			//draw: this.drawOptions,
+			//data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {

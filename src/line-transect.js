@@ -30,6 +30,7 @@ const editPointStyle = {...pointStyle, fillColor: editLineStyle.color};
 const hoverPointStyle = {...pointStyle, fillColor: hoverLineStyle.color};
 const editablePointStyle = {...pointStyle, radius: 5, fillColor: "#f00", fillOpacity: 0.7};
 const overlappingPointStyle = {...pointStyle, radius: 5, weight: 3, color: "#000"};
+const firstOverlappingPointStyle = {...overlappingPointStyle, fillColor: "#f00"};
 const seamPointStyle = {...pointStyle, radius: 7};
 const closebyEditPointStyle = {...editPointStyle, radius: 9};
 const closebyPointStyle = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity};
@@ -141,7 +142,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
 		if (!data) return;
 
-		let {feature, activeIdx, onChange, getFeatureStyle, getTooltip} = data;
+		let {feature, activeIdx, onChange, getFeatureStyle, getTooltip, printMode} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
 		this._LTActiveIdx = activeIdx;
@@ -150,6 +151,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this._LTHistory = [{geometry: feature.geometry}];
 		this._LTHistoryPointer = 0;
+
+		if (printMode) this._LTPrintMode = true;
 
 		this.setLineTransectGeometry(feature.geometry);
 		this._origLineTransect = L.featureGroup(this._allSegments.map(line =>
@@ -299,6 +302,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this._setIdxTupleMappings();
 		this._setLineTransectEvents();
+
+		this._setLTPrintLines();
 
 		provide(this, "lineTransect");
 	}
@@ -1072,6 +1077,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const isEditPoint = isPoint && idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple);
 		const isClosebyPoint = isPoint && idxTuplesEqual(idxTuple, this._closebyPointIdxTuple);
 		const isOverlappingEndOrStartPoint = isPoint && this._overlappingNonadjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
+		const isFirstOverlappingEndOrStartPoint = isOverlappingEndOrStartPoint && Object.keys(this._overlappingNonadjacentPointIdxTuples)[0] === idxTupleToIdxTupleStr(...idxTuple);
+
 		const isSeamPoint = isPoint && this._overlappingAdjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 
 		const _isHover = lineIdx === hoveredLineIdx || lineIdx === contextMenuLineIdx;
@@ -1090,21 +1097,32 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover && !isActive
 				: _isHover && !isActive;
 
+		function createPrintStylesFor(styles) {
+			return Object.keys(styles).reduce((o, key) => {
+				o[key] = {opacity: 0, fillOpacity: 0};
+				return o;
+			}, {});
+		}
+
 		const lineStyles = {
 			normal: lineStyle,
 			odd: lineStyle,
 			active: activeLineStyle,
 			edit: editLineStyle,
-			hover: hoverLineStyle,
+			hover: hoverLineStyle
 		};
+		lineStyles.print = createPrintStylesFor(lineStyles);
+		lineStyles.print.normal = {weight: 1, color: "#000"};
+		lineStyles.print.odd = {weight: 1, color: "#000"};
 
 		const corridorStyles = {
 			normal: corridorStyle,
 			odd: oddCorridorStyle,
 			active: activeCorridorStyle,
 			edit: editCorridorStyle,
-			hover: hoverCorridorStyle,
+			hover: hoverCorridorStyle
 		};
+		corridorStyles.print = createPrintStylesFor(corridorStyles);
 
 		const pointStyles = {
 			normal: pointStyle,
@@ -1117,7 +1135,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			closeby: closebyPointStyle,
 			seam: seamPointStyle,
 			overlappingSeam: overlappingPointStyle,
+			firstOverlappingSeam: firstOverlappingPointStyle
 		};
+		pointStyles.print = createPrintStylesFor(pointStyles);
+		pointStyles.print.firstOverlappingSeam = {...firstOverlappingPointStyle, weight: 0};
+		pointStyles.print.overlappingSeam = {...overlappingPointStyle, fillColor: "#f77", weight: 0};
 
 		let styleObject = undefined;
 		if (type === L.Polygon) {
@@ -1127,6 +1149,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		} else if (type === L.CircleMarker) {
 			styleObject = pointStyles;
 		}
+		if (this._LTPrintMode) {
+			styleObject = styleObject.print;
+		}
 
 		if (isEditPoint && isClosebyPoint) {
 			return styleObject.closebyEdit;
@@ -1134,16 +1159,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			return styleObject.closeby;
 		} else if (isEditPoint) {
 			return styleObject.editPoint;
-		}	else if (isEdit) {
-			return styleObject.edit;
-		} else if (isHover) {
-			return styleObject.hover;
-		} else if (isActive) {
-			return styleObject.active;
+		} else if (isFirstOverlappingEndOrStartPoint) {
+			return styleObject.firstOverlappingSeam;
 		} else if (isOverlappingEndOrStartPoint) {
 			return styleObject.overlappingSeam;
 		} else if (isSeamPoint) {
 			return styleObject.seam;
+		} else if (isEdit && !this._LTPrintMode) {
+			return styleObject.edit;
+		} else if (isHover && !this._LTPrintMode) {
+			return styleObject.hover;
+		} else if (isActive && !this._LTPrintMode) {
+			return styleObject.active;
 		} else {
 			if (this._getLTFeatureStyle) {
 				const style = this._getLTFeatureStyle({lineIdx, segmentIdx, type, style: styleObject.normal});
@@ -1545,6 +1572,42 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._disposeTooltip();
 			this._ltTooltip = undefined;
 		}
+	}
+
+	_setLTPrintLines() {
+		if (!this._LTPrintMode) {
+			return;
+		}
+		let counter = 0;
+		let offset = 0;
+
+		let prevEnd = undefined;
+		this._allSegments.forEach(segment => {
+			let [start, end] = segment.getLatLngs();
+			const distance = start.distanceTo(end);
+			if (prevEnd && !prevEnd.equals(start)) {
+				offset = 0;
+			}
+			prevEnd = end;
+
+			let usedDistance = -offset;
+			let nonusedDistance = distance + offset;
+			let splitted = false;
+			while (nonusedDistance >= 100) {
+				nonusedDistance -= 100;
+				usedDistance += 100;
+				counter++;
+				const major = !(counter % 5);
+				const lineAngleFromNorth = this._degreesFromNorth(segment.getLatLngs());
+				const lineCenter = L.GeometryUtil.destination(segment.getLatLngs()[0], lineAngleFromNorth, usedDistance);
+				const lineStart = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth - 90, (major ? 2 : 1) * LT_WIDTH_METERS);
+				const lineEnd = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth + 90, (major ? 2 : 1) * LT_WIDTH_METERS);
+				const line = L.polyline([lineStart, lineEnd], {color: "#000", weight: 1}).addTo(this.map);
+				line.bindTooltip(`distance: ${distance}<br/> nonusedDistance: ${nonusedDistance}<br/> usedDistance: ${usedDistance}`);
+				splitted = true;
+			}
+			offset = splitted ? nonusedDistance : offset + nonusedDistance;
+		});
 	}
 };
 

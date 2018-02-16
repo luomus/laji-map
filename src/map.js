@@ -783,6 +783,27 @@ export default class LajiMap {
 			};
 			this.initializeDataItem(item, dataIdx);
 			return;
+		// Flatten features which have a geometry collection a geometry to features of the featureCollection
+		} else if (item.featureCollection && item.featureCollection.features.some(feature => feature.geometry && feature.geometry.type === "GeometryCollection")) {
+			const {geometry, ..._featureCollection} = item.featureCollection; // eslint-disable-line no-unused-vars
+			item = {
+				...item,
+				featureCollection: {
+					..._featureCollection,
+					features: _featureCollection.features.reduce((features, f) => {
+						if (f.geometry.type === "GeometryCollection") {
+							f.geometry.geometries.forEach(g => {
+								features.push({type: "Feature", geometry: g});
+							});
+						} else {
+							features.push(f);
+						}
+						return features;
+					}, [])
+				}
+			};
+			this.initializeDataItem(item, dataIdx);
+			return;
 		}
 
 		const features = item.featureCollection && item.featureCollection.features ?

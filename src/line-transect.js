@@ -1076,8 +1076,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const contextMenuLineIdx = (this.getIdxsFromLayer(this._contextMenuLayer) || {}).lineIdx;
 		const isEditPoint = isPoint && idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple);
 		const isClosebyPoint = isPoint && idxTuplesEqual(idxTuple, this._closebyPointIdxTuple);
-		const isOverlappingEndOrStartPoint = isPoint && this._overlappingNonadjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
-		const isFirstOverlappingEndOrStartPoint = isOverlappingEndOrStartPoint && Object.keys(this._overlappingNonadjacentPointIdxTuples)[0] === idxTupleToIdxTupleStr(...idxTuple);
+		const isFirstOverlappingEndOrStartPoint = isPoint && ((!this._overlappingNonadjacentPointIdxTuples["0-0"] && idxTuplesEqual(idxTuple, [0, 0])) || (this._overlappingNonadjacentPointIdxTuples["0-0"] && Object.keys(this._overlappingNonadjacentPointIdxTuples)[0] === idxTupleToIdxTupleStr(...idxTuple)));
+		const isOverlappingEndOrStartPoint = isPoint && !isFirstOverlappingEndOrStartPoint && this._overlappingNonadjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 
 		const isSeamPoint = isPoint && this._overlappingAdjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 

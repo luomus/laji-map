@@ -677,6 +677,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_getContextMenuForPoint(lineIdx, pointIdx) {
+		if (this._LTPrintMode) return {contextmenuItems: []};
 		return {
 			contextmenuInheritItems: false,
 			contextmenuItems: [
@@ -773,6 +774,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_setLTPointEditable(lineIdx, pointIdx) {
+		if (this._LTPrintMode) return;
 		if (idxTuplesEqual(this._LTEditPointIdxTuple, [lineIdx, pointIdx])) return;
 
 		if (this._LTEditPointIdxTuple !== undefined) {
@@ -1076,8 +1078,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const contextMenuLineIdx = (this.getIdxsFromLayer(this._contextMenuLayer) || {}).lineIdx;
 		const isEditPoint = isPoint && idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple);
 		const isClosebyPoint = isPoint && idxTuplesEqual(idxTuple, this._closebyPointIdxTuple);
-		const isFirstOverlappingEndOrStartPoint = isPoint && ((!this._overlappingNonadjacentPointIdxTuples["0-0"] && idxTuplesEqual(idxTuple, [0, 0])) || (this._overlappingNonadjacentPointIdxTuples["0-0"] && Object.keys(this._overlappingNonadjacentPointIdxTuples)[0] === idxTupleToIdxTupleStr(...idxTuple)));
-		const isOverlappingEndOrStartPoint = isPoint && !isFirstOverlappingEndOrStartPoint && this._overlappingNonadjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
+		const isFirstOverlappingEndOrStartPoint = isPoint && (
+			(!this._overlappingNonadjacentPointIdxTuples["0-0"] && idxTuplesEqual(idxTuple, [0, 0])) ||
+			(this._overlappingNonadjacentPointIdxTuples["0-0"] && (Object.keys(this._overlappingNonadjacentPointIdxTuples)[0] === idxTupleToIdxTupleStr(...idxTuple) || idxTuplesEqual([0,0], idxTuple)))
+		);
+		const isOverlappingEndOrStartPoint = isPoint &&
+			!isFirstOverlappingEndOrStartPoint &&
+			this._overlappingNonadjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 
 		const isSeamPoint = isPoint && this._overlappingAdjacentPointIdxTuples.hasOwnProperty(idxTupleToIdxTupleStr(...idxTuple));
 
@@ -1155,7 +1162,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		if (isEditPoint && isClosebyPoint) {
 			return styleObject.closebyEdit;
-		} else if (isClosebyPoint) {
+		} else if (isClosebyPoint && !this._LTPrintMode) {
 			return styleObject.closeby;
 		} else if (isEditPoint) {
 			return styleObject.editPoint;
@@ -1548,6 +1555,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_updateLTTooltip(messages) {
+		if (this._LTPrintMode) return;
+
 		let message = "";
 		if (this._tooltip && this._tooltip !== this._ltTooltip) return;
 
@@ -1602,8 +1611,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				const lineCenter = L.GeometryUtil.destination(segment.getLatLngs()[0], lineAngleFromNorth, usedDistance);
 				const lineStart = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth - 90, (major ? 2 : 1) * LT_WIDTH_METERS);
 				const lineEnd = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth + 90, (major ? 2 : 1) * LT_WIDTH_METERS);
-				const line = L.polyline([lineStart, lineEnd], {color: "#000", weight: 1}).addTo(this.map);
-				line.bindTooltip(`distance: ${distance}<br/> nonusedDistance: ${nonusedDistance}<br/> usedDistance: ${usedDistance}`);
+				L.polyline([lineStart, lineEnd], {color: "#000", weight: 1}).addTo(this.map);
 				splitted = true;
 			}
 			offset = splitted ? nonusedDistance : offset + nonusedDistance;

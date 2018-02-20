@@ -582,7 +582,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				() => this.getDraw().polyline !== false
 			],
 			lineTransect: [
-				() => isProvided(this, "lineTransect")
+				() => isProvided(this, "lineTransect"),
+				() => !this._LTPrintMode
+
 			]
 		};
 

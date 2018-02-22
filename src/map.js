@@ -63,7 +63,8 @@ export default class LajiMap {
 			center:  [65, 26],
 			zoom: 2,
 			popupOnHover: false,
-			draw: false
+			draw: false,
+			bodyAsDialogRoot: true
 		};
 
 		this.options = {};
@@ -102,6 +103,7 @@ export default class LajiMap {
 			rectangle: true,
 			circle: true,
 			marker: true,
+			bodyAsDialogRoot: "setBodyAsDialogRoot"
 		};
 	}
 
@@ -150,14 +152,34 @@ export default class LajiMap {
 		this.blockerElem.className = "laji-map-blocker";
 
 		this.container.appendChild(this.mapElem);
-		document.body.appendChild(this.blockerElem);
 
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
 
+		if (this._dialogRoot) this.setBodyAsDialogRoot(this._dialogRoot === document.body);
+
 		if (this.map) this.map.invalidateSize();
 
 		provide(this, "rootElem");
+	}
+
+	@dependsOn("rootElem")
+	setBodyAsDialogRoot(value = true) {
+		if (!depsProvided(this, "setBodyAsDialogRoot", arguments)) return;
+		const prevBodyRoot = this._dialogRoot;
+		if (value) {
+			this._dialogRoot = document.body;
+		} else {
+			this._dialogRoot = this.rootElem;
+		}
+		if (prevBodyRoot) {
+			if (this.blockerElem.parentNode === prevBodyRoot) prevBodyRoot.removeChild(this.blockerElem);
+			if (this.blockerElem.className.includes("fixed")) {
+				this.blockerElem.className = this.blockerElem.className.replace(" fixed", "");
+			}
+		}
+		this._dialogRoot.appendChild(this.blockerElem);
+		if (value) this.blockerElem.className = `${this.blockerElem.className} fixed`;
 	}
 
 	getMMLProj() {
@@ -661,7 +683,7 @@ export default class LajiMap {
 
 	cleanDOM() {
 		if (this.rootElem) this.rootElem.removeChild(this.container);
-		if (this.blockerElem) document.body.removeChild(this.blockerElem);
+		if (this.blockerElem) this._dialogRoot.removeChild(this.blockerElem);
 		if (this._closeDialog) this._closeDialog();
 
 		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {

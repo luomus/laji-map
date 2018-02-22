@@ -980,7 +980,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (onClose) onClose(e);
 		}
 
-		this.showClosableElement(_container, close, !!"showBlocker", document.body);
+		this.showClosableElement(_container, close, !!"showBlocker", this._dialogRoot);
 	}
 
 	openCoordinatesInputDialog() {

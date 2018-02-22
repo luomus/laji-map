@@ -83,7 +83,7 @@
 	background-position: -124px -5px;
 }
 .laji-map-blocker {
-	position: fixed;
+	position: absolute;
 	display: none;
 	top: 0;
 	width: 100%;
@@ -91,6 +91,9 @@
 	background-color: black;
 	opacity: 0.3;
 	z-index: 1001;
+}
+.laji-map-blocker.fixed {
+	position: fixed;
 }
 .laji-map-dialog {
 	position: absolute;

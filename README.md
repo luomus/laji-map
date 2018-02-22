@@ -48,6 +48,7 @@ polyline                                        | Object                    | - 
 rectangle                                       | Object                    | -                                   | Global path style options.
 circle                                          | Object                    | -                                   | Global Path style options.
 marker                                          | Object                    | -                                   | Global Path style options.
+bodyAsDialogRoot                                | Boolean                   | true                                | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the rootElem will be used as the root DOM node for dialogs.
 
 ### Data options ###
 

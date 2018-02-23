@@ -206,7 +206,8 @@ export default class LajiMap {
 				attributionControl: false,
 				noWrap: true,
 				continuousWorld: false,
-				doubleClickZoom: false
+				doubleClickZoom: false,
+				zoomSnap: 0
 			});
 
 			this.tileLayers = {};
@@ -960,13 +961,14 @@ export default class LajiMap {
 		return [this.getDraw(), ...this.data];
 	}
 
-	setZoomToData(value = false) {
-		this._zoomToData = value;
-		if (value) this.zoomToData();
+	setZoomToData(options) {
+		this._zoomToData = options;
+		if (options) this.zoomToData(isObject(options) ? options : true);
 	}
 
 	@dependsOn("data", "draw", "center", "zoom")
-	zoomToData() {
+	zoomToData(options = {}) {
+		if (!Object.keys(options).length) throw new Error();
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
 		const featureGroup = L.featureGroup(this._getAllData().filter(item => item).reduce((layers, item) => {
@@ -982,8 +984,17 @@ export default class LajiMap {
 			return layers;
 		}, []));
 
-		const bounds = featureGroup.getBounds();
-		if (bounds.isValid()) this.map.fitBounds(bounds);
+		let bounds = featureGroup.getBounds();
+		if (bounds.isValid()) {
+			const {paddingInMeters} = options;
+			if (paddingInMeters) {
+				bounds = L.latLngBounds(
+					bounds.getSouthWest().toBounds(paddingInMeters).getSouthWest(),
+					bounds.getNorthEast().toBounds(paddingInMeters).getNorthEast()
+				);
+			}
+			this.map.fitBounds(bounds, options);
+		}
 	}
 
 	_initializeLayer(layer, ...indexTuple) {

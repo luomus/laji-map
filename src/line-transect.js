@@ -159,7 +159,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
 		)).addTo(this.map).bringToBack();
 
-		if (this.getOptions().zoomToData) this.zoomToData();
+		if (this.getOptions().zoomToData) this.zoomToData(this.getOptions().zoomToData);
 	}
 
 	setLTActiveIdx(idx) {

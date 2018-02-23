@@ -135,11 +135,11 @@ class App {
 			//	"lng": 21.160612106323246
 			//},
 			//zoom: 12,
-			zoomToData: true,
+			zoomToData: {paddingInMeters: 200},
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			draw: this.drawOptions,
-			data: this.data,
+			//draw: this.drawOptions,
+			//data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
@@ -168,21 +168,21 @@ class App {
 		const map = new LajiMap(options);
 		this.map = map;
 
-		map.addData({
-			geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
-			getFeatureStyle: (e) => {
-				const {featureIdx} = e;
-				return {
-					weight: featureIdx,
-					opacity: 1,
-					fillOpacity: 1,
-					color: "#0f0"
-				};
-			},
-			getPopup: (idx) => {
-				return `green ${idx}`;
-			}
-		});
+		//map.addData({
+		//	geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
+		//	getFeatureStyle: (e) => {
+		//		const {featureIdx} = e;
+		//		return {
+		//			weight: featureIdx,
+		//			opacity: 1,
+		//			fillOpacity: 1,
+		//			color: "#0f0"
+		//		};
+		//	},
+		//	getPopup: (idx) => {
+		//		return `green ${idx}`;
+		//	}
+		//});
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

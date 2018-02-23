@@ -53,6 +53,7 @@ export function dependsOn(...deps) {
  */
 export function provide(target, prov) {
 	function executeDependencies(target, prov) {
+
 		const {depsExecuted} = target;
 		(providerToDependency[prov] || []).filter(dep => depIsProvided(target, dep)).forEach(dep => {
 			if (!target.params[dep] && !reflected[dep]) return;

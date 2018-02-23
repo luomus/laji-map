@@ -968,7 +968,6 @@ export default class LajiMap {
 
 	@dependsOn("data", "draw", "center", "zoom")
 	zoomToData(options = {}) {
-		if (!Object.keys(options).length) throw new Error();
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
 		const featureGroup = L.featureGroup(this._getAllData().filter(item => item).reduce((layers, item) => {

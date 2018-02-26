@@ -272,6 +272,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						eventName: "lineTransect:pointadd"
 					},
 					{
+						name: "shiftPoint",
+						text: this.translations.ShiftPoint,
+						iconCls: "laji-map-line-transect-shift-point-glyph",
+						fn: (...params) => this.startLTPointShift(...params),
+						finishFn: (...params) => this.stopLTPointShift(...params),
+						eventName: "lineTransect:pointshift"
+					},
+					{
 						name: "undo",
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
@@ -500,6 +508,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				deleteSegment: true,
 				deletePoints: true,
 				createPoint: true,
+				shiftPoint: true,
 				undo: true,
 				redo: true
 			},

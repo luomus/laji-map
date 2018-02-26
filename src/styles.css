@@ -150,6 +150,11 @@
 	font-size: 9px;
 	white-space: nowrap;
 }
+.laji-map .laji-map-line-transect-shift-point-glyph:before {
+	content: "ALKU";
+	font-weight: bold;
+	font-size: 7px;
+}
 
 .laji-map .laji-map-warning {
 	position: absolute;

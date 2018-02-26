@@ -34,6 +34,7 @@ const firstOverlappingPointStyle = {...overlappingPointStyle, fillColor: "#f00"}
 const seamPointStyle = {...pointStyle, radius: 7};
 const closebyEditPointStyle = {...editPointStyle, radius: 9};
 const closebyPointStyle = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity};
+const hintPointStyle = {...closebyPointStyle, radius: 7};
 
 const LT_WIDTH_METERS = 25;
 
@@ -252,6 +253,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			overlappingsCoordsToIdxs[stringCoords] = [lineIdx, segmentIdx];
 		};
 
+		let prevEnd = undefined;
+		this._lineIdxsTupleStringsToLineGroupIdxs = {};
+		let groupIdx = 0;
+		const indexSegment = (segment, lineIdx, segmentIdx) => {
+			const [start, end] = segment.map(c => L.latLng(c));
+			if (prevEnd && !start.equals(prevEnd)) {
+				groupIdx++;
+			}
+			this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] = groupIdx;
+			prevEnd = end;
+		};
+
 		wholeLinesAsSegments.forEach((wholeLineAsSegments, lineIdx) => {
 			[pointLayers, lineLayers, corridorLayers].forEach(layers => {
 				layers.push([]);
@@ -272,6 +285,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				));
 
 				const lngLat = segment[0];
+				indexSegment(segment, lineIdx, segmentIdx);
 				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
 				pointLayer.push(L.circleMarker(
 					segment[0],
@@ -315,7 +329,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const {geometry} = this._LTHistory[this._LTHistoryPointer];
 		this.setLineTransectGeometry(geometry);
 		if (events) {
-			this._triggerEvent(events, this._onLTChange);
+			this._triggerEvent(events.slice(0).reverse(), this._onLTChange);
 		}
 	}
 
@@ -637,13 +651,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					} else if (overlappingAdjacentIdxTuple) {
 						layers.push(this._getLayerForIdxTuple(this._pointLayers, ...overlappingAdjacentIdxTuple));
 					}
-					layers.forEach(layer => layer && layer.setStyle(this._getStyleForLTLayer(layer)));
+					layers.forEach(layer => layer && this._setStyleForLTLayer(layer));
 				});
 				if (this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
 					this._updateLTTooltip({dblclick: this.translations.toEditPoint, rightclick: this.translations.toDeletePoint});
 				} else {
 					this._updateLTTooltip({dblclick: undefined, rightclick: undefined});
 				}
+			}
+		}).on("click", e => {
+			L.DomEvent.stopPropagation(e);
+			if (this._closebyPointIdxTuple) {
+				this._getPoint(...this._closebyPointIdxTuple, (...idxTuple) => this.commitLTPointShift(...idxTuple));
 			}
 		}).on("dblclick", e => {
 			L.DomEvent.stopPropagation(e);
@@ -776,7 +795,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_setLTPointEditable(lineIdx, pointIdx) {
-		if (this._LTPrintMode) return;
+		if (this._LTPrintMode || this._pointLTShiftMode) return;
 		if (idxTuplesEqual(this._LTEditPointIdxTuple, [lineIdx, pointIdx])) return;
 
 		if (this._LTEditPointIdxTuple !== undefined) {
@@ -806,14 +825,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			.bringToFront()
 			.on("mouseover", () => {
 				this._LTdragPoint.setStyle(style);
-				point.setStyle(this._getStyleForLTLayer(point));
+				this._setStyleForLTLayer(point);
 				this._updateLTTooltip({drag: this.translations.toMovePoint});
 			}).on("mouseout", () => {
 				this._LTdragPoint.setStyle({...style, opacity: 0.3});
-				point.setStyle(this._getStyleForLTLayer(point));
+				this._setStyleForLTLayer(point);
 				this._updateLTTooltip({drag: undefined});
 			})
-			.on("remove", () => point.setStyle(this._getStyleForLTLayer(point)))
+			.on("remove", () => this._setStyleForLTLayer(point))
 			.on("mousedown", this._startLTDragPointHandler)
 			.on("mouseup", this._stopLTDragPointHandler);
 
@@ -824,13 +843,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.map.on("mouseup", this._stopLTDragCorridorHandler);
 
 		this._clearTooltipDescription(lineIdx);
-		point.setStyle(this._getStyleForLTLayer(point));
+		this._setStyleForLTLayer(point);
 		[
 			this._getIdxTuplePrecedingEditPoint(),
 			this._getIdxTupleFollowingEditPoint()
 		].filter(i => i)
 		 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => this._getLayerForIdxTuple(layers, ...idxTuple)))
-		 .forEach(layerPair => layerPair.forEach(layer => layer.setStyle(this._getStyleForLTLayer(layer))));
+		 .forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 	}
 
 	_commitPointDrag() {
@@ -1079,7 +1098,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const [hoveredLineIdx, hoveredSegmentIdx] = this._hoveredIdxTuple || [];
 		const contextMenuLineIdx = (this.getIdxsFromLayer(this._contextMenuLayer) || {}).lineIdx;
 		const isEditPoint = isPoint && idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple);
-		const isClosebyPoint = isPoint && idxTuplesEqual(idxTuple, this._closebyPointIdxTuple);
+		const isHintPoint = isPoint && this._pointLTShiftMode && this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === 0 && (segmentIdx === 0 || segmentIdx === this._pointLayers[lineIdx].length - 1);
+		const isClosebyPoint = isPoint &&
+			idxTuplesEqual(idxTuple, this._closebyPointIdxTuple)
+			&& (!this._pointLTShiftMode || (isHintPoint));
 		const isFirstOverlappingEndOrStartPoint = isPoint && (
 			(!this._overlappingNonadjacentPointIdxTuples["0-0"] && idxTuplesEqual(idxTuple, [0, 0])) ||
 			(this._overlappingNonadjacentPointIdxTuples["0-0"] && (Object.keys(this._overlappingNonadjacentPointIdxTuples)[0] === idxTupleToIdxTupleStr(...idxTuple) || idxTuplesEqual([0,0], idxTuple)))
@@ -1142,6 +1164,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			hover: hoverPointStyle,
 			closebyEdit: closebyEditPointStyle,
 			closeby: closebyPointStyle,
+			hint: hintPointStyle,
 			seam: seamPointStyle,
 			overlappingSeam: overlappingPointStyle,
 			firstOverlappingSeam: firstOverlappingPointStyle
@@ -1166,6 +1189,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			return styleObject.closebyEdit;
 		} else if (isClosebyPoint && !this._LTPrintMode) {
 			return styleObject.closeby;
+		} else if (isHintPoint) {
+			return styleObject.hint;
 		} else if (isEditPoint) {
 			return styleObject.editPoint;
 		} else if (isFirstOverlappingEndOrStartPoint) {
@@ -1189,9 +1214,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	_getStyleForLTLayer(layer) {
+	_setStyleForLTLayer(layer) {
 		const {lineIdx, segmentIdx} = this.getIdxsFromLayer(layer);
-		return this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, layer.constructor);
+		layer.setStyle(this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, layer.constructor))
 	}
 
 	_updateLTStyleForLineIdx(lineIdx) {
@@ -1208,7 +1233,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (layerGroup === this._pointLayers && segmentIdx === 0 || (this._pointLayers[lineIdx] && segmentIdx === this._pointLayers[lineIdx].length - 1)) return;
 			const lineGroup = layerGroup[lineIdx] || [];
 			const layer = lineGroup[segmentIdx];
-			if (layer) layer.setStyle(this._getStyleForLTLayer(layer));
+			if (layer) this._setStyleForLTLayer(layer);
 		});
 	}
 
@@ -1368,6 +1393,80 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("SplitLineTooltip");
+	}
+
+	startLTPointShift() {
+		this._pointLTShiftMode = true;
+		for (const lineIdx of Object.keys(this._lineIdxsTupleStringsToLineGroupIdxs)) {
+			const groupIdx = this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx];
+			if (groupIdx === 0) {
+				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, lineIdx, 0));
+				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, lineIdx, this._pointLayers[lineIdx].length - 1));
+			}
+		}
+		this._createTooltip("ShiftPointTooltip");
+	}
+
+	stopLTPointShift() {
+		this._pointLTShiftMode = false;
+		for (const lineIdx of Object.keys(this._lineIdxsTupleStringsToLineGroupIdxs)) {
+			const groupIdx = this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx];
+			if (groupIdx === 0) {
+				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, lineIdx, 0));
+				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, lineIdx, this._pointLayers[lineIdx].length - 1));
+			}
+		}
+		this._updateLTTooltip({
+			click: undefined
+		});
+	}
+
+	commitLTPointShift(_lineIdx, pointIdx) {
+		this.stopLTPointShift();
+
+		let lineIdx = pointIdx === 0
+			? _lineIdx
+			: pointIdx === this._pointLayers[_lineIdx].length - 1
+				? _lineIdx + 1
+				: _lineIdx;
+
+		let prevEnd = undefined;
+		let idx = 0;
+		for (idx in this._lineLayers) {
+			const line = this._lineLayers[idx];
+			const start = line[0].getLatLngs()[0];
+			const end = line[line.length - 1].getLatLngs()[1];
+			if (prevEnd && !start.equals(prevEnd)) {
+				break;
+			}
+			prevEnd = end;
+		}
+		const connectedLines = this._lineLayers.slice(0, idx);
+		const nonConnectedLines = this._lineLayers.slice(idx, this._lineLayers.length);
+
+		const headLines = connectedLines.slice(0, lineIdx);
+		const tailLines = connectedLines.slice(lineIdx, connectedLines.length);
+
+		const prevFeature = this._formatLTFeatureOut();
+		this._lineLayers = [...tailLines, ...headLines, ...nonConnectedLines];
+
+		const events = [];
+		headLines.forEach((line, idx) => {
+			events.push({
+				type: "insert",
+				idx: connectedLines.length + idx,
+				geometry: lineToGeoJSONLine(line)
+			});
+		});
+		headLines.forEach(() => {
+			events.push({
+				type: "delete",
+				idx: 0
+			});
+		});
+
+		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, {events, prevFeature});
+		this._triggerEvent(events, this._onLTChange);
 	}
 
 	startSelectLTSegmentMode(onSelect, tooltip, mode = "segment") { // mode should be "segment" or "line"

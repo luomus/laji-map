@@ -549,4 +549,14 @@ export default {
 		en: "Edit point",
 		sv: "Redigera poäng"
 	},
+	shiftPoint: {
+		fi: "Muuta aloituspistettä",
+		en: "Change the starting point",
+		sv: "Ändra startpunkten"
+	},
+	ShiftPointTooltip: {
+		fi: "<b>Klikkaa</b> jotain punaista keltaista pistettä asettaaksesi sen aloituspisteeksi",
+		en: "<b>Click</b> some of the red points to change the starting point",
+		sv: "<b>Klicka</b> på några av de röd punkterna för att ändra startpunkten"
+	}
 };

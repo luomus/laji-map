@@ -367,7 +367,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	// Opens a dialog and asks which point to use, if points are overlapping.
 	_getPoint(lineIdx, pointIdx, callback, questionTranslationKey = "FirstOrLastPoint", firstTranslationKey = "FirstPartitive", lastTranslationKey = "LastPartitive" ) {
 		const overlappingPointIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleToIdxTupleStr(lineIdx, pointIdx)];
-		if (overlappingPointIdxTuple !== undefined) {
+		const latLng = this._getLayerForIdxTuple(this._pointLayers, lineIdx, pointIdx).getLatLng();
+		const _latLng = overlappingPointIdxTuple ? this._getLayerForIdxTuple(this._pointLayers, ...overlappingPointIdxTuple).getLatLng() : undefined;
+		if (overlappingPointIdxTuple !== undefined && latLng.equals(_latLng)) {
 			const firstIdxTuple = overlappingPointIdxTuple;
 			const lastIdxTuple = [lineIdx, pointIdx];
 			const lastPoint = this._getLayerForIdxTuple(this._pointLayers, ...lastIdxTuple);

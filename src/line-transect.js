@@ -577,6 +577,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this._getPoint(...idxTuple, (...idxTuple) => this._setLTPointEditable(...idxTuple));
 		}).on("click", e => {
 			L.DomEvent.stopPropagation(e);
+			const {lineIdx, segmentIdx, idxTuple} = this.getIdxsFromEvent(e);
+			if (this._pointLTShiftMode && this._pointCanBeShiftedTo(...idxTuple)) {
+				this.commitLTPointShift(segmentIdx === 0 ? lineIdx : lineIdx + 1);
+				return;
+			}
 			this._interceptClick();
 			delayClick(() => {
 				const {lineIdx} = this.getIdxsFromEvent(e);
@@ -597,6 +602,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			delayClick(() => {
 				const {lineIdx, idxTuple} = this.getIdxsFromEvent(e);
 
+				if (this._closebyPointIdxTuple && this._pointLTShiftMode && this._pointCanBeShiftedTo(...this._closebyPointIdxTuple)) {
+					const [closeByLineIdx, closeBySegmentIdx] = this._closebyPointIdxTuple;
+					this.commitLTPointShift(closeBySegmentIdx === 0 ? closeByLineIdx : closeByLineIdx + 1);
+					return;
+				}
 				if (this._selectLTMode) {
 					this._hoveredIdxTuple = undefined;
 					if (this._onSelectLT) this._onSelectLT(...idxTuple);

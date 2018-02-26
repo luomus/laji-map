@@ -256,7 +256,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		let prevEnd = undefined;
 		this._lineIdxsTupleStringsToLineGroupIdxs = {};
 		let groupIdx = 0;
-		const indexSegment = (segment, lineIdx, segmentIdx) => {
+		const indexSegment = (segment, lineIdx) => {
 			const [start, end] = segment.map(c => L.latLng(c));
 			if (prevEnd && !start.equals(prevEnd)) {
 				groupIdx++;
@@ -699,24 +699,34 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_getContextMenuForPoint(lineIdx, pointIdx) {
 		if (this._LTPrintMode) return {contextmenuItems: []};
+		const contextmenuItems = [
+			{
+				text: this.translations.RemovePoint,
+				callback: () => {
+					this._getPoint(lineIdx, pointIdx, (...idxTuple) => this.removeLTPoint(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
+				},
+				iconCls: "glyphicon glyphicon-remove-sign"
+			},
+			{
+				text: this.translations.EditPoint,
+				callback: () => {
+					this._getPoint(lineIdx, pointIdx, (...idxTuple) => this._setLTPointEditable(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
+				},
+				iconCls: "glyphicon glyphicon-remove-sign"
+			}
+		];
+
+		if (this._pointCanBeShiftedTo(lineIdx, pointIdx)) {
+			contextmenuItems.push({
+				text: this.translations.ShiftPoint,
+				callback: () => this.commitLTPointShift(lineIdx, pointIdx),
+				iconCls: "laji-map-line-transect-shift-point-glyph"
+			});
+		}
+
 		return {
 			contextmenuInheritItems: false,
-			contextmenuItems: [
-				{
-					text: this.translations.RemovePoint,
-					callback: () => {
-						this._getPoint(lineIdx, pointIdx, (...idxTuple) => this.removeLTPoint(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
-					},
-					iconCls: "glyphicon glyphicon-remove-sign"
-				},
-				{
-					text: this.translations.EditPoint,
-					callback: () => {
-						this._getPoint(lineIdx, pointIdx, (...idxTuple) => this._setLTPointEditable(...idxTuple), "RemoveFirstOrLastPoint", "First", "Last");
-					},
-					iconCls: "glyphicon glyphicon-remove-sign"
-				}
-			]
+			contextmenuItems
 		};
 	}
 
@@ -1098,7 +1108,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const [hoveredLineIdx, hoveredSegmentIdx] = this._hoveredIdxTuple || [];
 		const contextMenuLineIdx = (this.getIdxsFromLayer(this._contextMenuLayer) || {}).lineIdx;
 		const isEditPoint = isPoint && idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple);
-		const isHintPoint = isPoint && this._pointLTShiftMode && this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === 0 && (segmentIdx === 0 || segmentIdx === this._pointLayers[lineIdx].length - 1);
+		const isHintPoint = isPoint && this._pointLTShiftMode && this._pointCanBeShiftedTo(lineIdx, segmentIdx);
 		const isClosebyPoint = isPoint &&
 			idxTuplesEqual(idxTuple, this._closebyPointIdxTuple)
 			&& (!this._pointLTShiftMode || (isHintPoint));
@@ -1216,7 +1226,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	_setStyleForLTLayer(layer) {
 		const {lineIdx, segmentIdx} = this.getIdxsFromLayer(layer);
-		layer.setStyle(this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, layer.constructor))
+		layer.setStyle(this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, layer.constructor));
 	}
 
 	_updateLTStyleForLineIdx(lineIdx) {
@@ -1394,6 +1404,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("SplitLineTooltip");
 	}
+
+	_pointCanBeShiftedTo(lineIdx, pointIdx) {
+		return this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === 0 && (pointIdx === 0 || pointIdx === this._pointLayers[lineIdx].length - 1);
+	}
+
 
 	startLTPointShift() {
 		this._pointLTShiftMode = true;

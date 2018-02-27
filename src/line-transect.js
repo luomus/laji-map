@@ -156,9 +156,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (printMode) this._LTPrintMode = true;
 
 		this.setLineTransectGeometry(feature.geometry);
-		this._origLineTransect = L.featureGroup(this._allSegments.map(line =>
-			L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
-		)).addTo(this.map).bringToBack();
+		if (!this._LTPrintMode) {
+			this._origLineTransect = L.featureGroup(this._allSegments.map(line =>
+				L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
+			)).addTo(this.map).bringToBack();
+		}
 
 		if (this.getOptions().zoomToData) this.zoomToData(this.getOptions().zoomToData);
 	}
@@ -274,23 +276,39 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const corridorLayer = corridorLayers[lineIdx];
 
 			wholeLineAsSegments.forEach((segment, segmentIdx) => {
-				lineLayer.push(L.polyline(
+				const line = L.polyline(
 					segment,
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polyline)
-				).setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}}));
+				);
+				if (!this._LTPrintMode) {
+					line.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+				} else if (!L.latLng(segment[0]).equals(prevEnd)) {
+					const degree = this._degreesFromNorth(segment);
+					const direction = L.GeometryUtil.destination(L.latLng(segment[0]), degree, 500);
+					L.polyline([segment[0], direction], {opacity: 0, fillOpacity: 0})
+						.setText("→", {repeat: false, attributes: {dy: 5, "font-size": 50}})
+						.addTo(this.map);
+					if (lineIdx === 0) {
+						L.polyline([segment[0], direction].map(c => L.GeometryUtil.destination(L.latLng(c), degree - 90, 30)), {opacity: 0, fillOpacity: 0})
+							.setText("Alku", {repeat: false, attributes: {dy: 5, "font-size": 20}})
+							.addTo(this.map);
+					}
+				}
+				lineLayer.push(line);
 
 				corridorLayer.push(L.polygon(
 					this._getCorridorCoordsForLine(segment),
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polygon)
 				));
 
-				const lngLat = segment[0];
-				indexSegment(segment, lineIdx, segmentIdx);
-				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
 				pointLayer.push(L.circleMarker(
 					segment[0],
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.CircleMarker)
 				));
+
+				const lngLat = segment[0];
+				indexSegment(segment, lineIdx, segmentIdx);
+				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
 
 				if (segmentIdx === wholeLineAsSegments.length - 1) {
 					const lngLat = segment[1];

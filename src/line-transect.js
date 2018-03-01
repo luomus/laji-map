@@ -276,6 +276,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const corridorLayer = corridorLayers[lineIdx];
 
 			wholeLineAsSegments.forEach((segment, segmentIdx) => {
+				const lngLat = segment[0];
+				indexSegment(segment, lineIdx, segmentIdx);
+				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
+
 				const line = L.polyline(
 					segment,
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polyline)
@@ -305,10 +309,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					segment[0],
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.CircleMarker)
 				));
-
-				const lngLat = segment[0];
-				indexSegment(segment, lineIdx, segmentIdx);
-				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
 
 				if (segmentIdx === wholeLineAsSegments.length - 1) {
 					const lngLat = segment[1];
@@ -1437,7 +1437,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === 0 && (pointIdx === 0 || pointIdx === this._pointLayers[lineIdx].length - 1);
 	}
 
-
 	startLTPointShift() {
 		this._pointLTShiftMode = true;
 		for (const lineIdx of Object.keys(this._lineIdxsTupleStringsToLineGroupIdxs)) {
@@ -1459,9 +1458,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, lineIdx, this._pointLayers[lineIdx].length - 1));
 			}
 		}
-		this._updateLTTooltip({
-			click: undefined
-		});
+		this._disposeTooltip();
 	}
 
 	commitLTPointShift(_lineIdx, pointIdx) {

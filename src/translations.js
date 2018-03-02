@@ -500,6 +500,11 @@ export default {
 		sv: "Finlands terränglaserkarta"
 	},
 	geobiologicalProvinces: {
+		fi: "Eliömaakunnat",
+		en: "Biogeographical provinces",
+		sv: "biogeografiska provinser"
+	},
+	geobiologicalProvinceBorders: {
 		fi: "Eliömaakuntien rajat",
 		en: "Borders of biogeographical provinces",
 		sv: "Gränserna av Biogeografiska provinser"

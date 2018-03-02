@@ -246,7 +246,14 @@ export default class LajiMap {
 			this.availableTileLayers = this.tileLayers;
 
 			this.overlaysByNames = {
-				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/INSPIRE/wms", {
+				geobiologicalProvinces: L.tileLayer.wms("http://maps.luomus.fi/geoserver/ows", {
+					maxZoom: 15,
+					layers: "INSPIRE:fi_fmnh_br_extended",
+					format: "image/png",
+					transparent: true,
+					version: "1.3.0",
+				}).setOpacity(0.5),
+				geobiologicalProvinceBorders: L.tileLayer.wms("http://maps.luomus.fi/geoserver/INSPIRE/wms", {
 					maxZoom: 15,
 					layers: "INSPIRE:fi_fmnh_br",
 					styles: "harmaaviiva",

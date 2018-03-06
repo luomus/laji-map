@@ -277,7 +277,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			wholeLineAsSegments.forEach((segment, segmentIdx) => {
 				const lngLat = segment[0];
-				indexSegment(segment, lineIdx, segmentIdx);
 				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
 
 				const line = L.polyline(
@@ -292,12 +291,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					L.polyline([segment[0], direction], {opacity: 0, fillOpacity: 0})
 						.setText("→", {repeat: false, attributes: {dy: 5, "font-size": 50}})
 						.addTo(this.map);
-					if (lineIdx === 0) {
+					if (lineIdx === 0 && segmentIdx === 0) {
 						L.polyline([segment[0], direction].map(c => L.GeometryUtil.destination(L.latLng(c), degree - 90, 30)), {opacity: 0, fillOpacity: 0})
 							.setText("Alku", {repeat: false, attributes: {dy: 5, "font-size": 20}})
 							.addTo(this.map);
 					}
 				}
+				indexSegment(segment, lineIdx, segmentIdx);
 				lineLayer.push(line);
 
 				corridorLayer.push(L.polygon(
@@ -315,9 +315,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx + 1);
 					pointLayer.push(L.circleMarker(lngLat, this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx + 1, L.CircleMarker)));
 				}
-
 			});
-
 		});
 
 		this._allSegments = flattenMatrix(lineLayers);

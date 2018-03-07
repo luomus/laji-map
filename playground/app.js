@@ -126,7 +126,7 @@ class App {
 				feature: lineTransects.features[2],
 				activeIdx: 0,
 				onChange: this.onLTChange,
-				//printMode: true
+				printMode: true
 			},
 			lang: "fi",
 			popupOnHover: true,
@@ -135,7 +135,7 @@ class App {
 			//	"lng": 21.160612106323246
 			//},
 			//zoom: 12,
-			zoomToData: {paddingInMeters: 200},
+			zoomToData: {paddingInMeters: 100},
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			//draw: this.drawOptions,

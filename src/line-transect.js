@@ -292,7 +292,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 						.setText("→", {repeat: false, attributes: {dy: 5, "font-size": 50}})
 						.addTo(this.map);
 					if (lineIdx === 0 && segmentIdx === 0) {
-						L.polyline([segment[0], direction].map(c => L.GeometryUtil.destination(L.latLng(c), degree - 90, 30)), {opacity: 0, fillOpacity: 0})
+						L.polyline([segment[0], direction].map(c => L.GeometryUtil.destination(L.latLng(c), degree - 90, 60)), {opacity: 0, fillOpacity: 0})
 							.setText("Alku", {repeat: false, attributes: {dy: 5, "font-size": 20}})
 							.addTo(this.map);
 					}

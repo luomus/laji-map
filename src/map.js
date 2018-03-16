@@ -240,7 +240,8 @@ export default class LajiMap {
 				attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors"
 			});
 			this.tileLayers.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-				subdomains:["mt0","mt1","mt2","mt3"]
+				subdomains:["mt0","mt1","mt2","mt3"],
+				attribution: "&copy; <a href=\"https://developers.google.com/maps/terms\" target=\"_blank\" rel=\"noopener noreferrer\">Google</a>"
 			});
 
 			this.availableTileLayers = this.tileLayers;

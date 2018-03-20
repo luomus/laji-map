@@ -687,7 +687,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 		}).on("click", e => {
 			L.DomEvent.stopPropagation(e);
-			if (this._closebyPointIdxTuple) {
+			if (this._closebyPointIdxTuple && this._pointLTShiftMode) {
 				this._getPoint(...this._closebyPointIdxTuple, (...idxTuple) => this.commitLTPointShift(...idxTuple));
 			}
 		}).on("dblclick", e => {

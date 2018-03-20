@@ -380,14 +380,14 @@ export default {
 		sv: "Ladda upp textkoordinater."
 	},
 	geoDataFormatDetectionError: {
-		fi: "Formaatin tunnistus epäonnistui.",
-		en: "Format detection failed.",
-		sv: "Formatdetektering misslyckades."
+		fi: "Formaatin tunnistus epäonnistui",
+		en: "Format detection failed",
+		sv: "Formatdetektering misslyckades"
 	},
 	GeoDataCRSDetectionError: {
-		fi: "Koordinaattijärjestelmän tunnistus epäonnistui.",
-		en: "Coordinate system detection failed.",
-		sv: "Detektering av koordinatsystemet misslyckades."
+		fi: "Koordinaattijärjestelmän tunnistus epäonnistui",
+		en: "Coordinate system detection failed",
+		sv: "Detektering av koordinatsystemet misslyckades"
 	},
 	jsonParseError: {
 		fi: "JSON:in purku epäonnistui",
@@ -410,9 +410,9 @@ export default {
 		sv: "Parsing av koordinater misslyckades."
 	},
 	lineGeoDataFormatError: {
-		fi: "Kuvion purku tekstisyötteestä epäonnistui.",
-		en: "Parsing feature from text input failed.",
-		sv: "Parsing av figuren från textinmatning misslyckades."
+		fi: "Kuvion purku tekstisyötteestä epäonnistui",
+		en: "Parsing feature from text input failed",
+		sv: "Parsing av figuren från textinmatning misslyckades"
 	},
 	line: {
 		fi: "Rivi",

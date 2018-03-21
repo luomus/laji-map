@@ -143,7 +143,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
 		if (!data) return;
 
-		let {feature, activeIdx, onChange, getFeatureStyle, getTooltip, printMode} = data;
+		let {feature, activeIdx, onChange, getFeatureStyle, getTooltip, printMode, editable = true} = data;
 		this.LTFeature = feature;
 		this._onLTChange = onChange;
 		this._LTActiveIdx = activeIdx;
@@ -155,8 +155,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		if (printMode) this._LTPrintMode = true;
 
+		this._LTEditable = this._LTPrintMode ? false : editable;
+
 		this.setLineTransectGeometry(feature.geometry);
-		if (!this._LTPrintMode) {
+		if (this._LTEditable) {
+			if (this._origLineTransect) {
+				this._origLineTransect.remove();
+			}
 			this._origLineTransect = L.featureGroup(this._allSegments.map(line =>
 				L.polyline(line._latlngs, origLineStyle).setText("→", {repeat: true, attributes: {...origLineStyle, dy: 5, "font-size": 18}, below: true})
 			)).addTo(this.map).bringToBack();
@@ -724,7 +729,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_getContextMenuForPoint(lineIdx, pointIdx) {
-		if (this._LTPrintMode) return {contextmenuItems: []};
+		if (!this._LTEditable) return {contextmenuItems: []};
 		const contextmenuItems = [
 			{
 				text: this.translations.RemovePoint,
@@ -831,7 +836,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_setLTPointEditable(lineIdx, pointIdx) {
-		if (this._LTPrintMode || this._pointLTShiftMode) return;
+		if (!this._LTEditable || this._pointLTShiftMode) return;
 		if (idxTuplesEqual(this._LTEditPointIdxTuple, [lineIdx, pointIdx])) return;
 
 		if (this._LTEditPointIdxTuple !== undefined) {
@@ -1221,9 +1226,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			styleObject = styleObject.print;
 		}
 
-		if (isEditPoint && isClosebyPoint) {
+		if (isEditPoint && isClosebyPoint && this._LTEditable) {
 			return styleObject.closebyEdit;
-		} else if (isClosebyPoint && !this._LTPrintMode) {
+		} else if (isClosebyPoint && this._LTEditable) {
 			return styleObject.closeby;
 		} else if (isHintPoint) {
 			return styleObject.hint;
@@ -1235,11 +1240,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			return styleObject.overlappingSeam;
 		} else if (isSeamPoint) {
 			return styleObject.seam;
-		} else if (isEdit && !this._LTPrintMode) {
+		} else if (isEdit && this._LTEditable) {
 			return styleObject.edit;
-		} else if (isHover && !this._LTPrintMode) {
+		} else if (isHover && this._LTEditable) {
 			return styleObject.hover;
-		} else if (isActive && !this._LTPrintMode) {
+		} else if (isActive && this._LTEditable) {
 			return styleObject.active;
 		} else {
 			if (this._getLTFeatureStyle) {
@@ -1694,7 +1699,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_updateLTTooltip(messages) {
-		if (this._LTPrintMode) return;
+		if (!this._LTEditable) return;
 
 		let message = "";
 		if (this._tooltip && this._tooltip !== this._ltTooltip) return;

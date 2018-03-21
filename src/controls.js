@@ -592,7 +592,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect"),
-				() => !this._LTPrintMode
+				() => this._LTEditable
 
 			]
 		};

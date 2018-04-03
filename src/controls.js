@@ -284,14 +284,16 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
 						fn: (...params) => this.LTUndo(...params),
-						onAdd: () => this.updateLTUndoButton()
+						onAdd: () => this.updateLTUndoButton(),
+						disabled: this._LTHistoryPointer <= 0
 					},
 					{
 						name: "redo",
 						text: this.translations.Redo,
 						iconCls: "laji-map-line-transect-redo-glyph",
 						fn: (...params) => this.LTRedo(...params),
-						onAdd: () => this.updateLTRedoButton()
+						onAdd: () => this.updateLTRedoButton(),
+						disabled: !this._LTHistory || this._LTHistoryPointer >= this._LTHistory.length - 1
 					}
 				]
 			}
@@ -593,7 +595,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			lineTransect: [
 				() => isProvided(this, "lineTransect"),
 				() => this._LTEditable
-
 			]
 		};
 

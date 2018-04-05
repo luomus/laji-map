@@ -5,6 +5,7 @@ import {
 	EPSG2393WKTString,
 	EPSG3067WKTString
 } from "./globals";
+import {Earth} from "../node_modules/leaflet/src/geo/crs/CRS.Earth";
 
 export function reverseCoordinate(c) {
 	return c.slice(0).reverse();
@@ -321,6 +322,20 @@ export function WKTToGeoJSON(WKT) {
 	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "PROJCS");
 }
 
+export function latLngOrTupleToTuple(latLng) {
+	if (isObject(latLng)) {
+		return [latLng.lat, latLng.lng];
+	}
+	return latLng;
+}
+
+export function latLngTuplesEqual(first, second) {
+	return [0, 1].every(idx => first[idx] === second[idx]);
+}
+
+export function latLngTuplesDistance(first, second) {
+	return Earth.distance(...[first, second].map(([lat, lng]) => {return {lat, lng};}));
+}
 
 export function latLngSegmentsToGeoJSONGeometry(_lines) {
 	let lines = [];
@@ -333,12 +348,13 @@ export function latLngSegmentsToGeoJSONGeometry(_lines) {
 
 		segmentPairs.forEach(pair => {
 			const line = lines[lines.length - 1];
-			line.push(pair[0][0]);
-			if (pair[1] && !L.latLng(pair[0][1]).equals(L.latLng(pair[1][0]))) {
-				line.push(pair[0][1]);
+			const [first, last] = pair;
+			line.push(first[0]);
+			if (pair[1] && !latLngTuplesEqual(first[1], last[0])) {
+				line.push(first[1]);
 				lines.push([]);
-			} else if (!pair[1]) {
-				line.push(pair[0][1]);
+			} else if (!last) {
+				line.push(first[1]);
 			}
 		});
 	});
@@ -376,7 +392,7 @@ export function detectFormat(data) {
 }
 
 export function detectCRSFromLatLng(latLng) {
-	if (latLng instanceof L.LatLng) {
+	if (isObject(latLng) && latLng.lat && latLng.lng) {
 		latLng = [latLng.lat, latLng.lng];
 	}
 	if (validateLatLng(latLng, wgs84Validator)) {
@@ -630,8 +646,7 @@ export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
 	lines.some(line => {
 		prevDistance = distance;
 		line.some(segment => {
-			const latLngs = segment.map(c => L.latLng(c));
-			distance += latLngs[0].distanceTo(latLngs[1]);
+			distance += latLngTuplesDistance(...segment);
 		});
 		if (i === idx) {
 			return true;

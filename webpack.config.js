@@ -22,7 +22,12 @@ module.exports = {
 				loaders: ["babel"],
 				include: [
 					path.join(__dirname, "src"),
-					path.join(__dirname, "playground")
+					path.join(__dirname, "playground"),
+					path.join(__dirname, "node_modules", "leaflet", "src", "geo", "crs"),
+					path.join(__dirname, "node_modules", "leaflet", "src", "geo", "LatLng"),
+					path.join(__dirname, "node_modules", "leaflet", "src", "geometry", "Bounds"),
+					path.join(__dirname, "node_modules", "leaflet", "src", "geometry", "Point"),
+					path.join(__dirname, "node_modules", "leaflet", "src", "core", "Util")
 				]
 			},
 			{

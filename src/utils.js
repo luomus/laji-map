@@ -5,7 +5,6 @@ import {
 	EPSG2393WKTString,
 	EPSG3067WKTString
 } from "./globals";
-import {Earth} from "../node_modules/leaflet/src/geo/crs/CRS.Earth";
 
 export function reverseCoordinate(c) {
 	return c.slice(0).reverse();
@@ -333,8 +332,22 @@ export function latLngTuplesEqual(first, second) {
 	return [0, 1].every(idx => first[idx] === second[idx]);
 }
 
+// Copy pasted from leaflet/src/geo/crs/CRS.Earth.js for headless usage.
+// distance between two geographical points using spherical law of cosines approximation
+function distance(latlng1, latlng2) {
+	var rad = Math.PI / 180,
+		lat1 = latlng1.lat * rad,
+		lat2 = latlng2.lat * rad,
+		sinDLat = Math.sin((latlng2.lat - latlng1.lat) * rad / 2),
+		sinDLon = Math.sin((latlng2.lng - latlng1.lng) * rad / 2),
+		a = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon,
+		c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	//return this.R * c;
+	return 6371000 * c;
+}
+
 export function latLngTuplesDistance(first, second) {
-	return Earth.distance(...[first, second].map(([lat, lng]) => {return {lat, lng};}));
+	return distance(...[first, second].map(([lat, lng]) => {return {lat, lng};}));
 }
 
 export function latLngSegmentsToGeoJSONGeometry(_lines) {

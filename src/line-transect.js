@@ -1040,7 +1040,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords));
 		}
 
-		const getFollowingLineCoords = () => [latlng, followingLine.getLatLngs()[1]]
+		const getFollowingLineCoords = () => [latlng, followingLine.getLatLngs()[1]];
 
 		if (followingIdxTuple) {
 			const lineCoords = getFollowingLineCoords();

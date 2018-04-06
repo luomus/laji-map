@@ -220,9 +220,9 @@ export default {
 		sv: "<strong>Fel:</strong>"
 	},
 	addFeatureByCoordinates: {
-		fi: "Lisää kuvio koordinaattien perusteella.",
-		en: "Add a feature according to coordinates.",
-		sv: "Lägg till en figur på basis av koordinater."
+		fi: "Lisää kuvio koordinaattien perusteella",
+		en: "Add a feature according to coordinates",
+		sv: "Lägg till en figur på basis av koordinater"
 	},
 	forestVegetationZones: {
 		fi: "Metsäkasvillisuusvyöhykkeet",
@@ -280,9 +280,9 @@ export default {
 		sv: "EKS rutnät"
 	},
 	copyDrawnFeatures: {
-		fi: "Kopioi piirrettyjen kuvioiden koordinaatit.",
-		en: "Copy the coordinates of the drawn features.",
-		sv: "Kopiera koordinaterna för de dragna figurerna."
+		fi: "Kopioi piirrettyjen kuvioiden koordinaatit",
+		en: "Copy the coordinates of the drawn features",
+		sv: "Kopiera koordinaterna för de dragna figurerna"
 	},
 	clearMap: {
 		fi: "Tyhjennä kartta",

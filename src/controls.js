@@ -384,14 +384,14 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 							const buttonName = getSubControlName(name, subName);
 							this.buttonActions[buttonName] = {};
 							if (!that._controlIsAllowed(buttonName)) return;
-							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, buttonName, eventName]));
+							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, buttonName, eventName]), buttonName);
 							if (_onAdd) _onAdd();
 						});
 
 						return this.container;
 					} : function() {
 						const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-						that._controlButtons[name] = that._createControlItem(this, container, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, name, eventName]));
+						that._controlButtons[name] = that._createControlItem(this, container, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, name, eventName]), name);
 						if (_onAdd) _onAdd();
 						return container;
 					};
@@ -645,8 +645,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		}
 	}
 
-	_createControlButton(that, container, fn) {
-		const elem = L.DomUtil.create("a", "", container);
+	_createControlButton(that, container, fn, name) {
+		const elem = L.DomUtil.create("a", name ? "button-" + name.replace(".", "_") : "", container);
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
 		L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
@@ -658,8 +658,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		return elem;
 	}
 
-	_createControlItem(that, container, glyphName, title, fn) {
-		const elem = this._createControlButton(that, container, fn);
+	_createControlItem(that, container, glyphName, title, fn, name) {
+		const elem = this._createControlButton(that, container, fn, name);
 		L.DomUtil.create("span", glyphName, elem);
 		elem.title = title;
 
@@ -1467,7 +1467,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			controlGroup.forEach(control => {
 				const controlName = getSubControlName(groupName, control.name);
 				if ("text" in control && this._controlIsAllowed(controlName)) {
-					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({...control, callback: control.fn});
+					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({
+						...control,
+						callback: () => this.container.querySelector(`.button-${controlName.replace(".", "_")}`).click()
+					});
 					groupAdded = true;
 				}
 			});

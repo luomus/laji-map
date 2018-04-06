@@ -138,8 +138,8 @@ class App {
 			zoomToData: {paddingInMeters: 200},
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			//draw: this.drawOptions,
-			//data: this.data,
+			draw: this.drawOptions,
+			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
@@ -147,7 +147,7 @@ class App {
 				coordinates: true,
 				draw: {
 					copy: true,
-					upload: false,
+					upload: true,
 					clear: true,
 					reverse: true,
 					delete: true,

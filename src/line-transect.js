@@ -288,19 +288,22 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					segment,
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polyline)
 				);
+				const degree = this._degreesFromNorth(segment);
+				const direction = L.GeometryUtil.destination(L.latLng(segment[0]), degree, 500);
 				if (!this._LTPrintMode) {
 					line.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
 				} else if (!L.latLng(segment[0]).equals(prevEnd)) {
-					const degree = this._degreesFromNorth(segment);
-					const direction = L.GeometryUtil.destination(L.latLng(segment[0]), degree, 500);
 					L.polyline([segment[0], direction], {opacity: 0, fillOpacity: 0})
 						.setText("→", {repeat: false, attributes: {dy: 5, "font-size": 50}})
 						.addTo(this.map);
-					if (lineIdx === 0 && segmentIdx === 0) {
-						L.polyline([segment[0], direction].map(c => L.GeometryUtil.destination(L.latLng(c), degree - 90, 60)), {opacity: 0, fillOpacity: 0})
-							.setText("Alku", {repeat: false, attributes: {dy: 5, "font-size": 20}})
-							.addTo(this.map);
+				}
+				if (lineIdx === 0 && segmentIdx === 0) {
+					if (this._LTStartText) {
+						this._LTStartText.remove();
 					}
+					this._LTStartText =  L.polyline(this._getLTStartTextCoordinates(segment), {opacity: 0, fillOpacity: 0})
+						.setText("Alku", {repeat: false, attributes: {dy: 5, "font-size": 20}})
+						.addTo(this.map);
 				}
 				indexSegment(segment, lineIdx, segmentIdx);
 				lineLayer.push(line);
@@ -341,6 +344,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._setLTPrintLines();
 
 		provide(this, "lineTransect");
+	}
+
+	_getLTStartTextCoordinates(segment) {
+		segment = segment.map(L.latLng);
+		const degree = this._degreesFromNorth(segment);
+		const length = degree > -50 && degree < 50 ? 120 : 60;
+		return [segment[0], L.GeometryUtil.destination(segment[0], 90, 500)].map(c => L.GeometryUtil.destination(c, degree - 90, length));
 	}
 
 	LTUndo() {
@@ -1030,14 +1040,20 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			precedingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords));
 		}
 
+		const getFollowingLineCoords = () => [latlng, followingLine.getLatLngs()[1]]
+
 		if (followingIdxTuple) {
-			const lineCoords = [latlng, followingLine.getLatLngs()[1]];
+			const lineCoords = getFollowingLineCoords();
 			followingLine.setLatLngs(lineCoords);
 			followingCorridor.setLatLngs(this._getCorridorCoordsForLine(lineCoords));
 		}
 
 		point.setLatLng(latlng);
 		this._LTdragPoint.setLatLng(latlng);
+
+		if (lineIdx === 0 && pointIdx === 0) {
+			this._LTStartText.setLatLngs(this._getLTStartTextCoordinates(getFollowingLineCoords()));
+		}
 	}
 
 	_getLayerForIdxTuple(layer, lineIdx, segmentIdx) {

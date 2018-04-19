@@ -35,7 +35,7 @@ export default {
 		sv: "Ritning"
 	},
 	polyline: {
-		fi: "Linja",
+		fi: "Viiva",
 		en: "A line",
 		sv: "En linje"
 	},
@@ -310,14 +310,14 @@ export default {
 		sv: "Följande"
 	},
 	splitLine: {
-		fi: "Katkaise linja",
-		en: "Split line transect",
-		sv: "Bryta av linjen"
+		fi: "Katkaise biotooppi",
+		en: "Split biotope",
+		sv: "Bryta biotopen"
 	},
 	splitLineTooltip: {
-		fi: "<b>Klikkaa</b> karttaa katkaistaksesi linjan",
-		en: "<b>Click</b> the map to split the line",
-		sv: "<b>Klicka</b> på kartan för att bryta av linjen"
+		fi: "<b>Klikkaa</b> karttaa katkaistaksesi biotoopin",
+		en: "<b>Click</b> the map to split the biotope",
+		sv: "<b>Klicka</b> på kartan för att bryta av biotopen"
 	},
 	fromTheBeginningOfTheLine: {
 		fi: "linjan alusta",
@@ -510,9 +510,9 @@ export default {
 		sv: "Gränserna av Biogeografiska provinser"
 	},
 	createPoint: {
-		fi: "Luo piste",
-		en: "Remove point",
-		sv: "Radera punkten"
+		fi: "Luo piste biotoopin sisällä",
+		en: "Create point inside the biotope",
+		sv: "Skapa punkt inom biotopen"
 	},
 	addPointTooltip: {
 		fi: "<b>Klikkaa</b> karttaa luodaksesi uuden pisteen",

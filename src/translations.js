@@ -510,7 +510,7 @@ export default {
 		sv: "Gränserna av Biogeografiska provinser"
 	},
 	createPoint: {
-		fi: "Luo piste biotoopin sisällä",
+		fi: "Luo piste biotoopin sisälle",
 		en: "Create point inside the biotope",
 		sv: "Skapa punkt inom biotopen"
 	},

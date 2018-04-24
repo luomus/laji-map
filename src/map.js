@@ -91,7 +91,7 @@ export default class LajiMap {
 			center: "setCenter",
 			zoom: "setNormalizedZoom",
 			zoomToData: ["setZoomToData", "_zoomToData"],
-			locate: true,
+			locate: ["setLocate", "locate"],
 			onPopupClose: true,
 			markerPopupOffset: true,
 			featurePopupOffset: true,
@@ -1536,6 +1536,15 @@ export default class LajiMap {
 			contextmenuItems
 		});
 
+	}
+
+	setLocate(locate = false) {
+		this.locate = locate;
+		locate
+			? this._onLocate()
+			: this.userLocationMarker
+				? this.userLocationMarker.remove() && this.userLocationRadiusMarker.remove()
+				: undefined;
 	}
 
 	@dependsOn("map")

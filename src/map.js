@@ -1000,7 +1000,14 @@ export default class LajiMap {
 					bounds.getNorthEast().toBounds(paddingInMeters).getNorthEast()
 				);
 			}
-			this.map.fitBounds(bounds, options);
+			const {minZoom, maxZoom, ..._options} = options;
+			this.map.fitBounds(bounds, _options);
+			if (typeof maxZoom === "number" && !isNaN(maxZoom)) {
+				if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
+			}
+			if (typeof minZoom === "number" && !isNaN(minZoom)) {
+				if (this.getNormalizedZoom() < minZoom) this.setNormalizedZoom(minZoom);
+			}
 		}
 	}
 

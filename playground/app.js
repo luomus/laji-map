@@ -142,8 +142,9 @@ class App {
 			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
+			locate: true,
 			controls: {
-				location: false,
+				location: true,
 				coordinates: true,
 				draw: {
 					copy: true,

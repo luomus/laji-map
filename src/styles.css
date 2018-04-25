@@ -334,3 +334,6 @@
 	top: initial;
 	left: initial;
 }
+.laji-map .leaflet-control a.on {
+    background-color: #70d7ff;
+}

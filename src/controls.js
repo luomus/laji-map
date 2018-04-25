@@ -88,6 +88,33 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this.map.on("controlClick", cancelDraw);
 	}
 
+	_toggleLocate() {
+		this._locateOn ? this._setLocateOff() : this._setLocateOn();
+	}
+
+	_setLocateOn(...params) {
+		super._setLocateOn(...params);
+		this._updateUserLocate(true);
+	}
+
+	_setLocateOff(...params) {
+		super._setLocateOff(...params);
+		this._updateUserLocate(false);
+	}
+
+	@reflect()
+	@dependsOn("controls")
+	_updateUserLocate(value) {
+		if (!depsProvided(this, "_updateUserLocate", arguments)) return;
+		this._locateOn = value !== undefined ? value : this._locateOn;
+		const button = this._controlButtons["location.userLocation"];
+		if (this._locateOn && !button.className.includes(" on")) {
+			button.className = `${button.className} on`;
+		} else if (!this._locateOn && button.className.includes(" on")){
+			button.className = button.className.replace(" on", "");
+		}
+	}
+
 	@reflect()
 	@dependsOn("map", "translations", "controlSettings")
 	_updateMapControls() {
@@ -118,7 +145,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						name: "userLocation",
 						text: this.translations.Geolocate,
 						iconCls: "glyphicon glyphicon-screenshot",
-						fn: (...params) => this._onLocate(...params),
+						fn: (...params) => this._toggleLocate(...params),
 					}
 				],
 				contextMenu: false

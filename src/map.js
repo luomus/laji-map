@@ -305,7 +305,7 @@ export default class LajiMap {
 
 			if (this.locate) {
 				this.initializeViewAfterLocateFail = true;
-				this._onLocate();
+				this._setLocateOn();
 			}
 
 			this._initializeMapEvents();
@@ -971,7 +971,7 @@ export default class LajiMap {
 
 	setZoomToData(options) {
 		this._zoomToData = options;
-		if (options) this.zoomToData(isObject(options) ? options : true);
+		if (options && !this.locate) this.zoomToData(isObject(options) ? options : true);
 	}
 
 	@dependsOn("data", "draw", "center", "zoom")
@@ -1541,16 +1541,29 @@ export default class LajiMap {
 	setLocate(locate = false) {
 		this.locate = locate;
 		locate
-			? this._onLocate()
+			? this._setLocateOn()
 			: this.userLocationMarker
 				? this.userLocationMarker.remove() && this.userLocationRadiusMarker.remove()
 				: undefined;
 	}
 
 	@dependsOn("map")
-	_onLocate() {
-		if (!depsProvided(this, "_onLocate", arguments)) return;
-		this.map.locate();
+	_setLocateOn() {
+		if (!depsProvided(this, "_setLocateOn", arguments)) return;
+		this.map.locate({watch: true, enableHighAccuracy: true});
+	}
+
+	@dependsOn("map")
+	_setLocateOff() {
+		if (!depsProvided(this, "_setLocateOff", arguments)) return;
+		this.map.stopLocate();
+		if (this.userLocationMarker) {
+			this.userLocationMarker.remove();
+			this.userLocationMarker = undefined;
+			this.userLocationRadiusMarker.remove();
+			this.userLocationRadiusMarker = undefined;
+		}
+		if (this.locate && this.locate[0]) this.locate[0](undefined);
 	}
 
 	@dependsOn("map")
@@ -2313,6 +2326,14 @@ export default class LajiMap {
 		this.addDrawAbortListeners();
 
 		return this._draftDrawLayer;
+	}
+
+	addFeatureToDraw(feature) {
+		this.addFeatureToData(feature, this.drawIdx);
+	}
+	addFeatureToData(feature, dataIdx) {
+		const layer = this._featureToLayer(this.data[dataIdx].getFeatureStyle)(feature);
+		this._onAdd(dataIdx, layer);
 	}
 
 	getFeatureTypes() {

@@ -1580,11 +1580,14 @@ export default class LajiMap {
 		this.userLocationMarker.on("click", () => {
 			!this._interceptClick() && this.map.fitBounds(this.userLocationRadiusMarker.getBounds());
 		});
+
+		if (this.locate && this.locate[0]) this.locate[0](latlng, accuracy);
 	}
 
 	_onLocationNotFound() {
 		alert(this.translations.geolocationFailed);
 		if (this.initializeViewAfterLocateFail) this._initializeView();
+		if (this.locate && this.locate[1]) this.locate[1]();
 	}
 
 	_getLayerByIdxs(dataIdx, featureIdx) {

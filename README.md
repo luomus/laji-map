@@ -30,7 +30,7 @@ overlayNames                                    | String[]                  | - 
 center                                          | LatLng                    | [65, 26]                            | The coordinates for the initial center of the map.
 zoom                                            | Int                       | 2                                   | The initial zoom level for the map.
 zoomToData                                      | FitBounds options         | false                               | Zooms the map to given data & draw data. The options can include also paddingInMeters & minZoom as an options.
-locate                                          | Boolean                   | false                               | The map is centered to the user location if found.
+locate                                          | Boolean / [fn, fn]        | false                               | The map is centered to the user location if found. Options can be callbacks: [onSuccess(latlng, radius), onFailed()]
 onPopupClose()                                  | Function                  | -                                   | Function to call when a popup is closed
 markerPopupOffset                               | Int                       | 0                                   | Offset (towards up) for popups for markers.
 featurePopupOffset                              | Int                       | 0                                   | Offset (towards up) for popups for features other than markers.

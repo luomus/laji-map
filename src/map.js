@@ -1564,13 +1564,15 @@ export default class LajiMap {
 			this.userLocationRadiusMarker = undefined;
 		}
 		if (this.locate && this.locate[0]) this.locate[0](undefined);
+		this._located = false;
 	}
 
 	@dependsOn("map")
 	_onLocationFound({latlng, accuracy, bounds}) {
 		if (!depsProvided(this, "_onLocationFound", arguments)) return;
 
-		this.map.fitBounds(bounds);
+		if (!this._located) this.map.fitBounds(bounds);
+		this._located = true;
 
 		if (this.userLocationRadiusMarker) {
 			this.userLocationRadiusMarker.setLatLng(latlng).setRadius(accuracy);

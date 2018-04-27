@@ -1,8 +1,3 @@
-
-.laji-map {
-	margin-top: 200px;
-	margin-bottom: 200px;
-}
 .laji-map, .leaflet-container {
 	position: relative;
 	width: 100%;

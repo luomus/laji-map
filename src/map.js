@@ -224,9 +224,9 @@ export default class LajiMap {
 
 			this._showingPreventScroll = true;
 			if (!showingAlready) {
-				document.querySelectorAll(".laji-map-scroll-prevent").forEach(elem => elem.className = elem.className.replace("left", "enter"));
+				[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.className = elem.className.replace("left", "enter"));
 				setImmediate(() => {
-					document.querySelectorAll(".laji-map-scroll-prevent").forEach(elem => elem.className = elem.className.replace(" enter", ""));
+					[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.className = elem.className.replace(" enter", ""));
 				});
 			}
 
@@ -239,7 +239,7 @@ export default class LajiMap {
 				hidePreventElem();
 			}, 2000);
 
-			document.querySelectorAll(".laji-map-scroll-prevent").forEach(elem => elem.style.display = "block");
+			[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.style.display = "block");
 		};
 
 		const hidePreventElem = () => {
@@ -249,10 +249,10 @@ export default class LajiMap {
 			clearTimeout(this._showPreventShowTimeout);
 			clearTimeout(this._showPreventAnimationTimeout);
 
-			document.querySelectorAll(".laji-map-scroll-prevent").forEach(elem => elem.className = `${elem.className} leaving`);
+			[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.className = `${elem.className} leaving`);
 			this._showPreventAnimationTimeout = setTimeout(() => {
 				this._showingPreventScroll = false;
-				document.querySelectorAll(".laji-map-scroll-prevent").forEach(elem => elem.className = elem.className.replace("leaving", "left"));
+				[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.className = elem.className.replace("leaving", "left"));
 				startPreventScrollingTimeout();
 			}, 200); //should match transition time in css
 		};

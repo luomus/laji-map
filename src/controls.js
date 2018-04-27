@@ -108,6 +108,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		if (!depsProvided(this, "_updateUserLocate", arguments)) return;
 		this._locateOn = value !== undefined ? value : this._locateOn;
 		const button = this._controlButtons["location.userLocation"];
+		if (!button) return;
 		if (this._locateOn && !button.className.includes(" on")) {
 			button.className = `${button.className} on`;
 		} else if (!this._locateOn && button.className.includes(" on")){

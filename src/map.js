@@ -158,6 +158,11 @@ export default class LajiMap {
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
 
+		if (this._clickBeforeZoomAndPan) {
+			this.setClickBeforeZoomAndPan(false);
+			this.setClickBeforeZoomAndPan(true);
+		}
+
 		this._openDialogs = [];
 		if (this._dialogRoot) this.setBodyAsDialogRoot(this._dialogRoot === document.body);
 

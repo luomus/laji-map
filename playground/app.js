@@ -137,7 +137,6 @@ class App {
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
 			markerPopupOffset: 40,
-			clickBeforeZoomAndPan: true,
 			featurePopupOffset: 5,
 			draw: this.drawOptions,
 			data: this.data,

@@ -559,9 +559,19 @@ export default {
 		en: "Change the starting point",
 		sv: "Ändra startpunkten"
 	},
-	ShiftPointTooltip: {
+	shiftPointTooltip: {
 		fi: "<b>Klikkaa</b> jotain punaista pistettä asettaaksesi sen aloituspisteeksi",
 		en: "<b>Click</b> some of the red points to change the starting point",
 		sv: "<b>Klicka</b> på några av de röd punkterna för att ändra startpunkten"
+	},
+	clickBeforeZoom: {
+		fi: "Klikkaa ennen kuin lähennät",
+		en: "Click before zooming",
+		sv: "Klicka innan du zoomar"
+	},
+	clickBeforePan: {
+		fi: "Klikkaa ennen kuin liikutat",
+		en: "Click before panning",
+		sv: "Klicka innan du panorerar"
 	}
 };

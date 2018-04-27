@@ -64,7 +64,8 @@ export default class LajiMap {
 			zoom: 2,
 			popupOnHover: false,
 			draw: false,
-			bodyAsDialogRoot: true
+			bodyAsDialogRoot: true,
+			clickBeforeZoomAndPan: false
 		};
 
 		this.options = {};
@@ -103,7 +104,8 @@ export default class LajiMap {
 			rectangle: true,
 			circle: true,
 			marker: true,
-			bodyAsDialogRoot: "setBodyAsDialogRoot"
+			bodyAsDialogRoot: "setBodyAsDialogRoot",
+			clickBeforeZoomAndPan: "setClickBeforeZoomAndPan",
 		};
 	}
 
@@ -156,6 +158,7 @@ export default class LajiMap {
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
 
+		this._openDialogs = [];
 		if (this._dialogRoot) this.setBodyAsDialogRoot(this._dialogRoot === document.body);
 
 		if (this.map) this.map.invalidateSize();
@@ -180,6 +183,137 @@ export default class LajiMap {
 		}
 		this._dialogRoot.appendChild(this.blockerElem);
 		if (value) this.blockerElem.className = `${this.blockerElem.className} fixed`;
+	}
+
+	@dependsOn("rootElem", "map", "translations")
+	setClickBeforeZoomAndPan(value = true) {
+		if (!depsProvided(this, "setClickBeforeZoomAndPan", arguments)) return;
+
+		const valueWas = this._clickBeforeZoomAndPan;
+		this._clickBeforeZoomAndPan = value;
+
+		const isOutsideLajiMap = elem => document.contains(elem) && !this.container.contains(elem) && elem !== this.blockerElem && (!this._openDialogs.length || this._openDialogs.every(dialog => !dialog.contains(elem)));
+		window.isOutsideLajiMap = isOutsideLajiMap;
+
+		let translationHook = undefined;
+
+		this._scrollPreventElem = this._scrollPreventElem || document.createElement("div");
+		const textElem = document.createElement("span");
+		translationHook = this.addTranslationHook(textElem, "ClickBeforeZoom");
+		this._scrollPreventElem.appendChild(textElem);
+		this._scrollPreventElem.className = "laji-map-scroll-prevent left";
+		this._showingPreventScroll = false;
+
+		const preventScrolling = () => {
+			this.map.scrollWheelZoom.disable();
+			this.map.dragging.disable();
+			this._preventScroll = true;
+		};
+
+		const startPreventScrollingTimeout = () => {
+			clearTimeout(this._showPreventShowTimeout);
+			this._showPreventShowTimeout = setTimeout(() => {
+				preventScrolling();
+			}, 3000);
+		};
+
+		const showPreventElem = () => {
+			//if (this._showingPreventScroll) return;
+			const showingAlready = this._showingPreventScroll;
+
+			this._showingPreventScroll = true;
+			if (!showingAlready) {
+				this._scrollPreventElem.className = "laji-map-scroll-prevent enter";
+				setImmediate(() => {
+					this._scrollPreventElem.className = "laji-map-scroll-prevent";
+				});
+			}
+
+			clearTimeout(this._showPreventHideTimeout);
+			clearTimeout(this._showPreventShowTimeout);
+			clearTimeout(this._showPreventAnimationTimeout);
+
+			this._showPreventHideTimeout = setTimeout(() => {
+				if (!document.contains(this._scrollPreventElem)) return;
+				hidePreventElem();
+			}, 2000);
+
+			this._scrollPreventElem.style.display = "block";
+		};
+
+		const hidePreventElem = () => {
+			if (!this._showingPreventScroll) return;
+
+			clearTimeout(this._showPreventHideTimeout);
+			clearTimeout(this._showPreventShowTimeout);
+			clearTimeout(this._showPreventAnimationTimeout);
+
+			this._scrollPreventElem.className = "laji-map-scroll-prevent leaving";
+			this._showPreventAnimationTimeout = setTimeout(() => {
+				this._showingPreventScroll = false;
+				this._scrollPreventElem.className = "laji-map-scroll-prevent left";
+				startPreventScrollingTimeout();
+			}, 200); //should match transition time in css
+		};
+
+		const onTouchOrMouse = touch => e => {
+			if (touch) e.stopPropagation();
+			startPreventScrollingTimeout();
+			const isOutside = isOutsideLajiMap(e.target);
+			if (!this._preventScroll && isOutside) {
+				preventScrolling();
+			} else if (this._preventScroll && !isOutside) {
+				this.map.scrollWheelZoom.enable();
+				this.map.dragging.enable();
+				if (!touch) this.map.dragging._draggable._onDown(e);
+				hidePreventElem();
+				this._preventScroll = false;
+			}
+		};
+
+		if (value && !valueWas) {
+
+			preventScrolling();
+
+			this._scrollPreventDocumentClickListener = document.addEventListener("touch", onTouchOrMouse(!!"touch"));
+			this._scrollPreventDocumentClickListener = document.addEventListener("mousedown", onTouchOrMouse());
+
+			this._scrollPreventScrollListeners = [];
+			"wheel touchstart".split(" ").forEach(eventName => {
+				const eventListener = (e) => {
+					const coordinatesSource = eventName === "touchstart" ? e.touches[0] : e;
+					const pointedElem = document.elementFromPoint(coordinatesSource.clientX, coordinatesSource.clientY);
+					const isOutside = isOutsideLajiMap(pointedElem);
+					if (this._preventScroll && !isOutside) {
+						this.removeTranslationHook(translationHook);
+						translationHook = this.addTranslationHook(textElem, `ClickBefore${eventName === "wheel" ? "Zoom" : "Pan"}`);
+						showPreventElem();
+					} else {
+						startPreventScrollingTimeout();
+					}
+				};
+				window.addEventListener(eventName, eventListener);
+				this._scrollPreventScrollListeners.push([eventName, eventListener]);
+
+				this.map.addEventListener("zoomstart", startPreventScrollingTimeout);
+			});
+
+			this.container.appendChild(this._scrollPreventElem);
+		} else if (!value && valueWas) {
+			clearTimeout(this._showPreventHideTimeout);
+			clearTimeout(this._showPreventShowTimeout);
+			clearTimeout(this._showPreventAnimationTimeout);
+			document.removeEventListener("click", this._scrollPreventDocumentClickListener);
+			this._scrollPreventElem.removeEventListener("click", this.__scrollPreventElemClickListener);
+			this.map.removeEventListener("zoomstart", startPreventScrollingTimeout);
+			this._scrollPreventEventListener = undefined;
+			this._scrollPreventElem.remove();
+			this._scrollPreventElem = undefined;
+			this._scrollPreventScrollListeners.forEach(listener => window.removeEventListener(...listener));
+			this._scrollPreventScrollListeners = undefined;
+			this.map.scrollWheelZoom.enable();
+			this.map.dragging.enable();
+		}
 	}
 
 	getMMLProj() {
@@ -2375,6 +2509,7 @@ export default class LajiMap {
 			}
 			if (onClose) onClose(e);
 			that._closeDialog = undefined;
+			that._openDialogs = that._openDialogs.filter(dialog => dialog !== elem);
 		}
 
 		this._addKeyListener(ESC, close);
@@ -2387,5 +2522,8 @@ export default class LajiMap {
 		}
 
 		this._closeDialog = close;
+		if (container === this._dialogRoot) {
+			this._openDialogs.push(elem);
+		}
 	}
 }

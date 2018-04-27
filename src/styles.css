@@ -1,3 +1,8 @@
+
+.laji-map {
+	margin-top: 200px;
+	margin-bottom: 200px;
+}
 .laji-map, .leaflet-container {
 	position: relative;
 	width: 100%;
@@ -82,7 +87,7 @@
 .laji-map .leaflet-touch .context-menu-draw-marker {
 	background-position: -124px -5px;
 }
-.laji-map-blocker {
+.laji-map-blocker, .laji-map .laji-map-scroll-prevent {
 	position: absolute;
 	display: none;
 	top: 0;
@@ -94,6 +99,22 @@
 }
 .laji-map-blocker.fixed {
 	position: fixed;
+}
+.laji-map .laji-map-scroll-prevent {
+	pointer-events: none;
+	transition: opacity 200ms ease-in;
+}
+.laji-map .laji-map-scroll-prevent.enter, .laji-map-scroll-prevent.left {
+	opacity: 0;
+}
+.laji-map .laji-map-scroll-prevent span {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 30px;
+	color: white;
+	opacity: 1;
 }
 .laji-map-dialog {
 	position: absolute;

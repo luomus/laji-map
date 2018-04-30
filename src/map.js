@@ -155,13 +155,13 @@ export default class LajiMap {
 
 		this.container.appendChild(this.mapElem);
 
+		const shouldSetZoomAndPan = this._clickBeforeZoomAndPan;
+		shouldSetZoomAndPan && this.setClickBeforeZoomAndPan(false);
+
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
 
-		if (this._clickBeforeZoomAndPan) {
-			this.setClickBeforeZoomAndPan(false);
-			this.setClickBeforeZoomAndPan(true);
-		}
+		shouldSetZoomAndPan && this.setClickBeforeZoomAndPan(true);
 
 		this._openDialogs = [];
 		if (this._dialogRoot) this.setBodyAsDialogRoot(this._dialogRoot === document.body);
@@ -211,18 +211,22 @@ export default class LajiMap {
 		translationHook = this.addTranslationHook(this._scrollPreventTextElem, "ClickBeforeZoom");
 		this._showingPreventScroll = false;
 
-		const preventScrolling = () => {
-			this.map.scrollWheelZoom.disable();
-			this.map.dragging.disable();
-			this._preventScroll = true;
-		};
+		if (!this._preventScrolling) {
+			this._preventScrolling = () => {
+				this.map.scrollWheelZoom.disable();
+				this.map.dragging.disable();
+				this._preventScroll = true;
+			};
+		}
 
-		const startPreventScrollingTimeout = () => {
-			clearTimeout(this._showPreventShowTimeout);
-			this._showPreventShowTimeout = setTimeout(() => {
-				preventScrolling();
-			}, 3000);
-		};
+		if (!this._startPreventScrollingTimeout) {
+			this._startPreventScrollingTimeout = () => {
+				clearTimeout(this._showPreventShowTimeout);
+				this._showPreventShowTimeout = setTimeout(() => {
+					this._preventScrolling();
+				}, 3000);
+			};
+		}
 
 		const showPreventElem = () => {
 			const showingAlready = this._showingPreventScroll;
@@ -258,16 +262,16 @@ export default class LajiMap {
 			this._showPreventAnimationTimeout = setTimeout(() => {
 				this._showingPreventScroll = false;
 				[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.className = elem.className.replace("leaving", "left"));
-				startPreventScrollingTimeout();
+				this._startPreventScrollingTimeout();
 			}, 200); //should match transition time in css
 		};
 
 		const onTouchOrMouse = touch => e => {
 			if (touch) e.stopPropagation();
-			startPreventScrollingTimeout();
+			this._startPreventScrollingTimeout();
 			const isOutside = isOutsideLajiMap(e.target);
 			if (!this._preventScroll && isOutside) {
-				preventScrolling();
+				this._preventScrolling();
 			} else if (this._preventScroll && !isOutside) {
 				this.map.scrollWheelZoom.enable();
 				this.map.dragging.enable();
@@ -277,12 +281,16 @@ export default class LajiMap {
 			}
 		};
 
+		if (!this._onTouchPreventScrolling) {
+			this._onTouchPreventScrolling = onTouchOrMouse(!!"touch");
+			this._onMouseDownPreventScrolling = onTouchOrMouse(!"mouse");
+		}
+
 		if (value && !valueWas) {
+			this._preventScrolling();
 
-			preventScrolling();
-
-			this._scrollPreventDocumentClickListener = document.addEventListener("touch", onTouchOrMouse(!!"touch"));
-			this._scrollPreventDocumentClickListener = document.addEventListener("mousedown", onTouchOrMouse());
+			document.addEventListener("touch", this._onTouchPreventScrolling);
+			document.addEventListener("mousedown", this._onMouseDownPreventScrolling);
 
 			this._scrollPreventScrollListeners = [];
 			"wheel touchstart".split(" ").forEach(eventName => {
@@ -295,13 +303,13 @@ export default class LajiMap {
 						translationHook = this.addTranslationHook(this._scrollPreventTextElem, `ClickBefore${eventName === "wheel" ? "Zoom" : "Pan"}`);
 						showPreventElem();
 					} else {
-						startPreventScrollingTimeout();
+						this._startPreventScrollingTimeout();
 					}
 				};
 				window.addEventListener(eventName, eventListener);
 				this._scrollPreventScrollListeners.push([eventName, eventListener]);
 
-				this.map.addEventListener("zoomstart", startPreventScrollingTimeout);
+				this.map.addEventListener("zoomstart", this._startPreventScrollingTimeout);
 			});
 
 			this.container.appendChild(this._scrollPreventElem);
@@ -310,10 +318,9 @@ export default class LajiMap {
 			clearTimeout(this._showPreventHideTimeout);
 			clearTimeout(this._showPreventShowTimeout);
 			clearTimeout(this._showPreventAnimationTimeout);
-			document.removeEventListener("click", this._scrollPreventDocumentClickListener);
-			this._scrollPreventElem.removeEventListener("click", this.__scrollPreventElemClickListener);
-			this.map.removeEventListener("zoomstart", startPreventScrollingTimeout);
-			this._scrollPreventEventListener = undefined;
+			document.removeEventListener("touch", this._onTouchPreventScrolling);
+			document.removeEventListener("mousedown", this._onMouseDownPreventScrolling);
+			this.map.removeEventListener("zoomstart", this._startPreventScrollingTimeout);
 			this._scrollPreventElem.remove();
 			this._scrollPreventElem = undefined;
 			this._scrollPreventTextElemContainer.remove();

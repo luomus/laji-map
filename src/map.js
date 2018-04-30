@@ -296,6 +296,34 @@ export default class LajiMap {
 			this._onDrawStopPreventScrolling = () => this.map.dragging.enable();
 		}
 
+		if (this._preventScrollDomCleaner) {
+			this._removeDomCleaner(this._preventScrollDomCleaner);
+		}
+		this._preventScrollDomCleaner = () => {
+			if (this._preventScrollDomCleaner) {
+				this._removeDomCleaner(this._preventScrollDomCleaner);
+			}
+			this._preventScrollDomCleaner = undefined;
+
+			clearTimeout(this._showPreventHideTimeout);
+			clearTimeout(this._showPreventShowTimeout);
+			clearTimeout(this._showPreventAnimationTimeout);
+			document.removeEventListener("touch", this._onTouchPreventScrolling);
+			document.removeEventListener("mousedown", this._onMouseDownPreventScrolling);
+			this.map.removeEventListener("zoomstart", this._startPreventScrollingTimeout);
+			this.map.removeEventListener("controlClick", this._onControlClickPreventScrolling);
+			this.map.removeEventListener("draw:drawstart", this._onDrawStartPreventScrolling);
+			this.map.removeEventListener("draw:drawstop", this._onDrawStopPreventScrolling);
+			this._scrollPreventElem.remove();
+			this._scrollPreventElem = undefined;
+			this._scrollPreventTextElemContainer.remove();
+			this._scrollPreventTextElemContainer = undefined;
+			(this._scrollPreventScrollListeners || []).forEach(listener => window.removeEventListener(...listener));
+			this._scrollPreventScrollListeners = undefined;
+			this.map.scrollWheelZoom.enable();
+			this.map.dragging.enable();
+		};
+
 		if (value && !valueWas) {
 			this._preventScrolling();
 
@@ -327,24 +355,9 @@ export default class LajiMap {
 			this.container.appendChild(this._scrollPreventTextElemContainer);
 			this.map.addEventListener("draw:drawstart", this._onDrawStartPreventScrolling);
 			this.map.addEventListener("draw:drawstop", this._onDrawStopPreventScrolling);
+			this._addDomCleaner(this._preventScrollDomCleaner);
 		} else if (!value && valueWas) {
-			clearTimeout(this._showPreventHideTimeout);
-			clearTimeout(this._showPreventShowTimeout);
-			clearTimeout(this._showPreventAnimationTimeout);
-			document.removeEventListener("touch", this._onTouchPreventScrolling);
-			document.removeEventListener("mousedown", this._onMouseDownPreventScrolling);
-			this.map.removeEventListener("zoomstart", this._startPreventScrollingTimeout);
-			this.map.removeEventListener("controlClick", this._onControlClickPreventScrolling);
-			this.map.removeEventListener("draw:drawstart", this._onDrawStartPreventScrolling);
-			this.map.removeEventListener("draw:drawstop", this._onDrawStopPreventScrolling);
-			this._scrollPreventElem.remove();
-			this._scrollPreventElem = undefined;
-			this._scrollPreventTextElemContainer.remove();
-			this._scrollPreventTextElemContainer = undefined;
-			this._scrollPreventScrollListeners.forEach(listener => window.removeEventListener(...listener));
-			this._scrollPreventScrollListeners = undefined;
-			this.map.scrollWheelZoom.enable();
-			this.map.dragging.enable();
+			if (this._preventScrollDomCleaner) this._preventScrollDomCleaner();
 		}
 	}
 
@@ -850,20 +863,34 @@ export default class LajiMap {
 	}
 
 	destroy() {
+		this.cleanDOM();
 		this.map.remove();
 		this.map = null;
-
-		this.cleanDOM();
 	}
 
 	cleanDOM() {
 		if (this.rootElem) this.rootElem.removeChild(this.container);
 		if (this.blockerElem) this._dialogRoot.removeChild(this.blockerElem);
 		if (this._closeDialog) this._closeDialog();
+		if (this._domCleaners) {
+			this._domCleaners.forEach(cleaner => cleaner());
+			this._domCleaners = [];
+		}
 
 		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
 			document.removeEventListener(type, this._documentEvents[type]);
 		});
+	}
+
+	_addDomCleaner(fn) {
+		if (!this._domCleaners) this._domCleaners = [];
+
+		this._domCleaners.push(fn);
+	}
+
+	_removeDomCleaner(fn) {
+		if (!this._domCleaners) return;
+		this._domCleaners = this._domCleaners.filter(_fn => _fn !== fn);
 	}
 
 	_constructDictionary() {

@@ -213,6 +213,7 @@ export default class LajiMap {
 
 		if (!this._preventScrolling) {
 			this._preventScrolling = () => {
+				if (this.drawing || this.activeControl) return;
 				this.map.scrollWheelZoom.disable();
 				this.map.dragging.disable();
 				this._preventScroll = true;

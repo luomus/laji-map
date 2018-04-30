@@ -346,6 +346,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					cont.removeChild(_that.buttonActions[name][text]);
 				});
 				_that.buttonActions[name] = {};
+				that.activeControl = undefined;
 			}
 
 			function stopOnControlClick({name: _name}) {
@@ -374,6 +375,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			cont.style.display = "block";
 
 			this.container.appendChild(cont);
+			that.activeControl = name;
 		}
 
 		function _createFinishHandler(name, fn, eventName) {

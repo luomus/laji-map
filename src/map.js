@@ -266,24 +266,33 @@ export default class LajiMap {
 			}, 200); //should match transition time in css
 		};
 
-		const onTouchOrMouse = touch => e => {
-			if (touch) e.stopPropagation();
+		const _onTouchOrMouseEventAgnostic = (isOutside) => {
 			this._startPreventScrollingTimeout();
-			const isOutside = isOutsideLajiMap(e.target);
 			if (!this._preventScroll && isOutside) {
 				this._preventScrolling();
 			} else if (this._preventScroll && !isOutside) {
 				this.map.scrollWheelZoom.enable();
 				this.map.dragging.enable();
-				if (!touch) this.map.dragging._draggable._onDown(e);
 				hidePreventElem();
 				this._preventScroll = false;
+				return true;
+			}
+		};
+
+		const onTouchOrMouse = (touch) => e => {
+			if (touch) e.stopPropagation();
+			const enabled = _onTouchOrMouseEventAgnostic(isOutsideLajiMap(e.target));
+			if (enabled && !touch) {
+				this.map.dragging._draggable._onDown(e);
 			}
 		};
 
 		if (!this._onTouchPreventScrolling) {
 			this._onTouchPreventScrolling = onTouchOrMouse(!!"touch");
 			this._onMouseDownPreventScrolling = onTouchOrMouse(!"mouse");
+			this._onControlClickPreventScrolling = () => _onTouchOrMouseEventAgnostic(false);
+			this._onDrawStartPreventScrolling = () => this.map.dragging.disable();
+			this._onDrawStopPreventScrolling = () => this.map.dragging.enable();
 		}
 
 		if (value && !valueWas) {
@@ -291,6 +300,7 @@ export default class LajiMap {
 
 			document.addEventListener("touch", this._onTouchPreventScrolling);
 			document.addEventListener("mousedown", this._onMouseDownPreventScrolling);
+			this.map.addEventListener("controlClick", this._onControlClickPreventScrolling);
 
 			this._scrollPreventScrollListeners = [];
 			"wheel touchstart".split(" ").forEach(eventName => {
@@ -314,6 +324,8 @@ export default class LajiMap {
 
 			this.container.appendChild(this._scrollPreventElem);
 			this.container.appendChild(this._scrollPreventTextElemContainer);
+			this.map.addEventListener("draw:drawstart", this._onDrawStartPreventScrolling);
+			this.map.addEventListener("draw:drawstop", this._onDrawStopPreventScrolling);
 		} else if (!value && valueWas) {
 			clearTimeout(this._showPreventHideTimeout);
 			clearTimeout(this._showPreventShowTimeout);
@@ -321,6 +333,9 @@ export default class LajiMap {
 			document.removeEventListener("touch", this._onTouchPreventScrolling);
 			document.removeEventListener("mousedown", this._onMouseDownPreventScrolling);
 			this.map.removeEventListener("zoomstart", this._startPreventScrollingTimeout);
+			this.map.removeEventListener("controlClick", this._onControlClickPreventScrolling);
+			this.map.removeEventListener("draw:drawstart", this._onDrawStartPreventScrolling);
+			this.map.removeEventListener("draw:drawstop", this._onDrawStopPreventScrolling);
 			this._scrollPreventElem.remove();
 			this._scrollPreventElem = undefined;
 			this._scrollPreventTextElemContainer.remove();

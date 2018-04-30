@@ -71,7 +71,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_initializeMapEvents() {
 		super._initializeMapEvents();
 		const cancelDraw = ({name}) => {
-			if (name === "draw") return;
+			if (name === "draw" || name === "zoom" || name === "layer") return;
 			if (!this.drawControl) return;
 			this.getFeatureTypes().forEach(featureType => {
 				const handlerContainer = this.drawControl._toolbars.draw._modes[featureType];
@@ -349,7 +349,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 
 			function stopOnControlClick({name: _name}) {
-				if (name !== _name) stop();
+				if (name !== _name && name !== "zoom" && name !== "layer") stop();
 			}
 
 			if (!cont) {
@@ -855,6 +855,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				this._handlingClick = false;
 
 				that.layerControl.expand();
+				that.map.fire("controlClick", {name: "layer"});
 			},
 			_initLayout: function() {
 				L.Control.Layers.prototype._initLayout.call(this);
@@ -903,11 +904,22 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	getZoomControl() {
+		const that = this;
 		const ZoomControl = L.Control.Zoom.extend({
+			onZoomClick: function() {
+				that.map.fire("controlClick", {name: "zoom"});
+			},
 			onAdd: function(map) {
 				const container = L.Control.Zoom.prototype.onAdd.call(this, map);
 				L.DomEvent.disableClickPropagation(container);
+				this._zoomInButton.addEventListener("click", this.onZoomClick);
+				this._zoomOutButton.addEventListener("click", this.onZoomClick);
 				return container;
+			},
+			onRemove: function(map) {
+				L.Control.Zoom.prototype.onRemove.call(this, map);
+				this._zoomInButton.removeEventListener("click", this.onZoomClick);
+				this._zoomOutButton.removeEventListener("click", this.onZoomClick);
 			}
 		});
 		return new ZoomControl({

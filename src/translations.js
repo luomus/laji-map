@@ -535,9 +535,9 @@ export default {
 		sv: "För att flytta punkten"
 	},
 	toActivate: {
-		fi: "Näyttääksesi pätkän lomakkeella",
-		en: "To show the segment on the form",
-		sv: "För att visa klippet på formuläret"
+		fi: "Näyttääksesi biotoopin lomakkeella",
+		en: "To show the biotope on the form",
+		sv: "För att visa biotopen på formuläret"
 	},
 	toEditPoint: {
 		fi: "Muokataksesi pistettä",
@@ -570,8 +570,8 @@ export default {
 		sv: "Klicka innan du zoomar"
 	},
 	clickBeforePan: {
-		fi: "Klikkaa ennen kuin liikutat",
-		en: "Click before panning",
-		sv: "Klicka innan du panorerar"
+		fi: "Koske ennen kuin liikutat",
+		en: "Touch before panning",
+		sv: "Rör innan du panorerar"
 	}
 };

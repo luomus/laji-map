@@ -509,11 +509,15 @@ export default class LajiMap {
 	@dependsOn("map", "tileLayer", "center", "zoom")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
-		this.map.setView(
-			this.center,
-			this.getDenormalizedZoom(this.zoom),
-			{animate: false}
-		);
+		if (this._zoomToData) {
+			this.zoomToData(this._zoomToData);
+		} else {
+			this.map.setView(
+				this.center,
+				this.getDenormalizedZoom(this.zoom),
+				{animate: false}
+			);
+		}
 	}
 
 	@dependsOn("map")
@@ -1792,8 +1796,8 @@ export default class LajiMap {
 		if (this.locate && this.locate[0]) this.locate[0](latlng, accuracy);
 	}
 
-	_onLocationNotFound() {
-		alert(this.translations.geolocationFailed);
+	_onLocationNotFound(e) {
+		if (e.code !== 1) alert(this.translations.geolocationFailed);
 		if (this.initializeViewAfterLocateFail) this._initializeView();
 		if (this.locate && this.locate[1]) this.locate[1]();
 	}

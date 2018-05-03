@@ -383,9 +383,9 @@ export default class LajiMap {
 				contextmenuItems: [],
 				zoomControl: false,
 				attributionControl: false,
-				noWrap: true,
 				continuousWorld: false,
 				doubleClickZoom: false,
+				worldCopyJump: true,
 				zoomSnap: 0
 			});
 
@@ -1357,13 +1357,31 @@ export default class LajiMap {
 	_setOnChangeForItem(item, format = "GeoJSON", crs = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
+		const wrapCoordinate = (( [lng, lat] ) => {
+			const wrapped = this.map.wrapLatLng([lat, lng]);
+			return [wrapped.lng, wrapped.lat];
+		});
+		const wrapCoordinates = (e) => {
+			if (e.feature.geometry.type === "Polygon") {
+				e.feature.geometry.coordinates[0] = e.feature.geometry.coordinates[0].map(wrapCoordinate);
+			} else if (e.feature.geometry.type !== "Point") {
+				e.feature.geometry.coordinates = e.feature.geometry.coordinates.map(wrapCoordinate);
+			} else {
+				e.feature.geometry.coordinates = wrapCoordinate(e.feature.geometry.coordinates);
+			}
+		};
+
 		const onChange = item.onChange;
 		if (onChange) item.onChange = events => onChange(events.map(e => {
+			const layer = this._featureToLayer(this.data[this.drawIdx].getFeatureStyle)(e.feature);
+			this.data[0].group.addLayer(layer);
 			switch (e.type) {
 			case "create":
+				wrapCoordinates(e);
 				e.geoData = convert(e.feature, format, crs);
 				break;
 			case "edit":
+				wrapCoordinates(e);
 				e.geoData = Object.keys(e.features).reduce((features, idx) => {
 					features[idx] = convert(e.features[idx], format, crs);
 					return features;

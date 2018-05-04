@@ -1763,9 +1763,10 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	_setLocateOn() {
+	_setLocateOn(triggerEvent = false) {
 		if (!depsProvided(this, "_setLocateOn", arguments)) return;
 		this.map.locate({watch: true, enableHighAccuracy: true});
+		triggerEvent && this.map.fire("locateToggle", {locate: this.locate});
 	}
 
 	@dependsOn("map")
@@ -1780,6 +1781,7 @@ export default class LajiMap {
 		}
 		if (this.locate && this.locate[0]) this.locate[0](undefined);
 		this._located = false;
+		this.map.fire("locateToggle", {locate: false});
 	}
 
 	@dependsOn("map")
@@ -1811,6 +1813,7 @@ export default class LajiMap {
 			!this._interceptClick() && this.map.fitBounds(this.userLocationRadiusMarker.getBounds());
 		});
 
+		this.userLocation = {latlng, accuracy};
 		if (this.locate && this.locate[0]) this.locate[0](latlng, accuracy);
 	}
 

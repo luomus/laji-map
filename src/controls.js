@@ -89,7 +89,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	_toggleLocate() {
-		this._locateOn ? this._setLocateOff() : this._setLocateOn();
+		this._locateOn ? this._setLocateOff() : this._setLocateOn(!!"triggerEvent");
 	}
 
 	_setLocateOn(...params) {

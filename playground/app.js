@@ -136,7 +136,7 @@ class App {
 			//},
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
-			//locate: true,
+			locate: true,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			draw: this.drawOptions,

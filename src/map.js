@@ -1817,7 +1817,7 @@ export default class LajiMap {
 	_onLocationNotFound(e) {
 		if (e.code !== 1) alert(this.translations.geolocationFailed);
 		if (this.initializeViewAfterLocateFail) this._initializeView();
-		if (this.locate && this.locate[1]) this.locate[1]();
+		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 
 	_getLayerByIdxs(dataIdx, featureIdx) {

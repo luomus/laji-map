@@ -62,10 +62,11 @@ export default class LajiMap {
 			locate: false,
 			center:  [65, 26],
 			zoom: 2,
+			zoomToData: false,
 			popupOnHover: false,
 			draw: false,
 			bodyAsDialogRoot: true,
-			clickBeforeZoomAndPan: false
+			clickBeforeZoomAndPan: false,
 		};
 
 		this.options = {};
@@ -506,7 +507,7 @@ export default class LajiMap {
 	}
 
 
-	@dependsOn("map", "tileLayer", "center", "zoom")
+	@dependsOn("map", "tileLayer", "center", "zoom", "_zoomToData")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
 
@@ -1173,6 +1174,7 @@ export default class LajiMap {
 	setZoomToData(options) {
 		this._zoomToData = options;
 		if (options && !this.locate) this.zoomToData(isObject(options) ? options : true);
+		provide(this, "_zoomToData");
 	}
 
 	@dependsOn("data", "draw", "center", "zoom")
@@ -1804,8 +1806,6 @@ export default class LajiMap {
 	}
 
 	_onLocationNotFound(e) {
-		//if (e.code !== 1) alert(this.translations.geolocationFailed);
-		if (this.initializeViewAfterLocateFail) this._initializeView();
 		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 

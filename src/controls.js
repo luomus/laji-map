@@ -756,7 +756,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						visible = true;
 					}
 
-					const {lat, lng} = latlng;
+					const [lng, lat] = that.wrapGeoJSONCoordinate([latlng.lng, latlng.lat]);
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
 					const ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
 					const etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();

@@ -1359,28 +1359,28 @@ export default class LajiMap {
 		}
 	}
 
+
+	wrapGeoJSONCoordinate([lng, lat]) {
+		const wrapped = this.map.wrapLatLng([lat, lng]);
+		return [wrapped.lng, wrapped.lat];
+	}
+
 	@dependsOn("data")
 	_setOnChangeForItem(item, format = "GeoJSON", crs = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
-		const wrapCoordinate = (( [lng, lat] ) => {
-			const wrapped = this.map.wrapLatLng([lat, lng]);
-			return [wrapped.lng, wrapped.lat];
-		});
 		const wrapCoordinates = (e) => {
 			if (e.feature.geometry.type === "Polygon") {
-				e.feature.geometry.coordinates[0] = e.feature.geometry.coordinates[0].map(wrapCoordinate);
+				e.feature.geometry.coordinates[0] = e.feature.geometry.coordinates[0].map(c => this.wrapGeoJSONCoordinate(c));
 			} else if (e.feature.geometry.type !== "Point") {
-				e.feature.geometry.coordinates = e.feature.geometry.coordinates.map(wrapCoordinate);
+				e.feature.geometry.coordinates = e.feature.geometry.coordinates.map(c => this.wrapGeoJSONCoordinate(c));
 			} else {
-				e.feature.geometry.coordinates = wrapCoordinate(e.feature.geometry.coordinates);
+				e.feature.geometry.coordinates = this.wrapGeoJSONCoordinate(e.feature.geometry.coordinates);
 			}
 		};
 
 		const onChange = item.onChange;
 		if (onChange) item.onChange = events => onChange(events.map(e => {
-			const layer = this._featureToLayer(this.data[this.drawIdx].getFeatureStyle)(e.feature);
-			this.data[0].group.addLayer(layer);
 			switch (e.type) {
 			case "create":
 				wrapCoordinates(e);

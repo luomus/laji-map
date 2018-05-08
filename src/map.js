@@ -386,7 +386,6 @@ export default class LajiMap {
 				attributionControl: false,
 				continuousWorld: false,
 				doubleClickZoom: false,
-				worldCopyJump: true,
 				zoomSnap: 0
 			});
 

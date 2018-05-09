@@ -104,7 +104,7 @@
 }
 .laji-map .laji-map-scroll-prevent.text-container {
 	opacity: 1;
-	background-color: initial;
+	background-color: transparent;
 }
 .laji-map .laji-map-scroll-prevent span {
 	position: absolute;

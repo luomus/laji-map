@@ -316,10 +316,10 @@ export default class LajiMap {
 			this.map.removeEventListener("draw:drawstart", this._onDrawStartPreventScrolling);
 			this.map.removeEventListener("draw:drawstop", this._onDrawStopPreventScrolling);
 			const scrollPreventElemParent =this._scrollPreventElem.parentNode;
-			if (scrollPreventElemParent) scrollPreventElemParent.remove(this._scrollPreventElem);
+			if (scrollPreventElemParent) scrollPreventElemParent.removeChild(this._scrollPreventElem);
 			this._scrollPreventElem = undefined;
 			const scrollPreventTextElemContainerParent = this._scrollPreventTextElemContainer.parentNode;
-			if (scrollPreventTextElemContainerParent) scrollPreventTextElemContainerParent.remove(this._scrollPreventTextElemContainer);
+			if (scrollPreventTextElemContainerParent) scrollPreventTextElemContainerParent.removeChild(this._scrollPreventTextElemContainer);
 			this._scrollPreventTextElemContainer = undefined;
 			(this._scrollPreventScrollListeners || []).forEach(listener => window.removeEventListener(...listener));
 			this._scrollPreventScrollListeners = undefined;

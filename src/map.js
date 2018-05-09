@@ -198,7 +198,7 @@ export default class LajiMap {
 		const valueWas = this._clickBeforeZoomAndPan;
 		this._clickBeforeZoomAndPan = value;
 
-		const isOutsideLajiMap = elem => document.contains(elem) && !this.container.contains(elem) && elem !== this.blockerElem && (!this._openDialogs.length || this._openDialogs.every(dialog => !dialog.contains(elem)));
+		const isOutsideLajiMap = elem => document.body.contains(elem) && !this.container.contains(elem) && elem !== this.blockerElem && (!this._openDialogs.length || this._openDialogs.every(dialog => !dialog.contains(elem)));
 		window.isOutsideLajiMap = isOutsideLajiMap;
 
 		let translationHook = undefined;
@@ -246,7 +246,7 @@ export default class LajiMap {
 			clearTimeout(this._showPreventAnimationTimeout);
 
 			this._showPreventHideTimeout = setTimeout(() => {
-				if (!document.contains(this._scrollPreventElem)) return;
+				if (!document.body.contains(this._scrollPreventElem)) return;
 				hidePreventElem();
 			}, 2000);
 

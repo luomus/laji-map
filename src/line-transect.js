@@ -711,7 +711,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				clearTimeout(this._LTClickTimeout);
 				this._disableDblClickZoom = true;
 				this._getPoint(...this._closebyPointIdxTuple, (...idxTuple) => this._setLTPointEditable(...idxTuple));
-				this._updateLTTooltip({dblclick: undefined});
 				setTimeout(() => {
 					this._disableDblClickZoom = false;
 				}, 10);
@@ -901,6 +900,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		].filter(i => i)
 		 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => this._getLayerForIdxTuple(layers, ...idxTuple)))
 		 .forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
+
+		this._updateLTTooltip({dblclick: undefined});
 	}
 
 	_commitPointDrag() {

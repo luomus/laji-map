@@ -1196,6 +1196,18 @@ export default class LajiMap {
 		}, []));
 
 		let bounds = featureGroup.getBounds();
+		this.fitBounds(bounds, options);
+	}
+
+	_initializeLayer(layer, ...indexTuple) {
+		this._setIdForLayer(layer, ...indexTuple);
+		this._initializePopup(layer);
+		this._initializeTooltip(layer);
+		this._updateContextMenuForLayer(layer);
+		this._decoratePolyline(layer);
+	}
+
+	fitBounds(bounds, options) {
 		if (bounds.isValid()) {
 			const {paddingInMeters} = options;
 			if (paddingInMeters) {
@@ -1213,14 +1225,6 @@ export default class LajiMap {
 				if (this.getNormalizedZoom() < minZoom) this.setNormalizedZoom(minZoom);
 			}
 		}
-	}
-
-	_initializeLayer(layer, ...indexTuple) {
-		this._setIdForLayer(layer, ...indexTuple);
-		this._initializePopup(layer);
-		this._initializeTooltip(layer);
-		this._updateContextMenuForLayer(layer);
-		this._decoratePolyline(layer);
 	}
 
 	@dependsOn("map", "translations")

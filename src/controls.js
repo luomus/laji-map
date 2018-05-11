@@ -327,7 +327,20 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		];
 
-		if (this._customControls) this.controlItems = [...this.controlItems, ...this._customControls];
+		const controlGroups = this.controlItems.reduce((groups, group) => {
+			if  (group.controls) groups[group.name] = group;
+			return groups;
+		}, {});
+
+		if (this._customControls) {
+			this._customControls.forEach(customControl => {
+				customControl._custom = true;
+				const target = customControl.group && controlGroups[customControl.group]
+					? controlGroups[customControl.group].controls
+					: this.controlItems;
+				target.push(customControl);
+			});
+		}
 
 		const that = this;
 
@@ -410,10 +423,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						this.buttonActionContainer = {};
 						this.buttonActions = {};
 
-						controls.forEach(({name: subName, iconCls, text, fn, finishFn, cancelFn, eventName, onAdd: _onAdd}) => {
+						controls.forEach(({name: subName, iconCls, text, fn, finishFn, cancelFn, eventName, onAdd: _onAdd, _custom}) => {
 							const buttonName = getSubControlName(name, subName);
 							this.buttonActions[buttonName] = {};
-							if (!that._controlIsAllowed(buttonName)) return;
+							if (!that._controlIsAllowed(buttonName, _custom)) return;
 							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, buttonName, eventName]), buttonName);
 							if (_onAdd) _onAdd();
 						});
@@ -426,7 +439,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						return container;
 					};
 
-				if (controls && !controls.filter(({name: subName}) => that._controlIsAllowed(getSubControlName(name, subName))).length) {
+				if (controls && !controls.filter(({name: subName, _custom}) => that._controlIsAllowed(getSubControlName(name, subName), _custom)).length) {
 					return;
 				}
 
@@ -608,7 +621,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 
-	_controlIsAllowed(name) {
+	_controlIsAllowed(name, custom = false) {
 		const dependencies = {
 			draw: [
 				() => this.drawIsAllowed()
@@ -657,7 +670,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			} else {
 				return (
 					controlSettings[parentControl] === true ||
-					(controlSettings[parentControl].constructor === Object && controlSettings[parentControl][subControl])
+					(controlSettings[parentControl].constructor === Object && (controlSettings[parentControl][subControl] || custom))
 				) && (
 					dependenciesAreOk(parentControl) && dependenciesAreOk(`${parentControl}.${subControl}`)
 				);
@@ -669,7 +682,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 
 	_addControl(name, control) {
-		if (control && this._controlIsAllowed(name)) {
+		if (control && this._controlIsAllowed(name) || control._custom) {
 			this.map.addControl(control);
 			this.controls.push(control);
 		}

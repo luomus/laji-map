@@ -140,9 +140,18 @@ userLocation                                    | Boolean                  | tru
 search (NOT SUPPORTED YET)                      | Boolean                  | true                                 | Controls whether to show a place name search input.
 
 
+#### Line transect control options ####
+
+If line transect control is true, it is interpreted as a line transect control options object with all default options.
+
+Option                                          | Type                     |  Default                             | Description
+------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
+split                                           | Boolean                  | true                                 | Controls whether to show the segment splitting button.
+delete                                          | Boolean                  | true                                 | Controls whether to show the segment deletion button
+
 ### Custom control options ###
 
-An array or custom control items. A control item is either a singular control, or a collection of control items (the control items in a collection must be singular control items).
+An array of custom control items. A control item is either a singular control, or a collection of control items (the control items in a collection must be singular control items).
 
 Option                                          | Type                     |  Default                             | Description
 ------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
@@ -155,15 +164,7 @@ eventName                                       | String                   | -  
 iconCls                                         | String                   | -                                    | A class that is added to the button icon.
 onAdd                                           | Function                 | -                                    | A callback that is called when the control is added to the map.
 contextMenu                                     | Boolean                  | true                                 | If true, control is added to the context menu.
-
-#### Line transect control options ####
-
-If line transect control is true, it is interpreted as a line transect control options object with all default options.
-
-Option                                          | Type                     |  Default                             | Description
-------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
-split                                           | Boolean                  | true                                 | Controls whether to show the segment splitting button.
-delete                                          | Boolean                  | true                                 | Controls whether to show the segment deletion button
+group                                           | String                   | -                                    | A pre-existing control group to add the group to. Will be displayed according to the groups rules.
 
 ## Methods ##
 

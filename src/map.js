@@ -1375,13 +1375,15 @@ export default class LajiMap {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
 		const wrapCoordinates = (e) => {
-			if (e.feature.geometry.type === "Polygon") {
-				e.feature.geometry.coordinates[0] = e.feature.geometry.coordinates[0].map(c => this.wrapGeoJSONCoordinate(c));
-			} else if (e.feature.geometry.type !== "Point") {
-				e.feature.geometry.coordinates = e.feature.geometry.coordinates.map(c => this.wrapGeoJSONCoordinate(c));
-			} else {
-				e.feature.geometry.coordinates = this.wrapGeoJSONCoordinate(e.feature.geometry.coordinates);
-			}
+			(e.features ? Object.keys(e.features).map(k => e.features[k]) : [e.feature]).forEach(feature => {
+				if (feature.geometry.type === "Polygon") {
+					feature.geometry.coordinates[0] = feature.geometry.coordinates[0].map(c => this.wrapGeoJSONCoordinate(c));
+				} else if (feature.geometry.type !== "Point") {
+					feature.geometry.coordinates = feature.geometry.coordinates.map(c => this.wrapGeoJSONCoordinate(c));
+				} else {
+					feature.geometry.coordinates = this.wrapGeoJSONCoordinate(feature.geometry.coordinates);
+				}
+			});
 		};
 
 		const onChange = item.onChange;

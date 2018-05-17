@@ -187,7 +187,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
 				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
 			}
-			const events = undoData.events.map(e => {
+			const undoEvents = undoData.events.map(e => {
 				switch(e.type) {
 				case "edit": {
 					return {
@@ -214,7 +214,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				}
 				}
 			}).filter(e => e);
-			this._LTHistory.push({geometry, events, featureCollection: undoData.prevFeature});
+			this._LTHistory.push({geometry, undoEvents, redoEvents: undoData.events, featureCollection: undoData.prevFeature});
 			this._LTHistoryPointer++;
 		}
 
@@ -355,22 +355,22 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	LTUndo() {
 		if (this._LTHistoryPointer <= 0) return;
-		const {events} = this._LTHistory[this._LTHistoryPointer];
+		const {undoEvents} = this._LTHistory[this._LTHistoryPointer];
 		this._LTHistoryPointer--;
 		const {geometry} = this._LTHistory[this._LTHistoryPointer];
 		this.setLineTransectGeometry(geometry);
-		if (events) {
-			this._triggerEvent(events.slice(0).reverse(), this._onLTChange);
+		if (undoEvents) {
+			this._triggerEvent(undoEvents.slice(0).reverse(), this._onLTChange);
 		}
 	}
 
 	LTRedo() {
 		if (this._LTHistoryPointer >= this._LTHistory.length - 1) return;
 		this._LTHistoryPointer++;
-		const {geometry, events} = this._LTHistory[this._LTHistoryPointer];
+		const {geometry, redoEvents} = this._LTHistory[this._LTHistoryPointer];
 		this.setLineTransectGeometry(geometry);
-		if (events) {
-			this._triggerEvent(events, this._onLTChange);
+		if (redoEvents) {
+			this._triggerEvent(redoEvents, this._onLTChange);
 		}
 	}
 

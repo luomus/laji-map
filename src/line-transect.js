@@ -772,6 +772,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 	// 'commit' can be an array of events that are triggered at the same time as the event that this function triggers.
 	removeLTPoint(lineIdx, pointIdx, commit = true) {
+		this._commitPointDrag();
+
 		let events = [];
 		const that = this;
 

@@ -288,11 +288,11 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					segment,
 					this._getStyleForLTIdxTupleAndType(lineIdx, segmentIdx, L.Polyline)
 				);
-				const degree = this._degreesFromNorth(segment);
-				const direction = L.GeometryUtil.destination(L.latLng(segment[0]), degree, 500);
 				if (!this._LTPrintMode) {
 					line.setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
 				} else if (!L.latLng(segment[0]).equals(prevEnd)) {
+					const degree = this._degreesFromNorth(segment);
+					const direction = L.GeometryUtil.destination(L.latLng(segment[0]), degree, 500);
 					L.polyline([segment[0], direction], {opacity: 0, fillOpacity: 0})
 						.setText("→", {repeat: false, attributes: {dy: 5, "font-size": 50}})
 						.addTo(this.map);
@@ -1286,7 +1286,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_updateLTStyleForIdxTuple(lineIdx, segmentIdx) {
-		if (lineIdx === undefined || segmentIdx === undefined) return;
+		if (this._LTPrintMode || lineIdx === undefined || segmentIdx === undefined) return;
 		[this._lineLayers, this._corridorLayers, this._pointLayers].forEach(layerGroup => {
 			if (layerGroup === this._pointLayers && segmentIdx === 0 || (this._pointLayers[lineIdx] && segmentIdx === this._pointLayers[lineIdx].length - 1)) return;
 			const lineGroup = layerGroup[lineIdx] || [];
@@ -1748,35 +1748,36 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (!this._LTPrintMode) {
 			return;
 		}
+
+		let nonusedDist = 0;
 		let counter = 0;
-		let offset = 0;
-
-		let prevEnd = undefined;
-		this._allSegments.forEach(segment => {
+		this._allSegments.forEach((segment, i) => {
+			let lengths = i === 0 ? [0]: [];
 			let [start, end] = segment.getLatLngs();
-			const distance = start.distanceTo(end);
-			if (prevEnd && !prevEnd.equals(start)) {
-				offset = 0;
+			const segmentLength = start.distanceTo(end);
+			let  _segmentLength = segmentLength;
+			while (_segmentLength + nonusedDist > 100) {
+				const length = 100 - nonusedDist;
+				_segmentLength -= length;
+				lengths.push(length);
+				nonusedDist = 0;
 			}
-			prevEnd = end;
+			nonusedDist = lengths.reduce((total, l) => total - l, segmentLength + nonusedDist);
 
-			let usedDistance = -offset;
-			let nonusedDistance = distance + offset;
-			let splitted = false;
-			while (nonusedDistance >= 100) {
-				nonusedDistance -= 100;
-				usedDistance += 100;
-				counter++;
-				const major = !(counter % 5);
-				const lineAngleFromNorth = this._degreesFromNorth(segment.getLatLngs());
-				const lineCenter = L.GeometryUtil.destination(segment.getLatLngs()[0], lineAngleFromNorth, usedDistance);
+			const lineAngleFromNorth = this._degreesFromNorth(segment.getLatLngs());
+			let accumulatedLength = 0;
+			lengths.forEach(length => {
+				const major = counter === 0 || counter % 5 === 0;
+				accumulatedLength += length;
+				const lineCenter = L.GeometryUtil.destination(segment.getLatLngs()[0], lineAngleFromNorth, accumulatedLength);
 				const lineStart = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth - 90, (major ? 2 : 1) * LT_WIDTH_METERS);
 				const lineEnd = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth + 90, (major ? 2 : 1) * LT_WIDTH_METERS);
 				L.polyline([lineStart, lineEnd], {color: "#000", weight: 1}).addTo(this.map);
-				splitted = true;
-			}
-			offset = splitted ? nonusedDistance : offset + nonusedDistance;
+				counter++;
+			});
 		});
+
+		this._allPoints[0].bringToFront();
 	}
 };
 

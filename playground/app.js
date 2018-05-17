@@ -163,16 +163,7 @@ class App {
 				shapeOptions: {
 					showArea: true
 				}
-			},
-			customControls: [
-				{
-					text: "moi"
-				},
-				{
-					text: "moi",
-					group: "lineTransect"
-				}
-			]
+			}
 		};
 
 

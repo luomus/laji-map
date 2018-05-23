@@ -907,6 +907,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_commitPointDrag() {
+		if (!this._LTEditPointIdxTuple) return;
+
 		this._stopLTDragPointHandler();
 		const precedingIdxTuple = this._getIdxTuplePrecedingEditPoint();
 		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();

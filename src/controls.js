@@ -771,8 +771,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 					const [lng, lat] = that.wrapGeoJSONCoordinate([latlng.lng, latlng.lat]);
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
-					const ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
-					const etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+					let ykj, etrsTm35Fin;
+					try {
+						ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
+						etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+					} catch (e) {
+						//
+					}
 
 					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
 						let coords = wgs84;
@@ -780,7 +785,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						else if (name === "ETRS-TM35FIN") coords = etrsTm35Fin;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
 						let coordsFormatted = undefined;
-						switch (name) {
+						if (coords) switch (name) {
 						case "WGS84":
 							coordsFormatted = coords.join(", ");
 							break;
@@ -790,7 +795,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						case "ETRS-TM35FIN":
 							coordsFormatted = `N=${coords[0]} E=${coords[1]}`;
 						}
-						coordsCell.innerHTML = coordsFormatted;
+						coordsCell.innerHTML = coordsFormatted || "";
 						coordsCell.className = "monospace";
 					});
 				}).on("mouseout", () => {
@@ -910,6 +915,18 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				});
 
 				that._slider = _noUiSlider;
+			},
+			_checkDisabledLayers: function() {
+				L.Control.Layers.prototype._checkDisabledLayers.call(this);
+				if (!that._isOutsideFinland(that.map.getCenter())) return;
+				const inputs = this._layerControlInputs;
+				for (let i = inputs.length - 1; i >= 0; i--) {
+					const input = inputs[i];
+					const layer = this._getLayer(input.layerId).layer;
+					if (that._getMMLCRSLayers().includes(layer)) {
+						input.disabled = true;
+					}
+				}
 			}
 		});
 

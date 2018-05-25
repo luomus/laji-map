@@ -18,7 +18,8 @@ import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
 	ESC,
-	ONLY_MML_OVERLAY_NAMES
+	ONLY_MML_OVERLAY_NAMES,
+	FINLAND_BOUNDS
 } from "./globals";
 
 import translations from "./translations.js";
@@ -526,6 +527,17 @@ export default class LajiMap {
 		}
 	}
 
+	_isOutsideFinland(latLng) {
+		return !L.latLngBounds(FINLAND_BOUNDS).contains(latLng);
+	}
+
+	_swapToForeignOutsideFinland(latLng) {
+		if (!this._getDefaultCRSLayers().includes(this.tileLayer) && this._isOutsideFinland(latLng)) {
+			this._swapToForeignFlag = true;
+			this.setTileLayer(this.tileLayers.openStreetMap);
+		}
+	}
+
 	@dependsOn("map")
 	_initializeMapEvents() {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
@@ -589,6 +601,13 @@ export default class LajiMap {
 					}
 				}
 				this.map.fire("mousemove", {latlng: this._mouseLatLng});
+			},
+			"moveend": () => {
+				if (this._swapToForeignFlag) {
+					this._swapToForeignFlag = false;
+					return;
+				}
+				this._swapToForeignOutsideFinland(this.map.getCenter());
 			}
 		});
 
@@ -724,10 +743,6 @@ export default class LajiMap {
 			projectionChanged = true;
 		}
 
-		if (projectionChanged) {
-			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
-			this.map.setView(center, zoom, {animate: false});
-		}
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
@@ -738,6 +753,11 @@ export default class LajiMap {
 
 		if (projectionChanged) {
 			this.setOverlays(this.overlays, !"trigger event");
+		}
+
+		if (projectionChanged) {
+			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+			this.map.setView(center, zoom, {animate: false});
 		}
 
 		let currentLayerName = undefined;

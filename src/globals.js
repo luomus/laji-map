@@ -18,3 +18,5 @@ export const EPSG2393WKTString = "PROJCS[\"KKJ_Finland_Uniform_Coordinate_System
 export const ESC = "ESC";
 
 export const ONLY_MML_OVERLAY_NAMES = ["ykjGrid", "ykjGridLabels"];
+
+export const FINLAND_BOUNDS = [[71.348, 33.783], [48.311, 18.316]];

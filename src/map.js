@@ -227,7 +227,7 @@ export default class LajiMap {
 				clearTimeout(this._showPreventShowTimeout);
 				this._showPreventShowTimeout = setTimeout(() => {
 					this._preventScrolling();
-				}, 3000);
+				}, 10000);
 			};
 		}
 

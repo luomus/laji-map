@@ -1239,7 +1239,7 @@ export default class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToForeignOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, _options);
+		this.map.fitBounds(bounds, {animate: false, _options});
 		if (typeof maxZoom === "number" && !isNaN(maxZoom)) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}

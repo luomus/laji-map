@@ -130,10 +130,10 @@ class App {
 			},
 			lang: "fi",
 			popupOnHover: true,
-			//center: {
-			//	"lat": 60.3499057749654,
-			//	"lng": 21.160612106323246
-			//},
+			center: {
+				"lat": 79.3499057749654,
+				"lng": 21.160612106323246
+			},
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
 			locate: true,

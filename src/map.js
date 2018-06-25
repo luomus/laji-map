@@ -1228,22 +1228,23 @@ export default class LajiMap {
 	}
 
 	fitBounds(bounds, options) {
-		if (bounds.isValid()) {
-			const {paddingInMeters} = options;
-			if (paddingInMeters) {
-				bounds = L.latLngBounds(
-					bounds.getSouthWest().toBounds(paddingInMeters).getSouthWest(),
-					bounds.getNorthEast().toBounds(paddingInMeters).getNorthEast()
-				);
-			}
-			const {minZoom, maxZoom, ..._options} = options;
-			this.map.fitBounds(bounds, _options);
-			if (typeof maxZoom === "number" && !isNaN(maxZoom)) {
-				if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
-			}
-			if (typeof minZoom === "number" && !isNaN(minZoom)) {
-				if (this.getNormalizedZoom() < minZoom) this.setNormalizedZoom(minZoom);
-			}
+		if (!bounds.isValid()) return;
+
+		const {paddingInMeters} = options;
+		if (paddingInMeters) {
+			bounds = L.latLngBounds(
+				bounds.getSouthWest().toBounds(paddingInMeters).getSouthWest(),
+				bounds.getNorthEast().toBounds(paddingInMeters).getNorthEast()
+			);
+		}
+		const {minZoom, maxZoom, ..._options} = options;
+		this._swapToForeignOutsideFinland(bounds.getCenter());
+		this.map.fitBounds(bounds, _options);
+		if (typeof maxZoom === "number" && !isNaN(maxZoom)) {
+			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
+		}
+		if (typeof minZoom === "number" && !isNaN(minZoom)) {
+			if (this.getNormalizedZoom() < minZoom) this.setNormalizedZoom(minZoom);
 		}
 	}
 

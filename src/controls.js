@@ -1,5 +1,5 @@
 import "leaflet-contextmenu";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridValidator, wgs84Validator, stringifyLajiMapError, createTextInput, createTextArea, isObject } from "./utils";
+import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator, ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject } from "./utils";
 import {
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
@@ -1099,6 +1099,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		};}
 
 		const ykjAllowed = that.getDraw().rectangle;
+		const etrsTm35FinAllowed = that.getDraw().marker;
 		const wgs84Allowed = that.getDraw().marker;
 
 		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
@@ -1114,7 +1115,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function submitValidate(inputValues) {
 			const validators = [];
 			if (wgs84Allowed) validators.push(wgs84Validator);
-			if (ykjAllowed) validators.push(ykjGridValidator);
+			if (ykjAllowed) validators.push(ykjValidator, ykjGridStrictValidator);
+			if (etrsTm35FinAllowed) validators.push(etrsTm35FinValidator);
 			return validators.some(validator => validateLatLng(inputValues, validator));
 		}
 
@@ -1140,8 +1142,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const rectangleAllowed = that.getDraw().rectangle;
 			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
 			if (that.getDraw().marker) {
-				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates}`;
-				else help = that.translations.EnterWgs84Coordinates;
+				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`;
+				else help = `${that.translations.EnterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`;
 			}
 			help += ".";
 			return help;
@@ -1176,8 +1178,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			return +strFormat;
 		}
 
-		function convert(coords) {
-			return convertLatLng(coords, "EPSG:2393", "WGS84");
+		function convert(coords, crs = "EPSG:2393") {
+			return convertLatLng(coords, crs, "WGS84");
 		}
 
 		container.addEventListener("submit", e => {
@@ -1186,18 +1188,28 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const latlngStr = [latInput.value, lngInput.value];
 			const latlng = latlngStr.map(parseFloat);
 
-			const isYKJ = !validateLatLng(latlngStr, wgs84Validator);
+			const isWGS84Coordinates = validateLatLng(latlngStr, wgs84Validator);
+			const isETRS = validateLatLng(latlngStr, etrsTm35FinValidator);
+			const isYKJ = validateLatLng(latlngStr, ykjValidator);
+			const isYKJGrid = validateLatLng(latlngStr, ykjGridStrictValidator);
 
 			let geometry = { type: "Point",
-				coordinates: (isYKJ ? convert(latlng.map(toYKJFormat)) : latlng.reverse())
+				coordinates: (isYKJ)
+					? convert(latlng.map(toYKJFormat), "EPSG:2393")
+					: (isETRS)
+						? convert(latlng, "EPSG:3067")
+						: (isWGS84Coordinates)
+							? latlng.reverse()
+							: null
 			};
+
 			const feature = {
 				type: "Feature",
 				geometry: geometry,
 				properties: {}
 			};
 
-			if (isYKJ && (latlngStr[0].length < 7 || this.getDraw().marker === false)) {
+			if (isYKJGrid) {
 				const latStart = toYKJFormat(latlng[0]);
 				const latEnd = toYKJFormat(latlng[0] + 1);
 
@@ -1211,7 +1223,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 					[latEnd, lonEnd],
 					[latEnd, lonStart],
 					[latStart, lonStart]
-				].map(convert)];
+				].map(coordinatePair => convert(coordinatePair, "EPSG:2393"))];
 			}
 
 			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);

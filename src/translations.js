@@ -244,6 +244,11 @@ export default {
 		en: "$errorHTML An error occurred. Please try again later.",
 		sv: "$errorHTML Ett fel uppstod. Försök igen senare."
 	},
+	enterETRSTM35FINCoordinates: {
+		fi: "Anna pisteen koordinaatit ETRS-TM35FIN-muodossa",
+		en: "Enter a marker's coordinates in ETRS-TM35FIN format",
+		sv: "Ange markörens koordinater i ETRS-TM35FIN format"
+	},
 	enterWgs84Coordinates: {
 		fi: "Anna pisteen koordinaatit WGS84-muodossa",
 		en: "Enter a marker's coordinates in WGS84 format",

@@ -549,19 +549,23 @@ function formatterForLength(length) {
 	return value => (value.length < length ? value + "0".repeat(length - value.length) : value);
 }
 const ykjRegexp = /^[0-9]{7}$/;
+
 const ykjValidator = [
 	{regexp: ykjRegexp, range: [6600000, 7800000]},
 	{regexp: ykjRegexp, range: [3000000, 3800000]}
 ];
+
 const etrsTm35FinValidator = [
 	{regexp: ykjRegexp, range: [6600000, 7800000]},
 	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000]}
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
-const ykjGridValidator = ykjValidator.map(validator => {return {...validator, regexp: /^[0-9]{3,7}$/, formatter: formatterForLength(7)};});
+// Valid ykj grid input can not overlap etrsTm35Fin coordinate point. Unvalidate cases where x-coordinate length is 7 digits or y-coordinate doesn't start with '3' or y-coordinate length is 7 digits. This leaves an unlikely corner case where the user wants to input 1 m wide or 1 m long rectangle.
+const ykjGridStrictValidator = ykjValidator.map(validator => {return {...validator, regexp: /^[0-9]{3,6}$/, formatter: formatterForLength(7)};});
+const ykjGridValidator = ykjGridStrictValidator; // For backward compability
 
-export {wgs84Validator, ykjValidator, ykjGridValidator, etrsTm35FinValidator, etrsValidator};
+export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, etrsTm35FinValidator, etrsValidator};
 
 export function validateLatLng(latlng, latLngValidator) {
 	return latlng.every((value, i) => {

@@ -295,9 +295,9 @@ export default {
 		sv: "Hotbedömningszoner"
 	},
 	firstOrLastPoint: {
-		fi: "Haluatko siirtää edeltävää vai seuraavaa pistettä?",
-		en: "Do you want to move the preceding or the following point?",
-		sv: "Vill du flytta den föregående eller den följande punkten?"
+		fi: "Haluatko siirtää edeltävää vai seuraavaa biotooppia?",
+		en: "Do you want to move the preceding or the following biotope?",
+		sv: "Vill du flytta den föregående eller den följande biotopen?"
 	},
 	firstPartitive: {
 		fi: "Edeltävää",

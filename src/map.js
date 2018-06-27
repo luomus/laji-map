@@ -266,7 +266,7 @@ export default class LajiMap {
 				this._showingPreventScroll = false;
 				[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.className = elem.className.replace("leaving", "left"));
 				this._startPreventScrollingTimeout();
-			}, 200); //should match transition time in css
+			}, 200); // Should match transition time in css
 		};
 
 		const _onTouchOrMouseEventAgnostic = (isOutside) => {
@@ -974,7 +974,7 @@ export default class LajiMap {
 			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 			feature.geometry.radius = layer.getRadius();
 		} else if  (feature.geometry.type === "Polygon") {
-			//If the coordinates are ordered counterclockwise, reverse them.
+			// If the coordinates are ordered counterclockwise, reverse them.
 			const coordinates = feature.geometry.coordinates[0].slice(0);
 
 			const sum = coordinates.map((c, i) => {
@@ -991,7 +991,7 @@ export default class LajiMap {
 			}
 		}
 
-		const {lajiMapIdx, ...properties} = feature.properties; //eslint-disable-line
+		const {lajiMapIdx, ...properties} = feature.properties; // eslint-disable-line
 		return {...feature, properties};
 	}
 
@@ -1099,7 +1099,6 @@ export default class LajiMap {
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
 				style: feature => {
 					return this._getStyleForType(dataIdx, feature.properties.lajiMapIdx, feature);
-					//return this._fillStyleWithGlobals(dataIdx, feature.properties.lajiMapIdx, feature);
 				},
 			}
 		);

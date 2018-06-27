@@ -1720,7 +1720,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const submit = document.createElement("button");
 		submit.setAttribute("type", "submit");
 		submit.className = "btn btn-block btn-primary";
-		translateHooks.push(this.addTranslationHook(submit, "SplitLine"));
+		translateHooks.push(this.addTranslationHook(submit, "SplitWholeLine"));
 		submit.setAttribute("disabled", "disabled");
 
 		submit.addEventListener("click", splitByMeters);

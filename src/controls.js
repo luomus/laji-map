@@ -26,7 +26,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_setLang() {
 		if (!depsProvided(this, "setLang", arguments)) return;
 
-		// original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
+		// Original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 		const drawLocalizations = L.drawLocal.draw;
 
 		const join = (...params) => this._joinTranslations(...params);
@@ -456,7 +456,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			if (leafletControl) this._addControl(name, leafletControl);
 		});
 
-		// hrefs cause map to scroll to top when a control is clicked. This is fixed below.
+		// Hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
 		function removeHref(className) {
 			const elems = document.getElementsByClassName(className);
@@ -1092,7 +1092,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function formatter(input) { return e => {
 			let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
 
-			if (charCode >= 48 && charCode <= 57) { // is a number
+			if (charCode >= 48 && charCode <= 57) { // Is a number
 			// The input cursor isn't necessary at the EOL, but this validation works regardless.
 				inputValidate(e, input.value + String.fromCharCode(charCode));
 			}

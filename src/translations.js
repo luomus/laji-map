@@ -100,9 +100,9 @@ export default {
 		sv: "Och"
 	},
 	toDrawCircle: {
-		fi: "Piirtääksesi ympyrän.",
-		en: "To draw a circle.",
-		sv: "För att rita en cirkel."
+		fi: "Piirtääksesi ympyrän",
+		en: "To draw a circle",
+		sv: "För att rita en cirkel"
 	},
 	toDrawRectangle: {
 		fi: "Piirtääksesi suorakulmion",
@@ -110,14 +110,14 @@ export default {
 		sv: "För att rita en rektangel"
 	},
 	clickMapToPlaceMarker: {
-		fi: "Klikkaa karttaa asettaaksesi nastan.",
-		en: "Click the map to place a marker.",
-		sv: "Klicka på kartan för att sätta en markör."
+		fi: "Klikkaa karttaa asettaaksesi nastan",
+		en: "Click the map to place a marker",
+		sv: "Klicka på kartan för att sätta en markör"
 	},
 	clickToStartDrawingShape: {
-		fi: "Klikkaa aloittaaksesi muodon piirtäminen.",
-		en: "Click to start drawing a shape.",
-		sv: "Klicka på för att börja rita en form."
+		fi: "Klikkaa aloittaaksesi muodon piirtäminen",
+		en: "Click to start drawing a shape",
+		sv: "Klicka på för att börja rita en form"
 	},
 	clickToContinueDrawingShape: {
 		fi: "Klikkaa jatkaaksesi muodon piirtämistä.",
@@ -319,6 +319,11 @@ export default {
 		en: "Split biotope",
 		sv: "Bryta biotopen"
 	},
+	splitWholeLine: {
+		fi: "Katkaise linja",
+		en: "Split line",
+		sv: "Bryta linjen"
+	},
 	splitLineTooltip: {
 		fi: "<b>Klikkaa</b> karttaa katkaistaksesi biotoopin",
 		en: "<b>Click</b> the map to split the biotope",
@@ -380,9 +385,9 @@ export default {
 		sv: "Den sista"
 	},
 	uploadDrawnFeatures: {
-		fi: "Tuo kuviot tekstinä.",
-		en: "Upload textual coordinates.",
-		sv: "Ladda upp textkoordinater."
+		fi: "Tuo kuviot tekstinä",
+		en: "Upload textual coordinates",
+		sv: "Ladda upp textkoordinater"
 	},
 	geoDataFormatDetectionError: {
 		fi: "Formaatin tunnistus epäonnistui",

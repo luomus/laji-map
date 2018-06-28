@@ -102,6 +102,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		this._updateUserLocate(false);
 	}
 
+	_onLocationFound(...params) {
+		super._onLocationFound(...params);
+		this._updateUserLocate(this._locateOn);
+	}
+
 	@reflect()
 	@dependsOn("controls")
 	_updateUserLocate(value) {
@@ -113,6 +118,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			button.className = `${button.className} on`;
 		} else if (!this._locateOn && button.className.includes(" on")){
 			button.className = button.className.replace(" on", "");
+		}
+		if (!this._located && !button.className.includes(" locating")) {
+			button.className = `${button.className} locating`;
+		} else if (this._located && button.className.includes(" locating")) {
+			button.className = button.className.replace(" locating", "");
 		}
 	}
 

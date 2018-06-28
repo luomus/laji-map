@@ -355,6 +355,22 @@
 	top: initial;
 	left: initial;
 }
-.laji-map .leaflet-control a.on {
+.laji-map .leaflet-control a.on:not(.locating) {
     background-color: #70d7ff;
+}
+.laji-map .leaflet-control a.on.locating {
+	animation: laji-map-locating-pulse 1s infinite;
+}
+
+@keyframes laji-map-locating-pulse {
+	0% {
+		background-color: #ffffff;
+	}
+	50% {
+		background-color: #70d7ff;
+	}
+	100% {
+		background-color: #ffffff;
+	}
+
 }

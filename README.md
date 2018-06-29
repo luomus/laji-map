@@ -20,9 +20,9 @@ var map = new LajiMap(options);
 Option                                          | Type                      |  Default                            | Description
 ------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
 rootElem                                        | HTML elem                 | -                                   | The node where to mount.
-lang                                            | String                    | "en"                                | one of "en", "fi", "sv".
+lang                                            | String                    | "en"                                | One of "en", "fi", "sv".
 data                                            | Data options[]            | -                                   | Data to draw on map.
-draw                                            | Draw options              | -                                   | options for data that can be controlled with the draw control buttons.
+draw                                            | Draw options              | -                                   | Options for data that can be controlled with the draw control buttons.
 controls                                        | Control options           | -                                   | An option object that defines which control should be shown.
 customControls                                  | Custom controls options[] | -                                   | An array of custom controls. See custom control options.
 tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap" or "googleSatellite".
@@ -65,16 +65,17 @@ getClusterStyle({count))                                         | Function     
 getDraftStyle                                                    | Function                  | true                                | A function that returns a Path style to use for the feature during drawing & editing a feature.
 on                                                               | Object                    | -                                   | An object containing event name -> event handler pairs. Event handler arguments look like this: (e, {idx, layer, feature}). Example: {click: function(e, {idx, layer, feature}) { //handle event }}
 editable                                                         | Boolean                   | true                                | Controls whether the data is editable.
+hasActive                                                        | Boolean                   | -                                   | Whether features can be activated.
 activeIdx                                                        | Integer                   | -                                   | The initial active idx. If not given, the data doesn't allow activating any feature. If 'undefined', features can be activated but there is initially no active features.
 polygon                                                          | Object                    | -                                   | Polygon options: {allowIntersection: Boolean}
 polyline                                                         | Object                    | -                                   | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true).
 onChange                                                         | Function                  | -                                   | A callback function that fires events for draw data changes. Receives an array of event objects.
-highlightOnHover                                                 | Boolean                   | false                               | Hightlights layers on hover even if the item isn't editable or doesn't have an active idx.
+highlightOnHover                                                 | Boolean                   | false                               | Highlights layers on hover even if the item isn't editable or doesn't have an active idx.
 
 
 ### Draw options ###
 
-Draw options extend data options.
+Draw options extend data options with `editable: true` as default.
 
 Option                                          | Type                 |  Default                                 | Description
 ------------------------------------------------|----------------------|------------------------------------------|------------------------------------

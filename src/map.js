@@ -1340,7 +1340,7 @@ export default class LajiMap {
 
 	drawIsAllowed = () => {
 		const draw = this.getDraw();
-		return this.getFeatureTypes().some(type => draw[type]);
+		return draw.editable && this.getFeatureTypes().some(type => draw[type]);
 	}
 
 	resetDrawUndoStack() {

@@ -139,8 +139,8 @@ class App {
 			locate: true,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			//draw: this.drawOptions,
-			//data: this.data,
+			draw: this.drawOptions,
+			data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {

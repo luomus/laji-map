@@ -387,14 +387,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const precedingIdxTuple = this._getIdxTuplePrecedingPoint(...idxTuple);
 		const followingIdxTuple = this._getIdxTupleFollowingPoint(...idxTuple);
 
-		if (!this._hoveredIdxTuple && !idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple) &&  overlappingPointIdxTuple && this._getLayerForIdxTuple(this._pointLayers, ...overlappingPointIdxTuple).getLatLng().equals(this._getLayerForIdxTuple(this._pointLayers, ...idxTuple).getLatLng())) {
+		if (!idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple) &&  overlappingPointIdxTuple && this._getLayerForIdxTuple(this._pointLayers, ...overlappingPointIdxTuple).getLatLng().equals(this._getLayerForIdxTuple(this._pointLayers, ...idxTuple).getLatLng())) {
 			tooltip = `${getTooltipForLineIdx(overlappingPointIdxTuple[0])}, ${tooltip}`;
 		}
 
-		if (!this._hoveredIdxTuple && precedingIdxTuple && pointIdx === 0) {
+		if (precedingIdxTuple && pointIdx === 0) {
 			tooltip += `, ${getTooltipForLineIdx(precedingIdxTuple[0])}`;
 		}
-		if (!this._hoveredIdxTuple && followingIdxTuple && pointIdx === this._lineLayers[lineIdx].length) {
+		if (followingIdxTuple && pointIdx === this._lineLayers[lineIdx].length) {
 			tooltip += `, ${getTooltipForLineIdx(followingIdxTuple[0])}`;
 		}
 
@@ -604,7 +604,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			this._hoveredIdxTuple = undefined;
 			this._updateLTStyleForLineIdx(lineIdx);
-			this._updateLTTooltip({text: undefined, click: undefined, drag: undefined});
+			const messages = {click: undefined, drag: undefined};
+			if (!this._closebyPointIdxTuple) messages.text = undefined;
+			this._updateLTTooltip(messages);
 		};
 		const pointIsMiddlePoint = (e) => {
 			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
@@ -717,7 +719,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					}
 					layers.forEach(layer => layer && this._setStyleForLTLayer(layer));
 				});
-				if (!this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
+				if (this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
 					this._updateLTTooltip({
 						text: this._getTooltipForPointIdxTuple(...this._closebyPointIdxTuple),
 						dblclick: this.translations.toEditPoint,

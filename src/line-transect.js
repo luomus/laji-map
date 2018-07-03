@@ -374,7 +374,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	_getTooltipForPointIdxTuple = (...idxTuple) => {
+	_getTooltipForPointIdxTuple = (type, ...idxTuple) => {
 		const [lineIdx, pointIdx] = idxTuple;
 		const getTooltipForLineIdx = lineIdx => {
 			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx, 10);
@@ -386,6 +386,10 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const overlappingPointIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleToIdxTupleStr(...idxTuple)];
 		const precedingIdxTuple = this._getIdxTuplePrecedingPoint(...idxTuple);
 		const followingIdxTuple = this._getIdxTupleFollowingPoint(...idxTuple);
+
+		if (type !== L.Marker) {
+			return tooltip;
+		}
 
 		if (!idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple) &&  overlappingPointIdxTuple && this._getLayerForIdxTuple(this._pointLayers, ...overlappingPointIdxTuple).getLatLng().equals(this._getLayerForIdxTuple(this._pointLayers, ...idxTuple).getLatLng())) {
 			tooltip = `${getTooltipForLineIdx(overlappingPointIdxTuple[0])}, ${tooltip}`;
@@ -401,8 +405,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return tooltip;
 	};
 
-	_showTooltipDescriptionFor(lineIdx, segmentIdx) {
-		const text = this._getTooltipForPointIdxTuple(lineIdx, segmentIdx);
+	_showTooltipDescriptionFor(type, lineIdx, segmentIdx) {
+		const text = this._getTooltipForPointIdxTuple(type, lineIdx, segmentIdx);
 		this._updateLTTooltip({text});
 		this._tooltipIdx = lineIdx;
 		if (this._getLTTooltip) {
@@ -580,19 +584,21 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const onMouseOver = (e) => {
 			L.DomEvent.stopPropagation(e);
 
+			const isPoint = e.layer instanceof L.Marker;
+			const type = isPoint ? L.Marker : L.Polygon;
 			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
 
 			const prevHoverIdx = this._hoveredIdxTuple;
 			this._hoveredIdxTuple = [lineIdx, segmentIdx];
 			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
 			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
-			this._showTooltipDescriptionFor(lineIdx, segmentIdx);
+			this._showTooltipDescriptionFor(type, lineIdx, segmentIdx);
 			const messages = {};
 			if (this._LTActiveIdx !== lineIdx) {
 				messages.click = this.translations.toActivate;
 			}
 			if ([this._getIdxTuplePrecedingEditPoint(), this._getIdxTupleFollowingEditPoint()].some(idxTuple => idxTuplesEqual(idxTuple, this._hoveredIdxTuple))) {
-				messages.text = this._getTooltipForPointIdxTuple(lineIdx, segmentIdx),
+				messages.text = this._getTooltipForPointIdxTuple(type, lineIdx, segmentIdx),
 				messages.drag = this.translations.toMovePoint;
 			}
 			this._updateLTTooltip(messages);
@@ -604,8 +610,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			this._hoveredIdxTuple = undefined;
 			this._updateLTStyleForLineIdx(lineIdx);
-			const messages = {click: undefined, drag: undefined};
-			if (!this._closebyPointIdxTuple) messages.text = undefined;
+			const messages = {text: undefined, click: undefined, drag: undefined};
 			this._updateLTTooltip(messages);
 		};
 		const pointIsMiddlePoint = (e) => {
@@ -659,8 +664,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				const {lineIdx, idxTuple} = this.getIdxsFromEvent(e);
 
 				if (this._closebyPointIdxTuple && this._pointLTShiftMode && this._pointCanBeShiftedTo(...this._closebyPointIdxTuple)) {
-					const [closeByLineIdx, closeBySegmentIdx] = this._closebyPointIdxTuple;
-					this.commitLTPointShift(closeBySegmentIdx === 0 ? closeByLineIdx : closeByLineIdx + 1);
+					const [closebyLineIdx, closebySegmentIdx] = this._closebyPointIdxTuple;
+					this.commitLTPointShift(closebySegmentIdx === 0 ? closebyLineIdx : closebyLineIdx + 1);
 					return;
 				}
 				if (this._selectLTMode) {
@@ -721,7 +726,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				});
 				if (this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
 					this._updateLTTooltip({
-						text: this._getTooltipForPointIdxTuple(...this._closebyPointIdxTuple),
 						dblclick: this.translations.toEditPoint,
 						rightclick: this.translations.toDeletePoint
 					});
@@ -915,7 +919,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				this._LTdragPoint.setStyle(style);
 				this._setStyleForLTLayer(point);
 				this._updateLTTooltip({
-					text: this._getTooltipForPointIdxTuple(lineIdx, pointIdx),
+					text: this._getTooltipForPointIdxTuple(L.Marker, lineIdx, pointIdx),
 					drag: this.translations.toMovePoint
 				});
 			}).on("mouseout", () => {
@@ -1030,7 +1034,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_dragLTPointHandler({latlng}) {
 		if (!this._dragMouseStart) return;
 
-		this._updateLTTooltip({text: this._getTooltipForPointIdxTuple(...this._LTEditPointIdxTuple)});
+		this._updateLTTooltip({text: this._getTooltipForPointIdxTuple(L.Marker, ...this._LTEditPointIdxTuple)});
 
 		const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
 		const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);

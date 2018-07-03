@@ -92,7 +92,7 @@
 	opacity: 0.3;
 	z-index: 1001;
 }
-.laji-map-blocker.fixed {
+.laji-map-blocker.fixed, .laji-map-dialog.fixed {
 	position: fixed;
 }
 .laji-map .laji-map-scroll-prevent {

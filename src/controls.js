@@ -1066,6 +1066,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	_showDialog(container, onClose) {
 		const _container = document.createElement("div");
 		_container.className = "laji-map-dialog panel panel-default panel-body";
+		if (this._dialogRoot === document.body) {
+			_container.className += " fixed";
+		}
 		_container.appendChild(container);
 
 		function close(e) {

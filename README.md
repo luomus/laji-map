@@ -48,7 +48,7 @@ polyline                                        | Object                    | - 
 rectangle                                       | Object                    | -                                   | Global path style options.
 circle                                          | Object                    | -                                   | Global Path style options.
 marker                                          | Object                    | -                                   | Global Path style options.
-bodyAsDialogRoot                                | Boolean                   | true                                | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the rootElem will be used as the root DOM node for dialogs.
+bodyAsDialogRoot                                | Boolean                   | true                                | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the map container will be used as the root DOM node for dialogs.
 clickBeforeZoomAndPan                           | Boolean                   | false                               | Block wheel and touchstart events before map is clicked/touched.
 
 ### Data options ###

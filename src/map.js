@@ -180,7 +180,7 @@ export default class LajiMap {
 		if (value) {
 			this._dialogRoot = document.body;
 		} else {
-			this._dialogRoot = this.rootElem;
+			this._dialogRoot = this.container;
 		}
 		if (prevBodyRoot) {
 			if (this.blockerElem.parentNode === prevBodyRoot) prevBodyRoot.removeChild(this.blockerElem);

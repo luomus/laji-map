@@ -374,3 +374,15 @@
 	}
 
 }
+
+.laji-map .leaflet-control-layers .info {
+	font-size: 10px;
+	font-style: italic;
+}
+.laji-map .disabled {
+	color: #dddddd;
+}
+
+.laji-map .leaflet-control-layers label.disabled {
+	cursor: not-allowed;
+}

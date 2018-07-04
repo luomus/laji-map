@@ -18,7 +18,6 @@ import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
 	ESC,
-	ONLY_MML_OVERLAY_NAMES,
 	FINLAND_BOUNDS
 } from "./globals";
 
@@ -389,7 +388,8 @@ export default class LajiMap {
 				attributionControl: false,
 				continuousWorld: false,
 				doubleClickZoom: false,
-				zoomSnap: 0
+				zoomSnap: 0,
+				maxZoom: 19
 			});
 
 			this.tileLayers = {};
@@ -735,30 +735,42 @@ export default class LajiMap {
 
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
+
 		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
-			if (isProvided(this, "tileLayer")) zoom = zoom - 3;
+			if (isProvided(this, "tileLayer")) {
+				zoom = zoom - 3;
+			}
 			projectionChanged = true;
 		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
 			zoom = zoom + 3;
 			projectionChanged = true;
 		}
 
-
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
-		if (this.tileLayer) this.map.removeLayer(this.tileLayer);
+		if (this.tileLayer) {
+			this.map.removeLayer(this.tileLayer);
+		}
 		this.tileLayer = layer;
 		this.map.addLayer(this.tileLayer);
-		if (this.tileLayerOpacity !== undefined) this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
+		if (this.tileLayerOpacity !== undefined) {
+			this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
+		}
 
 		if (projectionChanged) {
 			this.setOverlays(this.overlays, !"trigger event");
 		}
 
+		// Zoom levels behave differently on different projections.
+		// We bypass the default max zoom behaviour and handle it manually
+		// below.
+		const {maxZoom} = this.tileLayer.options;
+		this.map.setMaxZoom(19);
 		if (projectionChanged) {
 			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
 			this.map.setView(center, zoom, {animate: false});
 		}
+		this.map.setMaxZoom(maxZoom);
 
 		let currentLayerName = undefined;
 		for (let tileLayerName in this.tileLayers) {
@@ -796,11 +808,6 @@ export default class LajiMap {
 
 	setOverlays(overlays = [], triggerEvent = true) {
 		this.overlays = overlays;
-
-		if (this._getDefaultCRSLayers().includes(this.tileLayer)) {
-			const onlyMMLOverlays = ONLY_MML_OVERLAY_NAMES.map(name => this.overlaysByNames[name]);
-			overlays = overlays.filter(overlay => !onlyMMLOverlays.includes(overlay));
-		}
 
 		Object.keys(this.overlaysByNames).forEach(name => {
 			const overlay = this.overlaysByNames[name];
@@ -865,13 +872,18 @@ export default class LajiMap {
 		}, {});
 	}
 
-	getNormalizedZoom() {
-		const zoom = this.map.getZoom();
-		return (this._getMMLCRSLayers().includes(this.tileLayer)) ? zoom : zoom - 3;
+	getNormalizedZoom(zoom, tileLayer) {
+		if (!zoom) {
+			zoom = this.map.getZoom();
+		}
+		return (this._getMMLCRSLayers().includes(tileLayer || this.tileLayer)) ? zoom : zoom - 3;
 	}
 
-	getDenormalizedZoom() {
-		return this._getDefaultCRSLayers().includes(this.tileLayer) ? this.zoom + 3: this.zoom;
+	getDenormalizedZoom(zoom, tileLayer) {
+		if (!zoom) {
+			zoom = this.map.getZoom();
+		}
+		return this._getDefaultCRSLayers().includes(tileLayer || this.tileLayer) ? zoom + 3: zoom;
 	}
 
 	@dependsOn("map")

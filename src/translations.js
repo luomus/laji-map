@@ -583,5 +583,15 @@ export default {
 		fi: "Koske ennen kuin liikutat",
 		en: "Touch before panning",
 		sv: "Rör innan du panorerar"
+	},
+	onlyMMLLayersInfo: {
+		fi: "YKJ ruudukko ei ole käytettävissä maailmankartalle tai satelliittikartalle",
+		en: "Finnish uniform grid can't be used with world map or satellite map",
+		sv: "EKS rutnät kan inte användas med  världskarta eller satellitkarta"
+	},
+	outsideFinlandLayerControlInfo: {
+		fi: "Kohdenna kartta Suomen sisälle käyttääksesi Suomen karttoja",
+		en: "Center the map to Finland in order to use the Finnish maps",
+		sv: "Centrera kartan till Finland för att kunna använda de finska kartorna"
 	}
 };

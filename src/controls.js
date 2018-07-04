@@ -830,7 +830,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this.tileLayers[tileLayerName];
 		});
 		Object.keys(this.availableOverlaysByNames).forEach(overlayName => {
-			if (this._getDefaultCRSLayers().includes(this.tileLayer) && ONLY_MML_OVERLAY_NAMES.includes(overlayName)) return;
+			//if (this._getDefaultCRSLayers().includes(this.tileLayer) && ONLY_MML_OVERLAY_NAMES.includes(overlayName)) return;
 			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.availableOverlaysByNames[overlayName];
 		});
 
@@ -839,6 +839,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			onAdd: function(map) {
 				const container = L.Control.Layers.prototype.onAdd.call(this, map);
 				L.DomEvent.disableClickPropagation(container);
+				map.on("moveend", () => this._checkDisabledLayers());
 				return container;
 			},
 			_onInputClick: function(e) {
@@ -927,14 +928,48 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				that._slider = _noUiSlider;
 			},
 			_checkDisabledLayers: function() {
+				if (!this._map) return;
 				L.Control.Layers.prototype._checkDisabledLayers.call(this);
-				if (!that._isOutsideFinland(that.map.getCenter())) return;
+				const labels = [...this._baseLayersList.children, ...this._overlaysList.children];
+
 				const inputs = this._layerControlInputs;
 				for (let i = inputs.length - 1; i >= 0; i--) {
 					const input = inputs[i];
 					const layer = this._getLayer(input.layerId).layer;
-					if (that._getMMLCRSLayers().includes(layer)) {
+					const label = labels[i];
+
+					// Prevents default behaviour where Leaflet disables layers if their maxZoom is exceeded.
+					input.disabled = false;
+					label.className = "";
+
+					if (that._isOutsideFinland(that.map.getCenter()) && that._getMMLCRSLayers().includes(layer)) {
 						input.disabled = true;
+						label.className = "disabled";
+						if (i === 0) {
+							if (!this._outsideFinlandInfoSpan) {
+								this._outsideFinlandInfoSpanContainer = document.createElement("div");
+								this._outsideFinlandInfoSpan = document.createElement("span");
+								that.addTranslationHook(this._outsideFinlandInfoSpan, "OutsideFinlandLayerControlInfo");
+								this._outsideFinlandInfoSpan.className = "info";
+								this._outsideFinlandInfoSpanContainer.appendChild(this._outsideFinlandInfoSpan);
+							}
+							label.parentElement.parentElement.insertBefore(this._outsideFinlandInfoSpanContainer, label.parentElement);
+						}
+					} else if (this._outsideFinlandInfoSpanContainer && this._outsideFinlandInfoSpanContainer.parentElement) {
+						this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);
+					}
+					if (that._getDefaultCRSLayers().includes(that.tileLayer) && ONLY_MML_OVERLAY_NAMES.map(n => that.overlaysByNames[n]).includes(layer)) {
+						label.style["text-decoration"] = "line-through";
+						if (i === inputs.length - 1) {
+							if (!this._onlyMMLInfoSpan) {
+								this._onlyMMLInfoSpanContainer = document.createElement("div");
+								this._onlyMMLInfoSpan = document.createElement("span");
+								that.addTranslationHook(this._onlyMMLInfoSpan, "OnlyMMLLayersInfo");
+								this._onlyMMLInfoSpan.className = "info";
+								this._onlyMMLInfoSpanContainer.appendChild(this._onlyMMLInfoSpan);
+							}
+							label.parentElement.parentElement.appendChild(this._onlyMMLInfoSpanContainer);
+						}
 					}
 				}
 			}

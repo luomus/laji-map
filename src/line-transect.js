@@ -187,33 +187,52 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
 				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
 			}
-			const undoEvents = undoData.events.map(e => {
+			const undoEvents = [];
+			undoData.events.forEach(e => {
 				switch(e.type) {
 				case "edit": {
-					return {
+					undoEvents.push({
 						type: "edit",
 						idx: e.idx,
 						feature: undoData.prevFeature,
 						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idx]}
-					};
+					});
+					break;
 				}
 				case "insert": {
-					return {
+					undoEvents.push({
 						type: "delete",
 						idx: e.idx,
 						feature: undoData.prevFeature
-					};
+					});
+					break;
 				}
 				case "delete": {
-					return {
+					undoEvents.push({
 						type: "insert",
 						idx: e.idx,
 						feature: undoData.prevFeature,
 						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idx]}
-					};
+					});
+					break;
+				}
+				case "merge": {
+					undoEvents.push({
+						type: "insert",
+						idx: e.idxs[0],
+						feature: undoData.prevFeature,
+						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idxs[0]]}
+					});
+					undoEvents.push({
+						type: "edit",
+						idx: e.idxs[1],
+						feature: undoData.prevFeature,
+						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idxs[1]]}
+					});
+					break;
 				}
 				}
-			}).filter(e => e);
+			});
 			this._LTHistory.push({geometry, undoEvents, redoEvents: undoData.events, featureCollection: undoData.prevFeature});
 			this._LTHistoryPointer++;
 		}
@@ -810,7 +829,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		};
 	}
 
-	// 'commit' can be an array of events that are triggered at the same time as the event that this function triggers.
+	// @param 'commit' can be an array of events that are triggered at the same time as the event that this function triggers.
 	removeLTPoint(lineIdx, pointIdx, commit = true) {
 		this._commitPointDrag();
 
@@ -848,15 +867,9 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			const feature = this._formatLTFeatureOut();
 			events = [
 				{
-					type: "edit",
-					idx: precedingLineIdx,
+					type: "merge",
+					idxs: [precedingLineIdx, followingLineIdx],
 					feature,
-					geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]}
-				},
-				{
-					type: "delete",
-					idx: followingLineIdx,
-					feature
 				}
 			];
 		}

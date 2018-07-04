@@ -593,5 +593,10 @@ export default {
 		fi: "Kohdenna kartta Suomen sisälle käyttääksesi Suomen karttoja",
 		en: "Center the map to Finland in order to use the Finnish maps",
 		sv: "Centrera kartan till Finland för att kunna använda de finska kartorna"
+	},
+	tileLayerOpacityLabel: {
+		fi: "Kartan näkyvyys",
+		en: "Map visibility",
+		sv: "Kartsiktighet"
 	}
 };

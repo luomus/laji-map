@@ -897,9 +897,19 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 				const sliderContainer = document.createElement("div");
 				sliderContainer.className = "slider-container";
+
+				const sliderLabel = document.createElement("label");
+				that.addTranslationHook(sliderLabel, "TileLayerOpacityLabel");
+				sliderContainer.appendChild(sliderLabel)
+
 				const sliderInput = document.createElement("div");
 				sliderContainer.appendChild(sliderInput);
+
 				this._separator.parentElement.insertBefore(sliderContainer, layerControl._separator);
+
+				const sliderSeparator = document.createElement("div");
+				sliderSeparator.className = "leaflet-control-layers-separator";
+				sliderContainer.parentElement.insertBefore(sliderSeparator, sliderContainer);
 
 				const _noUiSlider = noUiSlider.create(sliderInput, {
 					start: that.tileLayerOpacity !== undefined ? that.tileLayerOpacity : 1,

@@ -18,7 +18,8 @@ import {
 	MAASTOKARTTA,
 	TAUSTAKARTTA,
 	ESC,
-	FINLAND_BOUNDS
+	FINLAND_BOUNDS,
+	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 
 import translations from "./translations.js";
@@ -817,6 +818,10 @@ export default class LajiMap {
 		const availableOverlays = [];
 		Object.keys(this.availableOverlaysByNames).forEach(name => {
 			availableOverlays.push(this.overlaysByNames[name]);
+		});
+
+		ONLY_MML_OVERLAY_NAMES.forEach(onlyMML => {
+			this.overlaysByNames[onlyMML].setOpacity(this._getMMLCRSLayers().includes(this.tileLayer) ? 1 : 0);
 		});
 
 		overlays.forEach(overlay => {

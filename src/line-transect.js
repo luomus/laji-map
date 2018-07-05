@@ -231,6 +231,15 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					});
 					break;
 				}
+				case "move": {
+					undoEvents.push({
+						type: "move",
+						idx: e.target,
+						target: e.idx + 1
+					});
+					break;
+				}
+
 				}
 			});
 			this._LTHistory.push({geometry, undoEvents, redoEvents: undoData.events, featureCollection: undoData.prevFeature});
@@ -1569,29 +1578,25 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			}
 			prevEnd = end;
 		}
+
 		const connectedLines = this._lineLayers.slice(0, idx);
-		const nonConnectedLines = this._lineLayers.slice(idx, this._lineLayers.length);
+		const disconnectedLines = this._lineLayers.slice(idx, this._lineLayers.length);
 
 		const headLines = connectedLines.slice(0, lineIdx);
 		const tailLines = connectedLines.slice(lineIdx, connectedLines.length);
 
 		const prevFeature = this._formatLTFeatureOut();
-		this._lineLayers = [...tailLines, ...headLines, ...nonConnectedLines];
+		this._lineLayers = [...tailLines, ...headLines, ...disconnectedLines];
 
 		const events = [];
-		headLines.forEach((line, idx) => {
+
+		for (let i = lineIdx + tailLines.length - 1; i >= lineIdx; i--) {
 			events.push({
-				type: "insert",
-				idx: connectedLines.length + idx,
-				geometry: lineToGeoJSONLine(line)
+				type: "move",
+				idx: lineIdx + tailLines.length - 1,
+				target: 0
 			});
-		});
-		headLines.forEach(() => {
-			events.push({
-				type: "delete",
-				idx: 0
-			});
-		});
+		}
 
 		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, {events, prevFeature});
 		this._triggerEvent(events, this._onLTChange);
@@ -1758,6 +1763,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (this._tooltip && this._tooltipTranslationHook) {
 			this.removeTranslationHook(this._tooltipTranslationHook);
 		} else {
+			if (this._tooltip) this._disposeTooltip();
 			this._tooltip = new L.Draw.Tooltip(this.map);
 			this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
 			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
@@ -1779,7 +1785,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		);
 		this._onMouseMove = undefined;
 		if (this._tooltip) this._tooltip.dispose();
-		this.removeTranslationHook(this._tooltipTranslationHook);
+		this._tooltipTranslationHook && this.removeTranslationHook(this._tooltipTranslationHook);
 		this._tooltip = undefined;
 	}
 

@@ -900,7 +900,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 				const sliderLabel = document.createElement("label");
 				that.addTranslationHook(sliderLabel, "TileLayerOpacityLabel");
-				sliderContainer.appendChild(sliderLabel)
+				sliderContainer.appendChild(sliderLabel);
 
 				const sliderInput = document.createElement("div");
 				sliderContainer.appendChild(sliderInput);

@@ -128,6 +128,8 @@ class App {
 				onChange: this.onLTChange,
 				//printMode: true
 			},
+			//draw: this.drawOptions,
+			//data: this.data,
 			lang: "fi",
 			popupOnHover: true,
 			center: {
@@ -139,8 +141,6 @@ class App {
 			//locate: true,
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
-			//draw: this.drawOptions,
-			//data: this.data,
 			tileLayerName: "openStreetMap",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {

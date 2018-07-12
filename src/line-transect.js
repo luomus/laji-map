@@ -182,20 +182,20 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
 	}
 
-	setLineTransectGeometry(geometry, undoData) {
-		if (undoData) {
+	setLineTransectGeometry(geometry, events) {
+		if (events) {
 			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
 				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
 			}
 			const undoEvents = [];
-			undoData.events.forEach(e => {
+			events.forEach(e => {
 				switch(e.type) {
 				case "edit": {
 					undoEvents.push({
 						type: "edit",
 						idx: e.idx,
-						feature: undoData.prevFeature,
-						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idx]}
+						feature: e.prevFeature,
+						geometry: {type: "LineString", coordinates: e.prevFeature.geometry.coordinates[e.idx]}
 					});
 					break;
 				}
@@ -203,7 +203,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					undoEvents.push({
 						type: "delete",
 						idx: e.idx,
-						feature: undoData.prevFeature
+						feature: e.prevFeature
 					});
 					break;
 				}
@@ -211,23 +211,23 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					undoEvents.push({
 						type: "insert",
 						idx: e.idx,
-						feature: undoData.prevFeature,
-						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idx]}
+						feature: e.prevFeature,
+						geometry: {type: "LineString", coordinates: e.prevFeature.geometry.coordinates[e.idx]}
 					});
 					break;
 				}
 				case "merge": {
 					undoEvents.push({
-						type: "insert",
-						idx: e.idxs[0],
-						feature: undoData.prevFeature,
-						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idxs[0]]}
-					});
-					undoEvents.push({
 						type: "edit",
 						idx: e.idxs[1],
-						feature: undoData.prevFeature,
-						geometry: {type: "LineString", coordinates: undoData.prevFeature.geometry.coordinates[e.idxs[1]]}
+						feature: e.prevFeature,
+						geometry: {type: "LineString", coordinates: e.prevFeature.geometry.coordinates[e.idxs[1]]}
+					});
+					undoEvents.push({
+						type: "insert",
+						idx: e.idxs[0],
+						feature: e.prevFeature,
+						geometry: {type: "LineString", coordinates: e.prevFeature.geometry.coordinates[e.idxs[0]]}
 					});
 					break;
 				}
@@ -242,7 +242,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 				}
 			});
-			this._LTHistory.push({geometry, undoEvents, redoEvents: undoData.events, featureCollection: undoData.prevFeature});
+			this._LTHistory.push({geometry, undoEvents, redoEvents: events});
 			this._LTHistoryPointer++;
 		}
 
@@ -859,13 +859,13 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		if (precedingLine === followingLine) {
 			precedingSegment.setLatLngs([precedingSegment.getLatLngs()[0], followingSegment.getLatLngs()[1]]);
 			this._lineLayers[precedingLineIdx] = precedingLine.filter(l => l !== followingSegment);
-			addMiddlePointRemoveEvent();
+			events = addMiddlePointRemoveEvent(events);
 		} else if (precedingLine && !followingLine) {
 			precedingLine.splice(precedingSegmentIdx, 1);
-			addMiddlePointRemoveEvent();
+			events = addMiddlePointRemoveEvent(events);
 		} else if (!precedingLine && followingLine) {
 			followingLine.splice(followingSegmentIdx, 1);
-			addMiddlePointRemoveEvent();
+			events = addMiddlePointRemoveEvent(events);
 		} else if (precedingLine && followingLine) {
 			const precedingSegment = precedingLine[precedingSegmentIdx];
 			const followingSegment = followingLine[followingSegmentIdx];
@@ -879,6 +879,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					type: "merge",
 					idxs: [precedingLineIdx, followingLineIdx],
 					feature,
+					geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]},
+					prevFeature
 				}
 			];
 		}
@@ -891,19 +893,20 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			if (Array.isArray(commit)) {
 				events = [...commit, ...events];
 			}
-			this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, {events, prevFeature});
+			this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, events);
 			this._triggerEvent(events, this._onLTChange);
 		} else {
 			return events;
 		}
 
-		function addMiddlePointRemoveEvent() {
+		function addMiddlePointRemoveEvent(events) {
 			const feature = that._formatLTFeatureOut();
-			events = [{
+			return [...events, {
 				type: "edit",
 				idx: precedingLineIdx,
 				feature: feature,
-				geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]}
+				geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]},
+				prevFeature
 			}];
 		}
 	}
@@ -1011,13 +1014,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				events.push({
 					type: "edit",
 					feature,
+					prevFeature: this._featureBeforePointDrag,
 					idx: lineIdx,
 					geometry: lineToGeoJSONLine(this._lineLayers[lineIdx])
 				});
 			}
 		});
 
-		this.setLineTransectGeometry(feature.geometry, {events, prevFeature: this._featureBeforePointDrag});
+		this.setLineTransectGeometry(feature.geometry, events);
 
 		this._triggerEvent(events, this._onLTChange);
 		this.map.fire("lineTransect:pointdrag");
@@ -1403,17 +1407,19 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			{
 				type: "edit",
 				feature,
+				prevFeature,
 				idx: lineIdx,
 				geometry: lineToGeoJSONLine(splittedLineTail)
 			},
 			{
 				type: "insert",
 				idx: lineIdx + 1,
-				geometry: lineToGeoJSONLine(splittedLineHead)
+				geometry: lineToGeoJSONLine(splittedLineHead),
+				prevFeature,
 			}
 		];
 
-		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
+		this.setLineTransectGeometry(feature.geometry, events);
 
 		if (lineIdx < this._LTActiveIdx) {
 			events.push(this._getOnActiveSegmentChangeEvent(this._LTActiveIdx + 1));
@@ -1445,11 +1451,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				type: "edit",
 				feature,
 				idx: lineIdx,
-				geometry: lineToGeoJSONLine(this._lineLayers[lineIdx])
+				geometry: lineToGeoJSONLine(this._lineLayers[lineIdx]),
+				prevFeature
 			},
 		];
 
-		this.setLineTransectGeometry(feature.geometry, {events, prevFeature});
+		this.setLineTransectGeometry(feature.geometry, events);
 		this._triggerEvent(events, this._onLTChange);
 
 		this.map.fire("lineTransect:pointadd");
@@ -1594,11 +1601,12 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			events.push({
 				type: "move",
 				idx: lineIdx + tailLines.length - 1,
-				target: 0
+				target: 0,
+				prevFeature
 			});
 		}
 
-		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, {events, prevFeature});
+		this.setLineTransectGeometry(this._formatLTFeatureOut().geometry, events);
 		this._triggerEvent(events, this._onLTChange);
 	}
 

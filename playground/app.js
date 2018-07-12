@@ -126,7 +126,7 @@ class App {
 				feature: lineTransects.features[2],
 				activeIdx: 0,
 				onChange: this.onLTChange,
-				//printMode: true
+				//printMode: true,
 			},
 			//draw: this.drawOptions,
 			//data: this.data,

@@ -2259,6 +2259,7 @@ export default class LajiMap {
 		this._onEdit(dataIdx, {[editId]: editLayer});
 	}
 
+	// Returns true if click was intercepted
 	_interceptClick() {
 		if (this._onDrawRemove || this._onDrawReverse || this.drawing) return true;
 		if (this.editIdx !== undefined) {

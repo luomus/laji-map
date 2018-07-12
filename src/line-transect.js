@@ -433,20 +433,6 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		return tooltip;
 	};
 
-	_showTooltipDescriptionFor(type, lineIdx, segmentIdx) {
-		const text = this._getTooltipForPointIdxTuple(type, lineIdx, segmentIdx);
-		this._updateLTTooltip({text});
-		this._tooltipIdx = lineIdx;
-		if (this._getLTTooltip) {
-			const result = this._getLTTooltip(lineIdx, text, (callbackText) => {
-				if (this._tooltipIdx === lineIdx) this._updateLTTooltip({text: callbackText});
-			});
-			if (result !== undefined && typeof result !== "function") {
-				this._updateLTTooltip({text: result});
-			}
-		}
-	}
-
 	_clearTooltipDescription() {
 		this._updateLTTooltip({text: undefined});
 		this._tooltipIdx = undefined;
@@ -613,23 +599,14 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			L.DomEvent.stopPropagation(e);
 
 			const isPoint = e.layer instanceof L.Marker;
-			const type = isPoint ? L.Marker : L.Polygon;
 			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
 
 			const prevHoverIdx = this._hoveredIdxTuple;
 			this._hoveredIdxTuple = [lineIdx, segmentIdx];
+			this._hoveredType = isPoint ? L.Marker : L.Polygon;
 			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
 			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
-			this._showTooltipDescriptionFor(type, lineIdx, segmentIdx);
-			const messages = {};
-			if (this._LTActiveIdx !== lineIdx) {
-				messages.click = this.translations.toActivate;
-			}
-			if ([this._getIdxTuplePrecedingEditPoint(), this._getIdxTupleFollowingEditPoint()].some(idxTuple => idxTuplesEqual(idxTuple, this._hoveredIdxTuple))) {
-				messages.text = this._getTooltipForPointIdxTuple(type, lineIdx, segmentIdx),
-				messages.drag = this.translations.toMovePoint;
-			}
-			this._updateLTTooltip(messages);
+			this._updateLTTooltip();
 		};
 		const onMouseOut = (e) => {
 			L.DomEvent.stopPropagation(e);
@@ -638,8 +615,8 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 			this._hoveredIdxTuple = undefined;
 			this._updateLTStyleForLineIdx(lineIdx);
-			const messages = {text: undefined, click: undefined, drag: undefined};
-			this._updateLTTooltip(messages);
+			this._editCorridorHovered = false;
+			this._updateLTTooltip();
 		};
 		const pointIsMiddlePoint = (e) => {
 			const {lineIdx, segmentIdx} = this.getIdxsFromEvent(e);
@@ -672,12 +649,18 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 				return;
 			}
 			this._interceptClick();
+
+			const idxTupleStr = idxTuple ? idxTupleToIdxTupleStr(...idxTuple) : undefined;
+			if (this._overlappingNonadjacentPointIdxTuples[idxTupleStr] || this._overlappingAdjacentPointIdxTuples[idxTupleStr]) {
+				return;
+			}
+
 			delayClick(() => {
 				const {lineIdx} = this.getIdxsFromEvent(e);
 
 				if (!this._selectLTMode) {
 					this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
-					this._updateLTTooltip({click: undefined});
+					this._updateLTTooltip();
 				}
 			});
 		}).on("mouseover", e => {
@@ -689,6 +672,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._corridorLayerGroup.on("click", e => {
 			L.DomEvent.stopPropagation(e);
 			delayClick(() => {
+				if (this._interceptClick()) return;
 				const {lineIdx, idxTuple} = this.getIdxsFromEvent(e);
 
 				if (this._closebyPointIdxTuple && this._pointLTShiftMode && this._pointCanBeShiftedTo(...this._closebyPointIdxTuple)) {
@@ -701,7 +685,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					if (this._onSelectLT) this._onSelectLT(...idxTuple);
 				} else {
 					this._triggerEvent(this._getOnActiveSegmentChangeEvent(lineIdx), this._onLTChange);
-					this._updateLTTooltip({click: undefined});
+					this._updateLTTooltip();
 				}
 			});
 		}).on("mouseover", onMouseOver)
@@ -752,21 +736,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 					}
 					layers.forEach(layer => layer && this._setStyleForLTLayer(layer));
 				});
-				if (this._closebyPointIdxTuple && !idxTuplesEqual(this._closebyPointIdxTuple, this._LTEditPointIdxTuple)) {
-					this._updateLTTooltip({
-						dblclick: this.translations.toEditPoint,
-						rightclick: this.translations.toDeletePoint
-					});
-				} else {
-					const messages = {
-						dblclick: undefined,
-						rightclick: undefined
-					};
-					if (!idxTuplesEqual(idxTuple, this._closebyPointIdxTuple) && !this._hoveredIdxTuple) {
-						messages.text = undefined;
-					}
-					this._updateLTTooltip(messages);
-				}
+				this._updateLTTooltip();
 			}
 		}).on("click", e => {
 			L.DomEvent.stopPropagation(e);
@@ -941,22 +911,16 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._LTdragPoint.addTo(this.map)
 			.bringToFront()
 			.on("mouseover", () => {
+				this._hoveringDragPoint = true;
 				this._LTdragPoint.setStyle(style);
 				this._setStyleForLTLayer(point);
-				this._updateLTTooltip({
-					text: this._getTooltipForPointIdxTuple(L.Marker, lineIdx, pointIdx),
-					drag: this.translations.toMovePoint
-				});
+				this._hoveredType = L.Marker;
+				this._updateLTTooltip();
 			}).on("mouseout", () => {
+				this._hoveringDragPoint = false;
 				this._LTdragPoint.setStyle({...style, opacity: 0.3});
 				this._setStyleForLTLayer(point);
-				const messages = {
-					drag: undefined
-				};
-				if (!this._hoveredIdxTuple) {
-					messages.text = undefined;
-				}
-				this._updateLTTooltip(messages);
+				this._updateLTTooltip();
 			})
 			.on("remove", () => this._setStyleForLTLayer(point))
 			.on("mousedown", this._startLTDragPointHandler)
@@ -977,7 +941,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => this._getLayerForIdxTuple(layers, ...idxTuple)))
 		 .forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 
-		this._updateLTTooltip({dblclick: undefined});
+		this._updateLTTooltip();
 	}
 
 	_commitPointDrag() {
@@ -987,7 +951,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		const precedingIdxTuple = this._getIdxTuplePrecedingEditPoint();
 		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();
 		this._LTEditPointIdxTuple = undefined;
-		this._updateLTTooltip({drag: undefined});
+		this._updateLTTooltip();
 		const dragPointLatLng = this._LTdragPoint.getLatLng();
 		this._LTdragPoint.remove();
 		this._LTdragPoint = undefined;
@@ -1025,6 +989,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 
 		this._triggerEvent(events, this._onLTChange);
 		this.map.fire("lineTransect:pointdrag");
+		this._updateLTTooltip();
 	}
 
 	_startLTDragHandler(handler) {
@@ -1041,6 +1006,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 			this.map.dragging.enable();
 			L.DomUtil.enableTextSelection();
 			this.map.off("mousemove", handler);
+			this._updateLTTooltip();
 		});
 	}
 
@@ -1060,7 +1026,7 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 	_dragLTPointHandler({latlng}) {
 		if (!this._dragMouseStart) return;
 
-		this._updateLTTooltip({text: this._getTooltipForPointIdxTuple(L.Marker, ...this._LTEditPointIdxTuple)});
+		this._updateLTTooltip();
 
 		const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
 		const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
@@ -1797,9 +1763,54 @@ export default LajiMap => class LajiMapWithLineTransect extends LajiMap {
 		this._tooltip = undefined;
 	}
 
-	_updateLTTooltip(messages) {
+	// Computes the messages to display.
+	_updateLTTooltip() {
 		if (!this._LTEditable) return;
 
+		const messages = {
+			text: undefined,
+			click: undefined,
+			dblclick: undefined,
+			rightclick: undefined,
+			drag: undefined
+		};
+
+		const hoveredIdxTuple = this._hoveredIdxTuple || this._hoveringDragPoint && this._LTEditPointIdxTuple;
+		if (hoveredIdxTuple) {
+			messages.text = this._getTooltipForPointIdxTuple(this._hoveredType, ...hoveredIdxTuple);
+		}
+
+		if (this._LTEditPointIdxTuple) {
+			if (this._hoveringDragPoint || this._editCorridorHovered || this._dragPointStart) {
+				messages.drag = this.translations.toMovePoint;
+			}
+			if (!this._hoveringDragPoint && !this._editCorridorHovered) {
+				messages.click = this.translations.toCommitEdit;
+			}
+		} else if(this._hoveredIdxTuple) {
+			messages.click = this.translations.toActivate;
+		}
+
+		if (this._closebyPointIdxTuple) {
+			messages.dblclick = this.translations.toEditPoint;
+			messages.rightclick = this.translations.toDeletePoint;
+		}
+		this.__updateLTTooltip(messages);
+
+		if (hoveredIdxTuple && this._getLTTooltip) {
+			const [lineIdx] = hoveredIdxTuple;
+			this._tooltipIdx = lineIdx;
+			const result = this._getLTTooltip(lineIdx, messages.text, (callbackText) => {
+				if (this._tooltipIdx === lineIdx) this.__updateLTTooltip({text: callbackText});
+			});
+			if (result !== undefined && typeof result !== "function") {
+				this.__updateLTTooltip({text: result});
+			}
+		}
+	}
+
+	// Displays the given messages.
+	__updateLTTooltip(messages) {
 		let message = "";
 		if (this._tooltip && this._tooltip !== this._ltTooltip) return;
 

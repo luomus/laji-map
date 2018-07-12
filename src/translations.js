@@ -598,5 +598,10 @@ export default {
 		fi: "Kartan näkyvyys",
 		en: "Map visibility",
 		sv: "Kartsiktighet"
+	},
+	toCommitEdit: {
+		fi: "Lopettaaksesi muokkauksen",
+		en: "To stop editing",
+		sv: "För att sluta redigera"
 	}
 };

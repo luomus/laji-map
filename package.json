@@ -4,7 +4,7 @@
   "description": "A map with drawing functionality",
   "main": "lib/map.js",
   "scripts": {
-    "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000",
+    "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000 --host 0.0.0.0",
     "build:lib": "rimraf lib && NODE_ENV=production babel -d lib/ src/ --copy-files",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
     "build": "npm run build:lib && npm run build:dist",

@@ -1407,8 +1407,6 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			tabsArr.push(tabContainer);
 		});
 
-		updateOutput();
-
 		function updateOutput() {
 			HTMLInput.value = pipeline.reduce((_output, {commands}, idx) =>
 				commands[activeCommands[idx]](_output), originalGeoJSON
@@ -1437,7 +1435,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		table.appendChild(tBody);
 
 		this._showDialog(table);
-		updateOutput(originalGeoJSON);
+		updateOutput();
 	}
 
 	openDrawUploadDialog() {

@@ -1,8 +1,9 @@
 var path = require("path");
 var webpack = require("webpack");
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
+	mode: "production",
 	entry: {
 		"laji-map": "./src/map",
 		styles: "./src/styles"
@@ -13,26 +14,27 @@ module.exports = {
 		libraryTarget: "umd"
 	},
 	plugins: [
-		new ExtractTextPlugin("[name].css", {allChunks: true}),
-		new webpack.IgnorePlugin(/^(buffertools)$/), // unwanted "deeper" dependency
-		new webpack.DefinePlugin({'process.env.NODE_ENV': '"production"'})
+		new MiniCssExtractPlugin({filename: "[name].css"})
 	],
 	module: {
-		loaders: [
+		rules: [
 			{
 				test: /\.js$/,
-				loaders: ["babel"],
+				loader: "babel-loader",
 				include: [
 					path.join(__dirname, "src")
 				]
 			},
 			{
 				test: /\.json$/,
-				loader: "json"
+				loader: "json-loader"
 			},
 			{
 				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("css-loader")
+				use: [
+					MiniCssExtractPlugin.loader,
+					"css-loader"
+				]
 			},
 			{
 				test: /\.png$/,
@@ -51,5 +53,17 @@ module.exports = {
 			/node_modules\/proj4leaflet\/lib\/proj4-compressed\.js/,
 			/node_modules\/proj4\/dist\/proj4\.js/
 		]
-	}
+	},
+	optimization: {
+		splitChunks: {
+			cacheGroups: {
+				styles: {
+					name: 'styles',
+					test: /\.css$/,
+					chunks: 'all',
+					enforce: true
+				}
+			}
+		}
+	},
 };

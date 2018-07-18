@@ -2,6 +2,7 @@ var path = require("path");
 var webpack = require("webpack");
 
 module.exports = {
+	mode: "development",
 	devtool: "eval",
 	entry: [
 		path.join(__dirname, "playground", "app"),
@@ -11,23 +12,17 @@ module.exports = {
 		filename: "main.js"
 	},
 	plugins: [
-		new webpack.HotModuleReplacementPlugin(),
-		new webpack.IgnorePlugin(/^(buffertools)$/), // unwanted "deeper" dependency
-		new webpack.DefinePlugin({"process.env.NODE_ENV": "\"development\""})
+		new webpack.HotModuleReplacementPlugin()
 	],
 	module: {
-		loaders: [
+		rules: [
 			{
 				test: /\.js$/,
-				loaders: ["babel"],
+				loader: "babel-loader",
 				include: [
 					path.join(__dirname, "src"),
 					path.join(__dirname, "playground")
 				]
-			},
-			{
-				test: /\.json$/,
-				loader: "json"
 			},
 			{
 				test: /\.css$/,

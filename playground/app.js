@@ -234,6 +234,7 @@ class App {
 }
 
 const app = new App();
+console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV !== "production") {
 	window.map = app.map;
 	window.lajiMapUtils = utils;

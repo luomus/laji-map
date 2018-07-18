@@ -1032,7 +1032,7 @@ export default class LajiMap {
 		if (geoData) {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
 			const anyToFeatureCollection = geoJSON => {
-				switch (geoJSON.type) {
+				switch(geoJSON.type) {
 				case "FeatureCollection":
 					return geoJSON;
 				case "Feature":
@@ -1925,7 +1925,7 @@ export default class LajiMap {
 					return;
 				}
 
-				switch(layer.feature.geometry.type) {
+				switch (layer.feature.geometry.type) {
 				case "MultiLineString":
 					firstPoint = layer.getLatLngs()[0][0];
 					break;

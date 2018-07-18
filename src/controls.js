@@ -5,14 +5,14 @@ import {
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
-import noUiSlider from "nouislider";
+import * as noUiSlider from "nouislider";
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
 }
 
 
-export default LajiMap => class LajiMapWithControls extends LajiMap {
+export default LajiMap => { class LajiMapWithControls extends LajiMap {
 	getOptionKeys() {
 		return {
 			...super.getOptionKeys(),
@@ -116,7 +116,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		if (!button) return;
 		if (this._locateOn && !button.className.includes(" on")) {
 			button.className = `${button.className} on`;
-		} else if (!this._locateOn && button.className.includes(" on")){
+		} else if (!this._locateOn && button.className.includes(" on")) {
 			button.className = button.className.replace(" on", "");
 		}
 		if (!this._located && !button.className.includes(" locating")) {
@@ -338,7 +338,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		];
 
 		const controlGroups = this.controlItems.reduce((groups, group) => {
-			if  (group.controls) groups[group.name] = group;
+			if (group.controls) groups[group.name] = group;
 			return groups;
 		}, {});
 
@@ -358,6 +358,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			let cont = this.buttonActionContainer[name];
 
 			const _that = this;
+
 			function stop() {
 				fn();
 				that.map.off("controlClick", stopOnControlClick);
@@ -411,7 +412,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		this._controlButtons = {};
 
-		function callback(fn, finishFn, cancelFn, name, eventName) { return (...params) => {
+		const callback = (fn, finishFn, cancelFn, name, eventName) => (...params) => {
 			that.map.fire("controlClick", {name});
 			if (finishFn) {
 				fn(...params);
@@ -420,7 +421,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			} else {
 				fn(...params);
 			}
-		};}
+		};
 
 		this.controlItems.filter(({control, name}) => {
 			return !control || this._controlIsAllowed(name);
@@ -640,7 +641,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				() => this.drawIsAllowed()
 			],
 			"drawUtils.coordinateInput": [
-				() => (["marker", "rectangle"].some(type => {return this.getDraw()[type] !== false;}))
+				() => (["marker", "rectangle"].some(type => {
+					return this.getDraw()[type] !== false;
+				}))
 			],
 			"drawUtils.reverse": [
 				() => this.getDraw().polyline !== false
@@ -732,11 +735,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			}
 		};
 
-		drawOptions.draw = {...drawOptions.draw, ...this.getFeatureTypes().reduce((options, type) => {
-			options[type] = (!this.getDraw() ||this.getDraw()[type] === false || this.controlSettings.draw[type] === false) ?
-				false : this._getDrawOptionsForType(type);
-			return options;
-		}, {})};
+		drawOptions.draw = {
+			...drawOptions.draw, ...this.getFeatureTypes().reduce((options, type) => {
+				options[type] = (!this.getDraw() || this.getDraw()[type] === false || this.controlSettings.draw[type] === false) ?
+					false : this._getDrawOptionsForType(type);
+				return options;
+			}, {})
+		};
 
 
 		this.drawControl = new L.Control.Draw(drawOptions);
@@ -795,7 +800,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 						else if (name === "ETRS-TM35FIN") coords = etrsTm35Fin;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
 						let coordsFormatted = undefined;
-						if (coords) switch (name) {
+						if (coords) switch(name) {
 						case "WGS84":
 							coordsFormatted = coords.join(", ");
 							break;
@@ -822,7 +827,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 	_getLayerControl(opacityControl = true) {
 		const baseMaps = {}, overlays = {};
-		const { translations } = this;
+		const {translations} = this;
 
 		const tileLayersNames = Object.keys(this.availableTileLayers);
 
@@ -836,13 +841,13 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 
 		const that = this;
 		const LayerControl = L.Control.Layers.extend({
-			onAdd: function(map) {
+			onAdd: function (map) {
 				const container = L.Control.Layers.prototype.onAdd.call(this, map);
 				L.DomEvent.disableClickPropagation(container);
 				map.on("moveend", () => this._checkDisabledLayers());
 				return container;
 			},
-			_onInputClick: function(e) {
+			_onInputClick: function (e) {
 				if (!e) return;
 
 				const inputs = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
@@ -879,7 +884,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				}
 
 				if (overlaysToAdd.some(overlay => !(that.overlays || []).includes(overlay)) ||
-				    (that.overlays || []).some(overlay => !overlaysToAdd.includes(overlay))) {
+					(that.overlays || []).some(overlay => !overlaysToAdd.includes(overlay))) {
 					that.setOverlays(overlaysToAdd);
 				}
 
@@ -891,9 +896,11 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			_initLayout: function() {
 				L.Control.Layers.prototype._initLayout.call(this);
 
-				if (!opacityControl)  return;
+				if (!opacityControl) return;
 
-				function disableSelect(e) { e.preventDefault(); }
+				function disableSelect(e) {
+					e.preventDefault();
+				}
 
 				const sliderContainer = document.createElement("div");
 				sliderContainer.className = "slider-container";
@@ -940,7 +947,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			_checkDisabledLayers: function() {
 				if (!this._map) return;
 				L.Control.Layers.prototype._checkDisabledLayers.call(this);
-				const labels = [...this._baseLayersList.children, ...this._overlaysList.children];
+				const labels = [
+					...Array.prototype.slice.call(this._baseLayersList.children, 0),
+					...Array.prototype.slice.call(this._overlaysList.children, 0)
+				];
 
 				const inputs = this._layerControlInputs;
 				for (let i = inputs.length - 1; i >= 0; i--) {
@@ -1141,20 +1151,22 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const col = document.createElement("div");
 			col.className = "col-xs-12";
 
-			[label, input].forEach(elem => {col.appendChild(elem);});
+			[label, input].forEach(elem => col.appendChild(elem));
 			row.appendChild(col);
 
 			return row;
 		}
 
-		function formatter(input) { return e => {
-			let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
+		function formatter(input) {
+			return e => {
+				let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
 
-			if (charCode >= 48 && charCode <= 57) { // Is a number
-			// The input cursor isn't necessary at the EOL, but this validation works regardless.
-				inputValidate(e, input.value + String.fromCharCode(charCode));
-			}
-		};}
+				if (charCode >= 48 && charCode <= 57) { // Is a number
+					// The input cursor isn't necessary at the EOL, but this validation works regardless.
+					inputValidate(e, input.value + String.fromCharCode(charCode));
+				}
+			};
+		}
 
 		const ykjAllowed = that.getDraw().rectangle;
 		const etrsTm35FinAllowed = that.getDraw().marker;
@@ -1206,6 +1218,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			help += ".";
 			return help;
 		}
+
 		translateHooks.push(this.addTranslationHook(helpSpan, getHelpTxt));
 
 		const inputValues = ["", ""];
@@ -1251,7 +1264,8 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const isYKJ = validateLatLng(latlngStr, ykjValidator);
 			const isYKJGrid = validateLatLng(latlngStr, ykjGridStrictValidator);
 
-			let geometry = { type: "Point",
+			let geometry = {
+				type: "Point",
 				coordinates: (isYKJ)
 					? convert(latlng.map(toYKJFormat), "EPSG:2393")
 					: (isETRS)
@@ -1425,9 +1439,9 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			const tr = document.createElement("tr");
 			row.forEach(items => (Array.isArray(items) ? items : [items])
 				.forEach(elem => {
-				 const td = document.createElement("td");
-				 td.appendChild(elem || document.createElement("div"));
-				 tr.appendChild(td);
+					const td = document.createElement("td");
+					td.appendChild(elem || document.createElement("div"));
+					tr.appendChild(td);
 				}));
 			tBody.appendChild(tr);
 		});
@@ -1532,7 +1546,10 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 		function convertText(e) {
 			e.preventDefault();
 			try {
-				const prevFeatureCollection = {type: "FeatureCollection", features: that.cloneFeatures(that.getDraw().featureCollection.features)};
+				const prevFeatureCollection = {
+					type: "FeatureCollection",
+					features: that.cloneFeatures(that.getDraw().featureCollection.features)
+				};
 				const events = [{
 					type: "delete",
 					idxs: Object.keys(that.idxsToIds[that.drawIdx])
@@ -1569,7 +1586,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 	}
 
 	_joinTranslations(...words) {
-		const { translations } = this;
+		const {translations} = this;
 		return words.map(word => translations[word]).join(" ");
 	}
 
@@ -1615,7 +1632,7 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 				}
 			});
 		};
-		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ?  control.controls : [control]));
+		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ? control.controls : [control]));
 
 		provide(this, "contextMenu");
 	}
@@ -1628,4 +1645,4 @@ export default LajiMap => class LajiMapWithControls extends LajiMap {
 			super.triggerDrawing(featureType);
 		}
 	}
-};
+} return LajiMapWithControls; };

@@ -128,8 +128,8 @@ class App {
 				onChange: this.onLTChange,
 				//printMode: true,
 			},
-			//draw: this.drawOptions,
-			//data: this.data,
+			draw: this.drawOptions,
+			data: this.data,
 			lang: "fi",
 			popupOnHover: true,
 			center: {
@@ -234,7 +234,6 @@ class App {
 }
 
 const app = new App();
-console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV !== "production") {
 	window.map = app.map;
 	window.lajiMapUtils = utils;

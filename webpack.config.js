@@ -18,7 +18,7 @@ module.exports = {
 		rules: [
 			{
 				test: /\.js$/,
-				loader: "babel-loader",
+				loader: "awesome-typescript-loader?module=es6",
 				include: [
 					path.join(__dirname, "src"),
 					path.join(__dirname, "playground")

@@ -19,7 +19,7 @@ export function depsProvided(target, name, args) {
 }
 
 /**
- * A decorator. If a function is reflected, it will execute always, when some of it's dependencies is reprovided.
+ * A decorator. If a function is reflected, it will execute always when some of it's dependencies is reprovided.
  */
 export function reflect() {
 	return (target, property) => {
@@ -39,7 +39,7 @@ export function reflect() {
  */
 export function dependsOn(...deps) {
 	return (target, property) => {
-		if (dependencyToProvider[property]) return; // dependency tree contructed already
+		if (dependencyToProvider[property]) return; // Dependency tree constructed already.
 
 		deps.forEach(dep => {
 			providerToDependency[dep] = [...(providerToDependency[dep] || []), property];
@@ -89,4 +89,3 @@ function depIsProvided(target, dep) {
 	}
 	return returnValue;
 }
-

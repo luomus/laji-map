@@ -6,6 +6,10 @@
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"experimentalDecorators": true
+		"lib": [
+			"dom",
+			"es7"
+		]
   },
   "include": [
     "./src/**/*.js"

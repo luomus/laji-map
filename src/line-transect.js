@@ -1,7 +1,6 @@
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
 import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx, capitalizeFirstLetter } from "./utils";
 import "leaflet-geometryutil";
-import "leaflet-textpath";
 import {
 	NORMAL_COLOR,
 	ACTIVE_COLOR,

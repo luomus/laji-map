@@ -1,4 +1,4 @@
-import LajiMap from "../src/map";
+import LajiMap from "../src/map.ts";
 import lineTransects from "./data.json";
 import * as utils from "../src/utils";
 

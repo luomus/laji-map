@@ -51,7 +51,7 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 	}
 });
 
-interface LajiMapEvent {
+export interface LajiMapEvent {
     type: string;
     idxs?: number[];
     idx?: number;
@@ -77,7 +77,7 @@ interface Data {
 
 declare const L: any; // TODO
 
-type IdxTuple = [number, number];
+export type IdxTuple = [number, number];
 
 interface DrawHistoryEntry { // TODO,
     featureCollection: any;
@@ -87,17 +87,9 @@ interface DrawHistoryEntry { // TODO,
 
 type Lang = "fi" | "en" | "sv";
 
-//declare HasLineTransect: T => <R extends T>;
-//declare module "line-transect" {
-//    HasLineTransect: <T> => <T>
-//    //interface Context {
-//    //    resource: any;
-//    //}
-//}
-
 //@HasControls
 //@HasLineTransect
-export default class LajiMap {
+class LajiMap {
 	private onSetLangHooks = [];
 	options: any;
 	_dialogRoot: any;
@@ -2796,3 +2788,4 @@ export default class LajiMap {
 		}
 	}
 }
+export default HasLineTransect(LajiMap);

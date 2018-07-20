@@ -44,5 +44,8 @@ module.exports = {
 		noParse: [
 			/dist\/(ol|proj4).js/
 		]
+	},
+	resolve: {
+		extensions: ['.ts', '.js', '.json']
 	}
 };

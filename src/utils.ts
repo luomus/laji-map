@@ -6,6 +6,8 @@ import {
 	EPSG3067WKTString
 } from "./globals";
 
+declare const L: any; // TODO
+
 export function reverseCoordinate(c) {
 	return c.slice(0).reverse();
 }
@@ -32,11 +34,11 @@ export function convertLatLng(latlng, from, to) {
 }
 
 function updateImmutablyRecursivelyWith(obj, fn) {
-	function _updater(obj, from, to) {
+	function _updater(obj) {
 		if (typeof obj === "object" && obj !== null) {
 			Object.keys(obj).forEach(key => {
 				obj[key] = fn(key, obj[key]);
-				_updater(obj[key], from, to);
+				_updater(obj[key]);
 			});
 		}
 		return obj;
@@ -347,7 +349,8 @@ function distance(latlng1, latlng2) {
 }
 
 export function latLngTuplesDistance(first, second) {
-	return distance(...[first, second].map(([lat, lng]) => {return {lat, lng};}));
+    [first, second] = [first, second].map(([lat, lng]) => {return {lat, lng};})
+	return distance(first, second);
 }
 
 export function latLngSegmentsToGeoJSONGeometry(_lines) {
@@ -517,9 +520,10 @@ export function getCRSObjectForGeoJSON(geoJSON, crs) {
 }
 
 export class LajiMapError extends Error {
+    _lajiMapError = true;
+    translationKey: string;
 	constructor(message, translationKey, additional = {}) {
 		super(message);
-		this._lajiMapError = true;
 		this.translationKey = translationKey;
 		Object.keys(additional).forEach(key => this[key] = additional[key]);
 	}
@@ -590,10 +594,10 @@ export function createTextInput() {
 	return input;
 }
 
-export function createTextArea(rows = 10, cols = 10) {
+export function createTextArea(rows: number = 10, cols: number = 10) {
 	const input = document.createElement("textarea");
-	input.setAttribute("rows", rows);
-	input.setAttribute("cols", cols);
+	input.setAttribute("rows", `${rows}`);
+	input.setAttribute("cols", `${cols}`);
 	input.className = "form-control laji-map-input";
 	return input;
 }
@@ -631,12 +635,15 @@ export function combineColors(...colors) {
 	const bv = colors.map(color => color.substring(5,7));
 	return [rv, gv, bv].reduce((rgb, hexVector) => {
 		 let value = hexVector.reduce((combinedDecimal, hex) => {
-			 if (hex === "--") return combinedDecimal;
+			if (hex === "--") {
+				return combinedDecimal;
+            }
 			if (combinedDecimal === undefined) {
 				return toDecimal(hex);
 			}
 			const decimal = toDecimal(hex);
-			const newCombined = parseInt(combinedDecimal - ((combinedDecimal - decimal) / 2));
+			const combinedDecimalInt = parseInt(combinedDecimal);
+			const newCombined = combinedDecimalInt - ((combinedDecimalInt - decimal) / 2);
 			return Math.max(Math.min(newCombined, 255), 0);
 		}, undefined);
 
@@ -655,15 +662,15 @@ export function combineColors(...colors) {
 	}, "#");
 }
 
-export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
+export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round?) {
 	const lines = geoJSONLineToLatLngSegmentArrays(LTFeature.geometry);
 	let i = 0;
 	let distance = 0;
 	let prevDistance = distance;
 	lines.some(line => {
 		prevDistance = distance;
-		line.some(segment => {
-			distance += latLngTuplesDistance(...segment);
+		line.some(([start, end]) => {
+			distance += latLngTuplesDistance(start, end);
 		});
 		if (i === idx) {
 			return true;

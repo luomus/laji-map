@@ -25,7 +25,12 @@ import {
 } from "./globals";
 
 import translations from "./translations.js";
-import {CRS, LatLngExpression, LeafletMouseEvent, LocationEvent, Map, MapOptions, Projection, TileLayer} from "leaflet";
+import {
+    CRS, FitBoundsOptions, LatLngExpression, LeafletMouseEvent, LocationEvent, Map, MapOptions, Projection,
+    TileLayer
+} from "leaflet";
+import {Feature} from "geojson";
+import {VectorMarkerIconOptions} from "./@types/leaflet.vector-markers";
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
@@ -51,6 +56,10 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 		return this;
 	}
 });
+
+interface LajiMapFitBoundsOptions extends FitBoundsOptions {
+	minZoom: number;
+}
 
 export interface LajiMapEvent {
     type: string;
@@ -1249,7 +1258,7 @@ class LajiMap {
 		item.groupContainer.addTo(this.map);
 
 		layer.eachLayer(layer => {
-			this._initializeLayer(layer, [dataIdx, layer.feature.properties.lajiMapIdx]);
+			this._initializeLayer(layer, [dataIdx, (<any> layer).feature.properties.lajiMapIdx]); // TODO better way to access feature?
 		});
 
 		if (item.hasActive) {
@@ -1363,7 +1372,7 @@ class LajiMap {
 		this._decoratePolyline(layer);
 	}
 
-	fitBounds(bounds, options) {
+	fitBounds(bounds, options : LajiMapFitBoundsOptions) {
 		if (!bounds.isValid()) return;
 
 		const {paddingInMeters} = options;
@@ -1375,7 +1384,7 @@ class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToForeignOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, {animate: false, _options});
+		this.map.fitBounds(bounds, {animate: false, ..._options});
 		if (typeof maxZoom === "number" && !isNaN(maxZoom)) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}
@@ -1672,7 +1681,7 @@ class LajiMap {
 			icon: "record",
 			markerColor,
 			opacity
-		});
+		} as VectorMarkerIconOptions);
 	}
 
 	_getClusterIcon(data) {

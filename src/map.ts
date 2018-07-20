@@ -2510,12 +2510,11 @@ class LajiMap {
 			feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString")
 		);
 
-		let style = {
+		let style: any = {
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
 			fillColor: NORMAL_COLOR,
-            weight: undefined  // TODO without this declaration we get TS warning. Is there a way to declare style as 'any'?
 		};
 		if (isLine) {
 			style.weight = 10;

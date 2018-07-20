@@ -415,7 +415,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 		this._controlButtons = {};
 
-		const callback = (fn, finishFn, cancelFn, name, eventName) => (...params) => {
+		function callback(fn, finishFn, cancelFn, name, eventName) {return (...params) => {
 			that.map.fire("controlClick", {name});
 			if (finishFn) {
 				fn(...params);
@@ -424,7 +424,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			} else {
 				fn(...params);
 			}
-		};
+		};}
 
 		this.controlItems.filter(({control, name}) => {
 			return !control || this._controlIsAllowed(name);

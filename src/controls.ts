@@ -5,11 +5,13 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
+import { LajiMapEvent } from "./map";
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
 }
 
+declare const L: any; // TODO
 
 export default LajiMap => { class LajiMapWithControls extends LajiMap {
 	getOptionKeys() {
@@ -23,7 +25,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 	@dependsOn("controls")
 	_setLang() {
-		if (!depsProvided(this, "setLang", arguments)) return;
+		if (!depsProvided(this, "_setLang", arguments)) return;
 
 		// Original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 		const drawLocalizations = L.drawLocal.draw;
@@ -62,9 +64,11 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		provide(this, "translations");
 	}
 
+    @dependsOn("map")
 	setLang(lang) {
+        if (!depsProvided(this, "setLang", arguments)) return;
 		super.setLang(lang);
-		this._setLang(lang);
+		this._setLang();
 	}
 
 	_initializeMapEvents() {
@@ -155,7 +159,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 						name: "userLocation",
 						text: this.translations.Geolocate,
 						iconCls: "glyphicon glyphicon-screenshot",
-						fn: (...params) => this._toggleLocate(...params),
+						fn: () => this._toggleLocate(),
 					}
 				],
 				contextMenu: false
@@ -187,19 +191,19 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 						name: "coordinateInput",
 						text: this.translations.AddFeatureByCoordinates,
 						iconCls: "laji-map-coordinate-input-glyph",
-						fn: (...params) => this.openCoordinatesInputDialog(...params)
+						fn: () => this.openCoordinatesInputDialog()
 					},
 					{
 						name: "copy",
 						text: this.translations.CopyDrawnFeatures,
 						iconCls: "glyphicon glyphicon-floppy-save",
-						fn: (...params) => this.openDrawCopyDialog(...params)
+						fn: () => this.openDrawCopyDialog()
 					},
 					{
 						name: "upload",
 						text: this.translations.UploadDrawnFeatures,
 						iconCls: "glyphicon glyphicon-floppy-open",
-						fn: (...params) => this.openDrawUploadDialog(...params)
+						fn: () => this.openDrawUploadDialog()
 					},
 					{
 						name: "clear",
@@ -523,9 +527,9 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this._updateMapControls();
 	}
 
-	setControlsWarn(...params) {
+	setControlsWarn(controlSettings) {
 		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'");
-		this.setControls(...params);
+		this.setControls(controlSettings);
 	}
 
 	setControls(controlSettings) {
@@ -700,7 +704,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		}
 	}
 
-	_createControlButton(that, container, fn, name) {
+	_createControlButton(that, container, fn, name?) {
 		const elem = L.DomUtil.create("a", name ? "button-" + name.replace(".", "_") : "", container);
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
@@ -765,7 +769,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				let visible = false;
 				container.style.display = "none";
 
-				const coordinateTypes = [
+				const coordinateTypes: any[] = [
 					{name: "WGS84"},
 					{name: "YKJ"},
 					{name: "ETRS-TM35FIN"}
@@ -1024,7 +1028,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		});
 	}
 
-	setTileLayerOpacity(opacity, triggerEvent) {
+	setTileLayerOpacity(opacity, triggerEvent?) {
 		super.setTileLayerOpacity(opacity, triggerEvent);
 		if (!this._opacitySetBySlide && this._slider) {
 			this._slider.set(opacity);
@@ -1117,7 +1121,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this._updateRedoButton("drawUtils.redo", this._drawHistory, this._drawHistoryPointer);
 	}
 
-	_showDialog(container, onClose) {
+	_showDialog(container, onClose?) {
 		const _container = document.createElement("div");
 		_container.className = "laji-map-dialog panel panel-default panel-body";
 		if (this._dialogRoot === document.body) {
@@ -1225,13 +1229,14 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			let prevVal = "";
 			input.addEventListener("keypress", formatter(input));
 			input.oninput = (e) => {
-				if (!inputValidate(e, e.target.value)) {
-					e.target.value = prevVal;
+                const target = <HTMLInputElement> e.target;
+				if (!inputValidate(e, target.value)) {
+					target.value = prevVal;
 				}
-				e.target.value = e.target.value.replace(",", ".");
-				prevVal = e.target.value;
+				target.value = target.value.replace(",", ".");
+				prevVal = target.value;
 
-				inputValues[i] = e.target.value;
+				inputValues[i] = target.value;
 				if (submitValidate(inputValues)) {
 					submitButton.removeAttribute("disabled");
 				} else {
@@ -1465,7 +1470,8 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		translationsHooks.push(this.addTranslationHook(button, "UploadDrawnFeatures"));
 		button.setAttribute("disabled", "disabled");
 
-		textarea.oninput = ({target: {value}}) => {
+		textarea.oninput = (e) => {
+            const {value} = <HTMLInputElement> e.target;
 			if (value === "") {
 				updateInfo();
 				button.setAttribute("disabled", "disabled");
@@ -1549,9 +1555,9 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 					type: "FeatureCollection",
 					features: that.cloneFeatures(that.getDraw().featureCollection.features)
 				};
-				const events = [{
+				const events: LajiMapEvent[] = [{
 					type: "delete",
-					idxs: Object.keys(that.idxsToIds[that.drawIdx])
+					idxs: Object.keys(that.idxsToIds[that.drawIdx]).map(idx => parseInt(idx))
 				}];
 				that.updateData(that.drawIdx, {...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
 				that.getDraw().featureCollection.features.forEach(feature => {

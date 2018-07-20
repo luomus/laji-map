@@ -2788,4 +2788,4 @@ class LajiMap {
 		}
 	}
 }
-export default HasLineTransect(LajiMap);
+export default HasControls(HasLineTransect(LajiMap));

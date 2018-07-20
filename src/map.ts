@@ -1,4 +1,4 @@
-import "leaflet";
+import * as L from "leaflet";
 import "leaflet-draw";
 import "proj4leaflet";
 import "Leaflet.vector-markers";
@@ -25,6 +25,7 @@ import {
 } from "./globals";
 
 import translations from "./translations.js";
+import {CRS, LatLngExpression, LeafletMouseEvent, LocationEvent, Map, MapOptions, Projection, TileLayer} from "leaflet";
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
@@ -39,7 +40,7 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 		const {width: mapWidth, x: mapX} = this._map._container.getBoundingClientRect();
 		if (width + x > mapWidth + mapX) {
 			const {x, y} = this._map.latLngToLayerPoint(latlng);
-			L.DomUtil.setPosition(this._container, {x: x - width - 30, y});
+			L.DomUtil.setPosition(this._container, new L.Point(x - width - 30, y));
 			if (!this._container.className.includes(" reversed")) {
 				this._container.className += " reversed";
 			}
@@ -75,8 +76,6 @@ interface Data {
     tooltipOptions?: any;
 }
 
-declare const L: any; // TODO
-
 export type IdxTuple = [number, number];
 
 interface DrawHistoryEntry { // TODO,
@@ -86,6 +85,10 @@ interface DrawHistoryEntry { // TODO,
 }
 
 type Lang = "fi" | "en" | "sv";
+
+interface LayerContainer {
+	layer: L.Layer;
+}
 
 //@HasControls
 //@HasLineTransect
@@ -104,9 +107,9 @@ class LajiMap {
     draw: any;
     drawIdx: number;
     _draftDrawLayer: any;
-    map: any;
-    _onDrawReverse: ({layer: any}) => void; // TODO
-    _onDrawRemove: ({layer: any}) => void; // TODO
+    map: Map;
+    _onDrawReverse: (LayerContainer) => void; //TODO can LayerContainer be defined inline here?
+    _onDrawRemove: (LayerContainer) => void;
     idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
     idsToIdxs: {[dataIdx: number]: {[id: number]: number}}; // TODO dataIdx turha
     idsToIdxTuples: {[id: number]: IdxTuple;};
@@ -146,7 +149,7 @@ class LajiMap {
     availableOverlaysByNames: {[name: string] : any}; // TODO
     overlays: any[]; // TODO
     savedMMLOverlays: {[name: string] : any}; // TODO
-    tileLayers: {[name: string] : any}; // TODO
+    tileLayers: {[name: string] : TileLayer}; // TODO
     tileLayerName: string; // TODO
     availableTileLayers: {[name: string] : any}; // TODO
     tileLayerOpacity: number;
@@ -409,7 +412,7 @@ class LajiMap {
 			if (touch) e.stopPropagation();
 			const enabled = _onTouchOrMouseEventAgnostic(isOutsideLajiMap(e.target));
 			if (enabled && !touch) {
-				this.map.dragging._draggable._onDown(e);
+				(<any> this.map.dragging)._draggable._onDown(e);
 			}
 		};
 
@@ -488,13 +491,13 @@ class LajiMap {
 		}
 	}
 
-	getMMLProj() {
+	getMMLProj(): CRS {
 		const mmlProj = L.TileLayer.MML.get3067Proj();
 
 		// Scale controller won't work without this hack.
 		// Fixes also circle projection.
-		mmlProj.distance =  L.CRS.Earth.distance;
-		mmlProj.R = 6378137;
+		//mmlProj.distance =  L.CRS.Earth.distance; //TODO
+		//mmlProj.R = 6378137;
 
 		return mmlProj;
 	}
@@ -510,11 +513,10 @@ class LajiMap {
 				contextmenuItems: [],
 				zoomControl: false,
 				attributionControl: false,
-				continuousWorld: false,
 				doubleClickZoom: false,
 				zoomSnap: 0,
 				maxZoom: 19
-			});
+			} as MapOptions);
 
 			this.tileLayers = {};
 
@@ -538,7 +540,6 @@ class LajiMap {
 				maxZoom: 19,
 				minZoom: 0,
 				tileSize: 256,
-				continuousWorld: true,
 				attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>, <a href=\"http://www.mapant.fi\"target=\"_blank\" rel=\"noopener noreferrer\">Mapant</a>"
 			});
 
@@ -652,7 +653,7 @@ class LajiMap {
 	}
 
 	_isOutsideFinland(latLng) {
-		return !L.latLngBounds(FINLAND_BOUNDS).contains(latLng);
+		return !L.latLngBounds(<LatLngExpression[]> FINLAND_BOUNDS).contains(latLng); // TODO globals to typescript, get rid of LatLngExpressions
 	}
 
 	_swapToForeignOutsideFinland(latLng) {
@@ -667,7 +668,7 @@ class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
-			dblclick: (e) => { // We have to handle dblclick zoom manually, since the default event can't be cancelled.
+			dblclick: (e: LeafletMouseEvent) => { // We have to handle dblclick zoom manually, since the default event can't be cancelled.
 				setImmediate(() => {
 					if (this._disableDblClickZoom) return;
 					const oldZoom = this.map.getZoom();
@@ -677,15 +678,15 @@ class LajiMap {
 				});
 			},
 			click: () => this._interceptClick(),
-			mousemove: ({latlng}) => {this._mouseLatLng = latlng;},
-			"draw:created": ({layer}) => this._onAdd(this.drawIdx, layer),
+			mousemove: ({latlng}: LeafletMouseEvent) => {this._mouseLatLng = latlng;},
+			"draw:created": ({layer}: L.DrawEvents.Created) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => {
 				this.drawing = true;
 				this.map.fire("controlClick", {name: "draw"});
 			},
 			"draw:drawstop": () => { this.drawing = false; },
-			"draw:drawvertex": (e) => {
-				const layers = e.layers._layers;
+			"draw:drawvertex": (e: L.DrawEvents.DrawVertex) => {
+				const layers = e.layers.getLayers();
 				const keys = Object.keys(layers);
 				const latlng = layers[keys[keys.length - 1]].getLatLng();
 
@@ -693,12 +694,12 @@ class LajiMap {
 				const {width, height} = this.rootElem.getBoundingClientRect();
 				const treshold = Math.min(width, height) / 4;
 				if ([y, y - height, x, x - width].some(dist => Math.abs(dist) < treshold)) {
-					this.map.setView(latlng);
+					this.map.panTo(latlng);
 				}
 			},
-			locationfound: ({latlng, accuracy, bounds}) => this._onLocationFound({latlng, accuracy, bounds}),
+			locationfound: ({latlng, accuracy, bounds}: LocationEvent) => this._onLocationFound({latlng, accuracy, bounds}),
 			locationerror: (e) => this._onLocationNotFound(e),
-			"contextmenu.show": (e) => {
+			"contextmenu.show": (e: any) => {
 				if (e.relatedTarget) {
 					this._contextMenuLayer = e.relatedTarget;
 					const tuple = this._getIdxTupleByLayer(this._contextMenuLayer);
@@ -811,7 +812,7 @@ class LajiMap {
 		this.map.addEventListener(eventListeners);
 	}
 
-	_getDefaultCRSLayers(): any[] { //TODO
+	_getDefaultCRSLayers(): TileLayer[] {
 		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
 	}
 
@@ -855,7 +856,7 @@ class LajiMap {
 
 		const center = this.map.getCenter();
 		this.map.options.crs = defaultCRSLayers.includes(layer) ? L.CRS.EPSG3857 : this.getMMLProj();
-		this.map.setView(center);
+		this.map.setView(center, this.map.getZoom());
 
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
@@ -891,7 +892,7 @@ class LajiMap {
 		const {maxZoom} = this.tileLayer.options;
 		this.map.setMaxZoom(19);
 		if (projectionChanged) {
-			this.map._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
+			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true); // Redraw all layers according to new projection.
 			this.map.setView(center, zoom, {animate: false});
 		}
 		this.map.setMaxZoom(maxZoom);
@@ -1229,7 +1230,7 @@ class LajiMap {
 
 		this.data[dataIdx] = item;
 
-		const layer = L.geoJson(
+		const layer = L.geoJSON( //TODO tää oli L.geoJson. Menikö rikki?
 			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),

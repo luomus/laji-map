@@ -625,7 +625,8 @@ export function combineColors(...colors) {
 
 	colors = colors.map(color => {
 		if (color.length === 4) {
-			color = `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+			const [hash, r, g, b] = color;
+			color = `#${r}${r}${g}${g}${b}${b}`;
 		}
 		return color;
 	});
@@ -643,7 +644,7 @@ export function combineColors(...colors) {
 			}
 			const decimal = toDecimal(hex);
 			const combinedDecimalInt = parseInt(combinedDecimal);
-			const newCombined = combinedDecimalInt - ((combinedDecimalInt - decimal) / 2);
+			const newCombined = Math.round(combinedDecimal - ((combinedDecimal - decimal) / 2));
 			return Math.max(Math.min(newCombined, 255), 0);
 		}, undefined);
 

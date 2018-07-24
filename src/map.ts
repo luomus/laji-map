@@ -1,4 +1,5 @@
 import * as L from "leaflet";
+import * as G from 'geojson';
 import "leaflet-draw";
 import "proj4leaflet";
 import "Leaflet.vector-markers";
@@ -25,11 +26,7 @@ import {
 } from "./globals";
 
 import translations from "./translations.js";
-import {
-    CRS, FitBoundsOptions, LatLngExpression, LeafletMouseEvent, LocationEvent, Map, MapOptions, Projection,
-    TileLayer
-} from "leaflet";
-import {Feature} from "geojson";
+import { CRS, FitBoundsOptions, LatLngExpression, LeafletMouseEvent, LocationEvent, Map, MapOptions, TileLayer } from "leaflet";
 import {VectorMarkerIconOptions} from "./@types/leaflet.vector-markers";
 
 function capitalizeFirstLetter(string) {
@@ -58,46 +55,43 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 });
 
 interface LajiMapFitBoundsOptions extends FitBoundsOptions {
-	minZoom: number;
+	paddingInMeters? :number;
+	minZoom?: number;
 }
 
 export interface LajiMapEvent {
     type: string;
     idxs?: number[];
     idx?: number;
-    features?: any; // TODO
-    feature?: any; // TODO
+    features?: {[id: number]: G.Feature};
+    feature?: G.Feature;
 }
 
 interface Data {
 	featureCollection: any;
 	getFeatureStyle?(feature: any): any;
-    getDraftStyle?(): any; // TODO ? pois voiko jättää
-    group: any;
+    getDraftStyle?(): any;
+    group: L.GeoJSON;
+	groupContainer: L.FeatureGroup;
+	cluster: boolean;
 	activeIdx: number;
-	groupContainer: any; // TODO leaflet layer
-    cluster: any; // TODO leaflet layer
     editable: boolean;
-    onChange(events: LajiMapEvent[]): void; // TODO tarkempi
+    onChange(events: LajiMapEvent[]): void;
     hasActive: boolean;
-    getTooltip(dataIdx: number, feature: any, callback: (content: string) => void): string; // TODO
-    getPopup(dataIdx: number, feature: any, callback: (content: string) => void): string; // TODO
+    getTooltip(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
+    getPopup(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
     tooltipOptions?: any;
 }
 
 export type IdxTuple = [number, number];
 
-interface DrawHistoryEntry { // TODO,
-    featureCollection: any;
+interface DrawHistoryEntry {
+    featureCollection: G.FeatureCollection;
     undoEvents?: LajiMapEvent[];
     redoEvents?: LajiMapEvent[];
 }
 
 type Lang = "fi" | "en" | "sv";
-
-interface LayerContainer {
-	layer: L.Layer;
-}
 
 //@HasControls
 //@HasLineTransect
@@ -117,8 +111,8 @@ class LajiMap {
     drawIdx: number;
     _draftDrawLayer: any;
     map: Map;
-    _onDrawReverse: (LayerContainer) => void; //TODO can LayerContainer be defined inline here?
-    _onDrawRemove: (LayerContainer) => void;
+    _onDrawReverse: (layer: L.Layer) => void;
+    _onDrawRemove: (layer: L.Layer) => void;
     idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
     idsToIdxs: {[dataIdx: number]: {[id: number]: number}}; // TODO dataIdx turha
     idsToIdxTuples: {[id: number]: IdxTuple;};
@@ -131,42 +125,42 @@ class LajiMap {
     polyline: any;
     locate: boolean;
     _located: boolean;
-    userLocation: {latlng: any, accuracy: number}; //TODO latlng
-    userLocationMarker: any; //TODO
-    userLocationRadiusMarker: any; //TODO
-    userLocationLayer: any; //TODO
-	popup: any; //TODO
-    popupOnHover: boolean; //TODO
-    popupCounter: number; //TODO
-    onPopupClose: () => void; //TODO
-    featurePopupOffset: number; //TODO
-    markerPopupOffset: number; //TODO
-	_drawReverseLayers: any[]; // TODO LAYERS
-    _drawRemoveLayers: any[]; // TODO LAYERS
+    userLocation: {latlng: L.LatLng, accuracy: number};
+    userLocationMarker: L.CircleMarker;
+    userLocationRadiusMarker: L.Circle;
+    userLocationLayer: L.LayerGroup;
+	popup: L.Rrose;
+    popupOnHover: boolean;
+    popupCounter: number;
+    onPopupClose: () => void;
+    featurePopupOffset: number;
+    markerPopupOffset: number;
+	_drawReverseLayers: L.Polyline[];
+    _drawRemoveLayers: L.Layer[];
     _disposeTooltip: () => void;
     _createTooltip: (string) => void;
-    _zoomToData: any; // TODO fitboundstype
+    _zoomToData: LajiMapFitBoundsOptions | boolean;
     _disableDblClickZoom: boolean;
     lang: Lang;
     dictionary: {[key: string]: any};
     _domCleaners: (() => void)[];
 	_documentEvents: {[eventName: string]: EventListener};
 	zoom: number;
-    center: [number, number]; //TODO
-    tileLayer: any; //TODO
-	overlaysByNames: {[name: string] : any}; // TODO
-    availableOverlaysByNames: {[name: string] : any}; // TODO
-    overlays: any[]; // TODO
-    savedMMLOverlays: {[name: string] : any}; // TODO
-    tileLayers: {[name: string] : TileLayer}; // TODO
+    center: L.LatLngExpression;
+    tileLayer: L.TileLayer;
+	overlaysByNames: {[name: string] : L.TileLayer}; // TODO
+    availableOverlaysByNames: {[name: string] : L.TileLayer}; // TODO
+    overlays: L.TileLayer[]; // TODO
+    savedMMLOverlays: {[name: string] : L.TileLayer}; // TODO
+    tileLayers: {[name: string] : L.TileLayer}; // TODO
     tileLayerName: string; // TODO
-    availableTileLayers: {[name: string] : any}; // TODO
+    availableTileLayers: {[name: string] : L.TileLayer}; // TODO
     tileLayerOpacity: number;
     _listenedEvents: {[eventName: string]: EventListener};
     _keyListeners: {[eventName: string]: ((e: Event) => boolean)[]};
 	_swapToForeignFlag: boolean;
-    _mouseLatLng: any; //TODO
-    _contextMenuLayer: any; //TODO
+    _mouseLatLng: L.LatLngExpression;
+    _contextMenuLayer: L.Layer;
 	initializeViewAfterLocateFail: boolean;
 	_preventScrollDomCleaner: () => void;
     _onDrawStopPreventScrolling: () => void;
@@ -181,13 +175,14 @@ class LajiMap {
     _onMouseDownPreventScrolling: EventListener;
     _onTouchPreventScrolling: EventListener;
     _preventScrolling: () => void;
-    _showPreventAnimationTimeout: number;
-    _showPreventShowTimeout: number;
-    _showPreventHideTimeout: number;
+    _showPreventAnimationTimeout: any;
+    _showPreventShowTimeout: any;
+    _showPreventHideTimeout: any;
     _showingPreventScroll: boolean;
     _LTEditPointIdxTuple: IdxTuple;
     activeControl: any; // TODO move to controls.js
 	_clickBeforeZoomAndPan: boolean;
+	_origLatLngs: {[id: string]: L.LatLng[]};
 
 	constructor(props) {
 		this._constructDictionary();
@@ -211,6 +206,7 @@ class LajiMap {
 		this._initializeMap();
 		this._stopDrawRemove = this._stopDrawRemove.bind(this);
 		this._stopDrawReverse = this._stopDrawReverse.bind(this);
+		this._onDrawReverseHandler = this._onDrawReverseHandler.bind(this);
 		this.abortDrawing = this.abortDrawing.bind(this);
 	}
 
@@ -545,7 +541,7 @@ class LajiMap {
 
 			this.tileLayers.ortokuva = L.tileLayer.mml("Ortokuva_3067");
 
-			this.tileLayers.laser = new L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
+			this.tileLayers.laser = L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
 				maxZoom: 19,
 				minZoom: 0,
 				tileSize: 256,
@@ -756,7 +752,7 @@ class LajiMap {
 
 	keyHandler(e) {
 		e = e || window.event;
-		var isEscape = false;
+		let isEscape = false;
 		if ("key" in e) {
 			isEscape = (e.key == "Escape" || e.key == "Esc");
 		} else {
@@ -1115,7 +1111,7 @@ class LajiMap {
 		}
 	}
 
-	formatFeatureOut(feature, layer) {
+	formatFeatureOut(feature, layer): G.Feature {
 		if (layer && layer instanceof L.Circle) {
 			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 			feature.geometry.radius = layer.getRadius();
@@ -1141,11 +1137,11 @@ class LajiMap {
 		return {...feature, properties};
 	}
 
-	formatFeatureIn(feature, idx) {
+	formatFeatureIn(feature: G.Feature, idx): G.Feature {
 		return {...feature, properties: {...feature.properties, lajiMapIdx: idx}};
 	}
 
-	cloneFeatures(features) {
+	cloneFeatures(features: G.Feature[]): G.Feature[] {
 		const featuresClone = [];
 		for (let i = 0; i < features.length; i++) {
 			const feature = features[i];
@@ -1337,14 +1333,14 @@ class LajiMap {
 		return [this.getDraw(), ...this.data];
 	}
 
-	setZoomToData(options?: any) { // TODO fitbounds type
+	setZoomToData(options?: LajiMapFitBoundsOptions | boolean) {
 		this._zoomToData = options;
-		if (options && !this.locate) this.zoomToData(isObject(options) ? options : true);
+		if (options && !this.locate) this.zoomToData(options);
 		provide(this, "_zoomToData");
 	}
 
 	@dependsOn("data", "draw", "center", "zoom")
-	zoomToData(options = {}) {
+	zoomToData(options: LajiMapFitBoundsOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
 		const featureGroup = L.featureGroup(this._getAllData().filter(item => item).reduce((layers, item) => {
@@ -1361,7 +1357,12 @@ class LajiMap {
 		}, []));
 
 		let bounds = featureGroup.getBounds();
-		this.fitBounds(bounds, options);
+
+		if (options && !isObject(options)) {
+			options = {};
+		}
+
+		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}
 
 	_initializeLayer(layer, idxTuple: IdxTuple) {
@@ -1372,7 +1373,7 @@ class LajiMap {
 		this._decoratePolyline(layer);
 	}
 
-	fitBounds(bounds, options : LajiMapFitBoundsOptions) {
+	fitBounds(bounds, options : LajiMapFitBoundsOptions = {}) {
 		if (!bounds.isValid()) return;
 
 		const {paddingInMeters} = options;
@@ -1384,11 +1385,11 @@ class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToForeignOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, {animate: false, ..._options});
-		if (typeof maxZoom === "number" && !isNaN(maxZoom)) {
+		this.map.fitBounds(bounds, <FitBoundsOptions> {animate: false, ..._options});
+		if (options.hasOwnProperty("maxZoom")) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}
-		if (typeof minZoom === "number" && !isNaN(minZoom)) {
+		if (options.hasOwnProperty("minZoom")) {
 			if (this.getNormalizedZoom() < minZoom) this.setNormalizedZoom(minZoom);
 		}
 	}
@@ -1594,17 +1595,17 @@ class LajiMap {
 		this._createTooltip("RemoveFeatureOnClick");
 
 		this._drawRemoveLayers = [];
-		this._onDrawRemove = ({layer}) => {
+		this._onDrawRemove = (layer) => {
 			this._drawRemoveLayers.push(layer);
 			this._removeLayerFromItem(this.getDraw(), layer);
 		};
-		this.getDraw().group.on("click", this._onDrawRemove);
+		this.getDraw().group.on("click", ({layer}: L.GeoJSONEvent) => this._onDrawRemove(layer));
 
 		this._addKeyListener(ESC, this._stopDrawRemove);
 	}
 
 	_stopDrawRemove() {
-		this.getDraw().group.removeEventListener("click", this._onDrawRemove);
+		this.getDraw().group.removeEventListener("click", ({layer}: L.GeoJSONEvent) => this._onDrawRemove(layer));
 		this._onDrawRemove = undefined;
 		this._disposeTooltip();
 		this._drawRemoveLayers = undefined;
@@ -1614,7 +1615,7 @@ class LajiMap {
 	_finishDrawRemove() {
 		const layers = this._drawRemoveLayers;
 		this._stopDrawRemove();
-		if (layers && layers.length) this._onDelete(this.drawIdx, layers.map(layer => layer._leaflet_id));
+		if (layers && layers.length) this._onDelete(this.drawIdx, layers.map(layer => L.Util.stamp(layer)));
 	}
 
 	_cancelDrawRemove() {
@@ -1630,21 +1631,26 @@ class LajiMap {
 		return false;
 	}
 
+	_onDrawReverseHandler({layer}: L.GeoJSONEvent) {
+        this._onDrawReverse(layer);
+	}
+
 	_startDrawReverse() {
 		if (this._onDrawReverse) return;
 		this._createTooltip("ReverseLineOnClick");
 		this._drawReverseLayers = [];
-		this._onDrawReverse = ({layer}) => {
-			this._drawReverseLayers.push(layer);
+		this._onDrawReverse = (layer) => {
+			if (!isPolyline(layer)) return;
+			this._drawReverseLayers.push(<L.Polyline> layer);
 			this._reversePolyline(layer);
 		};
-		this.getDraw().group.on("click", this._onDrawReverse);
+		this.getDraw().group.on("click", this._onDrawReverseHandler);
 		this._addKeyListener(ESC, this._stopDrawReverse);
 	}
 
 	_stopDrawReverse() {
 		if (!this._onDrawReverse) return;
-		this.getDraw().group.removeEventListener("click", this._onDrawReverse);
+		this.getDraw().group.removeEventListener("click", this._onDrawReverseHandler);
 		this._onDrawReverse = undefined;
 		this._drawReverseLayers = undefined;
 		this._disposeTooltip();
@@ -1656,7 +1662,7 @@ class LajiMap {
 		this._stopDrawReverse();
 		if (!layers || !layers.length) return;
 		const editData = layers.reduce((idToLayer, layer) => {
-			idToLayer[layer._leaflet_id] = layer;
+			idToLayer[L.Util.stamp(layer)] = layer;
 			return idToLayer;
 		}, {});
 		this._onEdit(this.drawIdx, editData);
@@ -1667,10 +1673,10 @@ class LajiMap {
 		this._stopDrawReverse();
 		if (!layers)  return;
 		layers.forEach(layer => {
-			layer.setLatLngs(layer._origLatLngs);
+			layer.setLatLngs(this._origLatLngs[L.Util.stamp(layer)]);
 			this._decoratePolyline(layer);
-			delete layer._origLatLngs;
 		}, {});
+		this._origLatLngs = undefined;
 	}
 
 	_createIcon(options: {color?: number, opacity?: number} = {}) {
@@ -1716,7 +1722,7 @@ class LajiMap {
 				html: `<div style="${styleString}"><span>${childCount}</span></div>`,
 				className: `marker-cluster${className}`,
 				iconSize: new L.Point(40, 40)
-			});
+			} as L.DivIconOptions);
 		};
 	}
 
@@ -1975,7 +1981,7 @@ class LajiMap {
 			this.userLocationRadiusMarker.setLatLng(latlng).setRadius(accuracy);
 			this.userLocationMarker.setLatLng(latlng);
 		} else {
-			this.userLocationRadiusMarker = new L.circle(latlng, accuracy,
+			this.userLocationRadiusMarker = L.circle(latlng, accuracy,
 				{
 					color: USER_LOCATION_COLOR,
 					fillColor: USER_LOCATION_COLOR,
@@ -2001,7 +2007,7 @@ class LajiMap {
 		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 
-    _getLayerByIdxs(idxTuple: IdxTuple): Data["group"] {
+    _getLayerByIdxs(idxTuple: IdxTuple): L.Layer {
 		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
 		const id = this.idxsToIds[dataIdx][featureIdx];
@@ -2090,7 +2096,11 @@ class LajiMap {
 		const {type} = layer.feature.geometry;
 
 		if (type === "LineString") {
-			if (!layer._origLatLngs) layer._origLatLngs = layer.getLatLngs();
+			if (!this._origLatLngs) {
+				this._origLatLngs = {};
+			}
+			const id = L.Util.stamp(layer);
+			if (!this._origLatLngs[id]) this._origLatLngs[id] = layer.getLatLngs();
 			layer.setLatLngs(layer.getLatLngs().slice(0).reverse());
 			this._decoratePolyline(layer);
 		}
@@ -2111,17 +2121,17 @@ class LajiMap {
 		};
 	}
 
-	_onAdd(dataIdx, layer, coordinateVerbatim?) {
-		if (isPolyline(layer) && layer.getLatLngs().length < 2) return;
+	_onAdd(dataIdx: number, layer: L.Layer, coordinateVerbatim?: string) {
+		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
 
 		const prevActiveIdx = this.data[dataIdx].activeIdx;
 
 		const item = this.data[dataIdx];
 		const {featureCollection: {features}} = item;
-		const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
+		const feature = this.formatFeatureOut((<any> layer).toGeoJSON(), layer);
 
 		if (coordinateVerbatim && feature.geometry) {
-			feature.geometry.coordinateVerbatim = coordinateVerbatim;
+			(<any> feature.geometry).coordinateVerbatim = coordinateVerbatim;
 		}
 		features.push(feature);
 
@@ -2147,7 +2157,7 @@ class LajiMap {
 			this._drawHistory = this._drawHistory.splice(0).splice(0, this._drawHistoryPointer + 1);
 		}
 
-		const featureCollection = {
+		const featureCollection: G.FeatureCollection = {
 			type: "FeatureCollection",
 			features: this.cloneFeatures(this.getDraw().featureCollection.features)
 		};
@@ -2316,7 +2326,7 @@ class LajiMap {
 		this.setActive(this._getLayerByIdxs(idxTuple));
 		return {
 			type: "active",
-			idx: idxTuple[1]
+			idx: featureIdx
 		};
 	}
 
@@ -2338,9 +2348,9 @@ class LajiMap {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
-			this.map.setView(layer.getLatLng());
+			this.map.panTo(layer.getLatLng(), {animate: false});
 		} else	{
-			this.map.fitBounds(layer.getBounds());
+			this.map.fitBounds((<any> layer).getBounds());
 		}
 
 		this._onActiveChange(idxTuple);
@@ -2350,7 +2360,7 @@ class LajiMap {
 		this.focusToLayerByIdxs([this.drawIdx, idx]);
 	}
 
-	_setEditable(layer) {
+	_setEditable(layer: L.Layer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		const item = this.data[dataIdx];
 		if (!item.editable || this._onDrawRemove || this._onDrawReverse) return;
@@ -2361,8 +2371,9 @@ class LajiMap {
 			item.groupContainer.removeLayer(editLayer);
 			this.map.addLayer(editLayer);
 		}
-		editLayer.options.editing || (editLayer.options.editing = {}); // See https://github.com/Leaflet/Leaflet.draw/issues/804
-		editLayer.editing.enable();
+		const layerOptions: any = (<any> editLayer).options;
+		layerOptions.editing || (layerOptions.editing = {}); // See https://github.com/Leaflet/Leaflet.draw/issues/804
+		(<any> layer).editing.enable();
 		editLayer.closePopup();
 		this.updateLayerStyle(editLayer);
 	}
@@ -2370,7 +2381,7 @@ class LajiMap {
 	_clearEditable() {
 		if (this.editIdxTuple === undefined) return;
 		const editLayer = this._getLayerByIdxs(this.editIdxTuple);
-		editLayer.editing.disable();
+		(<any> editLayer).editing.enable();
 		const item = this.data[this.editIdxTuple[0]];
 		if (item.cluster) {
 			this.map.removeLayer(editLayer);
@@ -2403,6 +2414,7 @@ class LajiMap {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
+			layer = <L.Marker> layer;
 			if (style.opacity !== undefined) layer.options.opacity = style.opacity;
 
 			layer.options.icon.options.markerColor = style.color;
@@ -2419,21 +2431,20 @@ class LajiMap {
 		}
 	}
 
-	_reversePointCoords(coords) {
-		if (!coords || coords.length !== 2) throw new Error("Invalid point coordinates");
-		return [coords[1], coords[0]];
-	}
 
 	_featureToLayer(getFeatureStyle, dataIdx?) {
+		function reversePointCoords(coords: LatLngExpression): LatLngExpression {
+			return [coords[1], coords[0]];
+		}
 		return (feature) => {
 			let layer;
 			if (feature.geometry.type === "Point") {
-				const latlng = this._reversePointCoords(feature.geometry.coordinates);
+				const latLng = reversePointCoords(feature.geometry.coordinates);
 				const params = {feature, featureIdx: feature.properties.lajiMapIdx};
 				if (dataIdx !== undefined) params[dataIdx] = dataIdx;
 				layer = (feature.geometry.radius) ?
-					new L.Circle(latlng, feature.geometry.radius) :
-					new L.marker(latlng, {
+					new L.Circle(latLng, feature.geometry.radius) :
+					L.marker(latLng, {
 						icon: this._createIcon(getFeatureStyle(params))
 					});
 			} else {

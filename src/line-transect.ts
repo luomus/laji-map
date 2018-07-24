@@ -1605,16 +1605,20 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			const end = line[line.length - 1].getLatLngs()[1];
 			if (prevEnd && !start.equals(prevEnd)) {
 				break;
+			} else if (idx === this._lineLayers.length - 1) {
+				idx = undefined;
 			}
 			prevEnd = end;
 		}
 
 		const connectedLines = this._lineLayers.slice(0, idx);
-		const disconnectedLines = this._lineLayers.slice(idx, this._lineLayers.length);
+		const disconnectedLines = idx !== undefined
+			? this._lineLayers.slice(idx, this._lineLayers.length)
+			: [];
 
 		const headLines = connectedLines.slice(0, lineIdx);
 		const tailLines = connectedLines.slice(lineIdx, connectedLines.length);
-
+		
 		const prevFeature = this._formatLTFeatureOut();
 		this._lineLayers = [...tailLines, ...headLines, ...disconnectedLines];
 

@@ -1,3 +1,4 @@
+import * as L from "leaflet";
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
 import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx, capitalizeFirstLetter } from "./utils";
 import "leaflet-geometryutil";
@@ -11,31 +12,30 @@ import { IdxTuple } from "./map";
 const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;
 
-// TODO svg style type?
-const lineStyle = {color: NORMAL_COLOR, weight: 2};
-const activeLineStyle = {...lineStyle, color: ACTIVE_COLOR};
-const hoverLineStyle = {...lineStyle, color: combineColors(lineStyle.color, activeLineStyle.color)};
-const editLineStyle = {...lineStyle, color: "#f00"};
-const origLineStyle = {...lineStyle, weight: 1, fill: "#99b"};
+const lineStyle: L.PathOptions = {color: NORMAL_COLOR, weight: 2};
+const activeLineStyle: L.PathOptions = {...lineStyle, color: ACTIVE_COLOR};
+const hoverLineStyle: L.PathOptions = {...lineStyle, color: combineColors(lineStyle.color, activeLineStyle.color)};
+const editLineStyle: L.PathOptions = {...lineStyle, color: "#f00"};
+const origLineStyle: L.PathOptions = {...lineStyle, weight: 1, fillColor: "#99b"}; // TODO fillColor oli fill - menikö rikki?
 
-const corridorStyle = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
-const oddCorridorStyle = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)};
-const activeCorridorStyle = {...corridorStyle, fillColor: activeLineStyle.color};
-const editCorridorStyle = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
-const hoverCorridorStyle = {...corridorStyle, fillColor: hoverLineStyle.color};
+const corridorStyle: L.PathOptions = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
+const oddCorridorStyle: L.PathOptions = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)};
+const activeCorridorStyle: L.PathOptions = {...corridorStyle, fillColor: activeLineStyle.color};
+const editCorridorStyle: L.PathOptions = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
+const hoverCorridorStyle: L.PathOptions = {...corridorStyle, fillColor: hoverLineStyle.color};
 
-const pointStyle = {weight: 0, radius: 3, fillColor: "#154EAA", fillOpacity: 1};
-const oddPointStyle = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)};
-const activePointStyle = {...pointStyle, fillColor: combineColors(activeLineStyle.color, "#000000", 40)};
-const editPointStyle = {...pointStyle, fillColor: editLineStyle.color};
-const hoverPointStyle = {...pointStyle, fillColor: hoverLineStyle.color};
-const editablePointStyle = {...pointStyle, radius: 5, fillColor: "#f00", fillOpacity: 0.7};
-const overlappingPointStyle = {...pointStyle, radius: 5, weight: 3, color: "#000"};
-const firstOverlappingPointStyle = {...overlappingPointStyle, fillColor: "#f00"};
-const seamPointStyle = {...pointStyle, radius: 7};
-const closebyEditPointStyle = {...editPointStyle, radius: 9};
-const closebyPointStyle = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity};
-const hintPointStyle = {...closebyPointStyle, radius: 7};
+const pointStyle: L.CircleMarkerOptions = {weight: 0, radius: 3, fillColor: "#154EAA", fillOpacity: 1};
+const oddPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)};
+const activePointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: combineColors(activeLineStyle.color, "#000000", 40)};
+const editPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: editLineStyle.color};
+const hoverPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: hoverLineStyle.color};
+const editablePointStyle: L.CircleMarkerOptions = {...pointStyle, radius: 5, fillColor: "#f00", fillOpacity: 0.7};
+const overlappingPointStyle: L.CircleMarkerOptions = {...pointStyle, radius: 5, weight: 3, color: "#000"};
+const firstOverlappingPointStyle: L.CircleMarkerOptions = {...overlappingPointStyle, fillColor: "#f00"};
+const seamPointStyle: L.CircleMarkerOptions = {...pointStyle, radius: 7};
+const closebyEditPointStyle:  L.CircleMarkerOptions = {...editPointStyle, radius: 9};
+const closebyPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity};
+const hintPointStyle: L.CircleMarkerOptions = {...closebyPointStyle, radius: 7};
 
 const LT_WIDTH_METERS = 25;
 
@@ -91,8 +91,6 @@ function idxTupleToIdxTupleStr(idxTuple: IdxTuple) : string {
 	const [i, j] = idxTuple;
 	return i !== undefined && j !== undefined ? `${i}-${j}` : undefined;
 }
-
-declare const L: any; // TODO
 
 export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	_hoveredIdxTuple: IdxTuple;
@@ -730,7 +728,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			if (this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode || this.map.contextmenu.isVisible()) {
 				return;
 			}
-			const closestPoint = L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
+			const closestPoint: L.CircleMarker = <L.CircleMarker> L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
 			const {idxTuple} = this.getIdxsFromLayer(closestPoint);
 			const idxTupleStr = idxTuple ? idxTupleToIdxTupleStr(idxTuple) : undefined;
 			const prevClosestPointIdxTuple = this._closebyPointIdxTuple;
@@ -1214,12 +1212,10 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_degreesFromNorth(lineCoords) {
-		const latLngs = lineCoords.map(L.latLng);
+		const latLngs = lineCoords.map(L.latLng).map(latlng => L.CRS.EPSG3857.project(latlng));
 
 		// Line angle horizontally.
-		const lineAngle = L.GeometryUtil.computeAngle(...latLngs.map(
-			latlng => L.CRS.EPSG3857.project(latlng)
-		));
+		const lineAngle = L.GeometryUtil.computeAngle(latLngs[0], latLngs[1]);
 
 		// Line angle clockwise from north.
 		return 90 - lineAngle;
@@ -1618,7 +1614,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 
 		const headLines = connectedLines.slice(0, lineIdx);
 		const tailLines = connectedLines.slice(lineIdx, connectedLines.length);
-		
+
 		const prevFeature = this._formatLTFeatureOut();
 		this._lineLayers = [...tailLines, ...headLines, ...disconnectedLines];
 
@@ -1934,5 +1930,5 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 
 		this._allPoints[0].bringToFront();
 	}
-} return LajiMapWithLineTransect; };
+} return <typeof LajiMap> LajiMapWithLineTransect; };
 

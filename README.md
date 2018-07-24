@@ -106,7 +106,7 @@ Option                                          | Type                     |  De
 draw                                            | Draw control options     | true                                 | Shows a map control for adding new features.
 layer                                           | Boolean                  | true                                 | Shows a tile/baselayer control.
 zoom                                            | Boolean                  | true                                 | Shows a zoom control.
-scale                                           | Integer                  | true                                 | Shows a scale control as meters.
+scale                                           | Boolean                  | true                                 | Shows a scale control as meters.
 location                                        | Location control options | true                                 | Shows a location control.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.

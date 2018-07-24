@@ -1,7 +1,6 @@
 import * as L from "leaflet";
-////import {MarkerOptions as _MarkerOptions, IconOptions as _IconOptions} from "leaflet";
-//
-interface VectorMarkerIconOptions {
+
+export interface VectorMarkerIconOptions {
     icon?: string;
     prefix?: string;
     markerColor?: string;
@@ -11,16 +10,10 @@ interface VectorMarkerIconOptions {
     opacity?: number;
 }
 
-interface MarkerOptions {
-	icon: VectorMarkerIconOptions
-}
-
 declare module "leaflet" {
 	namespace VectorMarkers {
        function icon(options: VectorMarkerIconOptions): L.Icon;
     }
 
-    namespace Marker {
-		export const options: MarkerOptions
-	}
+	interface BaseIconOptions extends VectorMarkerIconOptions { }
 }

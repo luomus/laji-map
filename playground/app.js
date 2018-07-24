@@ -128,8 +128,8 @@ class App {
 				onChange: this.onLTChange,
 				//printMode: true,
 			},
-			//draw: this.drawOptions,
-			//data: this.data,
+			draw: this.drawOptions,
+			data: this.data,
 			lang: "fi",
 			popupOnHover: true,
 			center: {

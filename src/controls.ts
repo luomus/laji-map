@@ -1,3 +1,4 @@
+import * as L from "leaflet";
 import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator, ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject } from "./utils";
 import {
 	ESC,
@@ -5,15 +6,86 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
-import { LajiMapEvent } from "./map";
+import {LajiMapEvent} from "./map";
+
+
+export interface ControlOptions {
+	name?: string;
+	text?: string;
+	position?: string;
+	eventName?: string;
+	group?: string;
+	iconCls?: string;
+	contextMenu?: boolean;
+	fn?: () => void;
+	stopFn?: () => void;
+	finishFn?: () => void;
+	cancelFn?: () => void;
+	onAdd?: () => void;
+	disabled?: boolean;
+	controls?: ControlOptions[];
+	control?: () => L.Control;
+	_custom?: boolean;
+}
+
+export interface DrawControlOptions {
+	rectangle?: boolean;
+	polygon?: boolean;
+	polyline?: boolean;
+	circle?: boolean;
+	marker?: boolean;
+	coordinateInput?: boolean;
+	copy?: boolean;
+	clear?: boolean;
+	reverse?: boolean;
+	delete?: boolean;
+	undo?: boolean;
+	redo?: boolean;
+}
+
+export interface LineTransectControlOptions {
+    split?: boolean;
+	splitByMeters?: boolean;
+	deletePoints?: boolean;
+	createPoint?: boolean;
+	shiftPoint?: boolean;
+	undo?: boolean;
+	redo?: boolean;
+}
+
+export interface LocationControlOptions {
+	user?: boolean;
+	search?: boolean;
+}
+
+export interface ControlsOptions {
+	draw?: boolean | DrawControlOptions;
+	layer?: boolean;
+	zoom?: boolean;
+	scale?: boolean;
+	location?: boolean | LocationControlOptions;
+	coordinates?: boolean;
+	lineTransect?: boolean | LineTransectControlOptions;
+	layerOpacity?: boolean
+	attribution?: boolean
+}
+
+interface InternalControlsOptions extends ControlsOptions {
+	drawUtils?: boolean | DrawControlOptions
+}
+
+export interface LajiMapOptions {
+	controls?: boolean | ControlsOptions
+}
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
 }
 
-declare const L: any; // TODO
-
 export default LajiMap => { class LajiMapWithControls extends LajiMap {
+
+	controlItems: ControlOptions[];
+
 	getOptionKeys() {
 		return {
 			...super.getOptionKeys(),
@@ -28,7 +100,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		if (!depsProvided(this, "_setLang", arguments)) return;
 
 		// Original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
-		const drawLocalizations = L.drawLocal.draw;
+		const drawLocalizations = (<any> L).drawLocal.draw;
 
 		const join = (...params) => this._joinTranslations(...params);
 
@@ -532,8 +604,8 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this.setControls(controlSettings);
 	}
 
-	setControls(controlSettings) {
-		controlSettings = JSON.parse(JSON.stringify(controlSettings));
+	setControls(controlSettings: ControlsOptions | boolean) {
+		let _controlSettings: InternalControlsOptions | boolean = JSON.parse(JSON.stringify(controlSettings));
 		this.controlSettings = {
 			draw: {
 				marker: true,
@@ -572,48 +644,44 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				redo: true
 			},
 			layerOpacity: true
-		};
+		} as InternalControlsOptions;
 
 
-		if (!controlSettings) {
-			controlSettings = Object.keys(this.controlSettings).reduce((settings, key) => {
+		if (!_controlSettings) {
+			_controlSettings = Object.keys(this.controlSettings).reduce((settings, key) => {
 				settings[key] = false;
 				return settings;
 			}, {});
 		}
 
-		if (isObject(controlSettings)) {
-			if ("draw" in controlSettings && !isObject(controlSettings.draw)) controlSettings.drawUtils = controlSettings.draw;
+		if (isObject(_controlSettings)) {
+			const __controlSettings: InternalControlsOptions = <InternalControlsOptions> _controlSettings;
+			if ("draw" in __controlSettings && !isObject(__controlSettings.draw)) {
+				__controlSettings.drawUtils = __controlSettings.draw;
+			}
 			// BW compability for drawCopy etc, which were moved under controlSettings.draw
 			["copy", "upload", "clear", "reverse", "delete", "undo", "redo"].forEach(name => {
-				const oldName = `draw${name[0].toUpperCase()}${name.slice(1)}`;
-				if (oldName in controlSettings) {
-					if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
-					controlSettings.drawUtils[name] = controlSettings[oldName];
-					delete controlSettings[oldName];
-					console.warn(`laji-map warning: controls.${oldName} is deprecated and will be removed in the future. Please use controls.draw.${name}`);
-				}
-				// Internally we use 'drawUtils' namespace, but for easier API we allow using 'draw' namespace for the utils.
-				if (isObject(controlSettings.draw) && name in controlSettings.draw) {
-					if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
-					controlSettings.drawUtils[name] = controlSettings.draw[name];
+				// Internally we use 'drawUtils' namespace, but for easier API we allow using 'draw'
+				// namespace for the utils.
+				if (isObject(__controlSettings.draw) && name in <DrawControlOptions> __controlSettings.draw) {
+					if (!__controlSettings.drawUtils) __controlSettings.drawUtils = {};
+					__controlSettings.drawUtils[name] = __controlSettings.draw[name];
 				}
 			});
-			if ("coordinateInput" in controlSettings) {
-				if (!controlSettings.drawUtils) controlSettings.drawUtils = {};
-				console.warn("laji-map warning: controls.coordinateInput is deprecated and will be removed in the future. Please use controls.draw.coordinateInput");
+			if ("coordinateInput" in __controlSettings) {
+				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput");
 			}
 
-			for (let setting in controlSettings) {
+			for (let setting in __controlSettings) {
 				if (!(setting in this.controlSettings)) continue;
 
-				let newSetting = controlSettings[setting];
+				let newSetting = __controlSettings[setting];
 				if (this.controlSettings[setting].constructor === Object) {
-					if (controlSettings[setting].constructor === Object) {
-						newSetting = {...this.controlSettings[setting], ...controlSettings[setting]};
+					if (__controlSettings[setting].constructor === Object) {
+						newSetting = {...this.controlSettings[setting], ...__controlSettings[setting]};
 					} else {
 						newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
-							subSettings[subSetting] = controlSettings[setting];
+							subSettings[subSetting] = __controlSettings[setting];
 							return subSettings;
 						}, {});
 					}
@@ -629,7 +697,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		provide(this, "controlSettings");
 	}
 
-	setCustomControls(controls) {
+	setCustomControls(controls: ControlOptions[]) {
 		this._customControls = controls;
 		provide(this, "customControls");
 	}
@@ -697,14 +765,14 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 	}
 
 
-	_addControl(name, control) {
-		if (control && this._controlIsAllowed(name) || control._custom) {
+	_addControl(name, control: L.Control) {
+		if (control && this._controlIsAllowed(name) || (<any> control)._custom) {
 			this.map.addControl(control);
 			this.controls.push(control);
 		}
 	}
 
-	_createControlButton(that, container, fn, name?) {
+	_createControlButton(that: this, container, fn, name?): HTMLElement {
 		const elem = L.DomUtil.create("a", name ? "button-" + name.replace(".", "_") : "", container);
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
@@ -725,8 +793,8 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		return elem;
 	}
 
-	_getDrawControl() {
-		const drawOptions = {
+	_getDrawControl(): L.Control.Draw {
+		const drawOptions: L.Control.DrawConstructorOptions = {
 			position: "topright",
 			edit: {
 				featureGroup: this.getDraw().group,
@@ -752,7 +820,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 	}
 
 
-	_getCoordinatesControl() {
+	_getCoordinatesControl(): L.Control {
 		const that = this;
 		const CoordinateControl = L.Control.extend({
 			options: {
@@ -828,7 +896,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		return new CoordinateControl();
 	}
 
-	_getLayerControl(opacityControl = true) {
+	_getLayerControl(opacityControl = true): L.Control.Layers {
 		const baseMaps = {}, overlays = {};
 		const {translations} = this;
 
@@ -897,7 +965,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				that.map.fire("controlClick", {name: "layer"});
 			},
 			_initLayout: function() {
-				L.Control.Layers.prototype._initLayout.call(this);
+				(<any> L.Control.Layers.prototype)._initLayout.call(this);
 
 				if (!opacityControl) return;
 
@@ -949,7 +1017,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			},
 			_checkDisabledLayers: function() {
 				if (!this._map) return;
-				L.Control.Layers.prototype._checkDisabledLayers.call(this);
+				(<any> L.Control.Layers.prototype)._checkDisabledLayers.call(this);
 				const labels = [
 					...Array.prototype.slice.call(this._baseLayersList.children, 0),
 					...Array.prototype.slice.call(this._overlaysList.children, 0)
@@ -1003,7 +1071,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		return layerControl;
 	}
 
-	getZoomControl() {
+	getZoomControl(): L.Control.Zoom {
 		const that = this;
 		const ZoomControl = L.Control.Zoom.extend({
 			onZoomClick: function() {
@@ -1650,4 +1718,4 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			super.triggerDrawing(featureType);
 		}
 	}
-} return LajiMapWithControls; };
+} return <typeof LajiMap> LajiMapWithControls; };

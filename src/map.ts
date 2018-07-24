@@ -18,15 +18,12 @@ import {
 	DATA_LAYER_COLOR,
 	EDITABLE_DATA_LAYER_COLOR,
 	USER_LOCATION_COLOR,
-	MAASTOKARTTA,
-	TAUSTAKARTTA,
 	ESC,
 	FINLAND_BOUNDS,
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 
 import translations from "./translations.js";
-import { CRS, FitBoundsOptions, LatLngExpression, LeafletMouseEvent, LocationEvent, Map, MapOptions, TileLayer } from "leaflet";
 import {VectorMarkerIconOptions} from "./@types/leaflet.vector-markers";
 
 function capitalizeFirstLetter(string) {
@@ -54,7 +51,7 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 	}
 });
 
-interface LajiMapFitBoundsOptions extends FitBoundsOptions {
+interface LajiMapFitBoundsOptions extends L.FitBoundsOptions {
 	paddingInMeters? :number;
 	minZoom?: number;
 }
@@ -67,20 +64,47 @@ export interface LajiMapEvent {
     feature?: G.Feature;
 }
 
-interface Data {
+interface GetFeatureStyleOptions {
+    dataIdx?: number;
+    featureIdx?: number;
+    feature?: G.Feature;
+    item?: Data
+}
+
+interface DataOptions {
 	featureCollection: any;
-	getFeatureStyle?(feature: any): any;
-    getDraftStyle?(): any;
-    group: L.GeoJSON;
-	groupContainer: L.FeatureGroup;
+	getFeatureStyle?(options: GetFeatureStyleOptions): L.PathOptions;
+	getDraftStyle?(): L.PathOptions;
 	cluster: boolean;
 	activeIdx: number;
-    editable: boolean;
-    onChange(events: LajiMapEvent[]): void;
-    hasActive: boolean;
-    getTooltip(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
-    getPopup(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
-    tooltipOptions?: any;
+	editable: boolean;
+	onChange(events: LajiMapEvent[]): void;
+	hasActive: boolean;
+	getTooltip?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
+	getPopup?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
+	tooltipOptions?: any;
+	on?: L.LeafletEventHandlerFnMap,
+}
+
+interface Data extends DataOptions {
+    group: L.GeoJSON;
+	groupContainer: L.FeatureGroup;
+}
+
+interface DrawOptions extends DataOptions {
+	rectangle?: boolean;
+	polygon?: boolean;
+	polyline?: boolean;
+	circle?: boolean;
+	marker?: boolean;
+}
+
+interface Draw extends Data {
+	rectangle?: boolean;
+	polygon?: boolean;
+	polyline?: boolean;
+	circle?: boolean;
+	marker?: boolean;
 }
 
 export type IdxTuple = [number, number];
@@ -93,12 +117,58 @@ interface DrawHistoryEntry {
 
 type Lang = "fi" | "en" | "sv";
 
-//@HasControls
-//@HasLineTransect
-class LajiMap {
+type TileLayerName = "maastokartta"
+                   | "taustakartta"
+                   | "pohjakartta"
+                   | "ortokuva"
+                   | "laser"
+                   | "openStreepMap"
+                   | "googleSatellite"
+
+type OverlayName = "geobiologicalProvinces"
+                 | "geobiologicalProvinceBorders"
+                 | "forestVegetationZones"
+                 | "mireVegetationZones"
+                 | "threatenedSpeciesEvaluationZones"
+                 | "ykjGrid"
+                 | "ykjGridLabels";
+
+interface LajiMapOptions {
+    rootElem?: HTMLElement;
+    lang?: Lang;
+    data?: DataOptions[];
+    draw?: DrawOptions | boolean;
+    tileLayerName?: TileLayerName;
+    availableTileLayerNamesBlacklist?: TileLayerName[];
+    availableTileLayerNamesWhitelist?: TileLayerName[];
+    overlayNames?: OverlayName[];
+    availableOverlayNameBlacklist?: OverlayName[];
+    availableOverlayNameWhitelist?: OverlayName[];
+    tileLayerOpacity?: number;
+    center?: L.LatLngExpression;
+    zoom?: number;
+    zoomToData?: boolean | LajiMapFitBoundsOptions;
+    locate?: boolean;
+    onPopupClose?: () => void;
+    markerPopupOffset?: number;
+    featurePopupOffset?: number;
+    popupOnHover?: boolean;
+    on?: L.LeafletEventHandlerFnMap,
+    polyline?: boolean | L.DrawOptions.PolylineOptions;
+    polygon?: boolean | L.DrawOptions.PolygonOptions;
+    rectangle?: boolean | L.DrawOptions.RectangleOptions;
+    circle?: boolean | L.DrawOptions.CircleOptions;
+    marker?: boolean | L.DrawOptions.MarkerOptions;
+    bodyAsDialogRoot?: boolean;
+    clickBeforeZoomAndPan?: boolean;
+}
+
+@HasControls
+@HasLineTransect
+export default class LajiMap {
 	private onSetLangHooks = [];
-	options: any;
-	_dialogRoot: any;
+	options: LajiMapOptions;
+	_dialogRoot: HTMLElement;
     _openDialogs = [];
     _closeDialog: (e?: Event) => void;
     container: HTMLElement;
@@ -107,22 +177,22 @@ class LajiMap {
     rootElem: HTMLElement;
 	translations: any;
 	data: Data[];
-    draw: any;
+    draw: Draw;
     drawIdx: number;
-    _draftDrawLayer: any;
-    map: Map;
+    _draftDrawLayer: L.Draw.Feature;
+    map: L.Map;
     _onDrawReverse: (layer: L.Layer) => void;
     _onDrawRemove: (layer: L.Layer) => void;
     idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
-    idsToIdxs: {[dataIdx: number]: {[id: number]: number}}; // TODO dataIdx turha
+    idsToIdxs: {[dataIdx: number]: {[id: number]: number}};
     idsToIdxTuples: {[id: number]: IdxTuple;};
-    _idxsToHovered: any;
-    _idxsToContextMenuOpen: any;
+    _idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}};
+    _idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}};
     editIdxTuple: IdxTuple;
     drawing: boolean;
     _drawHistoryPointer: number;
     _drawHistory: DrawHistoryEntry[];
-    polyline: any;
+    polyline: L.Polyline;
     locate: boolean;
     _located: boolean;
     userLocation: {latlng: L.LatLng, accuracy: number};
@@ -142,21 +212,21 @@ class LajiMap {
     _zoomToData: LajiMapFitBoundsOptions | boolean;
     _disableDblClickZoom: boolean;
     lang: Lang;
-    dictionary: {[key: string]: any};
+    dictionary: {[lang: string]: any};
     _domCleaners: (() => void)[];
 	_documentEvents: {[eventName: string]: EventListener};
 	zoom: number;
     center: L.LatLngExpression;
     tileLayer: L.TileLayer;
-	overlaysByNames: {[name: string] : L.TileLayer}; // TODO
-    availableOverlaysByNames: {[name: string] : L.TileLayer}; // TODO
-    overlays: L.TileLayer[]; // TODO
-    savedMMLOverlays: {[name: string] : L.TileLayer}; // TODO
-    tileLayers: {[name: string] : L.TileLayer}; // TODO
-    tileLayerName: string; // TODO
-    availableTileLayers: {[name: string] : L.TileLayer}; // TODO
+	overlaysByNames: {[name: string] : L.TileLayer};
+    availableOverlaysByNames: {[name: string] : L.TileLayer};
+    overlays: L.TileLayer[];
+    savedMMLOverlays: {[name: string] : L.TileLayer};
+    tileLayers: {[name: string] : L.TileLayer};
+    tileLayerName: TileLayerName;
+    availableTileLayers: {[name: string] : L.TileLayer};
     tileLayerOpacity: number;
-    _listenedEvents: {[eventName: string]: EventListener};
+    _listenedEvents: L.LeafletEventHandlerFnMap;
     _keyListeners: {[eventName: string]: ((e: Event) => boolean)[]};
 	_swapToForeignFlag: boolean;
     _mouseLatLng: L.LatLngExpression;
@@ -180,15 +250,15 @@ class LajiMap {
     _showPreventHideTimeout: any;
     _showingPreventScroll: boolean;
     _LTEditPointIdxTuple: IdxTuple;
-    activeControl: any; // TODO move to controls.js
+    activeControl: L.Control; // TODO move to controls.js
 	_clickBeforeZoomAndPan: boolean;
 	_origLatLngs: {[id: string]: L.LatLng[]};
 
-	constructor(props) {
+	constructor(props: LajiMapOptions) {
 		this._constructDictionary();
 
-		const options = {
-			tileLayerName: TAUSTAKARTTA,
+		const options: LajiMapOptions = {
+			tileLayerName: "taustakartta",
 			lang: "en",
 			data: [],
 			locate: false,
@@ -231,7 +301,6 @@ class LajiMap {
 			markerPopupOffset: true,
 			featurePopupOffset: true,
 			popupOnHover: true,
-			onInitializeDrawLayer: true,
 			on: "setEventListeners",
 			polyline: true,
 			polygon: true,
@@ -243,7 +312,7 @@ class LajiMap {
 		};
 	}
 
-	setOptions(options) {
+	setOptions(options: LajiMapOptions) {
 		Object.keys(options || {}).forEach(option => {
 			this.setOption(option, options[option]);
 		});
@@ -496,13 +565,13 @@ class LajiMap {
 		}
 	}
 
-	getMMLProj(): CRS {
+	getMMLProj(): L.CRS {
 		const mmlProj = L.TileLayer.MML.get3067Proj();
 
 		// Scale controller won't work without this hack.
 		// Fixes also circle projection.
-		//mmlProj.distance =  L.CRS.Earth.distance; //TODO
-		//mmlProj.R = 6378137;
+		mmlProj.distance =  L.CRS.Earth.distance;
+		(<any> mmlProj).R = 6378137;
 
 		return mmlProj;
 	}
@@ -521,11 +590,11 @@ class LajiMap {
 				doubleClickZoom: false,
 				zoomSnap: 0,
 				maxZoom: 19
-			} as MapOptions);
+			} as L.MapOptions);
 
 			this.tileLayers = {};
 
-			[MAASTOKARTTA, TAUSTAKARTTA].forEach(tileLayerName => {
+			["maastokartta", "taustakartta"].forEach(tileLayerName => {
 				this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 					layer: tileLayerName
 				});
@@ -658,7 +727,7 @@ class LajiMap {
 	}
 
 	_isOutsideFinland(latLng) {
-		return !L.latLngBounds(<LatLngExpression[]> FINLAND_BOUNDS).contains(latLng); // TODO globals to typescript, get rid of LatLngExpressions
+		return !L.latLngBounds(<L.LatLngExpression[]> FINLAND_BOUNDS).contains(latLng); // TODO globals to typescript, get rid of LatLngExpressions
 	}
 
 	_swapToForeignOutsideFinland(latLng) {
@@ -673,7 +742,7 @@ class LajiMap {
 		if (!depsProvided(this, "_initializeMapEvents", arguments)) return;
 
 		this.map.addEventListener({
-			dblclick: (e: LeafletMouseEvent) => { // We have to handle dblclick zoom manually, since the default event can't be cancelled.
+			dblclick: (e: L.LeafletMouseEvent) => { // We have to handle dblclick zoom manually, since the default event can't be cancelled.
 				setImmediate(() => {
 					if (this._disableDblClickZoom) return;
 					const oldZoom = this.map.getZoom();
@@ -683,7 +752,7 @@ class LajiMap {
 				});
 			},
 			click: () => this._interceptClick(),
-			mousemove: ({latlng}: LeafletMouseEvent) => {this._mouseLatLng = latlng;},
+			mousemove: ({latlng}: L.LeafletMouseEvent) => {this._mouseLatLng = latlng;},
 			"draw:created": ({layer}: L.DrawEvents.Created) => this._onAdd(this.drawIdx, layer),
 			"draw:drawstart": () => {
 				this.drawing = true;
@@ -702,7 +771,7 @@ class LajiMap {
 					this.map.panTo(latlng);
 				}
 			},
-			locationfound: ({latlng, accuracy, bounds}: LocationEvent) => this._onLocationFound({latlng, accuracy, bounds}),
+			locationfound: ({latlng, accuracy, bounds}: L.LocationEvent) => this._onLocationFound({latlng, accuracy, bounds}),
 			locationerror: (e) => this._onLocationNotFound(e),
 			"contextmenu.show": (e: any) => {
 				if (e.relatedTarget) {
@@ -804,7 +873,7 @@ class LajiMap {
 	}
 
 	@dependsOn("map")
-	setEventListeners(eventListeners) {
+	setEventListeners(eventListeners: L.LeafletEventHandlerFnMap) {
 		if (!depsProvided(this, "setEventListeners", arguments)) return;
 
 		if (this._listenedEvents) {
@@ -817,7 +886,7 @@ class LajiMap {
 		this.map.addEventListener(eventListeners);
 	}
 
-	_getDefaultCRSLayers(): TileLayer[] {
+	_getDefaultCRSLayers(): L.TileLayer[] {
 		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
 	}
 
@@ -826,13 +895,13 @@ class LajiMap {
 	}
 
 	@dependsOn("map")
-	setTileLayerByName(name) {
+	setTileLayerByName(name: TileLayerName) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
 		this.setTileLayer(this.tileLayers[name]);
 	}
 
 	@dependsOn("map")
-	setAvailableTileLayers(names = [], condition) {
+	setAvailableTileLayers(names: TileLayerName[] = [], condition) {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
 		const list = names.reduce((list, name) => {
 			list[name] = true;
@@ -844,16 +913,16 @@ class LajiMap {
 		}, {});
 	}
 
-	setAvailableTileLayerBlacklist(names) {
+	setAvailableTileLayerBlacklist(names: TileLayerName[]) {
 		this.setAvailableTileLayers(names, false);
 	}
 
-	setAvailableTileLayerWhitelist(names) {
+	setAvailableTileLayerWhitelist(names: TileLayerName[]) {
 		this.setAvailableTileLayers(names, true);
 	}
 
 	@dependsOn("map", "center", "zoom")
-	setTileLayer(layer) {
+	setTileLayer(layer: L.TileLayer) {
 		if (!depsProvided(this, "setTileLayer", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
@@ -936,7 +1005,7 @@ class LajiMap {
 		if (!initialCall && triggerEvent) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
 	}
 
-	setOverlays(overlays = [], triggerEvent = true) {
+	setOverlays(overlays: L.TileLayer[] = [], triggerEvent = true) {
 		this.overlays = overlays;
 
 		Object.keys(this.overlaysByNames).forEach(name => {
@@ -967,11 +1036,11 @@ class LajiMap {
 	}
 
 	// Wrapper that prevents overlay event triggering on initial call.
-	_setOverlaysByName(overlayNames) {
+	_setOverlaysByName(overlayNames: OverlayName[]) {
 		this.setOverlaysByName(overlayNames, false);
 	}
 
-	getOverlaysByName() {
+	getOverlaysByName(): OverlayName[] {
 		const names = [];
 		(this.overlays || []).forEach(overlay => {
 			names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
@@ -994,7 +1063,7 @@ class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableOverlays(overlayNames = [], condition) {
+	setAvailableOverlays(overlayNames: OverlayName[] = [], condition) {
 		if (!depsProvided(this, "setAvailableOverlays", arguments)) return;
 		const list = overlayNames.reduce((list, name) => {
 			list[name] = true;
@@ -1006,14 +1075,14 @@ class LajiMap {
 		}, {});
 	}
 
-	getNormalizedZoom(zoom?: number, tileLayer?: any) { //TODO
+	getNormalizedZoom(zoom?: number, tileLayer?: L.TileLayer) {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
 		return (this._getMMLCRSLayers().includes(tileLayer || this.tileLayer)) ? zoom : zoom - 3;
 	}
 
-	getDenormalizedZoom(zoom?: number, tileLayer?: any) { // TODO
+	getDenormalizedZoom(zoom?: number, tileLayer?: L.TileLayer) {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
@@ -1235,7 +1304,7 @@ class LajiMap {
 
 		this.data[dataIdx] = item;
 
-		const layer = L.geoJSON( //TODO tää oli L.geoJson. Menikö rikki?
+		const layer = L.geoJSON(
 			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
@@ -1254,7 +1323,7 @@ class LajiMap {
 		item.groupContainer.addTo(this.map);
 
 		layer.eachLayer(layer => {
-			this._initializeLayer(layer, [dataIdx, (<any> layer).feature.properties.lajiMapIdx]); // TODO better way to access feature?
+			this._initializeLayer(layer, [dataIdx, (<any> layer).feature.properties.lajiMapIdx]);
 		});
 
 		if (item.hasActive) {
@@ -1385,7 +1454,7 @@ class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToForeignOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, <FitBoundsOptions> {animate: false, ..._options});
+		this.map.fitBounds(bounds, <L.FitBoundsOptions> {animate: false, ..._options});
 		if (options.hasOwnProperty("maxZoom")) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}
@@ -1679,7 +1748,7 @@ class LajiMap {
 		this._origLatLngs = undefined;
 	}
 
-	_createIcon(options: {color?: number, opacity?: number} = {}) {
+	_createIcon(options: L.PathOptions = {}) {
 		const markerColor = options.color || NORMAL_COLOR;
 		const opacity = options.opacity || 1;
 		return L.VectorMarkers.icon({
@@ -2032,7 +2101,9 @@ class LajiMap {
 		if (handler) handler(e);
 	}
 
-	_decoratePolyline(layer) {
+	_decoratePolyline(layer: L.Polyline) {
+		if (!isPolyline(layer)) return;
+
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 
 		const {showStart, showDirection = true} = this._fillStyleWithGlobals(dataIdx, featureIdx);
@@ -2040,56 +2111,57 @@ class LajiMap {
 		function warn() {
 			console.warn("Failed to add a starting point to line");
 		}
-		if (isPolyline(layer)) {
-			if (showDirection !== false) {
-				const {clickable} = layer;
-				layer.options.clickable = false;
-				try {
-					layer.setText(null)
-					     .setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
-				} catch (e) {
-					console.warn("laji-map polyline text decorating failed");
-				}
-				layer.options.clickable = clickable;
-			}
+
+		const typelessLayer = <any> layer;
+
+        if (showDirection !== false) {
+            const {clickable} = typelessLayer;
+			typelessLayer.options.clickable = false;
+            try {
+                layer.setText(null)
+                     .setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+            } catch (e) {
+                console.warn("laji-map polyline text decorating failed");
+            }
+			typelessLayer.options.clickable = clickable;
+        }
 
 
-			if (showStart) {
-				let firstPoint = undefined;
+        if (!showStart) return;
 
-				if (!layer.feature.geometry.type) {
-					warn();
-					return;
-				}
+        let firstPoint = undefined;
 
-				switch (layer.feature.geometry.type) {
-				case "MultiLineString":
-					firstPoint = layer.getLatLngs()[0][0];
-					break;
-				case "LineString":
-					firstPoint = layer.getLatLngs()[0];
-				}
+        if (!layer.feature.geometry.type) {
+            warn();
+            return;
+        }
 
-				if (!firstPoint) {
-					warn();
-					return;
-				}
+        switch (layer.feature.geometry.type) {
+        case "MultiLineString":
+            firstPoint = layer.getLatLngs()[0][0];
+            break;
+        case "LineString":
+            firstPoint = layer.getLatLngs()[0];
+        }
 
-				if (layer._startCircle) {
-					layer._startCircle.remove();
-				}
-				layer._startCircle = L.circleMarker(firstPoint, this._getStartCircleStyle(layer)).addTo(this.map);
-				layer.on("editdrag", () => {
-					layer._startCircle.setLatLng(layer.getLatLngs()[0]);
-				});
-				layer.on("remove", () => {
-					layer._startCircle.remove();
-				});
-				layer.on("add", () => {
-					layer._startCircle.addTo(this.map);
-				});
-			}
-		}
+        if (!firstPoint) {
+            warn();
+            return;
+        }
+
+        if (typelessLayer._startCircle) {
+			typelessLayer._startCircle.remove();
+        }
+		typelessLayer._startCircle = L.circleMarker(firstPoint, this._getStartCircleStyle(layer)).addTo(this.map);
+        layer.on("editdrag", () => {
+            typelessLayer._startCircle.setLatLng(layer.getLatLngs()[0]);
+        });
+        layer.on("remove", () => {
+            typelessLayer._startCircle.remove();
+        });
+        layer.on("add", () => {
+            typelessLayer._startCircle.addTo(this.map);
+        });
 	}
 
 	_reversePolyline(layer) {
@@ -2106,7 +2178,7 @@ class LajiMap {
 		}
 	}
 
-	_getStartCircleStyle(lineLayer) {
+	_getStartCircleStyle(lineLayer): L.PathOptions {
 		let options = {
 			...(this.polyline || {}),
 			...lineLayer.options,
@@ -2410,30 +2482,31 @@ class LajiMap {
 		}
 	}
 
-	setLayerStyle(layer, style) {
+	setLayerStyle(layer: L.Layer, style: L.PathOptions) {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
-			layer = <L.Marker> layer;
-			if (style.opacity !== undefined) layer.options.opacity = style.opacity;
+			const _layer = <L.Marker> layer;
+			if (style.opacity !== undefined) _layer.options.opacity = style.opacity;
 
-			layer.options.icon.options.markerColor = style.color;
-			if (layer._icon) {
+			_layer.options.icon.options.markerColor = style.color;
+			if ((<any> _layer)._icon) {
 				// Color must also be changed directly through DOM manipulation.
-				layer._icon.firstChild.firstChild.style.fill = style.color;
+				(<any> _layer)._icon.firstChild.firstChild.style.fill = style.color;
 				if (style.opacity !== undefined) {
-					layer._icon.firstChild.firstChild.style.opacity = style.opacity;
+					(<any> _layer)._icon.firstChild.firstChild.style.opacity = style.opacity;
 				}
 			}
 		} else {
-			layer.setStyle(style);
-			if (layer._startCircle) layer._startCircle.setStyle(this._getStartCircleStyle(layer));
+			const _layer = <L.Path> layer;
+			_layer.setStyle(style);
+			if ((<any> layer)._startCircle) (<any> layer)._startCircle.setStyle(this._getStartCircleStyle(layer));
 		}
 	}
 
 
 	_featureToLayer(getFeatureStyle, dataIdx?) {
-		function reversePointCoords(coords: LatLngExpression): LatLngExpression {
+		function reversePointCoords(coords: L.LatLngExpression): L.LatLngExpression {
 			return [coords[1], coords[0]];
 		}
 		return (feature) => {
@@ -2505,7 +2578,7 @@ class LajiMap {
 		return {...(featureTypeStyle || {}), ...(dataStyles || {})};
 	}
 
-	_getStyleForType(dataIdx, featureIdx, feature?, overrideStyles = {}) {
+	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles = {}): L.PathOptions {
 		const item = this.data[dataIdx];
 		let dataStyles = undefined;
 		if (item.getFeatureStyle) {
@@ -2600,8 +2673,8 @@ class LajiMap {
 		return style;
 	}
 
-	_getStyleForLayer(layer, overrideStyles?) {
-	    const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer); //TODO desctrucure valittaa param määrästä
+	_getStyleForLayer(layer: L.Layer, overrideStyles?) {
+	    const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		return this._getStyleForType(dataIdx, featureIdx,undefined, overrideStyles);
 	}
 
@@ -2737,7 +2810,7 @@ class LajiMap {
 		this._addKeyListener(ESC, this.abortDrawing);
 	}
 
-	triggerDrawing(featureType) {
+	triggerDrawing(featureType: "Marker" | "Circle" | "Polygon" | "Polyline" | "Rectangle") {
 		this._draftDrawLayer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
 		this._draftDrawLayer.enable();
 
@@ -2808,4 +2881,3 @@ class LajiMap {
 		}
 	}
 }
-export default HasControls(HasLineTransect(LajiMap));

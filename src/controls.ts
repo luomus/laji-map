@@ -1,5 +1,9 @@
 import * as L from "leaflet";
-import { convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON, detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator, ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject } from "./utils";
+import {
+	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
+	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator,
+	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString
+} from "./utils";
 import {
 	ESC,
 	ONLY_MML_OVERLAY_NAMES
@@ -1321,7 +1325,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			return +strFormat;
 		}
 
-		function convert(coords, crs = "EPSG:2393") {
+		function convert(coords, crs: CRSString = "EPSG:2393") {
 			return convertLatLng(coords, crs, "WGS84");
 		}
 
@@ -1413,7 +1417,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		function converterFor(proj) {
 			return input => {
 				const reprojected = convertGeoJSON(input, "WGS84", proj);
-				reprojected.crs = getCRSObjectForGeoJSON(reprojected, proj);
+				(<any> reprojected).crs = getCRSObjectForGeoJSON(reprojected, proj);
 				return reprojected;
 			};
 		}

@@ -8,7 +8,10 @@ import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
-import { convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject, combineColors, circleToPolygon } from "./utils";
+import {
+	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject,
+	combineColors, circleToPolygon, CoordinateSystem, CRSString
+} from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
@@ -51,7 +54,7 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 	}
 });
 
-interface LajiMapFitBoundsOptions extends L.FitBoundsOptions {
+export interface LajiMapFitBoundsOptions extends L.FitBoundsOptions {
 	paddingInMeters? :number;
 	minZoom?: number;
 }
@@ -64,7 +67,7 @@ export interface LajiMapEvent {
     feature?: G.Feature;
 }
 
-interface GetFeatureStyleOptions {
+export interface GetFeatureStyleOptions {
     dataIdx?: number;
     featureIdx?: number;
     feature?: G.Feature;
@@ -73,9 +76,11 @@ interface GetFeatureStyleOptions {
 
 interface DataOptions {
 	featureCollection: any;
+	geoData?: any | string;
 	getFeatureStyle?(options: GetFeatureStyleOptions): L.PathOptions;
-	getDraftStyle?(): L.PathOptions;
-	cluster: boolean;
+	getDraftStyle?(dataIdx?: number): L.PathOptions;
+	getClusterStyle?: (childCount: number) => L.PathOptions;
+	cluster: boolean | L.MarkerClusterGroupOptions;
 	activeIdx: number;
 	editable: boolean;
 	onChange(events: LajiMapEvent[]): void;
@@ -83,12 +88,14 @@ interface DataOptions {
 	getTooltip?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 	getPopup?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 	tooltipOptions?: any;
-	on?: L.LeafletEventHandlerFnMap,
+	on?: {[type: string]: (e: L.LeafletEvent, data: {feature?: G.Feature, layer?: DataItemLayer, idx?: number}) => void};
+	highlightOnHover?: boolean;
 }
 
 interface Data extends DataOptions {
     group: L.GeoJSON;
 	groupContainer: L.FeatureGroup;
+	idx: number;
 }
 
 interface DrawOptions extends DataOptions {
@@ -108,6 +115,8 @@ interface Draw extends Data {
 }
 
 export type IdxTuple = [number, number];
+export type DataItemLayer = L.Polygon | L.Polyline<G.LineString> | L.Marker | L.Circle;
+type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
 
 interface DrawHistoryEntry {
     featureCollection: G.FeatureCollection;
@@ -181,8 +190,8 @@ export default class LajiMap {
     drawIdx: number;
     _draftDrawLayer: L.Draw.Feature;
     map: L.Map;
-    _onDrawReverse: (layer: L.Layer) => void;
-    _onDrawRemove: (layer: L.Layer) => void;
+    _onDrawReverse: (layer: DataItemLayer) => void;
+    _onDrawRemove: (layer: DataItemLayer) => void;
     idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
     idsToIdxs: {[dataIdx: number]: {[id: number]: number}};
     idsToIdxTuples: {[id: number]: IdxTuple;};
@@ -206,7 +215,7 @@ export default class LajiMap {
     featurePopupOffset: number;
     markerPopupOffset: number;
 	_drawReverseLayers: L.Polyline[];
-    _drawRemoveLayers: L.Layer[];
+    _drawRemoveLayers: DataItemLayer[];
     _disposeTooltip: () => void;
     _createTooltip: (string) => void;
     _zoomToData: LajiMapFitBoundsOptions | boolean;
@@ -227,10 +236,10 @@ export default class LajiMap {
     availableTileLayers: {[name: string] : L.TileLayer};
     tileLayerOpacity: number;
     _listenedEvents: L.LeafletEventHandlerFnMap;
-    _keyListeners: {[eventName: string]: ((e: Event) => boolean)[]};
+    _keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
 	_swapToForeignFlag: boolean;
     _mouseLatLng: L.LatLngExpression;
-    _contextMenuLayer: L.Layer;
+    _contextMenuLayer: DataItemLayer;
 	initializeViewAfterLocateFail: boolean;
 	_preventScrollDomCleaner: () => void;
     _onDrawStopPreventScrolling: () => void;
@@ -312,13 +321,13 @@ export default class LajiMap {
 		};
 	}
 
-	setOptions(options: LajiMapOptions) {
-		Object.keys(options || {}).forEach(option => {
+	setOptions(options: LajiMapOptions = {}) {
+		Object.keys(options).forEach((option: keyof LajiMapOptions) => {
 			this.setOption(option, options[option]);
 		});
 	}
 
-	setOption(option, value) {
+	setOption(option: keyof LajiMapOptions, value) {
 		const optionKeys = this.getOptionKeys();
 
 		if (!optionKeys.hasOwnProperty(option)) return;
@@ -331,7 +340,7 @@ export default class LajiMap {
 		}
 	}
 
-	getOptions() {
+	getOptions(): LajiMapOptions {
 		const optionKeys = this.getOptionKeys();
 
 		return Object.keys(optionKeys).reduce((options, key) => {
@@ -345,7 +354,7 @@ export default class LajiMap {
 		}, {});
 	}
 
-	setRootElem(rootElem) {
+	setRootElem(rootElem: HTMLElement) {
 		this.cleanDOM();
 
 		this.mapElem = this.mapElem || document.createElement("div");
@@ -590,7 +599,7 @@ export default class LajiMap {
 				doubleClickZoom: false,
 				zoomSnap: 0,
 				maxZoom: 19
-			} as L.MapOptions);
+			});
 
 			this.tileLayers = {};
 
@@ -726,11 +735,11 @@ export default class LajiMap {
 		}
 	}
 
-	_isOutsideFinland(latLng) {
+	_isOutsideFinland(latLng: L.LatLngExpression) {
 		return !L.latLngBounds(<L.LatLngExpression[]> FINLAND_BOUNDS).contains(latLng); // TODO globals to typescript, get rid of LatLngExpressions
 	}
 
-	_swapToForeignOutsideFinland(latLng) {
+	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
 		if (!this._getDefaultCRSLayers().includes(this.tileLayer) && this._isOutsideFinland(latLng)) {
 			this._swapToForeignFlag = true;
 			this.setTileLayer(this.tileLayers.openStreetMap);
@@ -753,7 +762,7 @@ export default class LajiMap {
 			},
 			click: () => this._interceptClick(),
 			mousemove: ({latlng}: L.LeafletMouseEvent) => {this._mouseLatLng = latlng;},
-			"draw:created": ({layer}: L.DrawEvents.Created) => this._onAdd(this.drawIdx, layer),
+			"draw:created": ({layer}: L.DrawEvents.Created) => this._onAdd(this.drawIdx, <DataItemLayer> layer),
 			"draw:drawstart": () => {
 				this.drawing = true;
 				this.map.fire("controlClick", {name: "draw"});
@@ -842,7 +851,7 @@ export default class LajiMap {
 		document.addEventListener(type, fn);
 	}
 
-	_addKeyListener(key, fn, prioritize?) {
+	_addKeyListener(key: string, fn: (e?: Event) => boolean | void, prioritize?: boolean) {
 		if (!this._keyListeners) this._keyListeners = {};
 		if (!this._keyListeners[key]) this._keyListeners[key] = [];
 		if (prioritize) {
@@ -852,7 +861,7 @@ export default class LajiMap {
 		}
 	}
 
-	_removeKeyListener(key, fn) {
+	_removeKeyListener(key: string, fn: (e?: Event) => boolean | void) {
 		if (this._keyListeners && this._keyListeners[key]) {
 			const index = this._keyListeners[key].indexOf(fn);
 			if (index >= 0) {
@@ -861,7 +870,7 @@ export default class LajiMap {
 		}
 	}
 
-	_triggerKeyEvent(key, e) {
+	_triggerKeyEvent(key: string, e: Event) {
 		if (this._keyListeners && this._keyListeners[key])  {
 			for (let fn of this._keyListeners[key]) {
 				const result = fn(e);
@@ -890,7 +899,7 @@ export default class LajiMap {
 		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
 	}
 
-	_getMMLCRSLayers() {
+	_getMMLCRSLayers(): L.TileLayer[] {
 		return [this.tileLayers.maastokartta, this.tileLayers.taustakartta, this.tileLayers.pohjakartta, this.tileLayers.ortokuva, this.tileLayers.laser];
 	}
 
@@ -986,7 +995,7 @@ export default class LajiMap {
 		provide(this, "tileLayer");
 	}
 
-	getTileLayers() {
+	getTileLayers(): {[name: string]: L.TileLayer[]} {
 		const tileLayers = {};
 		Object.keys(this.tileLayers).forEach(tileLayerName => {
 			tileLayers[tileLayerName] = this.tileLayers[tileLayerName];
@@ -1049,16 +1058,16 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	setOverlaysByName(overlayNames = [], triggerEvent = true) {
+	setOverlaysByName(overlayNames: OverlayName[] = [], triggerEvent: boolean = true) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
 		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]), triggerEvent);
 	}
 
-	setAvailableOverlaysBlacklist(overlayNames) {
+	setAvailableOverlaysBlacklist(overlayNames: OverlayName[]) {
 		this.setAvailableOverlays(overlayNames, false);
 	}
 
-	setAvailableOverlaysWhitelist(overlayNames) {
+	setAvailableOverlaysWhitelist(overlayNames: OverlayName[]) {
 		this.setAvailableOverlays(overlayNames, true);
 	}
 
@@ -1075,14 +1084,14 @@ export default class LajiMap {
 		}, {});
 	}
 
-	getNormalizedZoom(zoom?: number, tileLayer?: L.TileLayer) {
+	getNormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
 		return (this._getMMLCRSLayers().includes(tileLayer || this.tileLayer)) ? zoom : zoom - 3;
 	}
 
-	getDenormalizedZoom(zoom?: number, tileLayer?: L.TileLayer) {
+	getDenormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
@@ -1099,7 +1108,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("zoom")
-	setCenter(center) {
+	setCenter(center: L.LatLngExpression) {
 		if (!depsProvided(this, "setCenter", arguments)) return;
 
 		this.center = center;
@@ -1127,13 +1136,13 @@ export default class LajiMap {
 		});
 	}
 
-	_addDomCleaner(fn) {
+	_addDomCleaner(fn: () => void) {
 		if (!this._domCleaners) this._domCleaners = [];
 
 		this._domCleaners.push(fn);
 	}
 
-	_removeDomCleaner(fn) {
+	_removeDomCleaner(fn: () => void) {
 		if (!this._domCleaners) return;
 		this._domCleaners = this._domCleaners.filter(_fn => _fn !== fn);
 	}
@@ -1180,10 +1189,10 @@ export default class LajiMap {
 		}
 	}
 
-	formatFeatureOut(feature, layer): G.Feature {
+	formatFeatureOut(feature: G.Feature, layer: DataItemLayer): G.Feature {
 		if (layer && layer instanceof L.Circle) {
 			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
-			feature.geometry.radius = layer.getRadius();
+			(<any> feature.geometry).radius = layer.getRadius();
 		} else if  (feature.geometry.type === "Polygon") {
 			// If the coordinates are ordered counterclockwise, reverse them.
 			const coordinates = feature.geometry.coordinates[0].slice(0);
@@ -1206,7 +1215,7 @@ export default class LajiMap {
 		return {...feature, properties};
 	}
 
-	formatFeatureIn(feature: G.Feature, idx): G.Feature {
+	formatFeatureIn(feature: G.Feature, idx: number): G.Feature {
 		return {...feature, properties: {...feature.properties, lajiMapIdx: idx}};
 	}
 
@@ -1219,7 +1228,7 @@ export default class LajiMap {
 		return featuresClone;
 	}
 
-	initializeDataItem(item, dataIdx?) {
+	initializeDataItem(item: Data, dataIdx?: number) {
 		dataIdx = dataIdx === undefined ? this.data.length : dataIdx;
 
 		let {geoData, ..._item} = item;
@@ -1317,44 +1326,53 @@ export default class LajiMap {
 		item.group = layer;
 		item.groupContainer = layer;
 		if (item.cluster) {
-			item.groupContainer = L.markerClusterGroup({iconCreateFunction: this._getClusterIcon(item), ...item.cluster});
+			item.groupContainer = L.markerClusterGroup({
+				iconCreateFunction: this._getClusterIcon(item),
+				...(isObject(item.cluster) ? <L.MarkerClusterGroupOptions> item.cluster : {})
+			});
 			item.group.addTo(item.groupContainer);
 		}
 		item.groupContainer.addTo(this.map);
 
 		layer.eachLayer(layer => {
-			this._initializeLayer(layer, [dataIdx, (<any> layer).feature.properties.lajiMapIdx]);
+			this._initializeLayer(<DataItemLayer> layer, [dataIdx, (<any> layer).feature.properties.lajiMapIdx]);
 		});
 
 		if (item.hasActive) {
-			this.updateLayerStyle(this._getLayerByIdxs([dataIdx, item.activeIdx]));
+			this.updateLayerStyle(this._getLayerByIdxTuple([dataIdx, item.activeIdx]));
 		}
 
 		if (item.on) Object.keys(item.on).forEach(eventName => {
-			item.group.on(eventName, (e) => {
+			item.group.on(eventName, (e: any) => {
 				const {layer} = e;
 				const {feature} = layer;
 				const idx = feature.properties.lajiMapIdx;
 				if (eventName === "click" && this._interceptClick()) return;
-				item.on[eventName](e, {idx, layer, feature: this.formatFeatureOut(feature, layer)});
+				item.on[eventName](e, {
+					idx,
+					layer,
+					feature: feature && layer
+                        ? this.formatFeatureOut(feature, layer)
+						: undefined
+				});
 			});
 		});
 
-		item.group.on("click", e => {
-			const {layer: {feature: {properties: {lajiMapIdx}}}} = e;
+		item.group.on("click", (e: L.LayerEvent) => {
+			const {feature: {properties: {lajiMapIdx}}} = <any> e.layer;
 			if (!this._interceptClick()) this._onActiveChange([item.idx, lajiMapIdx]);
 		});
 
-		item.group.on("dblclick", e => {
+		item.group.on("dblclick", (e: L.LayerEvent) => {
 			this._disableDblClickZoom = true;
-			const{layer} = e;
+			const layer = <DataItemLayer> e.layer;
 			this._setEditable(layer);
 			setTimeout(() => {
 				this._disableDblClickZoom = false;
 			}, 10);
 		});
 
-		item.group.on("mouseover", e => {
+		item.group.on("mouseover", (e: L.LayerEvent) => {
 			if (item.editable || item.hasActive || item.highlightOnHover) {
 				const {layer} = e;
 				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
@@ -1363,7 +1381,7 @@ export default class LajiMap {
 			}
 		});
 
-		item.group.on("mouseout", e => {
+		item.group.on("mouseout", (e: L.LayerEvent) => {
 			if (item.editable || item.hasActive || item.highlightOnHover) {
 				const {layer} = e;
 				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
@@ -1372,15 +1390,15 @@ export default class LajiMap {
 			}
 		});
 
-		item.group.on("layeradd", e => {
+		item.group.on("layeradd", (e: L.LayerEvent) => {
 			const item = this.data[dataIdx];
-			const {layer} = e;
+			const layer = <DataItemLayer> e.layer;
 			const {featureCollection: {features}} = item;
 			const featureIdx = features.length - 1;
 			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
 
 			feature.properties.lajiMapIdx = featureIdx;
-			layer.feature = feature;
+			(<any> layer).feature = feature;
 
 			if (item.cluster) {
 				item.groupContainer.clearLayers();
@@ -1390,8 +1408,8 @@ export default class LajiMap {
 			this._initializeLayer(layer, [dataIdx, featureIdx]);
 		});
 
-		item.group.on("layerremove", e => {
-			const {layer} = e;
+		item.group.on("layerremove", (e: L.LayerEvent) => {
+			const layer = <DataItemLayer> e.layer;
 			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 			this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
 			this._idxsToHovered[dataIdx][featureIdx] = false;
@@ -1434,15 +1452,15 @@ export default class LajiMap {
 		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}
 
-	_initializeLayer(layer, idxTuple: IdxTuple) {
+	_initializeLayer(layer: DataItemLayer, idxTuple: IdxTuple) {
 		this._setIdForLayer(layer, idxTuple);
 		this._initializePopup(layer);
 		this._initializeTooltip(layer);
 		this._updateContextMenuForLayer(layer);
-		this._decoratePolyline(layer);
+		if (isPolyline(layer)) this._decoratePolyline(<L.Polyline> layer);
 	}
 
-	fitBounds(bounds, options : LajiMapFitBoundsOptions = {}) {
+	fitBounds(bounds: L.LatLngBounds, options : LajiMapFitBoundsOptions = {}) {
 		if (!bounds.isValid()) return;
 
 		const {paddingInMeters} = options;
@@ -1576,7 +1594,7 @@ export default class LajiMap {
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
-					this.setActive(this._getLayerByIdxs([this.drawIdx, e.idx]));
+					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
 					return true;
 				}
 			});
@@ -1592,7 +1610,7 @@ export default class LajiMap {
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
-					this.setActive(this._getLayerByIdxs([this.drawIdx, e.idx]));
+					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
 					return true;
 				}
 			});
@@ -1607,7 +1625,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data")
-	_setOnChangeForItem(item, format = "GeoJSON", crs = "WGS84") {
+	_setOnChangeForItem(item, format: CoordinateSystem = "GeoJSON", crs: CRSString = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
 		const wrapCoordinates = (e) => {
@@ -1668,17 +1686,18 @@ export default class LajiMap {
 			this._drawRemoveLayers.push(layer);
 			this._removeLayerFromItem(this.getDraw(), layer);
 		};
-		this.getDraw().group.on("click", ({layer}: L.GeoJSONEvent) => this._onDrawRemove(layer));
+		this.getDraw().group.on("click", ({layer}: L.GeoJSONEvent) => this._onDrawRemove(<DataItemLayer> layer));
 
 		this._addKeyListener(ESC, this._stopDrawRemove);
 	}
 
 	_stopDrawRemove() {
-		this.getDraw().group.removeEventListener("click", ({layer}: L.GeoJSONEvent) => this._onDrawRemove(layer));
+		this.getDraw().group.removeEventListener("click", ({layer}: L.GeoJSONEvent) => this._onDrawRemove(<DataItemLayer> layer));
 		this._onDrawRemove = undefined;
 		this._disposeTooltip();
 		this._drawRemoveLayers = undefined;
 		this._removeKeyListener(ESC, this._stopDrawRemove);
+		return true;
 	}
 
 	_finishDrawRemove() {
@@ -1701,7 +1720,7 @@ export default class LajiMap {
 	}
 
 	_onDrawReverseHandler({layer}: L.GeoJSONEvent) {
-        this._onDrawReverse(layer);
+        this._onDrawReverse(<DataItemLayer> layer);
 	}
 
 	_startDrawReverse() {
@@ -1801,7 +1820,7 @@ export default class LajiMap {
 		if (!item.hasActive) return;
 		const prevActiveIdx = item.activeIdx;
 		item.activeIdx = featureIdx;
-		const prevActiveLayer =  this._getLayerByIdxs([dataIdx, prevActiveIdx]);
+		const prevActiveLayer =  this._getLayerByIdxTuple([dataIdx, prevActiveIdx]);
 		prevActiveLayer && this.updateLayerStyle(prevActiveLayer);
 		this.updateLayerStyle(layer);
 	}
@@ -2076,11 +2095,11 @@ export default class LajiMap {
 		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 
-    _getLayerByIdxs(idxTuple: IdxTuple): L.Layer {
+    _getLayerByIdxTuple(idxTuple: IdxTuple): DataItemLayer {
 		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
 		const id = this.idxsToIds[dataIdx][featureIdx];
-		return item.group ? item.group.getLayer(id) : undefined;
+		return item.group ? <DataItemLayer> item.group.getLayer(id) : undefined;
 	}
 
 	_getLayerById(id) {
@@ -2193,7 +2212,7 @@ export default class LajiMap {
 		};
 	}
 
-	_onAdd(dataIdx: number, layer: L.Layer, coordinateVerbatim?: string) {
+	_onAdd(dataIdx: number, layer: DataItemLayer, coordinateVerbatim?: string) {
 		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
 
 		const prevActiveIdx = this.data[dataIdx].activeIdx;
@@ -2395,7 +2414,7 @@ export default class LajiMap {
 
 	_getOnActiveChangeEvent(idxTuple: IdxTuple): LajiMapEvent {
 	    const [dataIdx, featureIdx] = idxTuple;
-		this.setActive(this._getLayerByIdxs(idxTuple));
+		this.setActive(this._getLayerByIdxTuple(idxTuple));
 		return {
 			type: "active",
 			idx: featureIdx
@@ -2432,13 +2451,13 @@ export default class LajiMap {
 		this.focusToLayerByIdxs([this.drawIdx, idx]);
 	}
 
-	_setEditable(layer: L.Layer) {
+	_setEditable(layer: DataItemLayer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		const item = this.data[dataIdx];
 		if (!item.editable || this._onDrawRemove || this._onDrawReverse) return;
 		this._clearEditable();
 		this.editIdxTuple = [dataIdx, featureIdx];
-		const editLayer = this._getLayerByIdxs(this.editIdxTuple);
+		const editLayer = this._getLayerByIdxTuple(this.editIdxTuple);
 		if (item.cluster) {
 			item.groupContainer.removeLayer(editLayer);
 			this.map.addLayer(editLayer);
@@ -2452,8 +2471,8 @@ export default class LajiMap {
 
 	_clearEditable() {
 		if (this.editIdxTuple === undefined) return;
-		const editLayer = this._getLayerByIdxs(this.editIdxTuple);
-		(<any> editLayer).editing.enable();
+		const editLayer = this._getLayerByIdxTuple(this.editIdxTuple);
+		(<any> editLayer).editing.disable();
 		const item = this.data[this.editIdxTuple[0]];
 		if (item.cluster) {
 			this.map.removeLayer(editLayer);
@@ -2468,7 +2487,7 @@ export default class LajiMap {
 		const [dataIdx, featureIdx] = editIdxTuple;
 		const editId = this.idxsToIds[dataIdx][featureIdx];
 		this._clearEditable();
-		const editLayer = this._getLayerByIdxs(editIdxTuple);
+		const editLayer = this._getLayerByIdxTuple(editIdxTuple);
 		this.updateLayerStyle(editLayer);
 		this._onEdit(dataIdx, {[editId]: editLayer});
 	}
@@ -2482,7 +2501,7 @@ export default class LajiMap {
 		}
 	}
 
-	setLayerStyle(layer: L.Layer, style: L.PathOptions) {
+	setLayerStyle(layer: DataItemLayer, style: L.PathOptions) {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
@@ -2541,7 +2560,7 @@ export default class LajiMap {
 		});
 
 		let layer = undefined;
-		if (this.idxsToIds[dataIdx] && item.group) layer = this._getLayerByIdxs([dataIdx, featureIdx]);
+		if (this.idxsToIds[dataIdx] && item.group) layer = this._getLayerByIdxTuple([dataIdx, featureIdx]);
 
 		const mergeOptions = (type) => {
 			return {...(this[type] || {}), ...(item[type] || {})};
@@ -2596,7 +2615,7 @@ export default class LajiMap {
 		}
 
 		let layer = undefined;
-		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxs([dataIdx, featureIdx]);
+		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxTuple([dataIdx, featureIdx]);
 
 		const isLine = (
 			layer && isPolyline(layer)
@@ -2673,7 +2692,7 @@ export default class LajiMap {
 		return style;
 	}
 
-	_getStyleForLayer(layer: L.Layer, overrideStyles?) {
+	_getStyleForLayer(layer: DataItemLayer, overrideStyles?) {
 	    const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		return this._getStyleForType(dataIdx, featureIdx,undefined, overrideStyles);
 	}
@@ -2751,8 +2770,7 @@ export default class LajiMap {
 		}
 	}
 
-	_getDrawOptionsForType(featureType) {
-		featureType = featureType.toLowerCase();
+	_getDrawOptionsForType(featureType: DataItemType) {
 		const baseStyle = this.getDraw().getDraftStyle();
 
 		interface AdditionalOptions {
@@ -2792,7 +2810,7 @@ export default class LajiMap {
 		};
 	}
 
-	abortDrawing(e) {
+	abortDrawing(e?: Event) {
 		if (e.preventDefault) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -2810,7 +2828,7 @@ export default class LajiMap {
 		this._addKeyListener(ESC, this.abortDrawing);
 	}
 
-	triggerDrawing(featureType: "Marker" | "Circle" | "Polygon" | "Polyline" | "Rectangle") {
+	triggerDrawing(featureType: DataItemType) {
 		this._draftDrawLayer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
 		this._draftDrawLayer.enable();
 
@@ -2819,23 +2837,23 @@ export default class LajiMap {
 		return this._draftDrawLayer;
 	}
 
-	addFeatureToDraw(feature) {
+	addFeatureToDraw(feature: G.Feature) {
 		this.addFeatureToData(feature, this.drawIdx);
 	}
-	addFeatureToData(feature, dataIdx) {
+	addFeatureToData(feature: G.Feature, dataIdx: number) {
 		const layer = this._featureToLayer(this.data[dataIdx].getFeatureStyle)(feature);
 		this._onAdd(dataIdx, layer);
 	}
 
-	getFeatureTypes() {
+	getFeatureTypes(): string[] {
 		return ["rectangle", "polyline", "polygon", "circle", "marker"];
 	}
 
-	_showError(e) {
+	_showError(e: Error) {
 		const alert = document.createElement("div");
 		alert.style.display = "block";
 		alert.className = "laji-map-popup alert alert-danger";
-		const message = () => (e._lajiMapError) ? stringifyLajiMapError(e, this.translations) : e.message;
+		const message = () => ((<any> e)._lajiMapError) ? stringifyLajiMapError(e, this.translations) : e.message;
 		const translationHook = this.addTranslationHook(alert, message);
 
 		this.showClosableElement(alert, () => {
@@ -2843,7 +2861,7 @@ export default class LajiMap {
 		});
 	}
 
-	showClosableElement(elem, onClose, blocker = false, container = this.container) {
+	showClosableElement(elem: HTMLElement, onClose: (e: Event) => void, blocker = false, container = this.container) {
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
 		closeButton.className = "close";

@@ -1,4 +1,5 @@
 import * as L from "leaflet";
+import * as G from 'geojson';
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
 import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx, capitalizeFirstLetter } from "./utils";
 import "leaflet-geometryutil";
@@ -8,6 +9,7 @@ import {
 	ESC
 } from "./globals";
 import { IdxTuple } from "./map";
+import {ContextMenuOptions} from "./@types/leaflet-contextmenu";
 
 const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;
@@ -16,7 +18,7 @@ const lineStyle: L.PathOptions = {color: NORMAL_COLOR, weight: 2};
 const activeLineStyle: L.PathOptions = {...lineStyle, color: ACTIVE_COLOR};
 const hoverLineStyle: L.PathOptions = {...lineStyle, color: combineColors(lineStyle.color, activeLineStyle.color)};
 const editLineStyle: L.PathOptions = {...lineStyle, color: "#f00"};
-const origLineStyle: L.PathOptions = {...lineStyle, weight: 1, fillColor: "#99b"}; // TODO fillColor oli fill - menikö rikki?
+const defaultLineStyle: L.PathOptions = {...lineStyle, weight: 1, fillColor: "#99b"};
 
 const corridorStyle: L.PathOptions = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
 const oddCorridorStyle: L.PathOptions = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)};
@@ -39,29 +41,53 @@ const hintPointStyle: L.CircleMarkerOptions = {...closebyPointStyle, radius: 7};
 
 const LT_WIDTH_METERS = 25;
 
+export interface LineTransectOptions {
+	feature: LineTransectFeature,
+	activeIdx?: number;
+	onChange?: (events: LineTransectEvent[]) => void;
+	getFeatureStyle?: (lineIdx: number, segmentIdx: number, type: Function, style: L.PathOptions) => L.PathOptions;
+	getTooltip?: (lineIdx: number, text: string, callback?: (callbackText: string) => void) => string;
+	printMode?: boolean;
+	editable?: boolean;
+}
+
 interface LineTransectIdx {
     i: number;
     lineIdx: number;
     segmentIdx: number;
-    idxTuple: IdxTuple;
+    idxTuple: SegmentIdxTuple;
 }
 
-type PointIdxTuple = IdxTuple;
-type SegmentIdxTuple = IdxTuple;
+export type LineTransectGeometry = G.LineString | G.MultiLineString;
+export interface LineTransectFeature {
+	type: "string";
+	geometry: LineTransectGeometry;
+	properties: G.GeoJsonProperties;
+	id?: string | number;
+}
 
-interface LineTransectEvent {
+export type PointIdxTuple = IdxTuple;
+export type SegmentIdxTuple = IdxTuple;
+
+export interface LineTransectEvent {
     type: string;
     idxs?: number[];
     idx?: number;
-    feature?: any; // TODO
-	geometry?: any; // TODO
-	prevFeature?: any; //TODO
+    feature?: LineTransectFeature;
+	prevFeature?: LineTransectFeature;
+	geometry?: LineTransectGeometry;
 	target?: number;
 }
 
-interface ContextMenuOptions { // TODO löytyyks jo
-	contextmenuInheritItems?: boolean;
-	contextmenuItems: any[];
+export type SegmentLayer = L.Polyline<G.LineString> | L.CircleMarker | L.Polygon<G.Polygon>;
+export type SegmentLayers = SegmentLayer[];
+
+interface TooltipMessages {
+	text?: string;
+	click?: string;
+	dblclick?: string;
+	rightclick?: string;
+	drag?: string;
 }
 
 function flattenMatrix(m) {
@@ -93,7 +119,17 @@ function idxTupleToIdxTupleStr(idxTuple: IdxTuple) : string {
 }
 
 export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
-	_hoveredIdxTuple: IdxTuple;
+	_hoveredIdxTuple: SegmentIdxTuple;
+	LTFeature: LineTransectFeature;
+	_LTEditPointIdxTuple: PointIdxTuple;
+	_splitIdxTuple: PointIdxTuple;
+	_splitPoint: L.LatLng;
+	_lineLayers: L.Polyline<G.LineString>[][];
+	_pointLayers: L.CircleMarker[][];
+	_corridorLayers: L.Polygon<G.Polygon>[][];
+	_allSegments: L.Polyline<G.LineString>[];
+	_allCorridors: L.Polygon<G.Polygon>[];
+	_allPoints: L.CircleMarker[];
 
 	constructor(props) {
 		super(props);
@@ -157,7 +193,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			this._commitPointDrag();
 			return true;
 		} else if (this._lineSplitFn) {
-			this._lineSplitFn(...this._splitIdxTuple, this._splitPoint);
+			this._lineSplitFn(this._splitIdxTuple, this._splitPoint);
 			return true;
 		}
 		return false;
@@ -168,7 +204,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	@dependsOn("map")
-	setLineTransect(data) {
+	setLineTransect(data: LineTransectOptions) {
 		if (!depsProvided(this, "setLineTransect", arguments)) return;
 		if (!data) return;
 
@@ -192,9 +228,9 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				this._origLineTransect.remove();
 			}
 			this._origLineTransect = L.featureGroup(this._allSegments.map(line =>
-				L.polyline(line._latlngs, origLineStyle).setText("→", {
+				L.polyline(<L.LatLngExpression[]> line.getLatLngs(), defaultLineStyle).setText("→", {
 					repeat: true,
-					attributes: {...origLineStyle, dy: 5, "font-size": 18},
+					attributes: {...defaultLineStyle, dy: 5, "font-size": 18},
 					below: true
 				})
 			)).addTo(this.map).bringToBack();
@@ -203,19 +239,19 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		if (this.getOptions().zoomToData) this.zoomToData(this.getOptions().zoomToData);
 	}
 
-	setLTActiveIdx(idx) {
+	setLTActiveIdx(idx: number) {
 		const prevIdx = this._LTActiveIdx;
 		this._LTActiveIdx = idx;
 		[prevIdx, this._LTActiveIdx].forEach(i => this._updateLTStyleForLineIdx(i));
 	}
 
-	_formatLTFeatureOut() {
-		const segments = this._lineLayers.map(line => line.map(segment => segment.getLatLngs().map(({lat, lng}) => [lng, lat])));
+	_formatLTFeatureOut(): LineTransectFeature {
+		const segments = this._lineLayers.map(line => line.map(segment => (<L.LatLng[]> segment.getLatLngs()).map(({lat, lng}) => [lng, lat])));
 
 		return {...this.LTFeature, geometry: latLngSegmentsToGeoJSONGeometry(segments)};
 	}
 
-	setLineTransectGeometry(geometry, events?: LineTransectEvent[]) {
+	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) {
 		if (events) {
 			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
 				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
@@ -284,7 +320,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		if (this._lineLayerGroup) this.map.removeLayer(this._lineLayerGroup);
 		if (this._corridorLayerGroup) this.map.removeLayer(this._corridorLayerGroup);
 		if (this._tooltipLayers) {
-			Object.keys(this._tooltipLayers).forEach(lineIdx => this._clearTooltipDescription());
+			Object.keys(this._tooltipLayers).forEach(() => this._clearTooltipDescription());
 		}
 		this._pointLayers = [];
 		this._lineLayers = [];
@@ -305,7 +341,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			if (overlapping) {
 				const [overlappingLineIdx] = overlapping;
 
-				const pointIdxTuple: IdxTuple = [lineIdx, segmentIdx];
+				const pointIdxTuple: PointIdxTuple = [lineIdx, segmentIdx];
 				const pointIdxTupleStr = idxTupleToIdxTupleStr(pointIdxTuple);
 				const overlappingPointIdxTuple = overlappingsCoordsToIdxs[stringCoords];
 				const overlappingPointIdxTupleStr = idxTupleToIdxTupleStr(overlappingPointIdxTuple);
@@ -333,7 +369,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		};
 
 		wholeLinesAsSegments.forEach((wholeLineAsSegments, lineIdx) => {
-			[pointLayers, lineLayers, corridorLayers].forEach(layers => {
+			[pointLayers, lineLayers, corridorLayers].forEach((layers: SegmentLayers[]) => {
 				layers.push([]);
 			});
 			const pointLayer = pointLayers[lineIdx];
@@ -344,7 +380,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				const lngLat = segment[0];
 				indexPoint(lngLat[1], lngLat[0], lineIdx, segmentIdx);
 
-				const line = L.polyline(
+				const line = <L.Polyline<G.LineString>> L.polyline(
 					segment,
 					this._getStyleForLTIdxTupleAndType([lineIdx, segmentIdx], L.Polyline)
 				);
@@ -406,7 +442,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		provide(this, "lineTransect");
 	}
 
-	_getLTStartTextCoordinates(segment) {
+	_getLTStartTextCoordinates(segment: L.LatLng[]) {
 		segment = segment.map(L.latLng);
 		const degree = this._degreesFromNorth(segment);
 		const length = degree > -50 && degree < 50 ? 120 : 60;
@@ -434,7 +470,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	_getTooltipForPointIdxTuple = (type, idxTuple: IdxTuple) => {
+	_getTooltipForPointIdxTuple = (type, idxTuple: PointIdxTuple) => {
 		const [lineIdx, pointIdx] = idxTuple;
 		const getTooltipForLineIdx = lineIdx => {
 			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), lineIdx, 10);
@@ -470,7 +506,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._tooltipIdx = undefined;
 	}
 
-	flatIdxToIdxTuple(idx) {
+	flatIdxToIdxTuple(idx: number) {
 		let lineIdx = 0;
 		let line = this._pointLayers[lineIdx];
 		while (idx >= line.length) {
@@ -483,14 +519,14 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 
 
 	// Opens a dialog and asks which point to use, if points are overlapping.
-	_getPoint(idxTuple: IdxTuple, callback: (idxTuple) => void, questionTranslationKey = "FirstOrLastPoint", firstTranslationKey = "FirstPartitive", lastTranslationKey = "LastPartitive") {
+	_getPoint(idxTuple: PointIdxTuple, callback: (idxTuple) => void, questionTranslationKey = "FirstOrLastPoint", firstTranslationKey = "FirstPartitive", lastTranslationKey = "LastPartitive") {
 		const [lineIdx, pointIdx] = idxTuple;
 		const overlappingPointIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleToIdxTupleStr([lineIdx, pointIdx])];
 		const latLng = this._getLayerForIdxTuple(this._pointLayers, [lineIdx, pointIdx]).getLatLng();
 		const _latLng = overlappingPointIdxTuple ? this._getLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple).getLatLng() : undefined;
 		if (overlappingPointIdxTuple !== undefined && latLng.equals(_latLng)) {
 			const firstIdxTuple = overlappingPointIdxTuple;
-			const lastIdxTuple: IdxTuple = [lineIdx, pointIdx];
+			const lastIdxTuple: PointIdxTuple = [lineIdx, pointIdx];
 			const lastPoint = this._getLayerForIdxTuple(this._pointLayers, lastIdxTuple);
 
 			const translateHooks = [];
@@ -557,9 +593,8 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	getIdxsFromLayer(layer): LineTransectIdx {
+	getIdxsFromLayer(layer: SegmentLayer): LineTransectIdx {
 		if (!layer) return undefined;
-		const {_leaflet_id} = layer;
 		const getIdxsForId = (id): LineTransectIdx => {
 			const lineIdx = this.leafletIdsToCorridorLineIdxs[id];
 			const segmentIdx = this.leafletIdsToCorridorSegmentIdxs[id];
@@ -570,8 +605,9 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				idxTuple: [lineIdx, segmentIdx]
 			};
 		};
+		const id = L.Util.stamp(layer);
 		if (layer instanceof L.CircleMarker) {
-			const i = this.leafletIdsToFlatPointIdxs[_leaflet_id];
+			const i = this.leafletIdsToFlatPointIdxs[id];
 			const [lineIdx, segmentIdx] = this.flatIdxToIdxTuple(i);
 			return {
 				i,
@@ -580,15 +616,15 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				idxTuple: [lineIdx, segmentIdx]
 			};
 		} else if (isPolyline(layer)) {
-			const corridorId = this.lineIdsToCorridorIds[layer._leaflet_id];
+			const corridorId = this.lineIdsToCorridorIds[L.Util.stamp(layer)];
 			return getIdxsForId(corridorId);
 		} else {
-			return getIdxsForId(_leaflet_id);
+			return getIdxsForId(id);
 		}
 	}
 
-	getIdxsFromEvent({layer}) {
-		return this.getIdxsFromLayer(layer);
+	getIdxsFromEvent({layer}: L.LayerEvent) {
+		return this.getIdxsFromLayer(<SegmentLayer> layer);
 	}
 
 
@@ -602,7 +638,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 
 		let i = 0;
 		this._corridorLayers.forEach((corridors, lineIdx) => corridors.forEach((corridor, segmentIdx) => {
-			const id = corridor._leaflet_id;
+			const id = L.Util.stamp(corridor);
 			this.leafletIdsToFlatCorridorSegmentIdxs[id] = i;
 			this.leafletIdsToCorridorLineIdxs[id] = lineIdx;
 			this.leafletIdsToCorridorSegmentIdxs[id] = segmentIdx;
@@ -612,7 +648,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 
 		i = 0;
 		this._lineLayers.forEach((lines) => lines.forEach((line) => {
-			this.lineIdsToCorridorIds[line._leaflet_id] = this.corridorFlatIdxsToLeafletIds[i];
+			this.lineIdsToCorridorIds[L.Util.stamp(line)] = this.corridorFlatIdxsToLeafletIds[i];
 			i++;
 		}));
 
@@ -621,7 +657,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		i = 0;
 		this._pointLayers.forEach((points) => {
 			points.forEach(point => {
-				this.leafletIdsToFlatPointIdxs[point._leaflet_id] = i;
+				this.leafletIdsToFlatPointIdxs[L.Util.stamp(point)] = i;
 				i++;
 			});
 		});
@@ -724,7 +760,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		}).on("mouseover", onMouseOver)
 			.on("mouseout", onMouseOut);
 
-		this.map.on("mousemove", ({latlng}) => {
+		this.map.on("mousemove", ({latlng}: L.LeafletMouseEvent) => {
 			if (this._splitIdxTuple || this._firstLTSegmentToRemoveIdx || this._selectLTMode || this.map.contextmenu.isVisible()) {
 				return;
 			}
@@ -743,7 +779,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				if (this._LTPointExpander) {
 					const layer = this._LTPointExpander;
 					layer.remove();
-					this._updateContextMenu && this._updateContextMenu(); // TODO depends on controls
+					this._updateContextMenu && this._updateContextMenu();
 				}
 				if (this._closebyPointIdxTuple) {
 					this._LTPointExpander = new L.CircleMarker(closestPoint.getLatLng(), {
@@ -775,12 +811,12 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				});
 				this._updateLTTooltip();
 			}
-		}).on("click", e => {
+		}).on("click", (e) => {
 			L.DomEvent.stopPropagation(e);
 			if (this._closebyPointIdxTuple && this._pointLTShiftMode) {
 				this._getPoint(this._closebyPointIdxTuple, (idxTuple) => this.commitLTPointShift(idxTuple));
 			}
-		}).on("dblclick", e => {
+		}).on("dblclick", (e) => {
 			L.DomEvent.stopPropagation(e);
 			if (this._closebyPointIdxTuple) {
 				clearTimeout(this._LTClickTimeout);
@@ -866,7 +902,9 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		let precedingLine = this._lineLayers[precedingLineIdx];
 		let followingLine = this._lineLayers[followingLineIdx];
 		if (precedingLine === followingLine) {
-			precedingSegment.setLatLngs([precedingSegment.getLatLngs()[0], followingSegment.getLatLngs()[1]]);
+			const start = (<L.LatLng[]> precedingSegment.getLatLngs())[0];
+			const end = (<L.LatLng[]> followingSegment.getLatLngs())[1];
+			precedingSegment.setLatLngs([start, end]);
 			this._lineLayers[precedingLineIdx] = precedingLine.filter(l => l !== followingSegment);
 			events = addMiddlePointRemoveEvent(events);
 		} else if (precedingLine && !followingLine) {
@@ -878,7 +916,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		} else if (precedingLine && followingLine) {
 			const precedingSegment = precedingLine[precedingSegmentIdx];
 			const followingSegment = followingLine[followingSegmentIdx];
-			precedingSegment.setLatLngs([precedingSegment.getLatLngs()[0], followingSegment.getLatLngs()[1]]);
+			precedingSegment.setLatLngs([<L.LatLngExpression> precedingSegment.getLatLngs()[0], <L.LatLngExpression> followingSegment.getLatLngs()[1]]);
 			followingLine.splice(followingSegmentIdx, 1);
 			this._lineLayers[precedingLineIdx] = [...precedingLine, ...followingLine];
 			this._lineLayers.splice(followingLineIdx, 1);
@@ -908,7 +946,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			return events;
 		}
 
-		function addMiddlePointRemoveEvent(events) {
+		function addMiddlePointRemoveEvent(events: LineTransectEvent[]) {
 			const feature = that._formatLTFeatureOut();
 			return [...events, {
 				type: "edit",
@@ -978,7 +1016,11 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			this._getIdxTuplePrecedingEditPoint(),
 			this._getIdxTupleFollowingEditPoint()
 		].filter(i => i)
-	 	 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => this._getLayerForIdxTuple(layers, idxTuple)))
+	 	 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => {
+	 	 	return layers === this._lineLayers
+			 ? this._getLayerForIdxTuple(<L.Polyline<G.LineString>[][]> layers, idxTuple)
+             : this._getLayerForIdxTuple(<L.Polygon[][]> layers, idxTuple)
+		 }))
 	 	 .forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 
 		this._updateLTTooltip();
@@ -1050,7 +1092,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		});
 	}
 
-	_startLTDragPointHandler({latlng}) {
+	_startLTDragPointHandler({latlng}: L.LeafletMouseEvent) {
 		const [lineIdx, pointIdx] = this._LTEditPointIdxTuple;
 		const point = this._pointLayers[lineIdx][pointIdx];
 		this._dragPointStart = point.getLatLng();
@@ -1063,7 +1105,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._stopLTDragHandler(this._dragLTPointHandler);
 	}
 
-	_dragLTPointHandler({latlng}) {
+	_dragLTPointHandler({latlng}: L.LeafletMouseEvent) {
 		if (!this._dragMouseStart) return;
 
 		this._updateLTTooltip();
@@ -1074,7 +1116,8 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._dragLTHandler(offsetDragPoint);
 	}
 
-	_startLTDragCorridorHandler({latlng}) {
+	_startLTDragCorridorHandler(e: L.LeafletMouseEvent) {
+		const {latlng} = e;
 		this._startLTDragHandler(this._dragLTCorridorHandler);
 
 		const [lineIdx, pointIdx] = this._LTEditPointIdxTuple;
@@ -1090,7 +1133,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._dragMouseStart = undefined;
 	}
 
-	_dragLTCorridorHandler({latlng}) {
+	_dragLTCorridorHandler({latlng}: L.LeafletMouseEvent) {
 		if (!this._dragMouseStart) return;
 		const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
 		const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
@@ -1099,7 +1142,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._dragLTHandler(offsetDragPoint);
 	}
 
-	_dragLTHandler(latlng) {
+	_dragLTHandler(latlng: L.LatLng) {
 		const idxs = this._LTEditPointIdxTuple;
 		const [lineIdx, pointIdx] = idxs;
 
@@ -1144,12 +1187,12 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	_getLayerForIdxTuple(layer, idxTuple: IdxTuple) {
+	_getLayerForIdxTuple<T extends SegmentLayer>(layers: T[][], idxTuple: IdxTuple): T {
 		const [lineIdx, segmentIdx] = idxTuple;
-		return layer[lineIdx][segmentIdx];
+		return layers[lineIdx][segmentIdx];
 	}
 
-	_layerExistsForIdxTuple(layer, idxTuple: IdxTuple) {
+	_layerExistsForIdxTuple<T extends SegmentLayer>(layer: T[][], idxTuple: IdxTuple): T {
 	    const [lineIdx, segmentIdx] = idxTuple;
 		return layer && layer[lineIdx] && layer[lineIdx][segmentIdx];
 	}
@@ -1167,7 +1210,8 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			precedingIdx = pointIdx - 1;
 		} else if (lineIdx - 1 >= 0) {
 			const precedingLineLayer = this._lineLayers[lineIdx - 1];
-			if (precedingLineLayer[precedingLineLayer.length - 1].getLatLngs()[1].equals(point.getLatLng())) {
+			const endLatLng = <L.LatLng> precedingLineLayer[precedingLineLayer.length - 1].getLatLngs()[1];
+			if (endLatLng.equals(point.getLatLng())) {
 				precedingLineIdx = lineIdx - 1;
 				precedingIdx = precedingLineLayer.length - 1;
 			}
@@ -1196,7 +1240,8 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			followingIdx = pointIdx;
 		} else if (lineIdx + 1 <= this._lineLayers.length - 1) {
 			const followingLineLayer = this._lineLayers[lineIdx + 1];
-			if (followingLineLayer[0].getLatLngs()[0].equals(point.getLatLng())) {
+			const startLatLng = <L.LatLng> followingLineLayer[0].getLatLngs()[0];
+			if (startLatLng.equals(point.getLatLng())) {
 				followingLineIdx = lineIdx + 1;
 				followingIdx = 0;
 			}
@@ -1205,13 +1250,13 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		return followingLineIdx !== undefined && followingIdx !== undefined ? [followingLineIdx, followingIdx] : undefined;
 	}
 
-	_getIdxTupleFollowingEditPoint() {
+	_getIdxTupleFollowingEditPoint(): PointIdxTuple {
 		return this._LTEditPointIdxTuple
 			? this._getIdxTupleFollowingPoint(this._LTEditPointIdxTuple)
 			: undefined;
 	}
 
-	_degreesFromNorth(lineCoords) {
+	_degreesFromNorth(lineCoords: L.LatLngExpression[]): number {
 		const latLngs = lineCoords.map(L.latLng).map(latlng => L.CRS.EPSG3857.project(latlng));
 
 		// Line angle horizontally.
@@ -1221,7 +1266,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		return 90 - lineAngle;
 	}
 
-	_getCorridorCoordsForLine(lineCoords) {
+	_getCorridorCoordsForLine(lineCoords: L.LatLngExpression[]): [L.LatLng, L.LatLng, L.LatLng, L.LatLng] {
 		const latLngs = lineCoords.map(L.latLng);
 		const lineAngleFromNorth = this._degreesFromNorth(lineCoords);
 
@@ -1234,14 +1279,14 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		return [SWCorner, NWCorner, NECorner, SECorner];
 	}
 
-	_getOnActiveSegmentChangeEvent(lineIdx): LineTransectEvent {
+	_getOnActiveSegmentChangeEvent(lineIdx: number): LineTransectEvent {
 		const prevIdx = this._LTActiveIdx;
 		this._LTActiveIdx = lineIdx;
 		[prevIdx, lineIdx].forEach(i => this._updateLTStyleForLineIdx(i));
 		return {type: "active", idx: this._LTActiveIdx};
 	}
 
-	_getStyleForLTIdxTupleAndType(idxTuple: IdxTuple, type) {
+	_getStyleForLTIdxTupleAndType(idxTuple: IdxTuple, type: Function): L.PathOptions {
 		const [lineIdx, segmentIdx] = idxTuple;
 
 		const isPoint = type === L.CircleMarker;
@@ -1279,7 +1324,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				? !isSeamPoint && !isOverlappingEndOrStartPoint && _isHover && !isActive
 				: _isHover && !isActive;
 
-		function createPrintStylesFor(styles) {
+		function createPrintStylesFor(styles: L.PathOptions): L.PathOptions {
 			return Object.keys(styles).reduce((o, key) => {
 				o[key] = {opacity: 0, fillOpacity: 0};
 				return o;
@@ -1365,12 +1410,12 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		}
 	}
 
-	_setStyleForLTLayer(layer) {
+	_setStyleForLTLayer(layer: SegmentLayer) {
 		const {lineIdx, segmentIdx} = this.getIdxsFromLayer(layer);
 		layer.setStyle(this._getStyleForLTIdxTupleAndType([lineIdx, segmentIdx], layer.constructor));
 	}
 
-	_updateLTStyleForLineIdx(lineIdx) {
+	_updateLTStyleForLineIdx(lineIdx: number) {
 		if (lineIdx === undefined) return;
 		this._corridorLayers[lineIdx].forEach(corridorLayer => {
 			const {segmentIdx} = this.getIdxsFromLayer(corridorLayer);
@@ -1395,20 +1440,21 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		return this.getIdxsFromLayer(this._lineLayers[lineIdx][segmentIdx]).i;
 	}
 
-	_commitLTLineSplit(lineIdx, segmentIdx, splitPoint) {
+	_commitLTLineSplit(idxTuple: SegmentIdxTuple, splitPoint: L.LatLng) {
 		this.stopLTLineSplit();
 
 		const prevFeature = this._formatLTFeatureOut();
 
+		const [lineIdx, segmentIdx] = idxTuple;
 		const splitLine = this._lineLayers[lineIdx][segmentIdx];
 
-		const [start, end] = splitLine.getLatLngs();
+		const [start, end] = <L.LatLng[]> splitLine.getLatLngs();
 		// Tail is the part prepending the split and head the following part.
 		const splittedSegmentTail = [start, splitPoint];
 		const splittedSegmentHead = [splitPoint, end];
 
 		splitLine.setLatLngs(splittedSegmentTail);
-		this._lineLayers[lineIdx].splice(segmentIdx + 1, 0, L.polyline(splittedSegmentHead));
+		this._lineLayers[lineIdx].splice(segmentIdx + 1, 0, <L.Polyline<G.LineString>> L.polyline(splittedSegmentHead));
 
 		const splittedLineTail = this._lineLayers[lineIdx].slice(0, segmentIdx + 1);
 		const splittedLineHead = this._lineLayers[lineIdx].slice(segmentIdx + 1);
@@ -1443,11 +1489,12 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this.map.fire("lineTransect:split");
 	}
 
-	_commitLTPointAdd(lineIdx, segmentIdx, splitPoint) {
+	_commitLTPointAdd(idxTuple: PointIdxTuple, splitPoint) {
 		this.stopLTLineSplit();
 
 		const prevFeature = this._formatLTFeatureOut();
 
+		const [lineIdx, segmentIdx] = idxTuple;
 		const splitLine = this._lineLayers[lineIdx][segmentIdx];
 
 		const [start, end] = splitLine.getLatLngs();
@@ -1456,7 +1503,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		const splittedSegmentHead = [splitPoint, end];
 
 		splitLine.setLatLngs(splittedSegmentTail);
-		this._lineLayers[lineIdx].splice(segmentIdx + 1, 0, L.polyline(splittedSegmentHead));
+		this._lineLayers[lineIdx].splice(segmentIdx + 1, 0, <L.Polyline<G.LineString>>L.polyline(splittedSegmentHead));
 
 		const feature = this._formatLTFeatureOut();
 
@@ -1528,7 +1575,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._createTooltip("SplitLineTooltip");
 	}
 
-	startLTLineSplitForIdx(...idxTuple) {
+	startLTLineSplitForIdx(idxTuple: SegmentIdxTuple) {
 		this._lineCutIdx = idxTuple;
 		this._lineSplitFn = this._commitLTLineSplit;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
@@ -1543,7 +1590,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._createTooltip("AddPointTooltip");
 	}
 
-	startLTPointAddSplitForIdx(...idxTuple) {
+	startLTPointAddSplitForIdx(idxTuple: PointIdxTuple) {
 		this._lineCutIdx = idxTuple;
 		this._lineSplitFn = this._commitLTPointAdd;
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
@@ -1551,7 +1598,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this._createTooltip("SplitLineTooltip");
 	}
 
-	_pointCanBeShiftedTo(idxTuple: PointIdxTuple) : boolean {
+	_pointCanBeShiftedTo(idxTuple: PointIdxTuple): boolean {
 		const [lineIdx, pointIdx] = idxTuple;
 		return this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === 0 && (pointIdx === 0 || pointIdx === this._pointLayers[lineIdx].length - 1);
 	}
@@ -1597,7 +1644,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		for (let _idx in this._lineLayers) {
 			idx = parseInt(_idx);
 			const line = this._lineLayers[idx];
-			const start = line[0].getLatLngs()[0];
+			const start = <L.LatLng> line[0].getLatLngs()[0];
 			const end = line[line.length - 1].getLatLngs()[1];
 			if (prevEnd && !start.equals(prevEnd)) {
 				break;
@@ -1641,7 +1688,8 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		if (tooltip) this._createTooltip(tooltip);
 	}
 
-	stopSelectLTSegmentMode(lineIdx?, segmentIdx?) {
+	stopSelectLTSegmentMode(idxTuple: SegmentIdxTuple = [undefined, undefined]) {
+		const [lineIdx, segmentIdx] = idxTuple;
 		this._selectLTMode = undefined;
 		this._onSelectLT = undefined;
 		if (this._hoveredIdxTuple) this._updateLTStyleForIdxTuple(this._hoveredIdxTuple);
@@ -1653,21 +1701,21 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		this.startSelectLTSegmentMode(this.chooseFirstSegmentToConnect, "startLineConnectFirstPointHelp");
 	}
 
-	stopRemoveLTPointMode(...params) {
-		const idxTuple = this._firstLTSegmentToRemoveIdx;
+	stopRemoveLTPointMode() {
+		const _idxTuple = this._firstLTSegmentToRemoveIdx;
 		this._firstLTSegmentToRemoveIdx = undefined;
-		if (idxTuple) this._updateLTStyleForIdxTuple(idxTuple);
-		this.stopSelectLTSegmentMode(...params);
+		if (_idxTuple) this._updateLTStyleForIdxTuple(_idxTuple);
+		this.stopSelectLTSegmentMode();
 	}
 
-	chooseFirstSegmentToConnect(idxTuple: IdxTuple) {
+	chooseFirstSegmentToConnect(idxTuple: SegmentIdxTuple): boolean {
 		this._firstLTSegmentToRemoveIdx = idxTuple;
 		this._updateLTStyleForIdxTuple(idxTuple);
 		this.startSelectLTSegmentMode(this.chooseLastSegmentToConnectAndCommit, "startLineConnectLastPointHelp");
 		return false;
 	}
 
-	chooseLastSegmentToConnectAndCommit(idxTuple: IdxTuple) {
+	chooseLastSegmentToConnectAndCommit(idxTuple: SegmentIdxTuple) {
 		const [first, last] = [this._firstLTSegmentToRemoveIdx, idxTuple].map(tuple => this._idxTupleToFlatIdx(tuple)).sort((a, b) => a - b);
 
 		let timeout = undefined;
@@ -1678,7 +1726,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 				prevLatLng = segment.getLatLngs()[1];
 				continue;
 			}
-			if (!segment.getLatLngs()[0].equals(prevLatLng)) {
+			if (!(<L.LatLng[]> segment.getLatLngs())[0].equals(prevLatLng)) {
 				this._createTooltip("SegmentsMustBeOfSameLine", !!"error");
 				if (timeout) clearTimeout(timeout);
 				timeout = setTimeout(() => {
@@ -1692,7 +1740,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		}
 		this._firstLTSegmentToRemoveIdx = undefined;
 
-		const flatIdxToIdxTuple = (idx): IdxTuple => {
+		const flatIdxToIdxTuple = (idx): SegmentIdxTuple => {
 			return (idx === undefined) ? undefined : this.getIdxsFromLayer(this._allSegments[idx]).idxTuple;
 		};
 
@@ -1714,10 +1762,10 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			const value = parseInt(input.value);
 
 			let distance = 0;
-			let distanceLessThanLength = 0;
+			let distanceLessThanLength;
 			let currentSegmentIdx = 0;
 			let currentLineIdx = 0;
-			let currentSegment = undefined;
+			let currentSegment;
 			while (true) {
 				const currentLine = this._lineLayers[currentLineIdx];
 				currentSegment = currentLine[currentSegmentIdx];
@@ -1737,7 +1785,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			const remainingLength = value - distanceLessThanLength;
 			const lineAngleFromNorth = this._degreesFromNorth(currentSegment.getLatLngs());
 			const splitPoint = L.GeometryUtil.destination(currentSegment.getLatLngs()[0], lineAngleFromNorth, remainingLength);
-			this._commitLTLineSplit(currentLineIdx, currentSegmentIdx, splitPoint);
+			this._commitLTLineSplit([currentLineIdx, currentSegmentIdx], splitPoint);
 			if (this._selectLTMode) this.stopSelectLTSegmentMode();
 			this._closeDialog(e);
 		};
@@ -1746,7 +1794,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		const container = document.createElement("form");
 
 		const feature = this._formatLTFeatureOut();
-		const [start, length] = getLineTransectStartEndDistancesForIdx(feature, feature.length - 1); // eslint-disable-line no-unused-vars
+		const [start, length] = getLineTransectStartEndDistancesForIdx(feature, 99999); // eslint-disable-line no-unused-vars
 
 		const help = document.createElement("span");
 		help.className = "help-block";
@@ -1791,7 +1839,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		input.focus();
 	}
 
-	_createTooltip(translationKey, error = false) {
+	_createTooltip(translationKey: string, error = false): L.Draw.Tooltip {
 		if (this._tooltip && this._tooltipTranslationHook) {
 			this.removeTranslationHook(this._tooltipTranslationHook);
 		} else {
@@ -1825,7 +1873,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	_updateLTTooltip() {
 		if (!this._LTEditable) return;
 
-		const messages = {
+		const messages: TooltipMessages = {
 			text: undefined,
 			click: undefined,
 			dblclick: undefined,
@@ -1868,7 +1916,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	// Displays the given messages.
-	__updateLTTooltip(messages) {
+	__updateLTTooltip(messages: TooltipMessages) {
 		let message = "";
 		if (this._tooltip && this._tooltip !== this._ltTooltip) return;
 
@@ -1904,7 +1952,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 		let counter = 0;
 		this._allSegments.forEach((segment, i) => {
 			let lengths = i === 0 ? [0] : [];
-			let [start, end] = segment.getLatLngs();
+			let [start, end] = <L.LatLng[]> segment.getLatLngs();
 			const segmentLength = start.distanceTo(end);
 			let _segmentLength = segmentLength;
 			while (_segmentLength + nonusedDist > 100) {
@@ -1915,12 +1963,12 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 			}
 			nonusedDist = lengths.reduce((total, l) => total - l, segmentLength + nonusedDist);
 
-			const lineAngleFromNorth = this._degreesFromNorth(segment.getLatLngs());
+			const lineAngleFromNorth = this._degreesFromNorth(<L.LatLng[]> segment.getLatLngs());
 			let accumulatedLength = 0;
 			lengths.forEach(length => {
 				const major = counter === 0 || counter % 5 === 0;
 				accumulatedLength += length;
-				const lineCenter = L.GeometryUtil.destination(segment.getLatLngs()[0], lineAngleFromNorth, accumulatedLength);
+				const lineCenter = L.GeometryUtil.destination((<L.LatLng[]> segment.getLatLngs())[0], lineAngleFromNorth, accumulatedLength);
 				const lineStart = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth - 90, (major ? 2 : 1) * LT_WIDTH_METERS);
 				const lineEnd = L.GeometryUtil.destination(lineCenter, lineAngleFromNorth + 90, (major ? 2 : 1) * LT_WIDTH_METERS);
 				L.polyline([lineStart, lineEnd], {color: "#000", weight: 1}).addTo(this.map);

@@ -79,8 +79,7 @@ class App {
 				//activeIdx: 0,
 				//editable: true,
 				highlightOnHover: true
-			},
-
+			}
 		];
 
 		this.drawOptions = {
@@ -163,7 +162,8 @@ class App {
 				shapeOptions: {
 					showArea: true
 				}
-			}
+			},
+			clickBeforeZoomAndPan: true
 		};
 
 

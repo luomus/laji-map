@@ -9,7 +9,7 @@ import {
 	ESC
 } from "./globals";
 import { IdxTuple } from "./map";
-import {ContextMenuOptions} from "./@types/leaflet-contextmenu";
+import { ContextMenuOptions } from "./@types/leaflet-contextmenu";
 
 const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;

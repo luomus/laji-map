@@ -9,8 +9,8 @@ import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import {
-	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject,
-	combineColors, circleToPolygon, CoordinateSystem, CRSString
+    convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject,
+    combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError
 } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
@@ -76,7 +76,7 @@ export interface GetFeatureStyleOptions {
 
 interface DataOptions {
 	featureCollection: any;
-	geoData?: any | string;
+	geoData?: G.GeoJSON | string;
 	getFeatureStyle?(options: GetFeatureStyleOptions): L.PathOptions;
 	getDraftStyle?(dataIdx?: number): L.PathOptions;
 	getClusterStyle?: (childCount: number) => L.PathOptions;
@@ -259,7 +259,6 @@ export default class LajiMap {
     _showPreventHideTimeout: any;
     _showingPreventScroll: boolean;
     _LTEditPointIdxTuple: IdxTuple;
-    activeControl: L.Control; // TODO move to controls.js
 	_clickBeforeZoomAndPan: boolean;
 	_origLatLngs: {[id: string]: L.LatLng[]};
 
@@ -402,6 +401,10 @@ export default class LajiMap {
 		if (value) this.blockerElem.className = `${this.blockerElem.className} fixed`;
 	}
 
+	shouldNotPreventScrolling() : boolean {
+		return !!(this.drawing || this._LTEditPointIdxTuple);
+	}
+
 	@dependsOn("rootElem", "map", "translations")
 	setClickBeforeZoomAndPan(value = true) {
 		if (!depsProvided(this, "setClickBeforeZoomAndPan", arguments)) return;
@@ -424,7 +427,7 @@ export default class LajiMap {
 
 		if (!this._preventScrolling) {
 			this._preventScrolling = () => {
-				if (this.drawing || this.activeControl || this._LTEditPointIdxTuple) return;
+			    if (this.shouldNotPreventScrolling()) return;
 				this.map.scrollWheelZoom.disable();
 				this.map.dragging.disable();
 				this._preventScroll = true;
@@ -736,7 +739,7 @@ export default class LajiMap {
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
-		return !L.latLngBounds(<L.LatLngExpression[]> FINLAND_BOUNDS).contains(latLng); // TODO globals to typescript, get rid of LatLngExpressions
+		return !L.latLngBounds(FINLAND_BOUNDS).contains(latLng);
 	}
 
 	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
@@ -2853,7 +2856,8 @@ export default class LajiMap {
 		const alert = document.createElement("div");
 		alert.style.display = "block";
 		alert.className = "laji-map-popup alert alert-danger";
-		const message = () => ((<any> e)._lajiMapError) ? stringifyLajiMapError(e, this.translations) : e.message;
+		const lajiMapError = ((<any> e)._lajiMapError) ? <LajiMapError> e : undefined;
+		const message = () => lajiMapError ? stringifyLajiMapError(lajiMapError, this.translations) : e.message;
 		const translationHook = this.addTranslationHook(alert, message);
 
 		this.showClosableElement(alert, () => {

@@ -89,6 +89,7 @@ function getSubControlName(name, subName) {
 export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 	controlItems: ControlOptions[];
+    activeControl: L.Control;
 
 	getOptionKeys() {
 		return {
@@ -1722,4 +1723,8 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			super.triggerDrawing(featureType);
 		}
 	}
+
+	shouldNotPreventScrolling() : boolean {
+		return super.shouldNotPreventScrolling() || !!this.activeControl;
+    }
 } return <typeof LajiMap> LajiMapWithControls; };

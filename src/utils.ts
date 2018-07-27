@@ -8,6 +8,7 @@ import {
 import * as L from "leaflet";
 import * as G from 'geojson';
 import {LineTransectFeature, LineTransectGeometry} from "./line-transect";
+import {DataItemLayer} from "./map";
 
 export function reverseCoordinate(c: L.LatLngTuple): L.LatLngTuple {
 	return <L.LatLngTuple> c.slice(0).reverse();
@@ -644,7 +645,7 @@ export function createTextArea(rows: number = 10, cols: number = 10): HTMLTextAr
 	return input;
 }
 
-export function isPolyline(layer: L.Layer): boolean {
+export function isPolyline(layer: DataItemLayer): boolean {
 	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
 }
 

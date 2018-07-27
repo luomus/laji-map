@@ -12,7 +12,10 @@ export interface VectorMarkerIconOptions {
 
 declare module "leaflet" {
 	namespace VectorMarkers {
-       function icon(options: VectorMarkerIconOptions): L.Icon;
+		function icon(options: VectorMarkerIconOptions): L.Icon;
+		class Icon extends L.Icon {
+			constructor(options: VectorMarkerIconOptions);
+		}
     }
 
 	interface BaseIconOptions extends VectorMarkerIconOptions { }

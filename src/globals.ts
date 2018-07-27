@@ -1,4 +1,4 @@
-export const INCOMPLETE_COLOR = "#36B43A";
+export const INCOMPLETE_COLOR = "#f604fA";
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";
 export const DATA_LAYER_COLOR = "#AAAAAA";

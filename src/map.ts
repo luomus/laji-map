@@ -16,7 +16,6 @@ import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
 import {
-	INCOMPLETE_COLOR,
 	NORMAL_COLOR,
 	DATA_LAYER_COLOR,
 	EDITABLE_DATA_LAYER_COLOR,
@@ -28,8 +27,7 @@ import {
 
 import translations from "./translations.js";
 import {VectorMarkerIconOptions} from "./@types/leaflet.vector-markers";
-import {DomEvent} from "leaflet";
-import EventHandlerFn = DomEvent.EventHandlerFn;
+import {DomEvent, Util} from "leaflet";
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
@@ -122,7 +120,7 @@ interface Draw extends Data {
 }
 
 export type IdxTuple = [number, number];
-export type DataItemLayer = L.Polygon | L.Polyline<G.LineString> | L.Marker | L.Circle;
+export type DataItemLayer = L.Polygon | L.Polyline | L.Marker | L.Circle;
 type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
 
 interface DrawHistoryEntry {
@@ -179,10 +177,49 @@ interface LajiMapOptions {
     clickBeforeZoomAndPan?: boolean;
 }
 
+class _VectorMarkerIcon extends L.VectorMarkers.Icon {
+	_icon: HTMLElement;
+	createIcon(oldIcon) {
+		this._icon = super.createIcon(oldIcon);
+		return this._icon;
+	}
+	_update(_options) {
+		L.Util.setOptions(this, _options);
+		this.createIcon(this._icon);
+
+		//L.Util.setOptions(this, _options);
+		//const {options}: {options: any} = this;
+
+		//const mapPin = 'M16,1 C7.7146,1 1,7.65636364 1,15.8648485 C1,24.0760606 16,51 16,51 C16,51 31,24.0760606 31,15.8648485 C31,7.65636364 24.2815,1 16,1 L16,1 Z'
+
+        //const pin_path = options.map_pin || mapPin;
+		//this._icon.innerHTML = `<svg width="${options.iconSize[0]}px" height="${options.iconSize[1]}px" viewBox="${options.viewBox}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="${pin_path}" fill="${options.markerColor}"></path></svg>`
+
+        //options.className += options.className.length > 0 ? ' ' + options.extraDivClasses : options.extraDivClasses;
+		//(<any> this)._setIconStyles(this._icon, 'icon');
+        //(<any> this)._setIconStyles(this._icon, `icon-${options.markerColor}`);
+
+		this._icon.appendChild((<any> this)._createInner());
+
+		//!!!! loppu toi ylempi toimi
+
+		//const container = L.Control.Layers.prototype.onAdd.call(this, map);
+
+		//return (<any> L.VectorMarkers.Icon).prototype.createIcon.call(this, iconElem);
+
+		//(<any> this).iconColor = "black";
+		//console.log((<any> this)._icon);
+		//layer.options.icon = (<any> L.VectorMarkers).Icon.prototype.createIcon.call(layer.options.icon, (<any> layer)._icon);
+
+		//L.Util.setOptions(layer.options.icon, style);
+		//layer.options.icon = (<any> L.VectorMarkers).Icon.prototype.createIcon.call(layer.options.icon, (<any> layer)._icon);
+	}
+}
+
 @HasControls
 @HasLineTransect
 export default class LajiMap {
-	private onSetLangHooks = [];
+	private onSetLangHooks: (() => void)[] = [];
 	options: LajiMapOptions;
 	_dialogRoot: HTMLElement;
     _openDialogs = [];
@@ -1329,8 +1366,11 @@ export default class LajiMap {
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
 				style: (feature: G.Feature) => {
-					return this._getStyleForType([dataIdx, feature.properties.lajiMapIdx], feature);
+					return this._getStyleForType([dataIdx, feature.properties.lajiMapIdx]);
 				},
+				onEachFeature: (feature: G.Feature, layer: DataItemLayer) => {
+					this._initializeLayer(layer, [dataIdx, feature.properties.lajiMapIdx]);
+				}
 			}
 		);
 
@@ -1344,14 +1384,6 @@ export default class LajiMap {
 			item.group.addTo(item.groupContainer);
 		}
 		item.groupContainer.addTo(this.map);
-
-		layer.eachLayer(layer => {
-			this._initializeLayer(<DataItemLayer> layer, [dataIdx, (<any> layer).feature.properties.lajiMapIdx]);
-		});
-
-		if (item.hasActive) {
-			this.updateLayerStyle(this._getLayerByIdxTuple([dataIdx, item.activeIdx]));
-		}
 
 		if (item.on) Object.keys(item.on).forEach(eventName => {
 			item.group.on(eventName, (e: any) => {
@@ -1385,7 +1417,7 @@ export default class LajiMap {
 
 		item.group.on("mouseover", (e: L.LayerEvent) => {
 			if (item.editable || item.hasActive || item.highlightOnHover) {
-				const {layer} = e;
+				const layer = <DataItemLayer> e.layer;
 				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 				this._idxsToHovered[dataIdx][featureIdx] = true;
 				this.updateLayerStyle(layer);
@@ -1394,7 +1426,7 @@ export default class LajiMap {
 
 		item.group.on("mouseout", (e: L.LayerEvent) => {
 			if (item.editable || item.hasActive || item.highlightOnHover) {
-				const {layer} = e;
+				const layer = <DataItemLayer> e.layer;
 				const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 				this._idxsToHovered[dataIdx][featureIdx] = false;
 				this.updateLayerStyle(layer);
@@ -1417,6 +1449,7 @@ export default class LajiMap {
 			}
 
 			this._initializeLayer(layer, [dataIdx, featureIdx]);
+			this.updateLayerStyle(layer);
 		});
 
 		item.group.on("layerremove", (e: L.LayerEvent) => {
@@ -1779,7 +1812,7 @@ export default class LajiMap {
 	_createIcon(options: L.PathOptions = {}): L.Icon {
 		const markerColor = options.color || NORMAL_COLOR;
 		const opacity = options.opacity || 1;
-		return L.VectorMarkers.icon({
+		return new L.VectorMarkers.Icon({
 			prefix: "glyphicon",
 			icon: "record",
 			markerColor,
@@ -2132,9 +2165,10 @@ export default class LajiMap {
 	_decoratePolyline(layer: L.Polyline) {
 		if (!isPolyline(layer)) return;
 
-		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		const idxTuple =  this._getIdxTupleByLayer(layer);
+		const [dataIdx, featureIdx] = idxTuple;
 
-		const {showStart, showDirection = true}: CustomPolylineOptions = this._fillStyleWithGlobals([dataIdx, featureIdx]);
+		const {showStart, showDirection = true}: CustomPolylineOptions = this._fillStyleWithGlobals(idxTuple);
 
 		function warn() {
 			console.warn("Failed to add a starting point to line");
@@ -2516,16 +2550,27 @@ export default class LajiMap {
 
 		if (layer instanceof L.Marker) {
 			const _layer = <L.Marker> layer;
-			if (style.opacity !== undefined) _layer.options.opacity = style.opacity;
-
 			_layer.options.icon.options.markerColor = style.color;
+			if (style.opacity !== undefined) _layer.options.opacity = style.opacity;
 			if ((<any> _layer)._icon) {
-				// Color must also be changed directly through DOM manipulation.
 				(<any> _layer)._icon.firstChild.firstChild.style.fill = style.color;
-				if (style.opacity !== undefined) {
-					(<any> _layer)._icon.firstChild.firstChild.style.opacity = style.opacity;
-				}
+				(<any> _layer)._icon.firstChild.firstChild.style.opacity = style.opacity || 1;
 			}
+
+			//L.Util.setOptions(layer.options.icon, style);
+			//console.log(layer.options.icon.options);
+            //(<any> layer)._icon = (<any> layer).options.icon.createIcon((<any> layer)._icon);
+
+			//console.log(layer);
+			//console.log((<any> layer).options.icon);
+			//if ((<any> layer).options.icon.__proto__.createIcon) {
+			//	//L.Util.setOptions(layer.options.icon, style);
+            //    //layer.options.icon = (<any> L.VectorMarkers).Icon.prototype.createIcon.call(layer.options.icon, (<any> layer)._icon);
+			//	layer.options.icon = (<any> layer.options.icon)._update(style, (<any> layer)._icon);
+			//}
+			//_layer.setIcon(this._createIcon(style));
+
+			//(<any> layer.options.icon)._update({...style, markerColor: style.color});
 		} else {
 			const _layer = <L.Path> layer;
 			_layer.setStyle(style);
@@ -2544,9 +2589,9 @@ export default class LajiMap {
 				const latLng = reversePointCoords(feature.geometry.coordinates);
 				const params = {feature, featureIdx: feature.properties.lajiMapIdx};
 				if (dataIdx !== undefined) params[dataIdx] = dataIdx;
-				layer = (feature.geometry.radius) ?
-					new L.Circle(latLng, feature.geometry.radius) :
-					L.marker(latLng, {
+				layer = (feature.geometry.radius)
+                    ? new L.Circle(latLng, feature.geometry.radius)
+                    : L.marker(latLng, {
 						icon: this._createIcon(getFeatureStyle(params))
 					});
 			} else {
@@ -2557,23 +2602,22 @@ export default class LajiMap {
 	}
 
 	_getDefaultDrawDraftStyle(): L.PathOptions {
-		return this._getStyleForType([this.drawIdx, undefined], undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
+		return this._getStyleForType([this.drawIdx, undefined], {color: EDITABLE_DATA_LAYER_COLOR, fillColor: EDITABLE_DATA_LAYER_COLOR, opacity: 0.8});
 	}
 
-	_fillStyleWithGlobals<T extends L.PathOptions> (idxTuple: IdxTuple, feature?: G.Feature): T {
+	_fillStyleWithGlobals<T extends L.PathOptions> (idxTuple: IdxTuple): T {
 		const [dataIdx, featureIdx] = idxTuple;
+        const layer = this._getLayerByIdxTuple(idxTuple);
 		const item = this.data[dataIdx];
+		const feature = item.featureCollection.features[featureIdx];
 		const dataStyles = item.getFeatureStyle({
 			dataIdx,
 			featureIdx: featureIdx,
-			feature: feature || item.featureCollection.features[featureIdx],
+			feature,
 			item
 		});
 
-		let layer = undefined;
-		if (this.idxsToIds[dataIdx] && item.group) layer = this._getLayerByIdxTuple([dataIdx, featureIdx]);
-
-		const mergeOptions = (type) => {
+		const mergeOptions = (type: DataItemType) => {
 			return {...(this[type] || {}), ...(item[type] || {})};
 		};
 
@@ -2608,7 +2652,7 @@ export default class LajiMap {
 		return {...(featureTypeStyle || {}), ...(dataStyles || {})};
 	}
 
-	_getStyleForType(idx: IdxTuple | number, feature: G.Feature, overrideStyles: L.PathOptions = {}): L.PathOptions {
+	_getStyleForType(idx: IdxTuple | number, overrideStyles: L.PathOptions = {}): L.PathOptions {
 		let dataIdx, featureIdx;
 		if (typeof idx === "number") {
 			dataIdx = idx;
@@ -2616,19 +2660,20 @@ export default class LajiMap {
 			[dataIdx, featureIdx] = idx;
 		}
 		const item = this.data[dataIdx];
+		const feature = item.featureCollection.features[featureIdx];
 		let dataStyles = undefined;
 		if (item.getFeatureStyle) {
 			dataStyles = item.getFeatureStyle({
 				dataIdx,
 				featureIdx: featureIdx,
-				feature: feature || item.featureCollection.features[featureIdx],
+				feature,
 				item
 			});
 			if (dataStyles.color && !dataStyles.fillColor) {
 				dataStyles.fillColor = dataStyles.color;
 			}
 		} else {
-			dataStyles = this._fillStyleWithGlobals([dataIdx, featureIdx], feature);
+			dataStyles = this._fillStyleWithGlobals([dataIdx, featureIdx]);
 		}
 
 		let layer = undefined;
@@ -2709,30 +2754,30 @@ export default class LajiMap {
 		return style;
 	}
 
-	_getStyleForLayer(layer: DataItemLayer, overrideStyles?) {
+	_getStyleForLayer(layer: DataItemLayer, overrideStyles?): L.PathOptions {
 	    const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-		return this._getStyleForType([dataIdx, featureIdx],undefined, overrideStyles);
+		return this._getStyleForType([dataIdx, featureIdx], overrideStyles);
 	}
 
-	updateLayerStyle(layer) {
+	updateLayerStyle(layer: DataItemLayer) {
 		if (!layer) return;
 		this.setLayerStyle(layer, this._getStyleForLayer(layer, this._getStyleForLayer(layer)));
 	}
 
-	_getDefaultDrawStyle() {
+	_getDefaultDrawStyle(): L.PathOptions {
 		return {color: NORMAL_COLOR, fillColor: NORMAL_COLOR, opacity: 1, fillOpacity: 0.7};
 	}
 
-	_getDefaultDrawClusterStyle() {
+	_getDefaultDrawClusterStyle(): L.PathOptions {
 		return {color: this.getDraw().getFeatureStyle({}).color, opacity: 1};
 	}
 
-	_getDefaultDataStyle = item => () => {
+	_getDefaultDataStyle(item: Data): () => L.PathOptions {return () => {
 		const color = (item && item.editable) ?
 			EDITABLE_DATA_LAYER_COLOR :
 			DATA_LAYER_COLOR;
 		return {color, fillColor: color, opacity: 1, fillOpacity: 0.7};
-	}
+	}}
 
 
 	_getDefaultDataClusterStyle = (item) => () => {
@@ -2745,19 +2790,19 @@ export default class LajiMap {
 	}
 
 	_getDefaultDraftStyle(dataIdx: number): L.PathOptions {
-		return this._getStyleForType(dataIdx, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
+		return this._getStyleForType(dataIdx, {color: EDITABLE_DATA_LAYER_COLOR, fillColor: EDITABLE_DATA_LAYER_COLOR, opacity: 0.8});
 	}
 
-	_updateDataLayerGroupStyle(idx) {
+	_updateDataLayerGroupStyle(idx: number) {
 		const item = this.data[idx];
 		if (!item) return;
 
-		item.group.eachLayer(layer => {
+		item.group.eachLayer((layer: DataItemLayer) => {
 			this.updateLayerStyle(layer);
 		});
 	}
 
-	addTranslationHook(elemOrFn, translationKey, attr = "innerHTML") {
+	addTranslationHook(elemOrFn, translationKey, attr = "innerHTML"): () => void {
 		const that = this;
 
 		function translate() {
@@ -2776,18 +2821,19 @@ export default class LajiMap {
 			}
 		}
 
-		translate(); this.onSetLangHooks.push(translate);
+		translate();
+		this.onSetLangHooks.push(translate);
 		return translate;
 	}
 
-	removeTranslationHook(hook) {
+	removeTranslationHook(hook: () => void) {
 		const index = this.onSetLangHooks.indexOf(hook);
 		if (index >= 0) {
 			this.onSetLangHooks.splice(index, 1);
 		}
 	}
 
-	_getDrawOptionsForType(featureType: DataItemType) {
+	_getDrawOptionsForType<T extends L.PathOptions> (featureType: DataItemType): T  {
 		const baseStyle = this.getDraw().getDraftStyle();
 
 		interface AdditionalOptions {
@@ -2810,7 +2856,8 @@ export default class LajiMap {
 			break;
 		}
 
-		const userDefined = this.getDraw()[featureType] || {};
+		const _userDefined = this.getDraw()[featureType];
+		const userDefined = isObject(_userDefined) ? <any> _userDefined : {};
 
 		return {
 			metric: true,

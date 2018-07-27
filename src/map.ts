@@ -28,6 +28,8 @@ import {
 
 import translations from "./translations.js";
 import {VectorMarkerIconOptions} from "./@types/leaflet.vector-markers";
+import {DomEvent} from "leaflet";
+import EventHandlerFn = DomEvent.EventHandlerFn;
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
@@ -74,17 +76,22 @@ export interface GetFeatureStyleOptions {
     item?: Data
 }
 
+interface CustomPolylineOptions extends L.PolylineOptions {
+	showStart?: boolean;
+    showDirection?: boolean;
+}
+
 interface DataOptions {
-	featureCollection: any;
+	featureCollection?: any;
 	geoData?: G.GeoJSON | string;
 	getFeatureStyle?(options: GetFeatureStyleOptions): L.PathOptions;
 	getDraftStyle?(dataIdx?: number): L.PathOptions;
 	getClusterStyle?: (childCount: number) => L.PathOptions;
-	cluster: boolean | L.MarkerClusterGroupOptions;
-	activeIdx: number;
-	editable: boolean;
-	onChange(events: LajiMapEvent[]): void;
-	hasActive: boolean;
+	cluster?: boolean | L.MarkerClusterGroupOptions;
+	activeIdx?: number;
+	editable?: boolean;
+	onChange?(events: LajiMapEvent[]): void;
+	hasActive?: boolean;
 	getTooltip?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 	getPopup?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 	tooltipOptions?: any;
@@ -163,7 +170,7 @@ interface LajiMapOptions {
     featurePopupOffset?: number;
     popupOnHover?: boolean;
     on?: L.LeafletEventHandlerFnMap,
-    polyline?: boolean | L.DrawOptions.PolylineOptions;
+    polyline?: boolean | CustomPolylineOptions;
     polygon?: boolean | L.DrawOptions.PolygonOptions;
     rectangle?: boolean | L.DrawOptions.RectangleOptions;
     circle?: boolean | L.DrawOptions.CircleOptions;
@@ -202,7 +209,7 @@ export default class LajiMap {
     _drawHistoryPointer: number;
     _drawHistory: DrawHistoryEntry[];
     polyline: L.Polyline;
-    locate: boolean;
+    locate: [(event: L.LocationEvent) => void, (error: L.ErrorEvent) => void] | boolean;
     _located: boolean;
     userLocation: {latlng: L.LatLng, accuracy: number};
     userLocationMarker: L.CircleMarker;
@@ -783,8 +790,8 @@ export default class LajiMap {
 					this.map.panTo(latlng);
 				}
 			},
-			locationfound: ({latlng, accuracy, bounds}: L.LocationEvent) => this._onLocationFound({latlng, accuracy, bounds}),
-			locationerror: (e) => this._onLocationNotFound(e),
+			locationfound: (e: L.LocationEvent) => this._onLocationFound(e),
+			locationerror: (e: L.ErrorEvent) => this._onLocationNotFound(e),
 			"contextmenu.show": (e: any) => {
 				if (e.relatedTarget) {
 					this._contextMenuLayer = e.relatedTarget;
@@ -822,8 +829,8 @@ export default class LajiMap {
 			}
 		});
 
-		this._addDocumentEventListener("click", e => {
-			if (e.target !== this.rootElem && !this.rootElem.contains(e.target)) {
+		this._addDocumentEventListener("click", (e: MouseEvent) => {
+			if (e.target !== this.rootElem && !this.rootElem.contains(<Element> e.target)) {
 				this._interceptClick();
 			}
 		});
@@ -848,7 +855,7 @@ export default class LajiMap {
 		}
 	}
 
-	_addDocumentEventListener(type, fn) {
+	_addDocumentEventListener(type: string, fn: EventListener) {
 		if (!this._documentEvents) this._documentEvents = {};
 		this._documentEvents[type] = fn;
 		document.addEventListener(type, fn);
@@ -1231,9 +1238,10 @@ export default class LajiMap {
 		return featuresClone;
 	}
 
-	initializeDataItem(item: Data, dataIdx?: number) {
+	initializeDataItem(options: DataOptions, dataIdx?: number) {
 		dataIdx = dataIdx === undefined ? this.data.length : dataIdx;
 
+		let item = <Data> options;
 		let {geoData, ..._item} = item;
 		if (geoData) {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
@@ -1320,8 +1328,8 @@ export default class LajiMap {
 			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
-				style: feature => {
-					return this._getStyleForType(dataIdx, feature.properties.lajiMapIdx, feature);
+				style: (feature: G.Feature) => {
+					return this._getStyleForType([dataIdx, feature.properties.lajiMapIdx], feature);
 				},
 			}
 		);
@@ -1419,7 +1427,7 @@ export default class LajiMap {
 		});
 	}
 
-	_getAllData() {
+	_getAllData(): Data[] {
 		return [this.getDraw(), ...this.data];
 	}
 
@@ -1485,7 +1493,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map", "translations")
-	setData(data) {
+	setData(data: DataOptions[]) {
 		if (!depsProvided(this, "setData", arguments)) return;
 
 		if (!this.data) {
@@ -1500,28 +1508,28 @@ export default class LajiMap {
 		provide(this, "data");
 	}
 
-	addData(items) {
+	addData(items: DataOptions[]) {
 		if (!items) return;
 		if (!Array.isArray(items)) items = [items];
 		items.forEach(item => this.initializeDataItem(item));
 	}
 
-	updateData(idx, item) {
-		this.initializeDataItem(item, idx);
+	updateData(dataIdx, item: DataOptions) {
+		this.initializeDataItem(item, dataIdx);
 	}
 
-	updateDrawData(item) {
-		this.updateData(this.drawIdx, this.getDrawOptions(item));
+	updateDrawData(item: DrawOptions) {
+		this.updateData(this.drawIdx, <DataOptions> this.getDrawOptions(item));
 	}
 
-	removeData(idx) {
-		if (this.data[idx]) {
-			this.data[idx].groupContainer.clearLayers();
-			this.data[idx] = undefined;
+	removeData(dataIdx: number) {
+		if (this.data[dataIdx]) {
+			this.data[dataIdx].groupContainer.clearLayers();
+			this.data[dataIdx] = undefined;
 		}
 	}
 
-	getDrawOptions = (options) => {
+	getDrawOptions(options: DrawOptions | boolean): DrawOptions {
 		const drawAllowed = options !== false;
 
 		let draw = {
@@ -1536,12 +1544,12 @@ export default class LajiMap {
 		draw = {
 			...draw,
 			...{
-				...(drawAllowed ? (options || {}) : {})
+				...(drawAllowed ? (isObject(options)? <DrawOptions> options : {}) : {})
 			}
 		};
 
-		if (options.data) {
-			console.warn("laji-map warning: draw.data is deprecated and will be removed in the future. Please move it's content to draw");
+		if ((<any> options).data) {
+			console.warn("laji-map warning: draw.data is deprecated and HAS BEEN REMOVED! Please move it's content to draw");
 		}
 
 		draw = {
@@ -1549,16 +1557,14 @@ export default class LajiMap {
 			getClusterStyle: () => this._getDefaultDrawClusterStyle(),
 			getDraftStyle: () => this._getDefaultDrawDraftStyle(),
 			editable: true,
-			onChange: options.onChange || (options.data || {}).onChange,
 			...draw,
-			...(options.data || {})
 		};
 
 		return draw;
 	}
 
 	@dependsOn("map", "data")
-	setDraw(options) {
+	setDraw(options: DrawOptions) {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
 		 // Using a negative idx lets us keep the original data indices.
@@ -1571,11 +1577,11 @@ export default class LajiMap {
 		provide(this, "draw");
 	}
 
-	getDraw() {
+	getDraw(): Draw {
 		return this.data[this.drawIdx];
 	}
 
-	drawIsAllowed = () => {
+	drawIsAllowed(): boolean {
 		const draw = this.getDraw();
 		return draw.editable && this.getFeatureTypes().some(type => draw[type]);
 	}
@@ -1593,7 +1599,7 @@ export default class LajiMap {
 		const {undoEvents: events} = this._drawHistory[this._drawHistoryPointer];
 		this._drawHistoryPointer--;
 		const {featureCollection} = this._drawHistory[this._drawHistoryPointer];
-		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection});
+		this.updateData(this.drawIdx, <Data> {...this.getDraw(), featureCollection});
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
@@ -1609,7 +1615,7 @@ export default class LajiMap {
 		if (this._drawHistoryPointer >= this._drawHistory.length - 1) return;
 		this._drawHistoryPointer++;
 		const {featureCollection, redoEvents: events} = this._drawHistory[this._drawHistoryPointer];
-		this.updateData(this.drawIdx, {...this.getDraw(), featureCollection});
+		this.updateData(this.drawIdx, <Data> {...this.getDraw(), featureCollection});
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
@@ -1622,7 +1628,7 @@ export default class LajiMap {
 	}
 
 
-	wrapGeoJSONCoordinate([lng, lat]) {
+	wrapGeoJSONCoordinate([lng, lat]: G.Position): G.Position {
 		const wrapped = this.map.wrapLatLng([lat, lng]);
 		return [wrapped.lng, wrapped.lat];
 	}
@@ -1663,7 +1669,7 @@ export default class LajiMap {
 		}));
 	}
 
-	clearItemData(item) {
+	clearItemData(item: Data) {
 		const prevFeatureCollection = {type: "FeatureCollection", features: this.cloneFeatures(this.data[item.idx].featureCollection.features)};
 		const event: LajiMapEvent = {
 			type: "delete",
@@ -1671,7 +1677,7 @@ export default class LajiMap {
 		};
 		this._triggerEvent(event, item.onChange);
 
-		this.updateData(item.idx, {...item, geoData: undefined, featureCollection: {type: "FeatureCollection", features: []}});
+		this.updateData(item.idx, <DataOptions> {...item, geoData: undefined, featureCollection: {type: "FeatureCollection", features: []}});
 		this._resetIds(item.idx);
 		if (item.idx === this.drawIdx) this._updateDrawUndoStack(event, prevFeatureCollection);
 	}
@@ -1770,7 +1776,7 @@ export default class LajiMap {
 		this._origLatLngs = undefined;
 	}
 
-	_createIcon(options: L.PathOptions = {}) {
+	_createIcon(options: L.PathOptions = {}): L.Icon {
 		const markerColor = options.color || NORMAL_COLOR;
 		const opacity = options.opacity || 1;
 		return L.VectorMarkers.icon({
@@ -1781,7 +1787,7 @@ export default class LajiMap {
 		} as VectorMarkerIconOptions);
 	}
 
-	_getClusterIcon(data) {
+	_getClusterIcon(data: Data): (cluster: L.MarkerCluster) => L.DivIcon {
 		return (cluster) => {
 			var childCount = cluster.getChildCount();
 
@@ -1813,11 +1819,11 @@ export default class LajiMap {
 				html: `<div style="${styleString}"><span>${childCount}</span></div>`,
 				className: `marker-cluster${className}`,
 				iconSize: new L.Point(40, 40)
-			} as L.DivIconOptions);
+			});
 		};
 	}
 
-	setActive(layer) {
+	setActive(layer: DataItemLayer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		const item = this.data[dataIdx];
 		if (!item.hasActive) return;
@@ -1828,26 +1834,26 @@ export default class LajiMap {
 		this.updateLayerStyle(layer);
 	}
 
-	_resetIds(idx) {
+	_resetIds(dataIdx: number) {
 		// Maps item indices to internal ids and the other way around.
 		// We use leaflet ids as internal ids.
-		this.idxsToIds[idx] = {};
-		this.idsToIdxs[idx] = {};
+		this.idxsToIds[dataIdx] = {};
+		this.idsToIdxs[dataIdx] = {};
 
 		let counter = 0;
-		if (this.data[idx].group) this.data[idx].group.eachLayer(layer => {
-			this._setIdForLayer(layer, [idx, counter]);
+		if (this.data[dataIdx].group) this.data[dataIdx].group.eachLayer((layer: DataItemLayer) => {
+			this._setIdForLayer(layer, [dataIdx, counter]);
 			counter++;
 		});
 	}
 
-	_setIdForLayer(layer, idxTuple: IdxTuple) {
+	_setIdForLayer(layer: DataItemLayer, idxTuple: IdxTuple) {
 	    const [dataIdx, featureIdx] = idxTuple;
 		if (!this.idxsToIds[dataIdx]) {
 			this.idxsToIds[dataIdx] = {};
 			this.idsToIdxs[dataIdx] = {};
 		}
-		const id = layer._leaflet_id;
+		const id = L.Util.stamp(layer);
 		this.idxsToIds[dataIdx][featureIdx] = id;
 		this.idsToIdxs[dataIdx][id] = featureIdx;
 		this.idsToIdxTuples[id] = [dataIdx, featureIdx];
@@ -1866,7 +1872,7 @@ export default class LajiMap {
 		if (this.data) this.data.forEach(item => this._reclusterDataItem(item));
 	}
 
-	_reclusterDataItem(item) {
+	_reclusterDataItem(item: Data) {
 		if (item.cluster) {
 			this.map.removeLayer(item.groupContainer);
 			item.groupContainer = L.markerClusterGroup({
@@ -1880,13 +1886,13 @@ export default class LajiMap {
 		this.redrawDataItem(this.drawIdx);
 	}
 
-	redrawDataItem(idx) {
+	redrawDataItem(idx: number) {
 		const dataItem = this.data[idx];
 		if (!dataItem || !dataItem.group) return;
 
 		this._updateDataLayerGroupStyle(idx);
 
-		dataItem.group.eachLayer(layer => {
+		dataItem.group.eachLayer((layer: DataItemLayer) => {
 			this._initializePopup(layer);
 			this._initializeTooltip(layer);
 		});
@@ -1903,7 +1909,7 @@ export default class LajiMap {
 		this.redrawDrawData();
 	}
 
-	_initializePopup(layer) {
+	_initializePopup(layer: DataItemLayer) {
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 
 		const item = this.data[dataIdx];
@@ -1947,11 +1953,11 @@ export default class LajiMap {
 
 
 		if (this.popupOnHover) {
-			layer.on("mousemove", e => {
+			layer.on("mousemove", (e: L.LeafletMouseEvent) => {
 				latlng = e.latlng;
 				if (that.popup) that.popup.setLatLng(latlng);
 			});
-			layer.on("mouseover", e => {
+			layer.on("mouseover", (e: L.LeafletMouseEvent) => {
 				getContentAndOpenPopup(e.latlng);
 			});
 			layer.on("mouseout", () => {
@@ -1961,7 +1967,7 @@ export default class LajiMap {
 				closePopup();
 			});
 		} else {
-			layer.on("click", e => {
+			layer.on("click", (e: L.LeafletMouseEvent) => {
 				if (item.getPopup) {
 					closePopup();
 					getContentAndOpenPopup(e.latlng);
@@ -1970,7 +1976,7 @@ export default class LajiMap {
 		}
 	}
 
-	_initializeTooltip(layer) {
+	_initializeTooltip(layer: DataItemLayer) {
 		const [dataIdx] = this._getIdxTupleByLayer(layer);
 
 		const item = this.data[dataIdx];
@@ -1986,7 +1992,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("translations")
-	_updateContextMenuForLayer(layer) {
+	_updateContextMenuForLayer(layer: DataItemLayer) {
 		if (!depsProvided(this, "_updateContextMenuForLayer", arguments)) return;
 
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
@@ -2062,7 +2068,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	_onLocationFound({latlng, accuracy, bounds}) {
+	_onLocationFound({latlng, accuracy, bounds}: L.LocationEvent) {
 		if (!depsProvided(this, "_onLocationFound", arguments)) return;
 
 		if (!this._located) this.map.fitBounds(bounds);
@@ -2094,7 +2100,7 @@ export default class LajiMap {
 		if (this.locate && this.locate[0]) this.locate[0](latlng, accuracy);
 	}
 
-	_onLocationNotFound(e) {
+	_onLocationNotFound(e: L.ErrorEvent) {
 		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 
@@ -2105,9 +2111,9 @@ export default class LajiMap {
 		return item.group ? <DataItemLayer> item.group.getLayer(id) : undefined;
 	}
 
-	_getLayerById(id) {
+	_getLayerById(id: number): DataItemLayer {
 		const [dataIdx] = this.idsToIdxTuples[id];
-		return this.data[dataIdx].group.getLayer(id);
+		return <DataItemLayer> this.data[dataIdx].group.getLayer(id);
 	}
 
 	_getIdxTupleByLayer(layer) {
@@ -2128,7 +2134,7 @@ export default class LajiMap {
 
 		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 
-		const {showStart, showDirection = true} = this._fillStyleWithGlobals(dataIdx, featureIdx);
+		const {showStart, showDirection = true}: CustomPolylineOptions = this._fillStyleWithGlobals([dataIdx, featureIdx]);
 
 		function warn() {
 			console.warn("Failed to add a starting point to line");
@@ -2308,7 +2314,7 @@ export default class LajiMap {
 		}
 
 		for (let id in data) {
-			const layer = this._getLayerById(id);
+			const layer = this._getLayerById(+id);
 
 			if (layer) {
 				layer.closePopup().closeTooltip();
@@ -2386,7 +2392,7 @@ export default class LajiMap {
 
 		this._resetIds(dataIdx);
 
-		item.group.eachLayer(layer => {
+		item.group.eachLayer((layer: DataItemLayer) => {
 			this._updateContextMenuForLayer(layer);
 		});
 
@@ -2406,7 +2412,7 @@ export default class LajiMap {
 		}
 	}
 
-	_removeLayerFromItem(item, layer) {
+	_removeLayerFromItem(item: Data, layer: DataItemLayer) {
 		if (item.group !== item.groupContainer && item.groupContainer.hasLayer(layer)) {
 			item.groupContainer.removeLayer(layer);
 		}
@@ -2450,7 +2456,7 @@ export default class LajiMap {
 		this._onActiveChange(idxTuple);
 	}
 
-	focusToDrawLayer(idx) {
+	focusToDrawLayer(idx: number) {
 		this.focusToLayerByIdxs([this.drawIdx, idx]);
 	}
 
@@ -2496,12 +2502,13 @@ export default class LajiMap {
 	}
 
 	// Returns true if click was intercepted
-	_interceptClick() {
+	_interceptClick(): boolean {
 		if (this._onDrawRemove || this._onDrawReverse || this.drawing) return true;
 		if (this.editIdxTuple !== undefined) {
 			this._commitEdit();
 			return true;
 		}
+		return false;
 	}
 
 	setLayerStyle(layer: DataItemLayer, style: L.PathOptions) {
@@ -2527,7 +2534,7 @@ export default class LajiMap {
 	}
 
 
-	_featureToLayer(getFeatureStyle, dataIdx?) {
+	_featureToLayer(getFeatureStyle: (options: GetFeatureStyleOptions) => L.PathOptions, dataIdx?: number) {
 		function reversePointCoords(coords: L.LatLngExpression): L.LatLngExpression {
 			return [coords[1], coords[0]];
 		}
@@ -2549,11 +2556,12 @@ export default class LajiMap {
 		};
 	}
 
-	_getDefaultDrawDraftStyle() {
-		return this._getStyleForType(this.drawIdx, undefined, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
+	_getDefaultDrawDraftStyle(): L.PathOptions {
+		return this._getStyleForType([this.drawIdx, undefined], undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
 	}
 
-	_fillStyleWithGlobals(dataIdx, featureIdx, feature?) {
+	_fillStyleWithGlobals<T extends L.PathOptions> (idxTuple: IdxTuple, feature?: G.Feature): T {
+		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
 		const dataStyles = item.getFeatureStyle({
 			dataIdx,
@@ -2592,7 +2600,7 @@ export default class LajiMap {
 				featureTypeStyle = mergeOptions("polygon");
 				break;
 			case "Point":
-				featureTypeStyle = (feature.geometry.radius) ? mergeOptions("circle") : mergeOptions("marker");
+				featureTypeStyle = ((<any> feature.geometry).radius) ? mergeOptions("circle") : mergeOptions("marker");
 				break;
 			}
 		}
@@ -2600,7 +2608,13 @@ export default class LajiMap {
 		return {...(featureTypeStyle || {}), ...(dataStyles || {})};
 	}
 
-	_getStyleForType(dataIdx, featureIdx, feature, overrideStyles = {}): L.PathOptions {
+	_getStyleForType(idx: IdxTuple | number, feature: G.Feature, overrideStyles: L.PathOptions = {}): L.PathOptions {
+		let dataIdx, featureIdx;
+		if (typeof idx === "number") {
+			dataIdx = idx;
+		} else {
+			[dataIdx, featureIdx] = idx;
+		}
 		const item = this.data[dataIdx];
 		let dataStyles = undefined;
 		if (item.getFeatureStyle) {
@@ -2614,7 +2628,7 @@ export default class LajiMap {
 				dataStyles.fillColor = dataStyles.color;
 			}
 		} else {
-			dataStyles = this._fillStyleWithGlobals(dataIdx, featureIdx, feature);
+			dataStyles = this._fillStyleWithGlobals([dataIdx, featureIdx], feature);
 		}
 
 		let layer = undefined;
@@ -2697,7 +2711,7 @@ export default class LajiMap {
 
 	_getStyleForLayer(layer: DataItemLayer, overrideStyles?) {
 	    const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
-		return this._getStyleForType(dataIdx, featureIdx,undefined, overrideStyles);
+		return this._getStyleForType([dataIdx, featureIdx],undefined, overrideStyles);
 	}
 
 	updateLayerStyle(layer) {
@@ -2730,8 +2744,8 @@ export default class LajiMap {
 		return {color, opacity: 1};
 	}
 
-	_getDefaultDraftStyle(dataIdx) {
-		return this._getStyleForType(dataIdx, undefined, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
+	_getDefaultDraftStyle(dataIdx: number): L.PathOptions {
+		return this._getStyleForType(dataIdx, undefined, {color: INCOMPLETE_COLOR, fillColor: INCOMPLETE_COLOR, opacity: 0.8});
 	}
 
 	_updateDataLayerGroupStyle(idx) {

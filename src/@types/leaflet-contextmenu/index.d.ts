@@ -10,9 +10,11 @@ declare module "leaflet" {
 
 	interface Path {
 		bindContextMenu(options: ContextMenuOptions): Path;
+        unbindContextMenu();
 	}
 
 	interface Marker {
 		bindContextMenu(options: ContextMenuOptions): Marker;
+        unbindContextMenu();
 	}
 }

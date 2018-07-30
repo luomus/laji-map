@@ -8,8 +8,8 @@
     "build:lib": "rimraf lib && NODE_ENV=production tsc && copyfiles src/styles.css lib/styles.css",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
     "build": "npm run build:lib && npm run build:dist",
-    "publish-to-npm": "npm run lint && npm version patch && git push && npm run build && npm publish",
-    "push-to-git": "npm run lint && git push",
+    "publish-to-npm": "npm version patch && git push && npm run build && npm publish",
+    "push-to-git": "git push",
     "lint": "eslint -c .eslintrc.prod.json --ignore-pattern src/lib/ src playground"
   },
   "repository": {

@@ -5,7 +5,7 @@
   "main": "lib/map.js",
   "scripts": {
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000 --host 0.0.0.0",
-    "build:lib": "rimraf lib && NODE_ENV=production tsc && copyfiles src/styles.css lib/styles.css",
+    "build:lib": "rimraf lib && NODE_ENV=production tsc && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
     "build": "npm run build:lib && npm run build:dist",
     "publish-to-npm": "npm version patch && git push && npm run build && npm publish",

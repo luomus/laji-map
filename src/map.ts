@@ -2468,6 +2468,9 @@ export default class LajiMap {
 		const layerOptions: any = (<any> editLayer).options;
 		layerOptions.editing || (layerOptions.editing = {}); // See https://github.com/Leaflet/Leaflet.draw/issues/804
 		(<any> layer).editing.enable();
+		if (!(<any> this.map)._editTooltip) {
+			(<any> this.map)._editTooltip = {updateContent: () => {;}} // For some reason editing circle radius fails without this
+		}
 		editLayer.closePopup();
 		this.updateLayerStyle(editLayer);
 	}

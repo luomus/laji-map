@@ -177,45 +177,6 @@ interface LajiMapOptions {
     clickBeforeZoomAndPan?: boolean;
 }
 
-class _VectorMarkerIcon extends L.VectorMarkers.Icon {
-	_icon: HTMLElement;
-	createIcon(oldIcon) {
-		this._icon = super.createIcon(oldIcon);
-		return this._icon;
-	}
-	_update(_options) {
-		L.Util.setOptions(this, _options);
-		this.createIcon(this._icon);
-
-		//L.Util.setOptions(this, _options);
-		//const {options}: {options: any} = this;
-
-		//const mapPin = 'M16,1 C7.7146,1 1,7.65636364 1,15.8648485 C1,24.0760606 16,51 16,51 C16,51 31,24.0760606 31,15.8648485 C31,7.65636364 24.2815,1 16,1 L16,1 Z'
-
-        //const pin_path = options.map_pin || mapPin;
-		//this._icon.innerHTML = `<svg width="${options.iconSize[0]}px" height="${options.iconSize[1]}px" viewBox="${options.viewBox}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="${pin_path}" fill="${options.markerColor}"></path></svg>`
-
-        //options.className += options.className.length > 0 ? ' ' + options.extraDivClasses : options.extraDivClasses;
-		//(<any> this)._setIconStyles(this._icon, 'icon');
-        //(<any> this)._setIconStyles(this._icon, `icon-${options.markerColor}`);
-
-		this._icon.appendChild((<any> this)._createInner());
-
-		//!!!! loppu toi ylempi toimi
-
-		//const container = L.Control.Layers.prototype.onAdd.call(this, map);
-
-		//return (<any> L.VectorMarkers.Icon).prototype.createIcon.call(this, iconElem);
-
-		//(<any> this).iconColor = "black";
-		//console.log((<any> this)._icon);
-		//layer.options.icon = (<any> L.VectorMarkers).Icon.prototype.createIcon.call(layer.options.icon, (<any> layer)._icon);
-
-		//L.Util.setOptions(layer.options.icon, style);
-		//layer.options.icon = (<any> L.VectorMarkers).Icon.prototype.createIcon.call(layer.options.icon, (<any> layer)._icon);
-	}
-}
-
 @HasControls
 @HasLineTransect
 export default class LajiMap {
@@ -1444,8 +1405,7 @@ export default class LajiMap {
 			(<any> layer).feature = feature;
 
 			if (item.cluster) {
-				item.groupContainer.clearLayers();
-				item.groupContainer.addLayer(item.group);
+				item.groupContainer.addLayer(layer);
 			}
 
 			this._initializeLayer(layer, [dataIdx, featureIdx]);
@@ -2549,28 +2509,13 @@ export default class LajiMap {
 		if (!layer) return;
 
 		if (layer instanceof L.Marker) {
-			const _layer = <L.Marker> layer;
-			_layer.options.icon.options.markerColor = style.color;
-			if (style.opacity !== undefined) _layer.options.opacity = style.opacity;
+			let _layer = <L.Marker> layer;
+
+			// Ran into a bug? See known issues section of README.
 			if ((<any> _layer)._icon) {
 				(<any> _layer)._icon.firstChild.firstChild.style.fill = style.color;
 				(<any> _layer)._icon.firstChild.firstChild.style.opacity = style.opacity || 1;
 			}
-
-			//L.Util.setOptions(layer.options.icon, style);
-			//console.log(layer.options.icon.options);
-            //(<any> layer)._icon = (<any> layer).options.icon.createIcon((<any> layer)._icon);
-
-			//console.log(layer);
-			//console.log((<any> layer).options.icon);
-			//if ((<any> layer).options.icon.__proto__.createIcon) {
-			//	//L.Util.setOptions(layer.options.icon, style);
-            //    //layer.options.icon = (<any> L.VectorMarkers).Icon.prototype.createIcon.call(layer.options.icon, (<any> layer)._icon);
-			//	layer.options.icon = (<any> layer.options.icon)._update(style, (<any> layer)._icon);
-			//}
-			//_layer.setIcon(this._createIcon(style));
-
-			//(<any> layer.options.icon)._update({...style, markerColor: style.color});
 		} else {
 			const _layer = <L.Path> layer;
 			_layer.setStyle(style);
@@ -2685,7 +2630,7 @@ export default class LajiMap {
 			feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString")
 		);
 
-		let style: any = {
+		let style: L.PathOptions = {
 			opacity: 1,
 			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
@@ -2702,12 +2647,12 @@ export default class LajiMap {
 
 		const colors = [];
 
-		let editable = false;
+		let editing = false;
 		if (this.editIdxTuple) {
 			const [_dataIdx, _featureIdx] = this.editIdxTuple;
 
 			if (_dataIdx === dataIdx && _featureIdx === featureIdx) {
-				editable = true;
+				editing = true;
 			}
 		}
 
@@ -2717,7 +2662,8 @@ export default class LajiMap {
 			colors.push(["#00ff00", 80]);
 		}
 
-		if (editable) {
+
+		if (editing) {
 			const r = active ? "--" : "00";
 			const b = r;
 			colors.push([`#${r}ff${b}`, 30]);
@@ -2732,6 +2678,7 @@ export default class LajiMap {
 		if (hovered) {
 			colors.push(["#ffffff", 30]);
 		}
+
 
 		if (colors.length || this._idxsToContextMenuOpen[dataIdx][featureIdx]) {
 			style = {...style};
@@ -2750,7 +2697,7 @@ export default class LajiMap {
 				}
 			});
 		}
-
+		if (style.color === "#0adf3d") throw new Error();
 		return style;
 	}
 
@@ -2761,7 +2708,7 @@ export default class LajiMap {
 
 	updateLayerStyle(layer: DataItemLayer) {
 		if (!layer) return;
-		this.setLayerStyle(layer, this._getStyleForLayer(layer, this._getStyleForLayer(layer)));
+		this.setLayerStyle(layer, this._getStyleForLayer(layer));
 	}
 
 	_getDefaultDrawStyle(): L.PathOptions {

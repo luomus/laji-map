@@ -196,3 +196,33 @@ Start the development playground with `npm start`.
 To release a new version, run `npm run publish-to-npm`.
 
 Try to keep the code style consistent - ```npm run lint``` should pass without errors.
+
+## Known issues ##
+
+### Clustered data and marker styles ###
+
+When a cluster is unspiderfied, the colors for the unspiderfied markers are the style of `Data.getDraftStyle()`. Below is a code snippet describing what has been tried to solve the bug.
+
+```
+setLayerStyle(layer: DataItemLayer, style: L.PathOptions) {
+
+...
+
+if (layer instanceof L.Marker) {
+    let _layer = <L.Marker> layer;
+    // This mutates the icon options, so draft style & unspiderfied markers colors are wrong
+    layer.options.icon.options.markerColor = style.color;
+
+    // This causes an error after unspiderfying (immutable version of the line above)
+    (<any> layer).options = {...layer.options, icon: {...layer.options.icon, options: {...layer.options.icon.options, color: style.color}}};
+
+    // This causes an infinite loop when hovering marker
+    // (hovering calls setLayerStyle, and here a a hovering event is triggered when we create an ew icon)
+    layer.setIcon(this._createIcon(style));
+    
+    ...
+
+```
+
+Setting the styles manually when the cluster unspiderfies has been also tried, but for some reason the event isn't triggered.
+			

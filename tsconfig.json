@@ -5,7 +5,8 @@
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"experimentalDecorators": true,
-		"lib": [
+	  "allowJs": true,
+	  "lib": [
 			"dom",
 			"es7"
 		]

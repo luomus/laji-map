@@ -9,8 +9,8 @@ import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import {
-    convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject,
-    combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError
+	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject,
+	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError
 } from "./utils";
 import HasControls from "./controls";
 import HasLineTransect from "./line-transect";
@@ -59,23 +59,23 @@ export interface LajiMapFitBoundsOptions extends L.FitBoundsOptions {
 }
 
 export interface LajiMapEvent {
-    type: string;
-    idxs?: number[];
-    idx?: number;
-    features?: {[id: number]: G.Feature};
-    feature?: G.Feature;
+	type: string;
+	idxs?: number[];
+	idx?: number;
+	features?: {[id: number]: G.Feature};
+	feature?: G.Feature;
 }
 
 export interface GetFeatureStyleOptions {
-    dataIdx?: number;
-    featureIdx?: number;
-    feature?: G.Feature;
-    item?: Data
+	dataIdx?: number;
+	featureIdx?: number;
+	feature?: G.Feature;
+	item?: Data
 }
 
 export interface CustomPolylineOptions extends L.PolylineOptions {
 	showStart?: boolean;
-    showDirection?: boolean;
+	showDirection?: boolean;
 }
 
 export interface DataOptions {
@@ -97,7 +97,7 @@ export interface DataOptions {
 }
 
 export interface Data extends DataOptions {
-    group: L.GeoJSON;
+	group: L.GeoJSON;
 	groupContainer: L.FeatureGroup;
 	idx: number;
 }
@@ -123,57 +123,57 @@ export type DataItemLayer = L.Polygon | L.Polyline | L.Marker | L.Circle;
 export type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
 
 interface DrawHistoryEntry {
-    featureCollection: G.FeatureCollection;
-    undoEvents?: LajiMapEvent[];
-    redoEvents?: LajiMapEvent[];
+	featureCollection: G.FeatureCollection;
+	undoEvents?: LajiMapEvent[];
+	redoEvents?: LajiMapEvent[];
 }
 
 export type Lang = "fi" | "en" | "sv";
 
 export type TileLayerName = "maastokartta"
-                   | "taustakartta"
-                   | "pohjakartta"
-                   | "ortokuva"
-                   | "laser"
-                   | "openStreepMap"
-                   | "googleSatellite"
+				   | "taustakartta"
+				   | "pohjakartta"
+				   | "ortokuva"
+				   | "laser"
+				   | "openStreepMap"
+				   | "googleSatellite"
 
 export type OverlayName = "geobiologicalProvinces"
-                 | "geobiologicalProvinceBorders"
-                 | "forestVegetationZones"
-                 | "mireVegetationZones"
-                 | "threatenedSpeciesEvaluationZones"
-                 | "ykjGrid"
-                 | "ykjGridLabels";
+				 | "geobiologicalProvinceBorders"
+				 | "forestVegetationZones"
+				 | "mireVegetationZones"
+				 | "threatenedSpeciesEvaluationZones"
+				 | "ykjGrid"
+				 | "ykjGridLabels";
 
 export interface LajiMapOptions {
-    rootElem?: HTMLElement;
-    lang?: Lang;
-    data?: DataOptions[];
-    draw?: DrawOptions | boolean;
-    tileLayerName?: TileLayerName;
-    availableTileLayerNamesBlacklist?: TileLayerName[];
-    availableTileLayerNamesWhitelist?: TileLayerName[];
-    overlayNames?: OverlayName[];
-    availableOverlayNameBlacklist?: OverlayName[];
-    availableOverlayNameWhitelist?: OverlayName[];
-    tileLayerOpacity?: number;
-    center?: L.LatLngExpression;
-    zoom?: number;
-    zoomToData?: boolean | LajiMapFitBoundsOptions;
-    locate?: boolean;
-    onPopupClose?: () => void;
-    markerPopupOffset?: number;
-    featurePopupOffset?: number;
-    popupOnHover?: boolean;
-    on?: L.LeafletEventHandlerFnMap,
-    polyline?: boolean | CustomPolylineOptions;
-    polygon?: boolean | L.DrawOptions.PolygonOptions;
-    rectangle?: boolean | L.DrawOptions.RectangleOptions;
-    circle?: boolean | L.DrawOptions.CircleOptions;
-    marker?: boolean | L.DrawOptions.MarkerOptions;
-    bodyAsDialogRoot?: boolean;
-    clickBeforeZoomAndPan?: boolean;
+	rootElem?: HTMLElement;
+	lang?: Lang;
+	data?: DataOptions[];
+	draw?: DrawOptions | boolean;
+	tileLayerName?: TileLayerName;
+	availableTileLayerNamesBlacklist?: TileLayerName[];
+	availableTileLayerNamesWhitelist?: TileLayerName[];
+	overlayNames?: OverlayName[];
+	availableOverlayNameBlacklist?: OverlayName[];
+	availableOverlayNameWhitelist?: OverlayName[];
+	tileLayerOpacity?: number;
+	center?: L.LatLngExpression;
+	zoom?: number;
+	zoomToData?: boolean | LajiMapFitBoundsOptions;
+	locate?: boolean;
+	onPopupClose?: () => void;
+	markerPopupOffset?: number;
+	featurePopupOffset?: number;
+	popupOnHover?: boolean;
+	on?: L.LeafletEventHandlerFnMap,
+	polyline?: boolean | CustomPolylineOptions;
+	polygon?: boolean | L.DrawOptions.PolygonOptions;
+	rectangle?: boolean | L.DrawOptions.RectangleOptions;
+	circle?: boolean | L.DrawOptions.CircleOptions;
+	marker?: boolean | L.DrawOptions.MarkerOptions;
+	bodyAsDialogRoot?: boolean;
+	clickBeforeZoomAndPan?: boolean;
 }
 
 @HasControls
@@ -182,87 +182,87 @@ export default class LajiMap {
 	private onSetLangHooks: (() => void)[] = [];
 	options: LajiMapOptions;
 	_dialogRoot: HTMLElement;
-    _openDialogs = [];
-    _closeDialog: (e?: Event) => void;
-    container: HTMLElement;
-    mapElem: HTMLElement;
-    blockerElem: HTMLElement;
-    rootElem: HTMLElement;
+	_openDialogs = [];
+	_closeDialog: (e?: Event) => void;
+	container: HTMLElement;
+	mapElem: HTMLElement;
+	blockerElem: HTMLElement;
+	rootElem: HTMLElement;
 	translations: any;
 	data: Data[];
-    draw: Draw;
-    drawIdx: number;
-    _draftDrawLayer: L.Draw.Feature;
-    map: L.Map;
-    _onDrawReverse: (layer: DataItemLayer) => void;
-    _onDrawRemove: (layer: DataItemLayer) => void;
-    idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
-    idsToIdxs: {[dataIdx: number]: {[id: number]: number}};
-    idsToIdxTuples: {[id: number]: IdxTuple;};
-    _idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}};
-    _idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}};
-    editIdxTuple: IdxTuple;
-    drawing: boolean;
-    _drawHistoryPointer: number;
-    _drawHistory: DrawHistoryEntry[];
-    polyline: L.Polyline;
-    locate: [(event: L.LocationEvent) => void, (error: L.ErrorEvent) => void] | boolean;
-    _located: boolean;
-    userLocation: {latlng: L.LatLng, accuracy: number};
-    userLocationMarker: L.CircleMarker;
-    userLocationRadiusMarker: L.Circle;
-    userLocationLayer: L.LayerGroup;
+	draw: Draw;
+	drawIdx: number;
+	_draftDrawLayer: L.Draw.Feature;
+	map: L.Map;
+	_onDrawReverse: (layer: DataItemLayer) => void;
+	_onDrawRemove: (layer: DataItemLayer) => void;
+	idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
+	idsToIdxs: {[dataIdx: number]: {[id: number]: number}};
+	idsToIdxTuples: {[id: number]: IdxTuple;};
+	_idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}};
+	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}};
+	editIdxTuple: IdxTuple;
+	drawing: boolean;
+	_drawHistoryPointer: number;
+	_drawHistory: DrawHistoryEntry[];
+	polyline: L.Polyline;
+	locate: [(event: L.LocationEvent) => void, (error: L.ErrorEvent) => void] | boolean;
+	_located: boolean;
+	userLocation: {latlng: L.LatLng, accuracy: number};
+	userLocationMarker: L.CircleMarker;
+	userLocationRadiusMarker: L.Circle;
+	userLocationLayer: L.LayerGroup;
 	popup: any;
-    popupOnHover: boolean;
-    popupCounter: number;
-    onPopupClose: () => void;
-    featurePopupOffset: number;
-    markerPopupOffset: number;
+	popupOnHover: boolean;
+	popupCounter: number;
+	onPopupClose: () => void;
+	featurePopupOffset: number;
+	markerPopupOffset: number;
 	_drawReverseLayers: L.Polyline[];
-    _drawRemoveLayers: DataItemLayer[];
-    _disposeTooltip: () => void;
-    _createTooltip: (string) => void;
-    _zoomToData: LajiMapFitBoundsOptions | boolean;
-    _disableDblClickZoom: boolean;
-    lang: Lang;
-    dictionary: {[lang: string]: any};
-    _domCleaners: (() => void)[];
+	_drawRemoveLayers: DataItemLayer[];
+	_disposeTooltip: () => void;
+	_createTooltip: (string) => void;
+	_zoomToData: LajiMapFitBoundsOptions | boolean;
+	_disableDblClickZoom: boolean;
+	lang: Lang;
+	dictionary: {[lang: string]: any};
+	_domCleaners: (() => void)[];
 	_documentEvents: {[eventName: string]: EventListener};
 	zoom: number;
-    center: L.LatLngExpression;
-    tileLayer: L.TileLayer;
+	center: L.LatLngExpression;
+	tileLayer: L.TileLayer;
 	overlaysByNames: {[name: string] : L.TileLayer};
-    availableOverlaysByNames: {[name: string] : L.TileLayer};
-    overlays: L.TileLayer[];
-    savedMMLOverlays: {[name: string] : L.TileLayer};
-    tileLayers: {[name: string] : L.TileLayer};
-    tileLayerName: TileLayerName;
-    availableTileLayers: {[name: string] : L.TileLayer};
-    tileLayerOpacity: number;
-    _listenedEvents: L.LeafletEventHandlerFnMap;
-    _keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
+	availableOverlaysByNames: {[name: string] : L.TileLayer};
+	overlays: L.TileLayer[];
+	savedMMLOverlays: {[name: string] : L.TileLayer};
+	tileLayers: {[name: string] : L.TileLayer};
+	tileLayerName: TileLayerName;
+	availableTileLayers: {[name: string] : L.TileLayer};
+	tileLayerOpacity: number;
+	_listenedEvents: L.LeafletEventHandlerFnMap;
+	_keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
 	_swapToForeignFlag: boolean;
-    _mouseLatLng: L.LatLngExpression;
-    _contextMenuLayer: DataItemLayer;
+	_mouseLatLng: L.LatLngExpression;
+	_contextMenuLayer: DataItemLayer;
 	initializeViewAfterLocateFail: boolean;
 	_preventScrollDomCleaner: () => void;
-    _onDrawStopPreventScrolling: () => void;
-    _onDrawStartPreventScrolling: () => void;
-    _preventScroll: boolean;
-    _scrollPreventElem: HTMLElement;
-    _scrollPreventTextElemContainer: HTMLElement;
-    _scrollPreventTextElem: HTMLElement;
-    _scrollPreventScrollListeners: ([string, EventListener])[];
-    _startPreventScrollingTimeout: () => void;
-    _onControlClickPreventScrolling: () => boolean;
-    _onMouseDownPreventScrolling: EventListener;
-    _onTouchPreventScrolling: EventListener;
-    _preventScrolling: () => void;
-    _showPreventAnimationTimeout: any;
-    _showPreventShowTimeout: any;
-    _showPreventHideTimeout: any;
-    _showingPreventScroll: boolean;
-    _LTEditPointIdxTuple: IdxTuple;
+	_onDrawStopPreventScrolling: () => void;
+	_onDrawStartPreventScrolling: () => void;
+	_preventScroll: boolean;
+	_scrollPreventElem: HTMLElement;
+	_scrollPreventTextElemContainer: HTMLElement;
+	_scrollPreventTextElem: HTMLElement;
+	_scrollPreventScrollListeners: ([string, EventListener])[];
+	_startPreventScrollingTimeout: () => void;
+	_onControlClickPreventScrolling: () => boolean;
+	_onMouseDownPreventScrolling: EventListener;
+	_onTouchPreventScrolling: EventListener;
+	_preventScrolling: () => void;
+	_showPreventAnimationTimeout: any;
+	_showPreventShowTimeout: any;
+	_showPreventHideTimeout: any;
+	_showingPreventScroll: boolean;
+	_LTEditPointIdxTuple: IdxTuple;
 	_clickBeforeZoomAndPan: boolean;
 	_origLatLngs: {[id: string]: L.LatLng[]};
 
@@ -431,7 +431,7 @@ export default class LajiMap {
 
 		if (!this._preventScrolling) {
 			this._preventScrolling = () => {
-			    if (this.shouldNotPreventScrolling()) return;
+				if (this.shouldNotPreventScrolling()) return;
 				this.map.scrollWheelZoom.disable();
 				this.map.dragging.disable();
 				this._preventScroll = true;
@@ -1355,7 +1355,7 @@ export default class LajiMap {
 					idx,
 					layer,
 					feature: feature && layer
-                        ? this.formatFeatureOut(feature, layer)
+						? this.formatFeatureOut(feature, layer)
 						: undefined
 				});
 			});
@@ -1721,7 +1721,7 @@ export default class LajiMap {
 	}
 
 	_onDrawReverseHandler({layer}: L.GeoJSONEvent) {
-        this._onDrawReverse(<DataItemLayer> layer);
+		this._onDrawReverse(<DataItemLayer> layer);
 	}
 
 	_startDrawReverse() {
@@ -1840,7 +1840,7 @@ export default class LajiMap {
 	}
 
 	_setIdForLayer(layer: DataItemLayer, idxTuple: IdxTuple) {
-	    const [dataIdx, featureIdx] = idxTuple;
+		const [dataIdx, featureIdx] = idxTuple;
 		if (!this.idxsToIds[dataIdx]) {
 			this.idxsToIds[dataIdx] = {};
 			this.idsToIdxs[dataIdx] = {};
@@ -2096,7 +2096,7 @@ export default class LajiMap {
 		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 
-    _getLayerByIdxTuple(idxTuple: IdxTuple): DataItemLayer {
+	_getLayerByIdxTuple(idxTuple: IdxTuple): DataItemLayer {
 		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
 		const id = this.idxsToIds[dataIdx][featureIdx];
@@ -2135,54 +2135,54 @@ export default class LajiMap {
 
 		const typelessLayer = <any> layer;
 
-        if (showDirection !== false) {
-            const {clickable} = typelessLayer;
+		if (showDirection !== false) {
+			const {clickable} = typelessLayer;
 			typelessLayer.options.clickable = false;
-            try {
-                layer.setText(null)
-                     .setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
-            } catch (e) {
-                console.warn("laji-map polyline text decorating failed");
-            }
+			try {
+				layer.setText(null)
+					 .setText("→", {repeat: true, attributes: {dy: 5, "font-size": 18}});
+			} catch (e) {
+				console.warn("laji-map polyline text decorating failed");
+			}
 			typelessLayer.options.clickable = clickable;
-        }
+		}
 
 
-        if (!showStart) return;
+		if (!showStart) return;
 
-        let firstPoint = undefined;
+		let firstPoint = undefined;
 
-        if (!layer.feature.geometry.type) {
-            warn();
-            return;
-        }
+		if (!layer.feature.geometry.type) {
+			warn();
+			return;
+		}
 
-        switch (layer.feature.geometry.type) {
-        case "MultiLineString":
-            firstPoint = layer.getLatLngs()[0][0];
-            break;
-        case "LineString":
-            firstPoint = layer.getLatLngs()[0];
-        }
+		switch (layer.feature.geometry.type) {
+		case "MultiLineString":
+			firstPoint = layer.getLatLngs()[0][0];
+			break;
+		case "LineString":
+			firstPoint = layer.getLatLngs()[0];
+		}
 
-        if (!firstPoint) {
-            warn();
-            return;
-        }
+		if (!firstPoint) {
+			warn();
+			return;
+		}
 
-        if (typelessLayer._startCircle) {
+		if (typelessLayer._startCircle) {
 			typelessLayer._startCircle.remove();
-        }
+		}
 		typelessLayer._startCircle = L.circleMarker(firstPoint, this._getStartCircleStyle(layer)).addTo(this.map);
-        layer.on("editdrag", () => {
-            typelessLayer._startCircle.setLatLng(layer.getLatLngs()[0]);
-        });
-        layer.on("remove", () => {
-            typelessLayer._startCircle.remove();
-        });
-        layer.on("add", () => {
-            typelessLayer._startCircle.addTo(this.map);
-        });
+		layer.on("editdrag", () => {
+			typelessLayer._startCircle.setLatLng(layer.getLatLngs()[0]);
+		});
+		layer.on("remove", () => {
+			typelessLayer._startCircle.remove();
+		});
+		layer.on("add", () => {
+			typelessLayer._startCircle.addTo(this.map);
+		});
 	}
 
 	_reversePolyline(layer) {
@@ -2415,7 +2415,7 @@ export default class LajiMap {
 	}
 
 	_getOnActiveChangeEvent(idxTuple: IdxTuple): LajiMapEvent {
-	    const [dataIdx, featureIdx] = idxTuple;
+		const [dataIdx, featureIdx] = idxTuple;
 		this.setActive(this._getLayerByIdxTuple(idxTuple));
 		return {
 			type: "active",
@@ -2537,8 +2537,8 @@ export default class LajiMap {
 				const params = {feature, featureIdx: feature.properties.lajiMapIdx};
 				if (dataIdx !== undefined) params[dataIdx] = dataIdx;
 				layer = (feature.geometry.radius)
-                    ? new L.Circle(latLng, feature.geometry.radius)
-                    : L.marker(latLng, {
+					? new L.Circle(latLng, feature.geometry.radius)
+					: L.marker(latLng, {
 						icon: this._createIcon(getFeatureStyle(params))
 					});
 			} else {
@@ -2554,7 +2554,7 @@ export default class LajiMap {
 
 	_fillStyleWithGlobals<T extends L.PathOptions> (idxTuple: IdxTuple): T {
 		const [dataIdx, featureIdx] = idxTuple;
-        const layer = this._getLayerByIdxTuple(idxTuple);
+		const layer = this._getLayerByIdxTuple(idxTuple);
 		const item = this.data[dataIdx];
 		const feature = item.featureCollection.features[featureIdx];
 		const dataStyles = item.getFeatureStyle({
@@ -2704,7 +2704,7 @@ export default class LajiMap {
 	}
 
 	_getStyleForLayer(layer: DataItemLayer, overrideStyles?): L.PathOptions {
-	    const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 		return this._getStyleForType([dataIdx, featureIdx], overrideStyles);
 	}
 

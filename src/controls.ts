@@ -47,7 +47,7 @@ export interface DrawControlOptions {
 }
 
 export interface LineTransectControlOptions {
-    split?: boolean;
+	split?: boolean;
 	splitByMeters?: boolean;
 	deletePoints?: boolean;
 	createPoint?: boolean;
@@ -88,7 +88,7 @@ function getSubControlName(name, subName) {
 export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 	controlItems: ControlOptions[];
-    activeControl: L.Control;
+	activeControl: L.Control;
 
 	getOptionKeys() {
 		return {
@@ -140,9 +140,9 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		provide(this, "translations");
 	}
 
-    @dependsOn("map")
+	@dependsOn("map")
 	setLang(lang) {
-        if (!depsProvided(this, "setLang", arguments)) return;
+		if (!depsProvided(this, "setLang", arguments)) return;
 		super.setLang(lang);
 		this._setLang();
 	}
@@ -1301,7 +1301,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			let prevVal = "";
 			input.addEventListener("keypress", formatter(input));
 			input.oninput = (e) => {
-                const target = <HTMLInputElement> e.target;
+				const target = <HTMLInputElement> e.target;
 				if (!inputValidate(e, target.value)) {
 					target.value = prevVal;
 				}
@@ -1543,7 +1543,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		button.setAttribute("disabled", "disabled");
 
 		textarea.oninput = (e) => {
-            const {value} = <HTMLInputElement> e.target;
+			const {value} = <HTMLInputElement> e.target;
 			if (value === "") {
 				updateInfo();
 				button.setAttribute("disabled", "disabled");
@@ -1725,5 +1725,5 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 	shouldNotPreventScrolling() : boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
-    }
+	}
 } return <typeof LajiMap> LajiMapWithControls; };

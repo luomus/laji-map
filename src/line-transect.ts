@@ -52,10 +52,10 @@ export interface LineTransectOptions {
 }
 
 interface LineTransectIdx {
-    i: number;
-    lineIdx: number;
-    segmentIdx: number;
-    idxTuple: SegmentIdxTuple;
+	i: number;
+	lineIdx: number;
+	segmentIdx: number;
+	idxTuple: SegmentIdxTuple;
 }
 
 export type LineTransectGeometry = G.LineString | G.MultiLineString;
@@ -70,10 +70,10 @@ export type PointIdxTuple = IdxTuple;
 export type SegmentIdxTuple = IdxTuple;
 
 export interface LineTransectEvent {
-    type: string;
-    idxs?: number[];
-    idx?: number;
-    feature?: LineTransectFeature;
+	type: string;
+	idxs?: number[];
+	idx?: number;
+	feature?: LineTransectFeature;
 	prevFeature?: LineTransectFeature;
 	geometry?: LineTransectGeometry;
 	target?: number;
@@ -1019,7 +1019,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	 	 .map(idxTuple => [this._lineLayers, this._corridorLayers].map(layers => {
 	 	 	return layers === this._lineLayers
 			 ? this._getLayerForIdxTuple(<L.Polyline<G.LineString>[][]> layers, idxTuple)
-             : this._getLayerForIdxTuple(<L.Polygon[][]> layers, idxTuple)
+			 : this._getLayerForIdxTuple(<L.Polygon[][]> layers, idxTuple)
 		 }))
 	 	 .forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 
@@ -1193,7 +1193,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	}
 
 	_layerExistsForIdxTuple<T extends SegmentLayer>(layer: T[][], idxTuple: IdxTuple): T {
-	    const [lineIdx, segmentIdx] = idxTuple;
+		const [lineIdx, segmentIdx] = idxTuple;
 		return layer && layer[lineIdx] && layer[lineIdx][segmentIdx];
 	}
 
@@ -1223,7 +1223,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 	_getIdxTuplePrecedingEditPoint(): PointIdxTuple {
 		return this._LTEditPointIdxTuple
 			? this._getIdxTuplePrecedingPoint(this._LTEditPointIdxTuple)
-            : undefined
+			: undefined
 	}
 
 	_getIdxTupleFollowingPoint(idxTuple: PointIdxTuple): PointIdxTuple {
@@ -1805,7 +1805,7 @@ export default LajiMap => { class LajiMapWithLineTransect extends LajiMap {
 
 		let prevVal = "";
 		input.oninput = (e: Event) => {
-		    const target = <HTMLInputElement> e.target;
+			const target = <HTMLInputElement> e.target;
 			target.value = target.value.replace(",", ".");
 			if (!target.value.match(/^\d*\.?\d*$/)) {
 				target.value = prevVal;

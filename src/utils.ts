@@ -123,12 +123,12 @@ export function standardizeGeoJSON(geoJSON: G.GeoJSON): G.GeoJSON {
 }
 
 export function geoJSONToTextualFormatWith(geoJSON: G.GeoJSON,
-                                           name: string,
-                                           latLngCoordConverter: (latlng: number[]) => string,
-                                           coordinateJoiner: (latlng: number[]) => string,
-                                           coordinateStrToPoint: (coordinate: string) => string,
-                                           coordinateStrToLine: (coordinate: string) => string,
-                                           coordinateStrToPolygon: (coordinate: string) => string,): string {
+										   name: string,
+										   latLngCoordConverter: (latlng: number[]) => string,
+										   coordinateJoiner: (latlng: number[]) => string,
+										   coordinateStrToPoint: (coordinate: string) => string,
+										   coordinateStrToLine: (coordinate: string) => string,
+										   coordinateStrToPolygon: (coordinate: string) => string,): string {
 	function geoJSONCoordToTextual(coords) {
 		return latLngCoordConverter(reverseCoordinate(coords));
 	}
@@ -195,19 +195,19 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 		function formatCoordHalf(coordHalf, intAmount) {
 			let coordHalfStr = `${coordHalf}`;
 
-            // Don't add sign to YKJ.
-            if (detectCRSFromLatLng(latLng) === "EPSG:2393") {
-                return coordHalfStr;
-            }
+			// Don't add sign to YKJ.
+			if (detectCRSFromLatLng(latLng) === "EPSG:2393") {
+				return coordHalfStr;
+			}
 
-            let sign = "+";
-            if (coordHalfStr.includes("-")) {
-                sign = "-";
-                coordHalfStr = coordHalfStr.slice(1);
-            }
+			let sign = "+";
+			if (coordHalfStr.includes("-")) {
+				sign = "-";
+				coordHalfStr = coordHalfStr.slice(1);
+			}
 
-            const numberPart = detectCRSFromLatLng(latLng) === "WGS84" ? fixWgs84Length(coordHalfStr, intAmount, 6) : coordHalfStr;
-            coordHalfStr = `${sign}${numberPart}`;
+			const numberPart = detectCRSFromLatLng(latLng) === "WGS84" ? fixWgs84Length(coordHalfStr, intAmount, 6) : coordHalfStr;
+			coordHalfStr = `${sign}${numberPart}`;
 
 			return coordHalfStr;
 		}
@@ -241,11 +241,11 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 }
 
 function textualFormatToGeoJSON(text: string,
-                                lineToCoordinates: (line: string) => string[],
-                                lineIsPolygon: (line: string) => boolean,
-                                lineIsLineString: (line: string) => boolean,
-                                lineIsPoint: (line: string) => boolean,
-                                crsPrefix: string): G.GeoJSON {
+								lineToCoordinates: (line: string) => string[],
+								lineIsPolygon: (line: string) => boolean,
+								lineIsLineString: (line: string) => boolean,
+								lineIsPoint: (line: string) => boolean,
+								crsPrefix: string): G.GeoJSON {
 	const _lineToCoordinates = (line, idx): number[] => {
 		try  {
 			const coords = lineToCoordinates(line);
@@ -368,7 +368,7 @@ function distance(latlng1, latlng2) {
 }
 
 export function latLngTuplesDistance(first, second) {
-    [first, second] = [first, second].map(([lat, lng]) => {return {lat, lng};})
+	[first, second] = [first, second].map(([lat, lng]) => {return {lat, lng};})
 	return distance(first, second);
 }
 
@@ -548,9 +548,9 @@ export function getCRSObjectForGeoJSON(geoJSON: G.GeoJSON, crs: CRSString): {typ
 }
 
 export class LajiMapError extends Error {
-    _lajiMapError = true;
-    translationKey: string;
-    lineIdx?: number;
+	_lajiMapError = true;
+	translationKey: string;
+	lineIdx?: number;
 
 	constructor(message: string, translationKey: string, lineIdx?: number) {
 		super(message);
@@ -681,7 +681,7 @@ export function combineColors(...colors: any[]): string {
 		 let value = hexVector.reduce((combinedDecimal, hex) => {
 			if (hex === "--") {
 				return combinedDecimal;
-            }
+			}
 			if (combinedDecimal === undefined) {
 				return toDecimal(hex);
 			}

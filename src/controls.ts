@@ -12,7 +12,6 @@ import { dependsOn, depsProvided, provide, reflect, isProvided } from "./depende
 import * as noUiSlider from "nouislider";
 import {LajiMapEvent} from "./map";
 
-
 export interface ControlOptions {
 	name?: string;
 	text?: string;

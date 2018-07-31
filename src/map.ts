@@ -73,12 +73,12 @@ export interface GetFeatureStyleOptions {
     item?: Data
 }
 
-interface CustomPolylineOptions extends L.PolylineOptions {
+export interface CustomPolylineOptions extends L.PolylineOptions {
 	showStart?: boolean;
     showDirection?: boolean;
 }
 
-interface DataOptions {
+export interface DataOptions {
 	featureCollection?: any;
 	geoData?: G.GeoJSON | string;
 	getFeatureStyle?(options: GetFeatureStyleOptions): L.PathOptions;
@@ -96,13 +96,13 @@ interface DataOptions {
 	highlightOnHover?: boolean;
 }
 
-interface Data extends DataOptions {
+export interface Data extends DataOptions {
     group: L.GeoJSON;
 	groupContainer: L.FeatureGroup;
 	idx: number;
 }
 
-interface DrawOptions extends DataOptions {
+export interface DrawOptions extends DataOptions {
 	rectangle?: boolean;
 	polygon?: boolean;
 	polyline?: boolean;
@@ -110,7 +110,7 @@ interface DrawOptions extends DataOptions {
 	marker?: boolean;
 }
 
-interface Draw extends Data {
+export interface Draw extends Data {
 	rectangle?: boolean;
 	polygon?: boolean;
 	polyline?: boolean;
@@ -120,7 +120,7 @@ interface Draw extends Data {
 
 export type IdxTuple = [number, number];
 export type DataItemLayer = L.Polygon | L.Polyline | L.Marker | L.Circle;
-type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
+export type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
 
 interface DrawHistoryEntry {
     featureCollection: G.FeatureCollection;
@@ -128,9 +128,9 @@ interface DrawHistoryEntry {
     redoEvents?: LajiMapEvent[];
 }
 
-type Lang = "fi" | "en" | "sv";
+export type Lang = "fi" | "en" | "sv";
 
-type TileLayerName = "maastokartta"
+export type TileLayerName = "maastokartta"
                    | "taustakartta"
                    | "pohjakartta"
                    | "ortokuva"
@@ -138,7 +138,7 @@ type TileLayerName = "maastokartta"
                    | "openStreepMap"
                    | "googleSatellite"
 
-type OverlayName = "geobiologicalProvinces"
+export type OverlayName = "geobiologicalProvinces"
                  | "geobiologicalProvinceBorders"
                  | "forestVegetationZones"
                  | "mireVegetationZones"
@@ -146,7 +146,7 @@ type OverlayName = "geobiologicalProvinces"
                  | "ykjGrid"
                  | "ykjGridLabels";
 
-interface LajiMapOptions {
+export interface LajiMapOptions {
     rootElem?: HTMLElement;
     lang?: Lang;
     data?: DataOptions[];
@@ -212,7 +212,7 @@ export default class LajiMap {
     userLocationMarker: L.CircleMarker;
     userLocationRadiusMarker: L.Circle;
     userLocationLayer: L.LayerGroup;
-	popup: L.Rrose;
+	popup: any;
     popupOnHover: boolean;
     popupCounter: number;
     onPopupClose: () => void;
@@ -775,7 +775,7 @@ export default class LajiMap {
 				this.map.fire("controlClick", {name: "draw"});
 			},
 			"draw:drawstop": () => { this.drawing = false; },
-			"draw:drawvertex": (e: L.DrawEvents.DrawVertex) => {
+			"draw:drawvertex": (e: L.DrawEvents.Edited) => {
 				const layers = e.layers.getLayers();
 				const keys = Object.keys(layers);
 				const latlng = layers[keys[keys.length - 1]].getLatLng();
@@ -1917,7 +1917,7 @@ export default class LajiMap {
 
 			const offset = (layer instanceof L.Marker) ? (-that.markerPopupOffset  || 0) : (-that.featurePopupOffset || 0);
 
-			that.popup = new L.Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
+			that.popup = new (<any> L).Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
 				.setContent(content)
 				.setLatLng(latlng)
 				.openOn(that.map);

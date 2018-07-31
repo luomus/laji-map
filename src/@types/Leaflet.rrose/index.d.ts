@@ -1,12 +1,10 @@
 import * as L from "leaflet";
-import {LatLng, Map} from "leaflet";
-
 
 declare module "leaflet" {
-	class Rrose {
+	class Rrose extends L.Popup {
 		constructor(options?: any);
 		setContent(content: string): this;
-		openOn(map: Map): this;
-		setLatLng(latLng: LatLng): this;
+		openOn(map: L.Map): this;
+		setLatLng(latLng: L.LatLng): this;
 	}
 }

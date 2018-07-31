@@ -5,7 +5,7 @@ import "proj4leaflet";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "leaflet-mml-layers";
-import "./lib/Leaflet.rrose/leaflet.rrose-src.js";
+import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import {
@@ -25,9 +25,8 @@ import {
 	ONLY_MML_OVERLAY_NAMES
 } from "./globals";
 
-import translations from "./translations.js";
-import {VectorMarkerIconOptions} from "./@types/leaflet.vector-markers";
-import {DomEvent, Util} from "leaflet";
+import translations from "./translations";
+import { VectorMarkerIconOptions } from "./@types/leaflet.vector-markers";
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);

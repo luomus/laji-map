@@ -9,7 +9,7 @@ import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import {
-	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isPolyline, isObject,
+	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
 	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError
 } from "./utils";
 import HasControls from "./controls";
@@ -30,6 +30,10 @@ import { VectorMarkerIconOptions } from "./@types/leaflet.vector-markers";
 
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export function isPolyline(layer: DataItemLayer): boolean {
+	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
 }
 
 // Override the tooltip to turn when it overflows.

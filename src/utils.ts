@@ -5,19 +5,17 @@ import {
 	EPSG2393WKTString,
 	EPSG3067WKTString
 } from "./globals";
-import * as L from "leaflet";
 import * as G from 'geojson';
 import {LineTransectFeature, LineTransectGeometry} from "./line-transect";
-import {DataItemLayer} from "./map";
 
-export function reverseCoordinate(c: L.LatLngTuple): L.LatLngTuple {
-	return <L.LatLngTuple> c.slice(0).reverse();
+export function reverseCoordinate(c: [number, number]): [number, number] {
+	return <[number, number]> c.slice(0).reverse();
 }
 
 export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
 export type CoordinateSystem = "GeoJSON" | "WKT" | "ISO 6709";
 
-export function convertLatLng(latlng: L.LatLngTuple, from: CRSString, to: CRSString) {
+export function convertLatLng(latlng: [number, number], from: CRSString, to: CRSString) {
 	function formatToProj4Format(format) {
 		switch(format) {
 		case "EPSG:2393": return EPSG2393String;
@@ -32,7 +30,7 @@ export function convertLatLng(latlng: L.LatLngTuple, from: CRSString, to: CRSStr
 	} else if (from === "EPSG:3067") {
 		validator = etrsTm35FinValidator;
 	}
-	if (validator && validator.formatter) latlng = <L.LatLngTuple> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+	if (validator && validator.formatter) latlng = <[number, number]> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
 
 	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
@@ -643,10 +641,6 @@ export function createTextArea(rows: number = 10, cols: number = 10): HTMLTextAr
 	input.setAttribute("cols", `${cols}`);
 	input.className = "form-control laji-map-input";
 	return input;
-}
-
-export function isPolyline(layer: DataItemLayer): boolean {
-	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
 }
 
 export function isObject(obj): boolean {

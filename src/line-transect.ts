@@ -1,14 +1,14 @@
 import * as L from "leaflet";
 import * as G from 'geojson';
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";
-import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, createTextInput, isPolyline, combineColors, getLineTransectStartEndDistancesForIdx, capitalizeFirstLetter } from "./utils";
+import { latLngSegmentsToGeoJSONGeometry, geoJSONLineToLatLngSegmentArrays, createTextInput, combineColors, getLineTransectStartEndDistancesForIdx, capitalizeFirstLetter } from "./utils";
 import "leaflet-geometryutil";
 import {
 	NORMAL_COLOR,
 	ACTIVE_COLOR,
 	ESC
 } from "./globals";
-import { IdxTuple } from "./map";
+import { IdxTuple, isPolyline } from "./map";
 import { ContextMenuOptions } from "./@types/leaflet-contextmenu";
 
 const POINT_DIST_TRESHOLD = 50;

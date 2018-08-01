@@ -1,3 +1,6 @@
+import { ContextmenuItem } from "./@types/leaflet-contextmenu";
+import { DrawOptions } from "./map";
+import { DataItemType } from "./map";
 import * as L from "leaflet";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
@@ -10,7 +13,8 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
-import {LajiMapEvent} from "./map";
+import {LajiMapEvent, DataItemLayer } from "./map";
+import LajiMap from "./map";
 
 export interface ControlOptions {
 	name?: string;
@@ -41,8 +45,7 @@ export interface DrawControlOptions {
 	copy?: boolean;
 	clear?: boolean;
 	reverse?: boolean;
-	delete?: boolean;
-	undo?: boolean;
+	delete?: boolean; undo?: boolean;
 	redo?: boolean;
 }
 
@@ -85,10 +88,27 @@ function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
 }
 
-export default LajiMap => { class LajiMapWithControls extends LajiMap {
+interface CustomControl extends L.Control {
+	_custom: boolean;
+	group: string;
+}
+
+export default class LajiMapWithControls extends LajiMap {
+//export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 	controlItems: ControlOptions[];
 	activeControl: L.Control;
+	controlSettings: InternalControlsOptions;
+
+	drawControl: L.Control.Draw;
+	_locateOn: boolean;
+	_controlButtons: {[controlName: string]: HTMLElement};
+	controls: L.Control[];
+	_customControls: CustomControl[];
+	layerControl: L.Control.Layers;
+	_opacitySetBySlide: boolean;
+	_slider: any;
+	_contextMenuItems: {[buttonName: string]: HTMLElement};
 
 	getOptionKeys() {
 		return {
@@ -149,13 +169,13 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 	_initializeMapEvents() {
 		super._initializeMapEvents();
-		const cancelDraw = ({name}) => {
+		const cancelDraw = ({name}: any) => {
 			if (name === "draw" || name === "zoom" || name === "layer") return;
 			if (!this.drawControl) return;
 			this.getFeatureTypes().forEach(featureType => {
-				const handlerContainer = this.drawControl._toolbars.draw._modes[featureType];
+				const handlerContainer = (<any> this.drawControl)._toolbars.draw._modes[featureType];
 				if (handlerContainer && handlerContainer.handler._enabled) {
-					this.drawControl._toolbars.draw._modes[featureType].handler.disable();
+					(<any> this.drawControl)._toolbars.draw._modes[featureType].handler.disable();
 				}
 			});
 			this._clearEditable();
@@ -176,13 +196,13 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this._updateUserLocate(true);
 	}
 
-	_setLocateOff(...params) {
-		super._setLocateOff(...params);
+	_setLocateOff() {
+		super._setLocateOff();
 		this._updateUserLocate(false);
 	}
 
-	_onLocationFound(...params) {
-		super._onLocationFound(...params);
+	_onLocationFound(e) {
+		super._onLocationFound(e);
 		this._updateUserLocate(this._locateOn);
 	}
 
@@ -293,7 +313,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 							yesButton.className = "btn btn-block btn-primary";
 							translateHooks.push(this.addTranslationHook(yesButton, "Yes"));
 							yesButton.addEventListener("click", e => {
-								this.clearDrawData(...params);
+								this.clearDrawData();
 								this._closeDialog(e);
 							});
 
@@ -323,24 +343,24 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 						text: this.translations.DeleteFeature,
 						iconCls: "glyphicon glyphicon-remove-sign",
 						fn: (...params) => {
-							this._startDrawRemove(...params);
+							this._startDrawRemove();
 						},
-						finishFn: (...params) => this._finishDrawRemove(...params)
+						finishFn: (...params) => this._finishDrawRemove()
 					},
 					{
 						name: "reverse",
 						iconCls: "glyphicon glyphicon-sort",
 						text: this.translations.ReverseFeature,
 						fn: (...params) => {
-							this._startDrawReverse(...params);
+							this._startDrawReverse();
 						},
-						finishFn: (...params) => this._finishDrawReverse(...params)
+						finishFn: (...params) => this._finishDrawReverse()
 					},
 					{
 						name: "undo",
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
-						fn: (...params) => this.drawUndo(...params),
+						fn: () => this.drawUndo(),
 						onAdd: () => this.updateDrawUndoButton(),
 						disabled: this._drawHistoryPointer <= 0
 					},
@@ -348,72 +368,73 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 						name: "redo",
 						text: this.translations.Redo,
 						iconCls: "laji-map-line-transect-redo-glyph",
-						fn: (...params) => this.drawRedo(...params),
+						fn: () => this.drawRedo(),
 						onAdd: () => this.updateDrawRedoButton(),
 						disabled: this._drawHistoryPointer >= this._drawHistory.length - 1
 					}
 				]
 			},
-			{
-				name: "lineTransect",
-				controls: [
-					{
-						name: "split",
-						text: this.translations.SplitLine,
-						iconCls: "glyphicon glyphicon-scissors",
-						fn: (...params) => this.startLTLineSplit(...params),
-						finishFn: (...params) => this.stopLTLineSplit(...params),
-						eventName: "lineTransect:split"
-					},
-					{
-						name: "splitByMeters",
-						text: this.translations.SplitLineByMeters,
-						iconCls: "laji-map-line-transect-split-by-meters-glyph",
-						fn: (...params) => this.splitLTByMeters(...params),
-						eventName: "lineTransect:split"
-					},
-					{
-						name: "deletePoints",
-						text: this.translations.ConnectSegments,
-						iconCls: "laji-map-line-transect-remove-point-glyph",
-						fn: (...params) => this.startRemoveLTPointMode(...params),
-						finishFn: (...params) => this.stopRemoveLTPointMode(...params),
-						eventName: "lineTransect:deletePoint"
-					},
-					{
-						name: "createPoint",
-						text: this.translations.CreatePoint,
-						iconCls: "laji-map-line-transect-create-point-glyph",
-						fn: (...params) => this.startLTPointAdd(...params),
-						finishFn: (...params) => this.stopLTLineSplit(...params),
-						eventName: "lineTransect:pointadd"
-					},
-					{
-						name: "shiftPoint",
-						text: this.translations.ShiftPoint,
-						iconCls: "laji-map-line-transect-shift-point-glyph",
-						fn: (...params) => this.startLTPointShift(...params),
-						finishFn: (...params) => this.stopLTPointShift(...params),
-						eventName: "lineTransect:pointshift"
-					},
-					{
-						name: "undo",
-						text: this.translations.Undo,
-						iconCls: "laji-map-line-transect-undo-glyph",
-						fn: (...params) => this.LTUndo(...params),
-						onAdd: () => this.updateLTUndoButton(),
-						disabled: this._LTHistoryPointer <= 0
-					},
-					{
-						name: "redo",
-						text: this.translations.Redo,
-						iconCls: "laji-map-line-transect-redo-glyph",
-						fn: (...params) => this.LTRedo(...params),
-						onAdd: () => this.updateLTRedoButton(),
-						disabled: !this._LTHistory || this._LTHistoryPointer >= this._LTHistory.length - 1
-					}
-				]
-			}
+			//TODO
+			//{
+			//	name: "lineTransect",
+			//	controls: [
+			//		{
+			//			name: "split",
+			//			text: this.translations.SplitLine,
+			//			iconCls: "glyphicon glyphicon-scissors",
+			//			fn: (...params) => this.startLTLineSplit(...params),
+			//			finishFn: (...params) => this.stopLTLineSplit(...params),
+			//			eventName: "lineTransect:split"
+			//		},
+			//		{
+			//			name: "splitByMeters",
+			//			text: this.translations.SplitLineByMeters,
+			//			iconCls: "laji-map-line-transect-split-by-meters-glyph",
+			//			fn: (...params) => this.splitLTByMeters(...params),
+			//			eventName: "lineTransect:split"
+			//		},
+			//		{
+			//			name: "deletePoints",
+			//			text: this.translations.ConnectSegments,
+			//			iconCls: "laji-map-line-transect-remove-point-glyph",
+			//			fn: (...params) => this.startRemoveLTPointMode(...params),
+			//			finishFn: (...params) => this.stopRemoveLTPointMode(...params),
+			//			eventName: "lineTransect:deletePoint"
+			//		},
+			//		{
+			//			name: "createPoint",
+			//			text: this.translations.CreatePoint,
+			//			iconCls: "laji-map-line-transect-create-point-glyph",
+			//			fn: (...params) => this.startLTPointAdd(...params),
+			//			finishFn: (...params) => this.stopLTLineSplit(...params),
+			//			eventName: "lineTransect:pointadd"
+			//		},
+			//		{
+			//			name: "shiftPoint",
+			//			text: this.translations.ShiftPoint,
+			//			iconCls: "laji-map-line-transect-shift-point-glyph",
+			//			fn: (...params) => this.startLTPointShift(...params),
+			//			finishFn: (...params) => this.stopLTPointShift(...params),
+			//			eventName: "lineTransect:pointshift"
+			//		},
+			//		{
+			//			name: "undo",
+			//			text: this.translations.Undo,
+			//			iconCls: "laji-map-line-transect-undo-glyph",
+			//			fn: (...params) => this.LTUndo(...params),
+			//			onAdd: () => this.updateLTUndoButton(),
+			//			disabled: this._LTHistoryPointer <= 0
+			//		},
+			//		{
+			//			name: "redo",
+			//			text: this.translations.Redo,
+			//			iconCls: "laji-map-line-transect-redo-glyph",
+			//			fn: (...params) => this.LTRedo(...params),
+			//			onAdd: () => this.updateLTRedoButton(),
+			//			disabled: !this._LTHistory || this._LTHistoryPointer >= this._LTHistory.length - 1
+			//		}
+			//	]
+			//}
 		];
 
 		const controlGroups = this.controlItems.reduce((groups, group) => {
@@ -452,7 +473,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				that.activeControl = undefined;
 			}
 
-			function stopOnControlClick({name: _name}) {
+			function stopOnControlClick({name: _name}: any) {
 				if (name !== _name && name !== "zoom" && name !== "layer") stop();
 			}
 
@@ -575,8 +596,8 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this._updateMapControls();
 	}
 
-	updateDrawData(...params) {
-		super.updateDrawData(...params);
+	updateDrawData(item: DrawOptions) {
+		super.updateDrawData(item);
 		if (isProvided(this, "draw")) {
 			this._updateMapControls();
 		}
@@ -693,15 +714,18 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				this.controlSettings[setting] = newSetting;
 			}
 
-			if (this.controlSettings.draw && "coordinateInput" in this.controlSettings.draw) {
-				this.controlSettings.drawUtils.coordinateInput = this.controlSettings.draw.coordinateInput;
+			if (this.controlSettings.draw && isObject(this.controlSettings.draw) &&  "coordinateInput" in (<any> this.controlSettings.draw)) {
+				if (!isObject(this.controlSettings.drawUtils)) {
+					this.controlSettings.drawUtils = {};
+					this.controlSettings.drawUtils.coordinateInput = (<any> this.controlSettings.draw).coordinateInput;
+				}
 			}
 		}
 
 		provide(this, "controlSettings");
 	}
 
-	setCustomControls(controls: ControlOptions[]) {
+	setCustomControls(controls: CustomControl[]) {
 		this._customControls = controls;
 		provide(this, "customControls");
 	}
@@ -723,10 +747,11 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			"drawUtils.reverse": [
 				() => this.getDraw().polyline !== false
 			],
-			lineTransect: [
-				() => isProvided(this, "lineTransect"),
-				() => this._LTEditable
-			]
+			//TODO
+			//lineTransect: [
+			//	() => isProvided(this, "lineTransect"),
+			//	() => this._LTEditable
+			//]
 		};
 
 		const {controlSettings} = this;
@@ -776,7 +801,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		}
 	}
 
-	_createControlButton(that: this, container, fn, name?): HTMLElement {
+	_createControlButton(that: any, container, fn, name?): HTMLElement {
 		const elem = L.DomUtil.create("a", name ? "button-" + name.replace(".", "_") : "", container);
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
@@ -789,7 +814,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		return elem;
 	}
 
-	_createControlItem(that, container, glyphName, title, fn, name) {
+	_createControlItem(that, container, glyphName, title, fn, name): HTMLElement {
 		const elem = this._createControlButton(that, container, fn, name);
 		L.DomUtil.create("span", glyphName, elem);
 		elem.title = title;
@@ -811,7 +836,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		};
 
 		drawOptions.draw = {
-			...drawOptions.draw, ...this.getFeatureTypes().reduce((options, type) => {
+			...drawOptions.draw, ...this.getFeatureTypes().reduce((options, type: DataItemType) => {
 				options[type] = (!this.getDraw() || this.getDraw()[type] === false || this.controlSettings.draw[type] === false) ?
 					false : this._getDrawOptionsForType(type);
 				return options;
@@ -853,7 +878,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 					coordinateType.coordsCell = L.DomUtil.create("td", undefined, row);
 				});
 
-				that.map.on("mousemove", ({latlng}) => {
+				that.map.on("mousemove", ({latlng}: L.LeafletMouseEvent) => {
 					if (!visible) {
 						container.style.display = "block";
 						visible = true;
@@ -925,17 +950,17 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 			_onInputClick: function (e) {
 				if (!e) return;
 
-				const inputs = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
+				const inputs: NodeListOf<HTMLInputElement> = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
 
 				const overlayIdsToAdd = (that.overlays || []).reduce((ids, overlay) => {
-					ids[overlay._leaflet_id] = true;
+					ids[L.Util.stamp(overlay)] = true;
 					return ids;
 				}, {});
 				for (let i = 0; i < inputs.length; i++) {
 					const input = inputs[i];
 					if (input.checked) {
 						for (let tileLayerName of tileLayersNames) {
-							if (that.tileLayers[tileLayerName]._leaflet_id === input.layerId) {
+							if (L.Util.stamp(that.tileLayers[tileLayerName]) === (<any> input).layerId) {
 								that.setTileLayer(that.tileLayers[tileLayerName]);
 								break;
 							}
@@ -944,8 +969,8 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 					for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
 						const overlay = that.overlaysByNames[overlayName];
-						if (overlay._leaflet_id === input.layerId) {
-							overlayIdsToAdd[input.layerId] = input.checked;
+						if (L.Util.stamp(overlay) === (<any> input).layerId) {
+							overlayIdsToAdd[(<any> input).layerId] = input.checked;
 						}
 					}
 				}
@@ -953,7 +978,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				let overlaysToAdd = [];
 				for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
 					const overlay = that.overlaysByNames[overlayName];
-					if (overlayIdsToAdd[overlay._leaflet_id]) {
+					if (overlayIdsToAdd[L.Util.stamp(overlay)]) {
 						overlaysToAdd.push(overlay);
 					}
 				}
@@ -1108,11 +1133,12 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this._opacitySetBySlide = false;
 	}
 
-	setLineTransectGeometry(feature, undo) {
-		super.setLineTransectGeometry(feature, undo);
-		this.updateLTUndoButton();
-		this.updateLTRedoButton();
-	}
+	//TODO
+	//setLineTransectGeometry(feature, undo) {
+	//	super.setLineTransectGeometry(feature, undo);
+	//	this.updateLTUndoButton();
+	//	this.updateLTRedoButton();
+	//}
 
 	resetDrawUndoStack() {
 		super.resetDrawUndoStack();
@@ -1120,20 +1146,20 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		this.updateDrawRedoButton();
 	}
 
-	_updateDrawUndoStack(...params) {
-		super._updateDrawUndoStack(...params);
+	_updateDrawUndoStack(events: LajiMapEvent[] | LajiMapEvent, prevFeatureCollection, prevActiveIdx?) {
+		super._updateDrawUndoStack(events, prevFeatureCollection, prevActiveIdx);
 		this.updateDrawUndoButton();
 		this.updateDrawRedoButton();
 	}
 
-	drawUndo(...params) {
-		super.drawUndo(...params);
+	drawUndo() {
+		super.drawUndo();
 		this.updateDrawUndoButton();
 		this.updateDrawRedoButton();
 	}
 
-	drawRedo(...params) {
-		super.drawRedo(...params);
+	drawRedo() {
+		super.drawRedo();
 		this.updateDrawUndoButton();
 		this.updateDrawRedoButton();
 	}
@@ -1169,17 +1195,18 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		}
 	}
 
-	@dependsOn("controls", "contextMenu")
-	updateLTUndoButton() {
-		if (!depsProvided(this, "updateLTUndoButton", arguments)) return;
-		this._updateUndoButton("lineTransect.undo", this._LTHistory, this._LTHistoryPointer);
-	}
+	//TODO
+	//@dependsOn("controls", "contextMenu")
+	//updateLTUndoButton() {
+	//	if (!depsProvided(this, "updateLTUndoButton", arguments)) return;
+	//	this._updateUndoButton("lineTransect.undo", this._LTHistory, this._LTHistoryPointer);
+	//}
 
-	@dependsOn("controls", "contextMenu")
-	updateLTRedoButton() {
-		if (!depsProvided(this, "updateLTRedoButton", arguments)) return;
-		this._updateRedoButton("lineTransect.redo", this._LTHistory, this._LTHistoryPointer);
-	}
+	//@dependsOn("controls", "contextMenu")
+	//updateLTRedoButton() {
+	//	if (!depsProvided(this, "updateLTRedoButton", arguments)) return;
+	//	this._updateRedoButton("lineTransect.redo", this._LTHistory, this._LTHistoryPointer);
+	//}
 
 	@dependsOn("controls", "contextMenu")
 	updateDrawUndoButton() {
@@ -1379,9 +1406,9 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 
 			this._onAdd(this.drawIdx, layer, latInput.value + ":" + lngInput.value);
 			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
-			this.map.setView(center, this.map.zoom, {animate: false});
+			this.map.setView(center, this.map.getZoom(), {animate: false});
 			if (isMarker) {
-				if (this.clusterDrawLayer) this.clusterDrawLayer.zoomToShowLayer(layer);
+				if (this.getDraw().cluster) (<L.MarkerClusterGroup> this.getDraw().groupContainer).zoomToShowLayer(layer);
 				else this.setNormalizedZoom(9);
 			} else {
 				this.map.fitBounds(layer.getBounds());
@@ -1631,7 +1658,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 					type: "delete",
 					idxs: Object.keys(that.idxsToIds[that.drawIdx]).map(idx => parseInt(idx))
 				}];
-				that.updateData(that.drawIdx, {...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
+				that.updateDrawData(<DrawOptions> {...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
 				that.getDraw().featureCollection.features.forEach(feature => {
 					events.push({type: "create", feature});
 				});
@@ -1703,7 +1730,7 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 				if ("text" in control && this._controlIsAllowed(controlName)) {
 					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({
 						...control,
-						callback: () => this.container.querySelector(`.button-${controlName.replace(".", "_")}`).click()
+						callback: () => (<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
 					});
 					groupAdded = true;
 				}
@@ -1714,9 +1741,9 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 		provide(this, "contextMenu");
 	}
 
-	triggerDrawing(featureType) {
+	triggerDrawing(featureType: DataItemType) {
 		try {
-			this.drawControl._toolbars.draw._modes[featureType.toLowerCase()].handler.enable();
+			(<any> this.drawControl)._toolbars.draw._modes[featureType.toLowerCase()].handler.enable();
 			this.addDrawAbortListeners();
 		} catch (e) {
 			super.triggerDrawing(featureType);
@@ -1726,4 +1753,5 @@ export default LajiMap => { class LajiMapWithControls extends LajiMap {
 	shouldNotPreventScrolling() : boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
 	}
-} return <typeof LajiMap> LajiMapWithControls; };
+}
+//} return <typeof LajiMap> LajiMapWithControls; };

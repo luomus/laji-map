@@ -1,8 +1,23 @@
+export interface ContextMenuItemOptions {
+	text: string;
+	iconCls: string;
+	callback: () => void;
+}
+
 export interface ContextMenuOptions {
 	contextmenu?: boolean;
 	contextmenuInheritItems?: boolean;
-	contextmenuItems?: any[];
+	contextmenuItems?: ContextmenuItem[];
 	contextmenuWidth?: number;
+}
+
+export class ContextmenuItem {
+}
+
+export class Contextmenu {
+	addItem(options: ContextMenuItemOptions | "-"): HTMLElement;
+	removeAllItems(): void;
+	setDisabled(elem: HTMLElement | number, disabled: boolean): this;
 }
 
 declare module "leaflet" {
@@ -16,5 +31,8 @@ declare module "leaflet" {
 	interface Marker {
 		bindContextMenu(options: ContextMenuOptions): Marker;
         unbindContextMenu();
+	}
+	interface Map {
+		contextmenu: Contextmenu;
 	}
 }

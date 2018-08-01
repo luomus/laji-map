@@ -180,7 +180,7 @@ export interface LajiMapOptions {
 	clickBeforeZoomAndPan?: boolean;
 }
 
-@HasControls
+//@HasControls
 @HasLineTransect
 export default class LajiMap {
 	private onSetLangHooks: (() => void)[] = [];
@@ -196,7 +196,7 @@ export default class LajiMap {
 	data: Data[];
 	draw: Draw;
 	drawIdx: number;
-	_draftDrawLayer: L.Draw.Feature;
+	_draftDrawLayer: DataItemLayer;
 	map: L.Map;
 	_onDrawReverse: (layer: DataItemLayer) => void;
 	_onDrawRemove: (layer: DataItemLayer) => void;
@@ -1489,7 +1489,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map", "translations")
-	setData(data: DataOptions[]) {
+	setData(data: Data[]) {
 		if (!depsProvided(this, "setData", arguments)) return;
 
 		if (!this.data) {
@@ -2832,7 +2832,7 @@ export default class LajiMap {
 			e.preventDefault();
 			e.stopPropagation();
 		}
-		if (this._draftDrawLayer) this._draftDrawLayer.disable();
+		if (this._draftDrawLayer) (<any> this._draftDrawLayer).disable();
 		this._draftDrawLayer = undefined;
 		this._removeKeyListener(ESC, this.abortDrawing);
 		this.map.off("controlClick", this.abortDrawing);
@@ -2847,11 +2847,9 @@ export default class LajiMap {
 
 	triggerDrawing(featureType: DataItemType) {
 		this._draftDrawLayer = new L.Draw[capitalizeFirstLetter(featureType)](this.map, this._getDrawOptionsForType(featureType));
-		this._draftDrawLayer.enable();
+		(<any> this._draftDrawLayer).enable();
 
 		this.addDrawAbortListeners();
-
-		return this._draftDrawLayer;
 	}
 
 	addFeatureToDraw(feature: G.Feature) {
@@ -2862,7 +2860,7 @@ export default class LajiMap {
 		this._onAdd(dataIdx, layer);
 	}
 
-	getFeatureTypes(): string[] {
+	getFeatureTypes(): DataItemType[] {
 		return ["rectangle", "polyline", "polygon", "circle", "marker"];
 	}
 

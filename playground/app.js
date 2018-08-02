@@ -122,12 +122,12 @@ class App {
 
 		const options = {
 			rootElem: document.getElementById("root"),
-			//lineTransect: {
-			//	feature: lineTransects.features[2],
-			//	activeIdx: 0,
-			//	onChange: this.onLTChange,
-			//	//printMode: true,
-			//},
+			lineTransect: {
+				feature: lineTransects.features[2],
+				activeIdx: 0,
+				onChange: this.onLTChange,
+				//printMode: true,
+			},
 			draw: this.drawOptions,
 			data: this.data,
 			lang: "fi",

@@ -59,6 +59,7 @@
     "@types/geojson": "*",
     "@types/leaflet": "*",
     "@types/leaflet-draw": "*",
-    "@types/leaflet.markercluster": "*"
+    "@types/leaflet.markercluster": "*",
+    "@types/node": "*"
   }
 }

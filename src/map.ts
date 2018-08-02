@@ -181,7 +181,7 @@ export interface LajiMapOptions {
 }
 
 //@HasControls
-@HasLineTransect
+//@HasLineTransect
 export default class LajiMap {
 	private onSetLangHooks: (() => void)[] = [];
 	options: LajiMapOptions;
@@ -224,8 +224,6 @@ export default class LajiMap {
 	markerPopupOffset: number;
 	_drawReverseLayers: L.Polyline[];
 	_drawRemoveLayers: DataItemLayer[];
-	_disposeTooltip: () => void;
-	_createTooltip: (string) => void;
 	_zoomToData: LajiMapFitBoundsOptions | boolean;
 	_disableDblClickZoom: boolean;
 	lang: Lang;
@@ -246,8 +244,8 @@ export default class LajiMap {
 	_listenedEvents: L.LeafletEventHandlerFnMap;
 	_keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
 	_swapToForeignFlag: boolean;
-	_mouseLatLng: L.LatLngExpression;
-	_contextMenuLayer: DataItemLayer;
+	_mouseLatLng: L.LatLng;
+	_contextMenuLayer: L.Layer;
 	initializeViewAfterLocateFail: boolean;
 	_preventScrollDomCleaner: () => void;
 	_onDrawStopPreventScrolling: () => void;
@@ -269,6 +267,9 @@ export default class LajiMap {
 	_LTEditPointIdxTuple: IdxTuple;
 	_clickBeforeZoomAndPan: boolean;
 	_origLatLngs: {[id: string]: L.LatLng[]};
+	_tooltip: L.Draw.Tooltip;
+	_tooltipTranslationHook: () =>  void;
+	_onMouseMove: (e: any) => void;
 
 	constructor(props: LajiMapOptions) {
 		this._constructDictionary();
@@ -816,7 +817,7 @@ export default class LajiMap {
 					const [dataIdx, featureIdx] = tuple;
 					if (this.data[dataIdx] && this.data[dataIdx].editable) {
 						this._idxsToContextMenuOpen[dataIdx][featureIdx] = false;
-						this.updateLayerStyle(contextMenuLayer);
+						this.updateLayerStyle(<DataItemLayer> contextMenuLayer);
 					}
 				}
 				this.map.fire("mousemove", {latlng: this._mouseLatLng});
@@ -1423,7 +1424,7 @@ export default class LajiMap {
 		});
 	}
 
-	_getAllData(): Data[] {
+	_getAllData(): {group: L.FeatureGroup}[] {
 		return [this.getDraw(), ...this.data];
 	}
 
@@ -2755,7 +2756,7 @@ export default class LajiMap {
 		});
 	}
 
-	addTranslationHook(elemOrFn, translationKey, attr = "innerHTML"): () => void {
+	addTranslationHook(elemOrFn: HTMLElement | (() => void), translationKey?: string | (() => string), attr = "innerHTML"): () => void {
 		const that = this;
 
 		function translate() {
@@ -2914,4 +2915,51 @@ export default class LajiMap {
 			this._openDialogs.push(elem);
 		}
 	}
+
+	_createTooltip(translationKey: string, error = false): L.Draw.Tooltip {
+		if (this._tooltip && this._tooltipTranslationHook) {
+			this.removeTranslationHook(this._tooltipTranslationHook);
+		} else {
+			if (this._tooltip) this._disposeTooltip();
+			this._tooltip = new L.Draw.Tooltip(this.map);
+			this._onMouseMove = ({latlng}) => this._tooltip.updatePosition(latlng);
+			["mousemove", "touchmove", "MSPointerMove"].forEach(eType => this.map.on(eType, this._onMouseMove));
+			if (this._mouseLatLng) this._onMouseMove({latlng: this._mouseLatLng});
+		}
+		if (translationKey in this.translations) {
+			this._tooltipTranslationHook = this.addTranslationHook(() => this._tooltip.updateContent({text: this.translations[translationKey]}));
+		} else {
+			this._tooltip.updateContent({text: translationKey});
+		}
+		if (error) this._tooltip.showAsError();
+		else this._tooltip.removeError();
+		return this._tooltip;
+	}
+
+	_disposeTooltip() {
+		if (this._onMouseMove) ["mousemove", "touchmove", "MSPointerMove"].forEach(
+			eType => this.map.off(eType, this._onMouseMove)
+		);
+		this._onMouseMove = undefined;
+		if (this._tooltip) this._tooltip.dispose();
+		this._tooltipTranslationHook && this.removeTranslationHook(this._tooltipTranslationHook);
+		this._tooltip = undefined;
+	}
+
+
+	_showDialog(container: HTMLElement, onClose?: (e: Event)=> void) {
+		const _container = document.createElement("div");
+		_container.className = "laji-map-dialog panel panel-default panel-body";
+		if (this._dialogRoot === document.body) {
+			_container.className += " fixed";
+		}
+		_container.appendChild(container);
+
+		function close(e) {
+			if (onClose) onClose(e);
+		}
+
+		this.showClosableElement(_container, close, !!"showBlocker", this._dialogRoot);
+	}
+
 }

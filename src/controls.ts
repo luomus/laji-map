@@ -14,7 +14,7 @@ import {
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
 import {LajiMapEvent, DataItemLayer } from "./map";
-import LajiMap from "./map";
+import LajiMap from "./line-transect";
 
 export interface ControlOptions {
 	name?: string;
@@ -374,67 +374,66 @@ export default class LajiMapWithControls extends LajiMap {
 					}
 				]
 			},
-			//TODO
-			//{
-			//	name: "lineTransect",
-			//	controls: [
-			//		{
-			//			name: "split",
-			//			text: this.translations.SplitLine,
-			//			iconCls: "glyphicon glyphicon-scissors",
-			//			fn: (...params) => this.startLTLineSplit(...params),
-			//			finishFn: (...params) => this.stopLTLineSplit(...params),
-			//			eventName: "lineTransect:split"
-			//		},
-			//		{
-			//			name: "splitByMeters",
-			//			text: this.translations.SplitLineByMeters,
-			//			iconCls: "laji-map-line-transect-split-by-meters-glyph",
-			//			fn: (...params) => this.splitLTByMeters(...params),
-			//			eventName: "lineTransect:split"
-			//		},
-			//		{
-			//			name: "deletePoints",
-			//			text: this.translations.ConnectSegments,
-			//			iconCls: "laji-map-line-transect-remove-point-glyph",
-			//			fn: (...params) => this.startRemoveLTPointMode(...params),
-			//			finishFn: (...params) => this.stopRemoveLTPointMode(...params),
-			//			eventName: "lineTransect:deletePoint"
-			//		},
-			//		{
-			//			name: "createPoint",
-			//			text: this.translations.CreatePoint,
-			//			iconCls: "laji-map-line-transect-create-point-glyph",
-			//			fn: (...params) => this.startLTPointAdd(...params),
-			//			finishFn: (...params) => this.stopLTLineSplit(...params),
-			//			eventName: "lineTransect:pointadd"
-			//		},
-			//		{
-			//			name: "shiftPoint",
-			//			text: this.translations.ShiftPoint,
-			//			iconCls: "laji-map-line-transect-shift-point-glyph",
-			//			fn: (...params) => this.startLTPointShift(...params),
-			//			finishFn: (...params) => this.stopLTPointShift(...params),
-			//			eventName: "lineTransect:pointshift"
-			//		},
-			//		{
-			//			name: "undo",
-			//			text: this.translations.Undo,
-			//			iconCls: "laji-map-line-transect-undo-glyph",
-			//			fn: (...params) => this.LTUndo(...params),
-			//			onAdd: () => this.updateLTUndoButton(),
-			//			disabled: this._LTHistoryPointer <= 0
-			//		},
-			//		{
-			//			name: "redo",
-			//			text: this.translations.Redo,
-			//			iconCls: "laji-map-line-transect-redo-glyph",
-			//			fn: (...params) => this.LTRedo(...params),
-			//			onAdd: () => this.updateLTRedoButton(),
-			//			disabled: !this._LTHistory || this._LTHistoryPointer >= this._LTHistory.length - 1
-			//		}
-			//	]
-			//}
+			{
+				name: "lineTransect",
+				controls: [
+					{
+						name: "split",
+						text: this.translations.SplitLine,
+						iconCls: "glyphicon glyphicon-scissors",
+						fn: () => this.startLTLineSplit(),
+						finishFn: () => this.stopLTLineSplit(),
+						eventName: "lineTransect:split"
+					},
+					{
+						name: "splitByMeters",
+						text: this.translations.SplitLineByMeters,
+						iconCls: "laji-map-line-transect-split-by-meters-glyph",
+						fn: () => this.splitLTByMeters(),
+						eventName: "lineTransect:split"
+					},
+					{
+						name: "deletePoints",
+						text: this.translations.ConnectSegments,
+						iconCls: "laji-map-line-transect-remove-point-glyph",
+						fn: () => this.startRemoveLTPointMode(),
+						finishFn: () => this.stopRemoveLTPointMode(),
+						eventName: "lineTransect:deletePoint"
+					},
+					{
+						name: "createPoint",
+						text: this.translations.CreatePoint,
+						iconCls: "laji-map-line-transect-create-point-glyph",
+						fn: () => this.startLTPointAdd(),
+						finishFn: () => this.stopLTLineSplit(),
+						eventName: "lineTransect:pointadd"
+					},
+					{
+						name: "shiftPoint",
+						text: this.translations.ShiftPoint,
+						iconCls: "laji-map-line-transect-shift-point-glyph",
+						fn: () => this.startLTPointShift(),
+						finishFn: () => this.stopLTPointShift(),
+						eventName: "lineTransect:pointshift"
+					},
+					{
+						name: "undo",
+						text: this.translations.Undo,
+						iconCls: "laji-map-line-transect-undo-glyph",
+						fn: () => this.LTUndo(),
+						onAdd: () => this.updateLTUndoButton(),
+						disabled: this._LTHistoryPointer <= 0
+					},
+					{
+						name: "redo",
+						text: this.translations.Redo,
+						iconCls: "laji-map-line-transect-redo-glyph",
+						fn: () => this.LTRedo(),
+						onAdd: () => this.updateLTRedoButton(),
+						disabled: !this._LTHistory || this._LTHistoryPointer >= this._LTHistory.length - 1
+					}
+				]
+			}
 		];
 
 		const controlGroups = this.controlItems.reduce((groups, group) => {
@@ -747,11 +746,10 @@ export default class LajiMapWithControls extends LajiMap {
 			"drawUtils.reverse": [
 				() => this.getDraw().polyline !== false
 			],
-			//TODO
-			//lineTransect: [
-			//	() => isProvided(this, "lineTransect"),
-			//	() => this._LTEditable
-			//]
+			lineTransect: [
+				() => isProvided(this, "lineTransect"),
+				() => this._LTEditable
+			]
 		};
 
 		const {controlSettings} = this;
@@ -1133,12 +1131,11 @@ export default class LajiMapWithControls extends LajiMap {
 		this._opacitySetBySlide = false;
 	}
 
-	//TODO
-	//setLineTransectGeometry(feature, undo) {
-	//	super.setLineTransectGeometry(feature, undo);
-	//	this.updateLTUndoButton();
-	//	this.updateLTRedoButton();
-	//}
+	setLineTransectGeometry(feature, undo) {
+		super.setLineTransectGeometry(feature, undo);
+		this.updateLTUndoButton();
+		this.updateLTRedoButton();
+	}
 
 	resetDrawUndoStack() {
 		super.resetDrawUndoStack();
@@ -1195,18 +1192,17 @@ export default class LajiMapWithControls extends LajiMap {
 		}
 	}
 
-	//TODO
-	//@dependsOn("controls", "contextMenu")
-	//updateLTUndoButton() {
-	//	if (!depsProvided(this, "updateLTUndoButton", arguments)) return;
-	//	this._updateUndoButton("lineTransect.undo", this._LTHistory, this._LTHistoryPointer);
-	//}
+	@dependsOn("controls", "contextMenu")
+	updateLTUndoButton() {
+		if (!depsProvided(this, "updateLTUndoButton", arguments)) return;
+		this._updateUndoButton("lineTransect.undo", this._LTHistory, this._LTHistoryPointer);
+	}
 
-	//@dependsOn("controls", "contextMenu")
-	//updateLTRedoButton() {
-	//	if (!depsProvided(this, "updateLTRedoButton", arguments)) return;
-	//	this._updateRedoButton("lineTransect.redo", this._LTHistory, this._LTHistoryPointer);
-	//}
+	@dependsOn("controls", "contextMenu")
+	updateLTRedoButton() {
+		if (!depsProvided(this, "updateLTRedoButton", arguments)) return;
+		this._updateRedoButton("lineTransect.redo", this._LTHistory, this._LTHistoryPointer);
+	}
 
 	@dependsOn("controls", "contextMenu")
 	updateDrawUndoButton() {
@@ -1218,21 +1214,6 @@ export default class LajiMapWithControls extends LajiMap {
 	updateDrawRedoButton() {
 		if (!depsProvided(this, "updateDrawRedoButton", arguments)) return;
 		this._updateRedoButton("drawUtils.redo", this._drawHistory, this._drawHistoryPointer);
-	}
-
-	_showDialog(container, onClose?) {
-		const _container = document.createElement("div");
-		_container.className = "laji-map-dialog panel panel-default panel-body";
-		if (this._dialogRoot === document.body) {
-			_container.className += " fixed";
-		}
-		_container.appendChild(container);
-
-		function close(e) {
-			if (onClose) onClose(e);
-		}
-
-		this.showClosableElement(_container, close, !!"showBlocker", this._dialogRoot);
 	}
 
 	openCoordinatesInputDialog() {

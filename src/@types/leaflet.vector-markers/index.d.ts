@@ -1,6 +1,6 @@
 import * as L from "leaflet";
 
-export interface VectorMarkerIconOptions {
+interface VectorMarkerIconOptions {
     icon?: string;
     prefix?: string;
     markerColor?: string;
@@ -16,6 +16,7 @@ declare module "leaflet" {
 		class Icon extends L.Icon {
 			constructor(options: VectorMarkerIconOptions);
 		}
+		interface Options extends VectorMarkerIconOptions {}
     }
 
 	interface BaseIconOptions extends VectorMarkerIconOptions { }

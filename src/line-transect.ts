@@ -234,7 +234,7 @@ export default class LajiMapWithLineTransect extends LajiMap {
 		});
 	}
 
-	getOptionKeys() {
+	getOptionKeys(): any {
 		return {
 			...super.getOptionKeys(),
 			lineTransect: ["setLineTransect", () => {
@@ -904,7 +904,7 @@ export default class LajiMapWithLineTransect extends LajiMap {
 		}));
 	}
 
-	_getContextMenuForPoint(idxTuple: PointIdxTuple): L.ContextmenuOptions {
+	_getContextMenuForPoint(idxTuple: PointIdxTuple): L.Contextmenu.Options {
 		const [lineIdx, pointIdx] = idxTuple;
 		if (!this._LTEditable) return {contextmenuItems: []};
 		const contextmenuItems = [

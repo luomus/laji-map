@@ -1,4 +1,3 @@
-import { ContextmenuItem } from "./@types/leaflet-contextmenu";
 import { DrawOptions } from "./map";
 import { DataItemType } from "./map";
 import * as L from "leaflet";

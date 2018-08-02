@@ -9,7 +9,6 @@ import {
 	ESC
 } from "./globals";
 import { IdxTuple, isPolyline } from "./map";
-import { ContextMenuOptions } from "./@types/leaflet-contextmenu";
 import LajiMap from "./map";
 
 const POINT_DIST_TRESHOLD = 50;
@@ -68,7 +67,7 @@ interface LineTransectIdx {
 
 export type LineTransectGeometry = G.LineString | G.MultiLineString;
 export interface LineTransectFeature {
-	type: "string";
+	type: string;
 	geometry: LineTransectGeometry;
 	properties: G.GeoJsonProperties;
 	id?: string | number;
@@ -905,7 +904,7 @@ export default class LajiMapWithLineTransect extends LajiMap {
 		}));
 	}
 
-	_getContextMenuForPoint(idxTuple: PointIdxTuple): ContextMenuOptions {
+	_getContextMenuForPoint(idxTuple: PointIdxTuple): L.ContextmenuOptions {
 		const [lineIdx, pointIdx] = idxTuple;
 		if (!this._LTEditable) return {contextmenuItems: []};
 		const contextmenuItems = [

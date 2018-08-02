@@ -6,13 +6,6 @@ export interface ContextmenuItemOptions {
 	callback: () => void;
 }
 
-export interface ContextMenuOptions {
-	contextmenu?: boolean;
-	contextmenuInheritItems?: boolean;
-	contextmenuItems?: ContextmenuItemOptions[];
-	contextmenuWidth?: number;
-}
-
 export class ContextmenuItem {
 }
 
@@ -29,18 +22,25 @@ export interface ContextmenuEvent extends L.LeafletEvent {
 }
 
 declare module "leaflet" {
-	interface MapOptions extends ContextMenuOptions { }
+	interface MapOptions extends ContextmenuOptions { }
 
 	interface Path {
-		bindContextMenu(options: ContextMenuOptions): Path;
+		bindContextMenu(options: ContextmenuOptions): Path;
         unbindContextMenu();
 	}
 
 	interface Marker {
-		bindContextMenu(options: ContextMenuOptions): Marker;
+		bindContextMenu(options: ContextmenuOptions): Marker;
         unbindContextMenu();
 	}
 	interface Map {
 		contextmenu: Contextmenu;
 	}
+	export interface ContextmenuOptions {
+		contextmenu?: boolean;
+		contextmenuInheritItems?: boolean;
+		contextmenuItems?: ContextmenuItemOptions[];
+		contextmenuWidth?: number;
+	}
+
 }

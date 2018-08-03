@@ -1,6 +1,6 @@
-import { DrawOptions } from "./map";
-import { DataItemType } from "./map";
 import * as L from "leaflet";
+import LajiMap from "./map";
+import { DrawOptions, DataItemType, LajiMapEvent, DataItemLayer  } from "./map";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator,
@@ -12,8 +12,6 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
-import {LajiMapEvent, DataItemLayer } from "./map";
-import LajiMap from "./line-transect";
 
 export interface ControlOptions {
 	name?: string;
@@ -75,7 +73,7 @@ export interface ControlsOptions {
 	attribution?: boolean
 }
 
-interface InternalControlsOptions extends ControlsOptions {
+export interface InternalControlsOptions extends ControlsOptions {
 	drawUtils?: boolean | DrawControlOptions
 }
 
@@ -87,13 +85,13 @@ function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
 }
 
-interface CustomControl extends L.Control {
+export interface CustomControl extends L.Control {
 	_custom: boolean;
 	group: string;
 }
 
-export default class LajiMapWithControls extends LajiMap {
-//export default LajiMap => { class LajiMapWithControls extends LajiMap {
+type Constructor<LM> = new(...args: any[]) => LM;
+export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class _LajiMap extends Base {
 
 	controlItems: ControlOptions[];
 	activeControl: L.Control;
@@ -380,56 +378,56 @@ export default class LajiMapWithControls extends LajiMap {
 						name: "split",
 						text: this.translations.SplitLine,
 						iconCls: "glyphicon glyphicon-scissors",
-						fn: () => this.startLTLineSplit(),
-						finishFn: () => this.stopLTLineSplit(),
+						fn: () => (<any> this).startLTLineSplit(),
+						finishFn: () => (<any> this).stopLTLineSplit(),
 						eventName: "lineTransect:split"
 					},
 					{
 						name: "splitByMeters",
 						text: this.translations.SplitLineByMeters,
 						iconCls: "laji-map-line-transect-split-by-meters-glyph",
-						fn: () => this.splitLTByMeters(),
+						fn: () => (<any> this).splitLTByMeters(),
 						eventName: "lineTransect:split"
 					},
 					{
 						name: "deletePoints",
 						text: this.translations.ConnectSegments,
 						iconCls: "laji-map-line-transect-remove-point-glyph",
-						fn: () => this.startRemoveLTPointMode(),
-						finishFn: () => this.stopRemoveLTPointMode(),
+						fn: () => (<any> this).startRemoveLTPointMode(),
+						finishFn: () => (<any> this).stopRemoveLTPointMode(),
 						eventName: "lineTransect:deletePoint"
 					},
 					{
 						name: "createPoint",
 						text: this.translations.CreatePoint,
 						iconCls: "laji-map-line-transect-create-point-glyph",
-						fn: () => this.startLTPointAdd(),
-						finishFn: () => this.stopLTLineSplit(),
+						fn: () => (<any> this).startLTPointAdd(),
+						finishFn: () => (<any> this).stopLTLineSplit(),
 						eventName: "lineTransect:pointadd"
 					},
 					{
 						name: "shiftPoint",
 						text: this.translations.ShiftPoint,
 						iconCls: "laji-map-line-transect-shift-point-glyph",
-						fn: () => this.startLTPointShift(),
-						finishFn: () => this.stopLTPointShift(),
+						fn: () => (<any> this).startLTPointShift(),
+						finishFn: () => (<any> this).stopLTPointShift(),
 						eventName: "lineTransect:pointshift"
 					},
 					{
 						name: "undo",
 						text: this.translations.Undo,
 						iconCls: "laji-map-line-transect-undo-glyph",
-						fn: () => this.LTUndo(),
+						fn: () => (<any> this).LTUndo(),
 						onAdd: () => this.updateLTUndoButton(),
-						disabled: this._LTHistoryPointer <= 0
+						disabled: (<any> this)._LTHistoryPointer <= 0
 					},
 					{
 						name: "redo",
 						text: this.translations.Redo,
 						iconCls: "laji-map-line-transect-redo-glyph",
-						fn: () => this.LTRedo(),
+						fn: () => (<any> this).LTRedo(),
 						onAdd: () => this.updateLTRedoButton(),
-						disabled: !this._LTHistory || this._LTHistoryPointer >= this._LTHistory.length - 1
+						disabled: !(<any> this)._LTHistory || (<any> this)._LTHistoryPointer >= (<any> this)._LTHistory.length - 1
 					}
 				]
 			}
@@ -747,7 +745,7 @@ export default class LajiMapWithControls extends LajiMap {
 			],
 			lineTransect: [
 				() => isProvided(this, "lineTransect"),
-				() => this._LTEditable
+				() => (<any> this)._LTEditable
 			]
 		};
 
@@ -1194,13 +1192,13 @@ export default class LajiMapWithControls extends LajiMap {
 	@dependsOn("controls", "contextMenu")
 	updateLTUndoButton() {
 		if (!depsProvided(this, "updateLTUndoButton", arguments)) return;
-		this._updateUndoButton("lineTransect.undo", this._LTHistory, this._LTHistoryPointer);
+		this._updateUndoButton("lineTransect.undo", (<any> this)._LTHistory, (<any> this)._LTHistoryPointer);
 	}
 
 	@dependsOn("controls", "contextMenu")
 	updateLTRedoButton() {
 		if (!depsProvided(this, "updateLTRedoButton", arguments)) return;
-		this._updateRedoButton("lineTransect.redo", this._LTHistory, this._LTHistoryPointer);
+		this._updateRedoButton("lineTransect.redo", (<any> this)._LTHistory, (<any> this)._LTHistoryPointer);
 	}
 
 	@dependsOn("controls", "contextMenu")
@@ -1733,5 +1731,4 @@ export default class LajiMapWithControls extends LajiMap {
 	shouldNotPreventScrolling() : boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
 	}
-}
-//} return <typeof LajiMap> LajiMapWithControls; };
+} return _LajiMap; }

@@ -58,7 +58,7 @@ export interface LineTransectOptions {
 	editable?: boolean;
 }
 
-interface LineTransectIdx {
+export interface LineTransectIdx {
 	i: number;
 	lineIdx: number;
 	segmentIdx: number;
@@ -89,7 +89,7 @@ export interface LineTransectEvent {
 export type SegmentLayer = L.Polyline<G.LineString> | L.CircleMarker | L.Polygon<G.Polygon>;
 export type SegmentLayers = SegmentLayer[];
 
-interface TooltipMessages {
+export interface TooltipMessages {
 	text?: string;
 	click?: string;
 	dblclick?: string;
@@ -97,7 +97,7 @@ interface TooltipMessages {
 	drag?: string;
 }
 
-interface LineTransectHistoryEntry {
+export interface LineTransectHistoryEntry {
 	geometry: LineTransectGeometry;
 	undoEvents?: LineTransectEvent[];
 	redoEvents?: LineTransectEvent[];
@@ -131,7 +131,10 @@ function idxTupleToIdxTupleStr(idxTuple: IdxTuple) : string {
 	return i !== undefined && j !== undefined ? `${i}-${j}` : undefined;
 }
 
-export default class LajiMapWithLineTransect extends LajiMap {
+type Constructor<LM> = new(...args: any[]) => LM;
+
+export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>(Base: LM) { class _LajiMap extends Base {
+//export default class LajiMapWithLineTransect extends LajiMap {
 	_hoveredIdxTuple: SegmentIdxTuple;
 	LTFeature: LineTransectFeature;
 	_LTEditPointIdxTuple: PointIdxTuple;
@@ -191,8 +194,8 @@ export default class LajiMapWithLineTransect extends LajiMap {
 	_ltTooltip: L.Draw.Tooltip;
 	messages: TooltipMessages;
 
-	constructor(props) {
-		super(props);
+	constructor(...props: any[]) {
+		super(...props);
 		this._startLTDragHandler = this._startLTDragHandler.bind(this);
 		this._stopLTDragHandler = this._stopLTDragHandler.bind(this);
 		this._dragLTHandler = this._dragLTHandler.bind(this);
@@ -2004,5 +2007,7 @@ export default class LajiMapWithLineTransect extends LajiMap {
 
 		this._allPoints[0].bringToFront();
 	}
+}
+return _LajiMap;
 }
 

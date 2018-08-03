@@ -1,3 +1,4 @@
+import { LineTransectEvent, LineTransectGeometry } from "./line-transect";
 import * as L from "leaflet";
 import * as G from 'geojson';
 import "leaflet-draw";
@@ -172,7 +173,7 @@ export type IdxTuple = [number, number];
 export type DataItemLayer = L.Polygon | L.Polyline | L.Marker | L.Circle;
 export type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
 
-interface DrawHistoryEntry {
+export interface DrawHistoryEntry {
 	featureCollection: G.FeatureCollection;
 	undoEvents?: LajiMapEvent[];
 	redoEvents?: LajiMapEvent[];
@@ -226,10 +227,9 @@ export interface LajiMapOptions {
 	clickBeforeZoomAndPan?: boolean;
 }
 
-//@HasControls
-//@HasLineTransect
+
 export default class LajiMap {
-	private onSetLangHooks: (() => void)[] = [];
+	onSetLangHooks: (() => void)[] = [];
 	options: LajiMapOptions;
 	_dialogRoot: HTMLElement;
 	_openDialogs = [];
@@ -3007,5 +3007,7 @@ export default class LajiMap {
 
 		this.showClosableElement(_container, close, !!"showBlocker", this._dialogRoot);
 	}
+
+	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) { console.warn("line transect mixin not included!")}
 
 }

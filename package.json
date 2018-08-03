@@ -2,8 +2,8 @@
   "name": "laji-map",
   "version": "1.0.396",
   "description": "A map with drawing functionality",
-  "main": "lib/map.js",
-  "types": "lib/map.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000 --host 0.0.0.0",
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json --declaration && copyfiles -f src/styles.css lib/",

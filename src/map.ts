@@ -182,20 +182,20 @@ export interface DrawHistoryEntry {
 export type Lang = "fi" | "en" | "sv";
 
 export type TileLayerName = "maastokartta"
-				   | "taustakartta"
-				   | "pohjakartta"
-				   | "ortokuva"
-				   | "laser"
-				   | "openStreepMap"
-				   | "googleSatellite"
+                          | "taustakartta"
+                          | "pohjakartta"
+                          | "ortokuva"
+                          | "laser"
+                          | "openStreepMap"
+                          | "googleSatellite"
 
 export type OverlayName = "geobiologicalProvinces"
-				 | "geobiologicalProvinceBorders"
-				 | "forestVegetationZones"
-				 | "mireVegetationZones"
-				 | "threatenedSpeciesEvaluationZones"
-				 | "ykjGrid"
-				 | "ykjGridLabels";
+                        | "geobiologicalProvinceBorders"
+                        | "forestVegetationZones"
+                        | "mireVegetationZones"
+                        | "threatenedSpeciesEvaluationZones"
+                        | "ykjGrid"
+                        | "ykjGridLabels";
 
 export interface LajiMapOptions {
 	rootElem?: HTMLElement;

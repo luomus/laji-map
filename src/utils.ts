@@ -1,4 +1,4 @@
-import proj4 from "proj4";
+import * as  proj4 from "proj4";
 import {
 	EPSG2393String,
 	EPSG3067String,

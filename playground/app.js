@@ -1,4 +1,4 @@
-import LajiMap from "../lib/index";
+import LajiMap from "../src/index";
 import lineTransects from "./data.json";
 import * as utils from "../src/utils";
 
@@ -151,7 +151,7 @@ class App {
 					upload: true,
 					clear: true,
 					reverse: true,
-					delete: true,
+					delete: true
 				}
 			},
 			polyline: {

@@ -681,7 +681,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				__controlSettings.drawUtils = __controlSettings.draw;
 			}
 			// BW compability for drawCopy etc, which were moved under controlSettings.draw
-			["copy", "upload", "clear", "reverse", "delete", "undo", "redo"].forEach(name => {
+			["copy", "upload", "clear", "reverse", "delete", "undo", "redo", "coordinateInput"].forEach(name => {
 				// Internally we use 'drawUtils' namespace, but for easier API we allow using 'draw'
 				// namespace for the utils.
 				if (isObject(__controlSettings.draw) && name in <DrawControlOptions> __controlSettings.draw) {

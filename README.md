@@ -191,11 +191,13 @@ lineTransect:pointdrag                          | -
 
 ## Development ##
 
-Start the development playground with `npm start`.
+Install the dependencies with `yarn start`.
 
-To release a new version, run `npm run publish-to-npm`.
+Start the development playground with `yarn start`.
 
-Try to keep the code style consistent - ```npm run lint``` should pass without errors.
+To release a new version, run `yarn run publish-to-npm`.
+
+Try to keep the code style consistent - ```yarn run lint``` should pass without errors.
 
 ## Known issues ##
 

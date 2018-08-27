@@ -239,8 +239,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			controlContainerNode.className += " leaflet-touch";
 		}
 
-
-		const {drawing} = this;
 		(this.controls || []).forEach(control => {
 			if (control) this.map.removeControl(control);
 		});
@@ -590,10 +588,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		});
 		removeHref("leaflet-control-layers-toggle");
 		removeHref("leaflet-contextmenu-item");
-
-		if (drawing) {
-			this.triggerDrawing(drawing);
-		}
 
 		provide(this, "controls");
 	}

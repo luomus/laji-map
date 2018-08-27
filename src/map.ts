@@ -252,7 +252,7 @@ export default class LajiMap {
 	_idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}};
 	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}};
 	editIdxTuple: IdxTuple;
-	drawing: boolean;
+	drawing: DataItemType;
 	_drawHistoryPointer: number;
 	_drawHistory: DrawHistoryEntry[];
 	polyline: L.Polyline;
@@ -821,11 +821,11 @@ export default class LajiMap {
 			click: () => this._interceptClick(),
 			mousemove: ({latlng}: L.LeafletMouseEvent) => {this._mouseLatLng = latlng;},
 			"draw:created": ({layer}: L.DrawEvents.Created) => this._onAdd(this.drawIdx, <DataItemLayer> layer),
-			"draw:drawstart": () => {
-				this.drawing = true;
+			"draw:drawstart": ({layerType}: L.DrawEvents.DrawStart) => {
+				this.drawing = <DataItemType> layerType;
 				this.map.fire("controlClick", {name: "draw"});
 			},
-			"draw:drawstop": () => { this.drawing = false; },
+			"draw:drawstop": () => { this.drawing = undefined; },
 			"draw:drawvertex": (e: L.DrawEvents.Edited) => {
 				const layers = e.layers.getLayers();
 				const keys = Object.keys(layers);

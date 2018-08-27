@@ -101,7 +101,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	_locateOn: boolean;
 	_controlButtons: {[controlName: string]: HTMLElement};
 	controls: L.Control[];
-	_customControls: CustomControl[];
+	_customControls: CustomControl[] = [];
 	layerControl: L.Control.Layers;
 	_opacitySetBySlide: boolean;
 	_slider: any;
@@ -728,7 +728,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	setCustomControls(controls: CustomControl[]) {
-		if (this._customControls === controls) return;
+		if (this._customControls === controls || (this._customControls.length === 0 && controls.length === 0)) return;
 		this._customControls = controls;
 		provide(this, "customControls");
 	}

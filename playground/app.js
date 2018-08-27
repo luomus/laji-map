@@ -1,8 +1,9 @@
-import LajiMap from "../src/map";
+import LajiMap from "../src/index";
 import lineTransects from "./data.json";
 import * as utils from "../src/utils";
 
-import "../src/styles.js";
+import "../src/styles";
+
 class App {
 	constructor() {
 		this.data = [
@@ -79,8 +80,7 @@ class App {
 				//activeIdx: 0,
 				//editable: true,
 				highlightOnHover: true
-			},
-
+			}
 		];
 
 		this.drawOptions = {
@@ -115,7 +115,7 @@ class App {
 				showStart: true,
 				showDirection: true
 			},
-			//activeIdx: 0,
+			activeIdx: 0,
 		};
 
 		this.activeIdx = 0;
@@ -151,7 +151,7 @@ class App {
 					upload: true,
 					clear: true,
 					reverse: true,
-					delete: true,
+					delete: true
 				}
 			},
 			polyline: {
@@ -163,7 +163,8 @@ class App {
 				shapeOptions: {
 					showArea: true
 				}
-			}
+			},
+			clickBeforeZoomAndPan: true
 		};
 
 

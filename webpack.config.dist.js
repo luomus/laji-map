@@ -5,8 +5,8 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 module.exports = {
 	mode: "production",
 	entry: {
-		"laji-map": "./src/map",
-		styles: "./src/styles"
+		"laji-map": path.join(__dirname, "src", "map"),
+		styles: path.join(__dirname, "src", "styles")
 	},
 	output: {
 		path: path.join(__dirname, "dist"),
@@ -19,7 +19,7 @@ module.exports = {
 	module: {
 		rules: [
 			{
-				test: /\.js$/,
+				test: /\.(t|j)s$/,
 				loader: "awesome-typescript-loader?module=es6",
 				include: [
 					path.join(__dirname, "src")
@@ -66,4 +66,7 @@ module.exports = {
 			}
 		}
 	},
+	resolve: {
+			extensions: ['.ts', '.js']
+	}
 };

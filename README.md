@@ -59,7 +59,7 @@ Option                                                           | Type         
 featureCollection                                                | GeoJSON featureCollection | Empty feature collection            | The feature collection to render.
 getPopup(idx, geometry, callback)                                | Function                  | -                                   | Function that returns a popup string, or calls the callback with the popup string.
 getTooltip(idx, geometry, callback)                              | Function                  | -                                   | Function that returns a tooltip string, or calls the callback with the tooltip string.
-getFeatureStyle({dataIdx, featureIdx, feature, item})            | Function                  | see `lajiMap._getDefaultDataStyle()`| A function that returns a Path style to use for the feature described by the input parameters. (Note that draw data doesn't receive `dataIdx` input).
+getFeatureStyle({dataIdx, featureIdx, feature, item})            | Function                  | see `lajiMap._getDefaultDataStyle()`| A function that returns a Path style to use for the feature described by the input parameters.
 cluster                                                          | Boolean                   | false                               | Controls whether the features should cluster.
 getClusterStyle({count))                                         | Function                  | see `lajiMap._getClusterIcon()`     | A function that returns a Path style to use for feature clusters. The returned path style extends the default style. the `count` parameter is the number of features in the cluster.
 getDraftStyle                                                    | Function                  | true                                | A function that returns a Path style to use for the feature during drawing & editing a feature.
@@ -106,7 +106,7 @@ Option                                          | Type                     |  De
 draw                                            | Draw control options     | true                                 | Shows a map control for adding new features.
 layer                                           | Boolean                  | true                                 | Shows a tile/baselayer control.
 zoom                                            | Boolean                  | true                                 | Shows a zoom control.
-scale                                           | Integer                  | true                                 | Shows a scale control as meters.
+scale                                           | Boolean                  | true                                 | Shows a scale control as meters.
 location                                        | Location control options | true                                 | Shows a location control.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
@@ -191,8 +191,40 @@ lineTransect:pointdrag                          | -
 
 ## Development ##
 
-Start the development playground with `npm start`.
+Install the dependencies with `yarn start`.
 
-To release a new version, run `npm run publish-to-npm`.
+Start the development playground with `yarn start`.
 
-Try to keep the code style consistent - ```npm run lint``` should pass without errors.
+To release a new version, run `yarn run publish-to-npm`.
+
+Try to keep the code style consistent - ```yarn run lint``` should pass without errors.
+
+## Known issues ##
+
+### Clustered data and marker styles ###
+
+When a cluster is unspiderfied, the colors for the unspiderfied markers are the style of `Data.getDraftStyle()`. Below is a code snippet describing what has been tried to solve the bug.
+
+```
+setLayerStyle(layer: DataItemLayer, style: L.PathOptions) {
+
+...
+
+if (layer instanceof L.Marker) {
+    let _layer = <L.Marker> layer;
+    // This mutates the icon options, so draft style & unspiderfied markers colors are wrong
+    layer.options.icon.options.markerColor = style.color;
+
+    // This causes an error after unspiderfying (immutable version of the line above)
+    (<any> layer).options = {...layer.options, icon: {...layer.options.icon, options: {...layer.options.icon.options, color: style.color}}};
+
+    // This causes an infinite loop when hovering marker
+    // (hovering calls setLayerStyle, and here a a hovering event is triggered when we create an ew icon)
+    layer.setIcon(this._createIcon(style));
+    
+    ...
+
+```
+
+Setting the styles manually when the cluster unspiderfies has been also tried, but for some reason the event isn't triggered.
+			

@@ -1,16 +1,21 @@
-import proj4 from "proj4";
+import * as  proj4 from "proj4";
 import {
 	EPSG2393String,
 	EPSG3067String,
 	EPSG2393WKTString,
 	EPSG3067WKTString
 } from "./globals";
+import * as G from 'geojson';
+import {LineTransectFeature, LineTransectGeometry} from "./line-transect";
 
-export function reverseCoordinate(c) {
-	return c.slice(0).reverse();
+export function reverseCoordinate(c: [number, number]): [number, number] {
+	return <[number, number]> c.slice(0).reverse();
 }
 
-export function convertLatLng(latlng, from, to) {
+export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
+export type CoordinateSystem = "GeoJSON" | "WKT" | "ISO 6709";
+
+export function convertLatLng(latlng: [number, number], from: CRSString, to: CRSString) {
 	function formatToProj4Format(format) {
 		switch(format) {
 		case "EPSG:2393": return EPSG2393String;
@@ -22,21 +27,21 @@ export function convertLatLng(latlng, from, to) {
 	let validator = undefined;
 	if (from === "EPSG:2393") {
 		validator = ykjValidator;
-	} else if (from === "EPSG:2393") {
+	} else if (from === "EPSG:3067") {
 		validator = etrsTm35FinValidator;
 	}
-	if (validator && validator.formatter) latlng = latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+	if (validator && validator.formatter) latlng = <[number, number]> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
 
 	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 }
 
-function updateImmutablyRecursivelyWith(obj, fn) {
-	function _updater(obj, from, to) {
+function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) => any): any {
+	function _updater(obj) {
 		if (typeof obj === "object" && obj !== null) {
 			Object.keys(obj).forEach(key => {
 				obj[key] = fn(key, obj[key]);
-				_updater(obj[key], from, to);
+				_updater(obj[key]);
 			});
 		}
 		return obj;
@@ -45,7 +50,7 @@ function updateImmutablyRecursivelyWith(obj, fn) {
 	return _updater(parseJSON(JSON.stringify(obj)));
 }
 
-export function convertGeoJSON(geoJSON, from, to) {
+export function convertGeoJSON(geoJSON: G.GeoJSON, from: CRSString, to: CRSString): G.GeoJSON {
 	const convertCoordinates = coords => (typeof coords[0] === "number") ?
 			convertLatLng(reverseCoordinate(coords), from, to) :
 			coords.map(convertCoordinates);
@@ -99,7 +104,7 @@ export function circleToPolygon(center, radius, numberOfSegments) {
 	};
 }
 
-export function standardizeGeoJSON(geoJSON) {
+export function standardizeGeoJSON(geoJSON: G.GeoJSON): G.GeoJSON {
 
 	function standardizeGeometry(geom) {
 		let {coordinateVerbatim, radius, ...standardized} = geom; //eslint-disable-line
@@ -115,7 +120,13 @@ export function standardizeGeoJSON(geoJSON) {
 	});
 }
 
-export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon) {
+export function geoJSONToTextualFormatWith(geoJSON: G.GeoJSON,
+										   name: string,
+										   latLngCoordConverter: (latlng: number[]) => string,
+										   coordinateJoiner: (latlng: number[]) => string,
+										   coordinateStrToPoint: (coordinate: string) => string,
+										   coordinateStrToLine: (coordinate: string) => string,
+										   coordinateStrToPolygon: (coordinate: string) => string,): string {
 	function geoJSONCoordToTextual(coords) {
 		return latLngCoordConverter(reverseCoordinate(coords));
 	}
@@ -168,7 +179,7 @@ export function geoJSONToTextualFormatWith(geoJSON, name, latLngCoordConverter, 
 }
 
 // Pads zeros to start of integer and end of decimal.
-function fixWgs84Length(coordinateHalf, intLength, decLength) {
+function fixWgs84Length(coordinateHalf: string, intLength: number, decLength: number): string {
 	const coordHalfStr = `${coordinateHalf}`;
 	const parts = coordHalfStr.split(".");
 
@@ -177,23 +188,26 @@ function fixWgs84Length(coordinateHalf, intLength, decLength) {
 	return `${integerPart}.${decimalPart}`;
 }
 
-export function geoJSONToISO6709(geoJSON) {
+export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 	function latLngToISO6709String(latLng) {
 		function formatCoordHalf(coordHalf, intAmount) {
 			let coordHalfStr = `${coordHalf}`;
 
-			if (detectCRSFromLatLng(latLng) !== "EPSG:2393") { // Don't add sign to YKJ.
-				let sign = "+";
-				if (coordHalfStr.includes("-")) {
-					sign = "-";
-					coordHalfStr = coordHalfStr.slice(1);
-				}
-
-				const numberPart = detectCRSFromLatLng(latLng) === "WGS84" ? fixWgs84Length(coordHalfStr, intAmount, 6) : coordHalfStr;
-				coordHalfStr = `${sign}${numberPart}`;
+			// Don't add sign to YKJ.
+			if (detectCRSFromLatLng(latLng) === "EPSG:2393") {
+				return coordHalfStr;
 			}
 
-			return `${coordHalfStr}`;
+			let sign = "+";
+			if (coordHalfStr.includes("-")) {
+				sign = "-";
+				coordHalfStr = coordHalfStr.slice(1);
+			}
+
+			const numberPart = detectCRSFromLatLng(latLng) === "WGS84" ? fixWgs84Length(coordHalfStr, intAmount, 6) : coordHalfStr;
+			coordHalfStr = `${sign}${numberPart}`;
+
+			return coordHalfStr;
 		}
 
 		const delimiter = (detectCRSFromLatLng(latLng) !== "EPSG:2393") ? "" : ":"; // Use ':' delimiter for YKJ.
@@ -216,26 +230,31 @@ export function geoJSONToISO6709(geoJSON) {
 
 	let ISOGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToISO6709String, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
 
-	if (geoJSON.crs) {
-		const projString = geoJSON.crs.properties.name;
+	if ((<any> geoJSON).crs) {
+		const projString = (<any> geoJSON).crs.properties.name;
 		ISOGeo += `\nCRS${(projString === EPSG2393String) ? "EPSG:2393" : "EPSG:3067"}`;
 	}
 
 	return ISOGeo;
 }
 
-function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, crsPrefix) {
-	const _lineToCoordinates = (line, idx) => {
+function textualFormatToGeoJSON(text: string,
+								lineToCoordinates: (line: string) => string[],
+								lineIsPolygon: (line: string) => boolean,
+								lineIsLineString: (line: string) => boolean,
+								lineIsPoint: (line: string) => boolean,
+								crsPrefix: string): G.GeoJSON {
+	const _lineToCoordinates = (line, idx): number[] => {
 		try  {
 			const coords = lineToCoordinates(line);
-			if (!coords || coords.length < 1 || coords.some(coord => coord.length < 2)) throw new LajiMapError("Coordinate parsing failed", "coordinateParsingError", {lineIx: idx});
-			return coords;
+			if (!coords || coords.length < 1 || coords.some(coord => coord.length < 2)) throw new LajiMapError("Coordinate parsing failed", "coordinateParsingError", idx);
+			return coords.map(c => +c);
 		} catch (e) {
-			throw new LajiMapError("Line coordinate parsing failed", "CoordinateParsingError", {lineIdx: idx});
+			throw new LajiMapError("Line coordinate parsing failed", "CoordinateParsingError", idx);
 		}
 	};
 
-	const features = text.split("\n").map(line => line.trim()).filter(line => line && !line.startsWith(crsPrefix)).map((line, idx) => {
+	const features: G.Feature[] = <G.Feature[]> text.split("\n").map(line => line.trim()).filter(line => line && !line.startsWith(crsPrefix)).map((line, idx) => {
 		if (lineIsPolygon(line)) {
 			return {type: "Polygon", coordinates: [_lineToCoordinates(line, idx)]};
 		} else if (lineIsLineString(line)) {
@@ -243,14 +262,14 @@ function textualFormatToGeoJSON(text, lineToCoordinates, lineIsPolygon, lineIsLi
 		} else if (lineIsPoint(line)) {
 			return {type: "Point", coordinates: _lineToCoordinates(line, idx)[0]};
 		} else {
-			throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", {lineIdx: idx});
+			throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", idx);
 		}
 	}).map(geometry => {return {type: "Feature", properties: {}, geometry};});
 
 	return {type: "FeatureCollection", features};
 }
 
-export function ISO6709ToGeoJSON(ISO6709) {
+export function ISO6709ToGeoJSON(ISO6709: string): G.GeoJSON {
 	function lineToCoordinates(line) {
 		return line.split("/").filter(line => line).map(coordString => {
 			return coordString.match(/-?\d+\.?\d*/g).map(number => +number).reverse();
@@ -273,7 +292,7 @@ export function ISO6709ToGeoJSON(ISO6709) {
 	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");
 }
 
-export function geoJSONToWKT(geoJSON) {
+export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 	function latLngToWKTString(latLng) {
 		return latLng.reverse().join(" ");
 	}
@@ -296,15 +315,15 @@ export function geoJSONToWKT(geoJSON) {
 	let WKTGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToWKTString, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
 
 
-	if (geoJSON.crs) {
-		const projString = geoJSON.crs.properties.name;
+	if ((<any> geoJSON).crs) {
+		const projString = (<any> geoJSON).crs.properties.name;
 		WKTGeo += "\n" + ((projString === EPSG2393String) ? EPSG2393WKTString : EPSG3067WKTString);
 	}
 
 	return WKTGeo;
 }
 
-export function WKTToGeoJSON(WKT) {
+export function WKTToGeoJSON(WKT: string): G.GeoJSON {
 	function lineToCoordinates(line) {
 		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
 	}
@@ -347,11 +366,12 @@ function distance(latlng1, latlng2) {
 }
 
 export function latLngTuplesDistance(first, second) {
-	return distance(...[first, second].map(([lat, lng]) => {return {lat, lng};}));
+	[first, second] = [first, second].map(([lat, lng]) => {return {lat, lng};})
+	return distance(first, second);
 }
 
-export function latLngSegmentsToGeoJSONGeometry(_lines) {
-	let lines = [];
+export function latLngSegmentsToGeoJSONGeometry(_lines): LineTransectGeometry {
+	let lines: G.Position[][] = [];
 	_lines.forEach(segments => {
 		lines.push([]);
 		const segmentPairs = segments.map((segment, i) => {
@@ -377,10 +397,13 @@ export function latLngSegmentsToGeoJSONGeometry(_lines) {
 	// TODO we aren't checking for length of zero
 	const isMulti = lines.length > 1;
 
-	return {
-		type: isMulti ? "MultiLineString" : "LineString",
-		coordinates: isMulti ? lines : lines[0]
-	};
+	return isMulti ? {
+		type: "MultiLineString",
+		coordinates: lines
+	} as G.MultiLineString : {
+		type: "LineString",
+		coordinates: lines[0]
+	} as G.LineString;
 }
 
 export function geoJSONLineToLatLngSegmentArrays(geometry) {
@@ -394,7 +417,7 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 		geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
 }
 
-export function detectFormat(data) {
+export function detectFormat(data): CoordinateSystem {
 	if (typeof data === "string" && !data.match(/{.*}/) && data.includes("(")) {
 		return "WKT";
 	} else if (typeof data === "string" && !data.match(/{.*}/) && data.includes("/")) {
@@ -404,7 +427,7 @@ export function detectFormat(data) {
 	}
 }
 
-export function detectCRSFromLatLng(latLng) {
+export function detectCRSFromLatLng(latLng): CRSString {
 	if (isObject(latLng) && latLng.lat && latLng.lng) {
 		latLng = [latLng.lat, latLng.lng];
 	}
@@ -417,13 +440,14 @@ export function detectCRSFromLatLng(latLng) {
 	}
 }
 
-export function detectCRS(data) {
+export function detectCRS(data: string | G.GeoJSON): CRSString {
 	try {
 		return detectCRSFromLatLng(data);
 	} catch (e) {
 		const format = detectFormat(data);
 		let geoJSON = undefined;
 		if (format === "WKT") {
+			data = <string> data;
 			let detection = data.match(/(PROJCS.*)/);
 			if (detection) {
 				if (detection[1] === EPSG2393WKTString) return "EPSG:2393";
@@ -432,8 +456,9 @@ export function detectCRS(data) {
 				geoJSON = WKTToGeoJSON(data);
 			}
 		} else if (format === "ISO 6709") {
+			data = <string> data;
 			const detection = data.match(/CRS(.*)/);
-			if (detection) return detection[1];
+			if (detection) return <CRSString> detection[1];
 			else {
 				geoJSON = ISO6709ToGeoJSON(data);
 			}
@@ -468,19 +493,23 @@ export function detectCRS(data) {
 	}
 }
 
-export function convertAnyToWGS84GeoJSON(data) {
+export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON): G.GeoJSON {
 	return convert(data, "GeoJSON", "WGS84");
 }
 
-export function convert(input, outputFormat, outputCRS) {
+export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: CRSString): string;
+export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: CRSString): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): string;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): string | G.GeoJSON {
 	const inputFormat = detectFormat(input);
 	const inputCRS = detectCRS(input);
 
 	let geoJSON = undefined;
 	if (inputFormat === "WKT") {
-		geoJSON = WKTToGeoJSON(input);
+		geoJSON = WKTToGeoJSON(<string> input);
 	} else if (inputFormat === "ISO 6709") {
-		geoJSON = ISO6709ToGeoJSON(input);
+		geoJSON = ISO6709ToGeoJSON(<string> input);
 	} else if (inputFormat === "GeoJSON") {
 		geoJSON = (typeof input === "object") ? input : parseJSON(input);
 	} else {
@@ -507,7 +536,7 @@ export function convert(input, outputFormat, outputCRS) {
 	}
 }
 
-export function getCRSObjectForGeoJSON(geoJSON, crs) {
+export function getCRSObjectForGeoJSON(geoJSON: G.GeoJSON, crs: CRSString): {type: "name", properties: {name: string}} {
 	return (!crs || crs === "WGS84") ? undefined : {
 		type: "name",
 		properties: {
@@ -517,21 +546,24 @@ export function getCRSObjectForGeoJSON(geoJSON, crs) {
 }
 
 export class LajiMapError extends Error {
-	constructor(message, translationKey, additional = {}) {
+	_lajiMapError = true;
+	translationKey: string;
+	lineIdx?: number;
+
+	constructor(message: string, translationKey: string, lineIdx?: number) {
 		super(message);
-		this._lajiMapError = true;
 		this.translationKey = translationKey;
-		Object.keys(additional).forEach(key => this[key] = additional[key]);
+		if (lineIdx !== undefined) this.lineIdx = lineIdx;
 	}
 }
 
-export function stringifyLajiMapError(error, translations) {
+export function stringifyLajiMapError(error: LajiMapError, translations: any): string {
 	let msg = `${translations.errorHTML} ${error.translationKey && translations[error.translationKey] ? translations[error.translationKey] : error.message}.`;
 	if ("lineIdx" in error) msg  += ` ${translations.Line}: ${error.lineIdx}`;
 	return msg;
 }
 
-export function parseJSON(json) {
+export function parseJSON(json: string): any {
 	try {
 		return JSON.parse(json);
 	} catch (e) {
@@ -539,7 +571,13 @@ export function parseJSON(json) {
 	}
 }
 
-const wgs84Check = {
+interface CoordinateValidator {
+	regexp: RegExp;
+	range: number[];
+	formatter? (value: string): string;
+}
+
+const wgs84Check: CoordinateValidator = {
 	regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
 	range: [-180, 180]
 };
@@ -550,24 +588,31 @@ function formatterForLength(length) {
 }
 const ykjRegexp = /^[0-9]{7}$/;
 
-const ykjValidator = [
+
+const ykjValidator: CoordinateValidator[] = [
 	{regexp: ykjRegexp, range: [6600000, 7800000]},
 	{regexp: ykjRegexp, range: [3000000, 3800000]}
 ];
 
-const etrsTm35FinValidator = [
+const etrsTm35FinValidator: CoordinateValidator[] = [
 	{regexp: ykjRegexp, range: [6600000, 7800000]},
 	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000]}
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
-// Valid ykj grid input can not overlap etrsTm35Fin coordinate point. Unvalidate cases where x-coordinate length is 7 digits or y-coordinate doesn't start with '3' or y-coordinate length is 7 digits. This leaves an unlikely corner case where the user wants to input 1 m wide or 1 m long rectangle.
-const ykjGridStrictValidator = ykjValidator.map(validator => {return {...validator, regexp: /^[0-9]{3,6}$/, formatter: formatterForLength(7)};});
+// Valid ykj grid input can not overlap etrsTm35Fin coordinate point. Unvalidate cases where x-coordinate length is 7
+// digits or y-coordinate doesn't start with '3' or y-coordinate length is 7 digits. This leaves an unlikely corner
+// case where the user wants to input 1 m wide or 1 m long rectangle.
+const ykjGridStrictValidator: CoordinateValidator[] = ykjValidator.map(validator => ({
+	...validator,
+	regexp: /^[0-9]{3,6}$/,
+	formatter: formatterForLength(7)
+}));
 const ykjGridValidator = ykjGridStrictValidator; // For backward compability
 
 export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, etrsTm35FinValidator, etrsValidator};
 
-export function validateLatLng(latlng, latLngValidator) {
+export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[]) {
 	return latlng.every((value, i) => {
 		value = `${value}`;
 		const validator = latLngValidator[i];
@@ -579,34 +624,30 @@ export function validateLatLng(latlng, latLngValidator) {
 	});
 }
 
-export function roundMeters(meters, accuracy = 1) {
-	return accuracy ?  Math.round(parseInt(meters) / accuracy) * accuracy : meters;
+export function roundMeters(meters: number, accuracy: number = 1): number {
+	return accuracy ?  Math.round(Math.round(meters) / accuracy) * accuracy : meters;
 }
 
-export function createTextInput() {
+export function createTextInput(): HTMLInputElement {
 	const input = document.createElement("input");
 	input.type = "text";
 	input.className = "form-control laji-map-input";
 	return input;
 }
 
-export function createTextArea(rows = 10, cols = 10) {
+export function createTextArea(rows: number = 10, cols: number = 10): HTMLTextAreaElement {
 	const input = document.createElement("textarea");
-	input.setAttribute("rows", rows);
-	input.setAttribute("cols", cols);
+	input.setAttribute("rows", `${rows}`);
+	input.setAttribute("cols", `${cols}`);
 	input.className = "form-control laji-map-input";
 	return input;
 }
 
-export function isPolyline(layer) {
-	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
-}
-
-export function isObject(obj) {
+export function isObject(obj): boolean {
 	return typeof obj === "object" && obj !== null && !Array.isArray(obj) && obj.constructor === Object;
 }
 
-export function combineColors(...colors) {
+export function combineColors(...colors: any[]): string {
 	function toDecimal(hex) {
 		return parseInt(hex, 16);
 	}
@@ -621,7 +662,8 @@ export function combineColors(...colors) {
 
 	colors = colors.map(color => {
 		if (color.length === 4) {
-			color = `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+			const [hash, r, g, b] = color.split("");
+			color = `#${r}${r}${g}${g}${b}${b}`;
 		}
 		return color;
 	});
@@ -631,12 +673,15 @@ export function combineColors(...colors) {
 	const bv = colors.map(color => color.substring(5,7));
 	return [rv, gv, bv].reduce((rgb, hexVector) => {
 		 let value = hexVector.reduce((combinedDecimal, hex) => {
-			 if (hex === "--") return combinedDecimal;
+			if (hex === "--") {
+				return combinedDecimal;
+			}
 			if (combinedDecimal === undefined) {
 				return toDecimal(hex);
 			}
 			const decimal = toDecimal(hex);
-			const newCombined = parseInt(combinedDecimal - ((combinedDecimal - decimal) / 2));
+			const combinedDecimalInt = parseInt(combinedDecimal);
+			const newCombined = Math.round(combinedDecimalInt - ((combinedDecimalInt - decimal) / 2));
 			return Math.max(Math.min(newCombined, 255), 0);
 		}, undefined);
 
@@ -655,15 +700,15 @@ export function combineColors(...colors) {
 	}, "#");
 }
 
-export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
+export function getLineTransectStartEndDistancesForIdx(LTFeature: LineTransectFeature, idx: number, round?: number): number[] {
 	const lines = geoJSONLineToLatLngSegmentArrays(LTFeature.geometry);
 	let i = 0;
 	let distance = 0;
 	let prevDistance = distance;
 	lines.some(line => {
 		prevDistance = distance;
-		line.some(segment => {
-			distance += latLngTuplesDistance(...segment);
+		line.some(([start, end]) => {
+			distance += latLngTuplesDistance(start, end);
 		});
 		if (i === idx) {
 			return true;
@@ -674,4 +719,4 @@ export function getLineTransectStartEndDistancesForIdx(LTFeature, idx, round) {
 	return [prevDistance, distance].map(m => roundMeters(m, round));
 }
 
-export const capitalizeFirstLetter = string => string.charAt(0).toUpperCase() + string.slice(1);
+export const capitalizeFirstLetter = (string: string): string => string.charAt(0).toUpperCase() + string.slice(1);

@@ -1,21 +1,40 @@
 /*
+	Contains some local changes for typescript to work!
+	~ Olli
+ */
+
+/*
   Copyright (c) 2012 Eric S. Theise
-  
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
-  documentation files (the "Software"), to deal in the Software without restriction, including without limitation the 
-  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit 
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+  documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
   persons to whom the Software is furnished to do so, subject to the following conditions:
-  
-  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the 
+
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
   Software.
-  
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
-  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
-  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-    
-L.Rrose = L.Popup.extend({
+
+import * as L from "leaflet";
+
+//declare module "leaflet" {
+//	class Rrose extends L.Popup {
+//
+//	}
+//	//class Rrose extends L.Popup {
+//	//	constructor(options?: any);
+//	//	setContent(content: string): this;
+//	//	openOn(map: L.Map): this;
+//	//	setLatLng(latLng: L.LatLng): this;
+//	//}
+//}
+
+(<any> L).Rrose = L.Popup.extend({
 
   _initLayout:function () {
     var prefix = 'leaflet-rrose',
@@ -56,7 +75,7 @@ L.Rrose = L.Popup.extend({
       if (this.options.position === 's') {
         this._tipContainer = L.DomUtil.create('div', prefix + '-tip-container', container);
         wrapper = this._wrapper = L.DomUtil.create('div', prefix + '-content-wrapper', container);
-      } 
+      }
       else {
         this._tipContainer = L.DomUtil.create('div', prefix + '-tip-container' + ' ' + prefix + '-tip-container-' + this.options.position, container);
         wrapper = this._wrapper = L.DomUtil.create('div', prefix + '-content-wrapper' + ' ' + prefix + '-content-wrapper-' + this.options.position, container);
@@ -65,12 +84,12 @@ L.Rrose = L.Popup.extend({
       L.DomEvent.disableClickPropagation(wrapper);
       this._contentNode = L.DomUtil.create('div', prefix + '-content', wrapper);
       L.DomEvent.on(this._contentNode, 'mousewheel', L.DomEvent.stopPropagation);
-    } 
+    }
     else {
       if (this.options.position === 'n') {
         wrapper = this._wrapper = L.DomUtil.create('div', prefix + '-content-wrapper', container);
         this._tipContainer = L.DomUtil.create('div', prefix + '-tip-container', container);
-      } 
+      }
       else {
         wrapper = this._wrapper = L.DomUtil.create('div', prefix + '-content-wrapper' + ' ' + prefix + '-content-wrapper-' + this.options.position, container);
         this._tipContainer = L.DomUtil.create('div', prefix + '-tip-container' + ' ' + prefix + '-tip-container-' + this.options.position, container);
@@ -100,10 +119,10 @@ L.Rrose = L.Popup.extend({
 
     if (/e/.test(this.options.position)) {
       this._containerLeft = offset.x + (is3d ? 0 : pos.x);
-    } 
+    }
     else if (/w/.test(this.options.position)) {
       this._containerLeft = -Math.round(this._containerWidth) + offset.x + (is3d ? 0 : pos.x);
-    } 
+    }
     else {
       this._containerLeft = -Math.round(this._containerWidth / 2) + offset.x + (is3d ? 0 : pos.x);
     }

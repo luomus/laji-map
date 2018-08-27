@@ -101,7 +101,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	_locateOn: boolean;
 	_controlButtons: {[controlName: string]: HTMLElement};
 	controls: L.Control[];
-	_customControls: CustomControl[] = [];
+	_customControls: CustomControl[];
 	layerControl: L.Control.Layers;
 	_opacitySetBySlide: boolean;
 	_slider: any;
@@ -112,7 +112,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			...super.getOptionKeys(),
 			controlSettings: "setControlsWarn",
 			controls: ["setControls", () => this.controlSettings],
-			customControls: "setCustomControls"
+			customControls: ["setCustomControls", () => {
+				return this._customControls === undefined
+					? this._customControls
+					: this._customControls.map(({_custom, ...rest}) => {
+						return {...rest};
+					});
+			}]
 		};
 	}
 
@@ -441,12 +447,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		}, {});
 
 		if (this._customControls) {
-			this._customControls.forEach(customControl => {
-				customControl._custom = true;
+			this._customControls = this._customControls.map(customControl => {
+				customControl = <any> {...customControl, _custom: true};
 				const target = customControl.group && controlGroups[customControl.group]
 					? controlGroups[customControl.group].controls
 					: this.controlItems;
 				target.push(customControl);
+				return customControl;
 			});
 		}
 
@@ -727,8 +734,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		provide(this, "controlSettings");
 	}
 
-	setCustomControls(controls: CustomControl[]) {
-		if (this._customControls === controls || (this._customControls.length === 0 && controls.length === 0)) return;
+	setCustomControls(controls: CustomControl[] = []) {
+		const {_customControls = []} = this;
+		if (_customControls.length === 0 && controls.length === 0) return;
 		this._customControls = controls;
 		provide(this, "customControls");
 	}

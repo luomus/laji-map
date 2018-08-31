@@ -194,6 +194,7 @@ export type OverlayName = "geobiologicalProvinces"
                         | "forestVegetationZones"
                         | "mireVegetationZones"
                         | "threatenedSpeciesEvaluationZones"
+                        | "biodiversityForestZonest"
                         | "ykjGrid"
                         | "ykjGridLabels";
 
@@ -709,7 +710,7 @@ export default class LajiMap {
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
-				}).setOpacity(1),
+				}),
 				forestVegetationZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,
 					layers: "Metsakasvillisuusvyohykkeet",
@@ -731,6 +732,10 @@ export default class LajiMap {
 					transparent: true,
 					version: "1.1.0"
 				}),
+				biodiversityForestZones: L.tileLayer.wms("http://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", {
+					maxZoom: 15,
+					layers: "8"
+				}).setOpacity(0.5),
 				ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
 					maxZoom: 15,
 					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",

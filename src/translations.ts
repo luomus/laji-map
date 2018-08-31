@@ -603,5 +603,10 @@ export default {
 		fi: "Lopettaaksesi muokkauksen",
 		en: "To stop editing",
 		sv: "För att sluta redigera"
-	}
+	},
+	biodiversityForestZones: {
+		fi: "Monimuotoisuudelle tärkeät metsäalueet (alueellinen)",
+		en: "Forest zones important for biodiversity (regional)",
+		sv: "Skogszoner som är viktiga för biologisk mångfald (regional)"
+	},
 };

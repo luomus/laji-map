@@ -1,4 +1,4 @@
-import { LineTransectEvent, LineTransectGeometry } from "./line-transect";
+import {LineTransectEvent, LineTransectGeometry, LineTransectOptions} from "./line-transect";
 import * as L from "leaflet";
 import * as G from "geojson";
 import "leaflet-draw";
@@ -13,8 +13,6 @@ import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
 	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError
 } from "./utils";
-import HasControls from "./controls";
-import HasLineTransect from "./line-transect";
 import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
 import {
 	NORMAL_COLOR,
@@ -27,6 +25,7 @@ import {
 } from "./globals";
 
 import translations from "./translations";
+import {ControlsOptions} from "./controls";
 
 function capitalizeFirstLetter(s: string) {
 	return s.charAt(0).toUpperCase() + s.slice(1);
@@ -132,28 +131,34 @@ export interface DrawHistoryEntry {
 	redoEvents?: LajiMapEvent[];
 }
 
-export type Lang = "fi" | "en" | "sv";
+export enum Lang {
+	fi = "fi",
+    en = "en",
+    sv = "sv"
+}
 
-export type TileLayerName =
-	"maastokartta"
-	| "taustakartta"
-	| "pohjakartta"
-	| "ortokuva"
-	| "laser"
-	| "openStreepMap"
-	| "googleSatellite";
+export enum TileLayerName {
+	maastokartta = "maastokartta",
+	taustakartta = "taustakartta",
+	pohjakartta = "pohjakartta",
+	ortokuva = "ortokuva",
+	laser = "laser",
+	openStreetMap = "openStreetMap",
+	googleSatellite = "googleSatellite"
+}
 
-export type OverlayName =
-	"geobiologicalProvinces"
-	| "geobiologicalProvinceBorders"
-	| "forestVegetationZones"
-	| "mireVegetationZones"
-	| "threatenedSpeciesEvaluationZones"
-	| "biodiversityForestZonest"
-	| "ykjGrid"
-	| "ykjGridLabels";
+export enum OverlayName {
+	geobiologicalProvinces = "geobiologicalProvinces",
+	geobiologicalProvinceBorders = "geobiologicalProvinceBorders",
+	forestVegetationZones = "forestVegetationZones",
+	mireVegetationZones = "mireVegetationZones",
+	threatenedSpeciesEvaluationZones = "threatenedSpeciesEvaluationZones",
+	biodiversityForestZones = "biodiversityForestZones",
+	ykjGrid = "ykjGrid",
+	ykjGridLabels = "ykjGridLabels"
+}
 
-export interface LajiMapOptions {
+export interface Options {
 	rootElem?: HTMLElement;
 	lang?: Lang;
 	data?: DataOptions[];
@@ -181,6 +186,8 @@ export interface LajiMapOptions {
 	marker?: boolean | L.DrawOptions.MarkerOptions;
 	bodyAsDialogRoot?: boolean;
 	clickBeforeZoomAndPan?: boolean;
+	lineTransect?: LineTransectOptions;
+	controls?: boolean | ControlsOptions;
 }
 
 export default class LajiMap {
@@ -211,7 +218,7 @@ export default class LajiMap {
 	lang: Lang;
 	tileLayerOpacity: number;
 	onSetLangHooks: (() => void)[] = [];
-	options: LajiMapOptions;
+	options: Options;
 	_dialogRoot: HTMLElement;
 	_openDialogs = [];
 	_closeDialog: (e?: Event) => void;
@@ -272,12 +279,12 @@ export default class LajiMap {
 	_tooltipTranslationHook: () =>  void;
 	_onMouseMove: (e: any) => void;
 
-	constructor(props: LajiMapOptions) {
+	constructor(props: Options) {
 		this._constructDictionary();
 
-		const options: LajiMapOptions = {
-			tileLayerName: "taustakartta",
-			lang: "en",
+		const options: Options = {
+			tileLayerName: TileLayerName.taustakartta,
+			lang: Lang.en,
 			data: [],
 			locate: false,
 			center:  [65, 26],
@@ -330,13 +337,13 @@ export default class LajiMap {
 		};
 	}
 
-	setOptions(options: LajiMapOptions = {}) {
-		Object.keys(options).forEach((option: keyof LajiMapOptions) => {
+	setOptions(options: Options = {}) {
+		Object.keys(options).forEach((option: keyof Options) => {
 			this.setOption(option, options[option]);
 		});
 	}
 
-	setOption(option: keyof LajiMapOptions, value) {
+	setOption(option: keyof Options, value) {
 		const optionKeys = this.getOptionKeys();
 
 		if (!optionKeys.hasOwnProperty(option)) {
@@ -352,7 +359,7 @@ export default class LajiMap {
 		}
 	}
 
-	getOptions(): LajiMapOptions {
+	getOptions(): Options {
 		const optionKeys = this.getOptionKeys();
 
 		return Object.keys(optionKeys).reduce((options, key) => {

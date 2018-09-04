@@ -1,7 +1,7 @@
 /* tslint:disable */
-import LajiMap from  "./map";
-import WithControls from  "./controls";
-import WithLineTransect from  "./line-transect";
+import LajiMap, {Options as _LajiMapOptions} from "./map";
+import WithControls, {LajiMapOptions as LajiMapOptionsWithControls} from  "./controls";
+import WithLineTransect, {LajiMapOptions as LajiMapOptionsWithLineTransect} from  "./line-transect";
 
 export default WithControls(WithLineTransect(LajiMap));
 //export default WithLineTransect(LajiMap);

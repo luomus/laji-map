@@ -42,6 +42,10 @@ const hintPointStyle: L.CircleMarkerOptions = {...closebyPointStyle, radius: 7};
 
 const LT_WIDTH_METERS = 25;
 
+export interface LajiMapOptions {
+	lineTransect?: LineTransectOptions
+}
+
 export interface GetLineTransectFeatureStyleOptions {
 	lineIdx: number;
 	segmentIdx: number;

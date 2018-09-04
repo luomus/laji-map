@@ -1,3 +1,4 @@
+/* tslint:disable */
 require("leaflet/dist/leaflet.css");
 require("leaflet-draw/dist/leaflet.draw.css");
 require("leaflet-contextmenu/dist/leaflet.contextmenu.css");

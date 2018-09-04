@@ -11,7 +11,7 @@
     "build": "npm run build:lib && npm run build:dist",
     "publish-to-npm": "npm version patch && git push && npm run build && npm publish",
     "push-to-git": "git push",
-    "lint": "eslint -c .eslintrc.prod.json --ignore-pattern src/lib/ src playground"
+    "lint": "tslint src/*.ts"
   },
   "repository": {
     "type": "git",
@@ -34,13 +34,13 @@
     "awesome-typescript-loader": "^5.2.0",
     "copyfiles": "^2.0.0",
     "css-loader": "^1.0.0",
-    "eslint": "^3.19.0",
     "file-loader": "^1.1.11",
     "json-loader": "^0.5.7",
     "mini-css-extract-plugin": "^0.4.1",
     "rimraf": "2.5.4",
     "style-loader": "^0.18.2",
     "svg-url-loader": "^2.3.2",
+    "ts-lint": "^4.5.1",
     "typescript": "^2.9.2",
     "url-loader": "^1.0.1",
     "webpack": "^4.16.1",

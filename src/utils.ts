@@ -5,7 +5,7 @@ import {
 	EPSG2393WKTString,
 	EPSG3067WKTString
 } from "./globals";
-import * as G from 'geojson';
+import * as G from "geojson";
 import {LineTransectFeature, LineTransectGeometry} from "./line-transect";
 
 export function reverseCoordinate(c: [number, number]): [number, number] {
@@ -17,7 +17,7 @@ export type CoordinateSystem = "GeoJSON" | "WKT" | "ISO 6709";
 
 export function convertLatLng(latlng: [number, number], from: CRSString, to: CRSString) {
 	function formatToProj4Format(format) {
-		switch(format) {
+		switch (format) {
 		case "EPSG:2393": return EPSG2393String;
 		case "EPSG:3067": return EPSG3067String;
 		default: return proj4.defs(format);
@@ -30,18 +30,20 @@ export function convertLatLng(latlng: [number, number], from: CRSString, to: CRS
 	} else if (from === "EPSG:3067") {
 		validator = etrsTm35FinValidator;
 	}
-	if (validator && validator.formatter) latlng = <[number, number]> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+	if (validator && validator.formatter) {
+		latlng = <[number, number]> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+	}
 
 	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
 	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
 }
 
 function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) => any): any {
-	function _updater(obj) {
-		if (typeof obj === "object" && obj !== null) {
-			Object.keys(obj).forEach(key => {
-				obj[key] = fn(key, obj[key]);
-				_updater(obj[key]);
+	function _updater(_obj) {
+		if (typeof _obj === "object" && _obj !== null) {
+			Object.keys(_obj).forEach(key => {
+				_obj[key] = fn(key, _obj[key]);
+				_updater(_obj[key]);
 			});
 		}
 		return obj;
@@ -61,9 +63,9 @@ export function convertGeoJSON(geoJSON: G.GeoJSON, from: CRSString, to: CRSStrin
 	});
 }
 
-/** Taken from https://github.com/arg20/circle-to-radius
- *  (Copied here because the library didn't act nice with exporting)
-**/
+/* Taken from https://github.com/arg20/circle-to-radius
+ * (Copied here because the library didn't act nice with exporting)
+ */
 export function circleToPolygon(center, radius, numberOfSegments) {
 	function toRadians(angleInDegrees) {
 		return angleInDegrees * Math.PI / 180;
@@ -74,21 +76,22 @@ export function circleToPolygon(center, radius, numberOfSegments) {
 	}
 
 	function offset(c1, distance, bearing) {
-		var lat1 = toRadians(c1[1]);
-		var lon1 = toRadians(c1[0]);
-		var dByR = distance / 6378137; // distance divided by 6378137 (radius of the earth) wgs84
-		var lat = Math.asin(
+		var lat1 = toRadians(c1[1]); // tslint:disable-line
+		var lon1 = toRadians(c1[0]); // tslint:disable-line
+		// distance divided by 6378137 (radius of the earth) wgs84
+		var dByR = distance / 6378137;// tslint:disable-line
+		var lat = Math.asin( // tslint:disable-line
 			Math.sin(lat1) * Math.cos(dByR) +
 			Math.cos(lat1) * Math.sin(dByR) * Math.cos(bearing));
-		var lon = lon1 + Math.atan2(
+		var lon = lon1 + Math.atan2( // tslint:disable-line
 				Math.sin(bearing) * Math.sin(dByR) * Math.cos(lat1),
 				Math.cos(dByR) - Math.sin(lat1) * Math.sin(lat));
 		return [toDegrees(lon), toDegrees(lat)];
 	}
 
-	var n = numberOfSegments ? numberOfSegments : 32;
-	var flatCoordinates = [];
-	var coordinates = [];
+	var n = numberOfSegments ? numberOfSegments : 32; // tslint:disable-line
+	var flatCoordinates = []; // tslint:disable-line
+	var coordinates = []; // tslint:disable-line
 	for (let i = 0; i < n; ++i) {
 		flatCoordinates.push.apply(flatCoordinates, offset(center, radius, 2 * Math.PI * i / n));
 	}
@@ -107,7 +110,7 @@ export function circleToPolygon(center, radius, numberOfSegments) {
 export function standardizeGeoJSON(geoJSON: G.GeoJSON): G.GeoJSON {
 
 	function standardizeGeometry(geom) {
-		let {coordinateVerbatim, radius, ...standardized} = geom; //eslint-disable-line
+		let {coordinateVerbatim, radius, ...standardized} = geom;
 		if (radius !== undefined) {
 			standardized = circleToPolygon(standardized.coordinates, radius, 8);
 		}
@@ -120,13 +123,14 @@ export function standardizeGeoJSON(geoJSON: G.GeoJSON): G.GeoJSON {
 	});
 }
 
-export function geoJSONToTextualFormatWith(geoJSON: G.GeoJSON,
-										   name: string,
-										   latLngCoordConverter: (latlng: number[]) => string,
-										   coordinateJoiner: (latlng: number[]) => string,
-										   coordinateStrToPoint: (coordinate: string) => string,
-										   coordinateStrToLine: (coordinate: string) => string,
-										   coordinateStrToPolygon: (coordinate: string) => string,): string {
+export function geoJSONToTextualFormatWith(
+		geoJSON: G.GeoJSON,
+		name: string,
+		latLngCoordConverter: (latlng: number[]) => string,
+		coordinateJoiner: (latlng: number[]) => string,
+		coordinateStrToPoint: (coordinate: string) => string,
+		coordinateStrToLine: (coordinate: string) => string,
+		coordinateStrToPolygon: (coordinate: string) => string): string {
 	function geoJSONCoordToTextual(coords) {
 		return latLngCoordConverter(reverseCoordinate(coords));
 	}
@@ -142,35 +146,39 @@ export function geoJSONToTextualFormatWith(geoJSON: G.GeoJSON,
 
 	function geometryConverterFn(geometry) {
 		switch (geometry.type) {
-		case "GeometryCollection": return geometry.geometries.reduce((collStr, _geom) => `${collStr}${geometryConverterFn(_geom)}\n`, "");
-		case "Point": return coordinateStrToPoint(geoJSONCoordToTextual(geometry.coordinates));
-		case "LineString": return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
+		case "GeometryCollection":
+				return geometry.geometries.reduce((collStr, _geom) => `${collStr}${geometryConverterFn(_geom)}\n`, "");
+		case "Point":
+				return coordinateStrToPoint(geoJSONCoordToTextual(geometry.coordinates));
+		case "LineString":
+				return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
 		case "Polygon": {
 			if (geometry.coordinates.length > 1) throw new Error(`${name} doesn't support polygons with interior rings.`);
 			return coordinateStrToPolygon(geoJSONCoordsToTextualArea(geometry.coordinates[0]));
 		}
-		default: throw new Error(`Unknown geometry type ${geometry.type} for ${name} conversion`);
+		default:
+				throw new Error(`Unknown geometry type ${geometry.type} for ${name} conversion`);
 		}
 	}
 
 	function recursiveConvert(geometry, coordinateStr = "") {
-		const reducer = (coordinateStr, geoObject) => {
+		const reducer = (_coordinateStr, geoObject) => {
 			if (geoObject.features) {
 				geoObject.features.forEach(feature => {
-					coordinateStr += `${recursiveConvert(feature)}`;
+					_coordinateStr += `${recursiveConvert(feature)}`;
 				});
 			} else if (geoObject.geometry) {
-				coordinateStr += `${geometryConverterFn(geoObject.geometry)}\n`;
+				_coordinateStr += `${geometryConverterFn(geoObject.geometry)}\n`;
 			} else if (geoObject.geometries) {
-				geoObject.geometries.forEach(geometry => {
-					coordinateStr += `${geometryConverterFn(geometry)}\n`;
+				geoObject.geometries.forEach(_geometry => {
+					_coordinateStr += `${geometryConverterFn(_geometry)}\n`;
 				});
 			} else if (geoObject.coordinates) {
-				coordinateStr += `${geometryConverterFn(geoObject)}\n`;
+				_coordinateStr += `${geometryConverterFn(geoObject)}\n`;
 			} else {
 				throw new Error(`Ran into an unknown geoJSON object "${geoObject}"`);
 			}
-			return coordinateStr;
+			return _coordinateStr;
 		};
 		return (Array.isArray(geometry) ? geometry : [geometry]).reduce(reducer, coordinateStr);
 	}
@@ -204,7 +212,9 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 				coordHalfStr = coordHalfStr.slice(1);
 			}
 
-			const numberPart = detectCRSFromLatLng(latLng) === "WGS84" ? fixWgs84Length(coordHalfStr, intAmount, 6) : coordHalfStr;
+			const numberPart = detectCRSFromLatLng(latLng) === "WGS84"
+				? fixWgs84Length(coordHalfStr, intAmount, 6)
+				: coordHalfStr;
 			coordHalfStr = `${sign}${numberPart}`;
 
 			return coordHalfStr;
@@ -228,7 +238,15 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 		return `/${coords}`;
 	}
 
-	let ISOGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToISO6709String, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
+	let ISOGeo = geoJSONToTextualFormatWith(
+		geoJSON,
+		"ISO 6709",
+		latLngToISO6709String,
+		coordinateJoiner,
+		coordinateStrToPoint,
+		coordinateStrToLine,
+		coordinateStrToPolygon
+	);
 
 	if ((<any> geoJSON).crs) {
 		const projString = (<any> geoJSON).crs.properties.name;
@@ -238,41 +256,48 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 	return ISOGeo;
 }
 
-function textualFormatToGeoJSON(text: string,
-								lineToCoordinates: (line: string) => string[],
-								lineIsPolygon: (line: string) => boolean,
-								lineIsLineString: (line: string) => boolean,
-								lineIsPoint: (line: string) => boolean,
-								crsPrefix: string): G.GeoJSON {
+function textualFormatToGeoJSON(
+		text: string,
+		lineToCoordinates: (line: string) => string[],
+		lineIsPolygon: (line: string) => boolean,
+		lineIsLineString: (line: string) => boolean,
+		lineIsPoint: (line: string) => boolean,
+		crsPrefix: string): G.GeoJSON {
 	const _lineToCoordinates = (line, idx): number[] => {
 		try  {
 			const coords = lineToCoordinates(line);
-			if (!coords || coords.length < 1 || coords.some(coord => coord.length < 2)) throw new LajiMapError("Coordinate parsing failed", "coordinateParsingError", idx);
+			if (!coords || coords.length < 1 || coords.some(coord => coord.length < 2)) {
+				throw new LajiMapError("Coordinate parsing failed", "coordinateParsingError", idx);
+			}
 			return coords.map(c => +c);
 		} catch (e) {
 			throw new LajiMapError("Line coordinate parsing failed", "CoordinateParsingError", idx);
 		}
 	};
 
-	const features: G.Feature[] = <G.Feature[]> text.split("\n").map(line => line.trim()).filter(line => line && !line.startsWith(crsPrefix)).map((line, idx) => {
-		if (lineIsPolygon(line)) {
-			return {type: "Polygon", coordinates: [_lineToCoordinates(line, idx)]};
-		} else if (lineIsLineString(line)) {
-			return {type: "LineString", coordinates: _lineToCoordinates(line, idx)};
-		} else if (lineIsPoint(line)) {
-			return {type: "Point", coordinates: _lineToCoordinates(line, idx)[0]};
-		} else {
-			throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", idx);
-		}
-	}).map(geometry => {return {type: "Feature", properties: {}, geometry};});
+	const features: G.Feature[] = <G.Feature[]> text
+		.split("\n")
+		.map(line => line.trim())
+		.filter(line => line && !line.startsWith(crsPrefix))
+		.map((line, idx) => {
+			if (lineIsPolygon(line)) {
+				return {type: "Polygon", coordinates: [_lineToCoordinates(line, idx)]};
+			} else if (lineIsLineString(line)) {
+				return {type: "LineString", coordinates: _lineToCoordinates(line, idx)};
+			} else if (lineIsPoint(line)) {
+				return {type: "Point", coordinates: _lineToCoordinates(line, idx)[0]};
+			} else {
+				throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", idx);
+			}
+	}).map(geometry => ({type: "Feature", properties: {}, geometry}));
 
 	return {type: "FeatureCollection", features};
 }
 
 export function ISO6709ToGeoJSON(ISO6709: string): G.GeoJSON {
 	function lineToCoordinates(line) {
-		return line.split("/").filter(line => line).map(coordString => {
-			return coordString.match(/-?\d+\.?\d*/g).map(number => +number).reverse();
+		return line.split("/").filter(l => l).map(coordString => {
+			return coordString.match(/-?\d+\.?\d*/g).map(n => +n).reverse();
 		});
 	}
 
@@ -312,8 +337,15 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 		return `POLYGON((${coords}))`;
 	}
 
-	let WKTGeo = geoJSONToTextualFormatWith(geoJSON, "ISO 6709", latLngToWKTString, coordinateJoiner, coordinateStrToPoint, coordinateStrToLine, coordinateStrToPolygon);
-
+	let WKTGeo = geoJSONToTextualFormatWith(
+		geoJSON,
+		"ISO 6709",
+		latLngToWKTString,
+		coordinateJoiner,
+		coordinateStrToPoint,
+		coordinateStrToLine,
+		coordinateStrToPolygon
+	);
 
 	if ((<any> geoJSON).crs) {
 		const projString = (<any> geoJSON).crs.properties.name;
@@ -354,19 +386,19 @@ export function latLngTuplesEqual(first, second) {
 // Copy pasted from leaflet/src/geo/crs/CRS.Earth.js for headless usage.
 // distance between two geographical points using spherical law of cosines approximation
 function distance(latlng1, latlng2) {
-	var rad = Math.PI / 180,
+	var rad = Math.PI / 180, // tslint:disable-line
 		lat1 = latlng1.lat * rad,
 		lat2 = latlng2.lat * rad,
 		sinDLat = Math.sin((latlng2.lat - latlng1.lat) * rad / 2),
 		sinDLon = Math.sin((latlng2.lng - latlng1.lng) * rad / 2),
 		a = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon,
 		c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-	//return this.R * c;
+	// return this.R * c;
 	return 6371000 * c;
 }
 
 export function latLngTuplesDistance(first, second) {
-	[first, second] = [first, second].map(([lat, lng]) => {return {lat, lng};})
+	[first, second] = [first, second].map(([lat, lng]) => ({lat, lng}));
 	return distance(first, second);
 }
 
@@ -546,9 +578,9 @@ export function getCRSObjectForGeoJSON(geoJSON: G.GeoJSON, crs: CRSString): {typ
 }
 
 export class LajiMapError extends Error {
-	_lajiMapError = true;
-	translationKey: string;
-	lineIdx?: number;
+	public _lajiMapError = true;
+	public translationKey: string;
+	public lineIdx?: number;
 
 	constructor(message: string, translationKey: string, lineIdx?: number) {
 		super(message);
@@ -558,7 +590,7 @@ export class LajiMapError extends Error {
 }
 
 export function stringifyLajiMapError(error: LajiMapError, translations: any): string {
-	let msg = `${translations.errorHTML} ${error.translationKey && translations[error.translationKey] ? translations[error.translationKey] : error.message}.`;
+	let msg = `${translations.errorHTML} ${error.translationKey && translations[error.translationKey] ? translations[error.translationKey] : error.message}.`; // tslint:disable-line
 	if ("lineIdx" in error) msg  += ` ${translations.Line}: ${error.lineIdx}`;
 	return msg;
 }
@@ -587,7 +619,6 @@ function formatterForLength(length) {
 	return value => (value.length < length ? value + "0".repeat(length - value.length) : value);
 }
 const ykjRegexp = /^[0-9]{7}$/;
-
 
 const ykjValidator: CoordinateValidator[] = [
 	{regexp: ykjRegexp, range: [6600000, 7800000]},
@@ -668,11 +699,11 @@ export function combineColors(...colors: any[]): string {
 		return color;
 	});
 
-	const rv = colors.map(color => color.substring(1,3));
-	const gv = colors.map(color => color.substring(3,5));
-	const bv = colors.map(color => color.substring(5,7));
+	const rv = colors.map(color => color.substring(1, 3));
+	const gv = colors.map(color => color.substring(3, 5));
+	const bv = colors.map(color => color.substring(5, 7));
 	return [rv, gv, bv].reduce((rgb, hexVector) => {
-		 let value = hexVector.reduce((combinedDecimal, hex) => {
+		let value = hexVector.reduce((combinedDecimal, hex) => {
 			if (hex === "--") {
 				return combinedDecimal;
 			}
@@ -719,4 +750,4 @@ export function getLineTransectStartEndDistancesForIdx(LTFeature: LineTransectFe
 	return [prevDistance, distance].map(m => roundMeters(m, round));
 }
 
-export const capitalizeFirstLetter = (string: string): string => string.charAt(0).toUpperCase() + string.slice(1);
+export const capitalizeFirstLetter = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);

@@ -7,7 +7,6 @@ const reflected = {};
  * provided, as to speak).
  */
 
-
 export function depsProvided(target, name, args) {
 	initDepContextFor(target);
 	const {depsExecuted, params} = target;
@@ -52,13 +51,13 @@ export function dependsOn(...deps) {
  * Provide a dependency. All delayed functions depending on this function are executed after this.
  */
 export function provide(target, prov) {
-	function executeDependencies(target, prov) {
+	function executeDependencies(_target, _prov) {
 
-		const {depsExecuted} = target;
-		(providerToDependency[prov] || []).filter(dep => depIsProvided(target, dep)).forEach(dep => {
-			if (!target.params[dep] && !reflected[dep]) return;
-			target[dep](...(target.params[dep] || []));
-			delete target.params[dep];
+		const {depsExecuted} = _target;
+		(providerToDependency[_prov] || []).filter(dep => depIsProvided(_target, dep)).forEach(dep => {
+			if (!_target.params[dep] && !reflected[dep]) return;
+			_target[dep](...(_target.params[dep] || []));
+			delete _target.params[dep];
 			depsExecuted[dep] = true;
 		});
 	}

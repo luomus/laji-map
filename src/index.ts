@@ -1,3 +1,4 @@
+/* tslint:disable */
 import LajiMap from  "./map";
 import WithControls from  "./controls";
 import WithLineTransect from  "./line-transect";

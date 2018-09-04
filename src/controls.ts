@@ -4,7 +4,8 @@ import { DrawOptions, DataItemType, LajiMapEvent, DataItemLayer  } from "./map";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator,
-	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString
+	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
+	capitalizeFirstLetter
 } from "./utils";
 import {
 	ESC,
@@ -69,16 +70,16 @@ export interface ControlsOptions {
 	location?: boolean | LocationControlOptions;
 	coordinates?: boolean;
 	lineTransect?: boolean | LineTransectControlOptions;
-	layerOpacity?: boolean
-	attribution?: boolean
+	layerOpacity?: boolean;
+	attribution?: boolean;
 }
 
 export interface InternalControlsOptions extends ControlsOptions {
-	drawUtils?: boolean | DrawControlOptions
+	drawUtils?: boolean | DrawControlOptions;
 }
 
 export interface LajiMapOptions {
-	controls?: boolean | ControlsOptions
+	controls?: boolean | ControlsOptions;
 }
 
 function getSubControlName(name, subName) {
@@ -91,18 +92,17 @@ export interface CustomControl extends L.Control {
 }
 
 type Constructor<LM> = new(...args: any[]) => LM;
-export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class _LajiMap extends Base {
+export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithControls extends Base { // tslint:disable-line
 
-	controlItems: ControlOptions[];
-	activeControl: L.Control;
-	controlSettings: InternalControlsOptions;
-
-	drawControl: L.Control.Draw;
-	_locateOn: boolean;
-	_controlButtons: {[controlName: string]: HTMLElement};
 	controls: L.Control[];
 	_customControls: CustomControl[];
 	layerControl: L.Control.Layers;
+	controlItems: ControlOptions[];
+	activeControl: L.Control;
+	controlSettings: InternalControlsOptions;
+	drawControl: L.Control.Draw;
+	_locateOn: boolean;
+	_controlButtons: {[controlName: string]: HTMLElement};
 	_opacitySetBySlide: boolean;
 	_slider: any;
 	_contextMenuItems: {[buttonName: string]: HTMLElement};
@@ -183,10 +183,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			});
 			this._clearEditable();
 		};
-		// TODO Poista kommentit kun laji.fi havaintokartan neliöllä rajaus bugi korjattu. Jostain syystä draw:created -> this._onAdd ei triggeröidy.
-		//this.map.on("draw:created", e => {
-		//	cancelDraw(e);
-		//});
+		// TODO Poista kommentit kun laji.fi havaintokartan neliöllä rajaus bugi korjattu.
+		// Jostain syystä draw:created -> this._onAdd ei triggeröidy.
+		// this.map.on("draw:created", e => {
+		// 	cancelDraw(e);
+		// });
 		this.map.on("controlClick", cancelDraw);
 	}
 
@@ -469,8 +470,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (_that.container.contains(cont)) _that.container.removeChild(cont);
 				if (eventName) that.map.off(eventName);
 				if (_that.container.contains(cont)) _that.container.removeChild(cont);
-				Object.keys(_that.buttonActions[name]).forEach(text => {
-					cont.removeChild(_that.buttonActions[name][text]);
+				Object.keys(_that.buttonActions[name]).forEach(_text => {
+					cont.removeChild(_that.buttonActions[name][_text]);
 				});
 				_that.buttonActions[name] = {};
 				that.activeControl = undefined;
@@ -524,7 +525,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			} else {
 				fn(...params);
 			}
-		};}
+		}; }
 
 		this.controlItems.filter(({control, name}) => {
 			return !control || this._controlIsAllowed(name);
@@ -537,27 +538,56 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						this.buttonActionContainer = {};
 						this.buttonActions = {};
 
-						controls.forEach(({name: subName, iconCls, text, fn, finishFn, cancelFn, eventName, onAdd: _onAdd, _custom}) => {
+						controls.forEach(({
+							name: subName,
+							iconCls: subIconCls,
+							text: subText,
+							fn: subFn,
+							finishFn: subFinishFn,
+							cancelFn: subCancelFn,
+							eventName: subEventName,
+							onAdd: subOnAdd,
+							_custom
+						}) => {
 							const buttonName = getSubControlName(name, subName);
 							this.buttonActions[buttonName] = {};
 							if (!that._controlIsAllowed(buttonName, _custom)) return;
-							that._controlButtons[buttonName] = that._createControlItem(this, this.buttonContainer, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, buttonName, eventName]), buttonName);
-							if (_onAdd) _onAdd();
+							that._controlButtons[buttonName] = that._createControlItem(
+								this,
+								this.buttonContainer,
+								subIconCls,
+								subText,
+								callback.apply(this, [subFn, subFinishFn, subCancelFn, buttonName, subEventName]),
+								buttonName
+							);
+							if (subOnAdd) subOnAdd();
 						});
 
 						return this.container;
 					} : function() {
 						const container = L.DomUtil.create("div", "leaflet-bar leaflet-control laji-map-control");
-						that._controlButtons[name] = that._createControlItem(this, container, iconCls, text, callback.apply(this, [fn, finishFn, cancelFn, name, eventName]), name);
+						that._controlButtons[name] = that._createControlItem(
+							this,
+							container,
+							iconCls,
+							text,
+							callback.apply(this, [fn, finishFn, cancelFn, name, eventName]),
+							name
+						);
 						if (_onAdd) _onAdd();
 						return container;
 					};
 
-				if (controls && !controls.filter(({name: subName, _custom}) => that._controlIsAllowed(getSubControlName(name, subName), _custom)).length) {
+				const noneAllowed = controls
+					&& !controls.filter(({name: subName, _custom}) =>
+						that._controlIsAllowed(getSubControlName(name, subName), _custom)
+					).length;
+
+				if (noneAllowed) {
 					return;
 				}
 
-				const Control = L.Control.extend({
+				const Control = L.Control.extend({ // tslint:disable-line
 					options: position ? {position} : undefined,
 					onAdd,
 					_createActionHandler,
@@ -574,7 +604,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		function removeHref(className) {
 			const elems = document.getElementsByClassName(className);
-			for (let i = 0; i < elems.length; i++) {
+			for (let i = 0; i < elems.length; i++) {  // tslint:disable-line
 				const elem = elems[i];
 				elem.removeAttribute("href");
 			}
@@ -628,7 +658,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	setControlsWarn(controlSettings) {
-		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'");
+		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'"); // tslint:disable-line
 		this.setControls(controlSettings);
 	}
 
@@ -674,7 +704,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			layerOpacity: true
 		} as InternalControlsOptions;
 
-
 		if (!_controlSettings) {
 			_controlSettings = Object.keys(this.controlSettings).reduce((settings, key) => {
 				settings[key] = false;
@@ -683,33 +712,33 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		}
 
 		if (isObject(_controlSettings)) {
-			const __controlSettings: InternalControlsOptions = <InternalControlsOptions> _controlSettings;
-			if ("draw" in __controlSettings && !isObject(__controlSettings.draw)) {
-				__controlSettings.drawUtils = __controlSettings.draw;
+			const subControlSettings: InternalControlsOptions = <InternalControlsOptions> _controlSettings;
+			if ("draw" in subControlSettings && !isObject(subControlSettings.draw)) {
+				subControlSettings.drawUtils = subControlSettings.draw;
 			}
 			// BW compability for drawCopy etc, which were moved under controlSettings.draw
 			["copy", "upload", "clear", "reverse", "delete", "undo", "redo", "coordinateInput"].forEach(name => {
 				// Internally we use 'drawUtils' namespace, but for easier API we allow using 'draw'
 				// namespace for the utils.
-				if (isObject(__controlSettings.draw) && name in <DrawControlOptions> __controlSettings.draw) {
-					if (!__controlSettings.drawUtils) __controlSettings.drawUtils = {};
-					__controlSettings.drawUtils[name] = __controlSettings.draw[name];
+				if (isObject(subControlSettings.draw) && name in <DrawControlOptions> subControlSettings.draw) {
+					if (!subControlSettings.drawUtils) subControlSettings.drawUtils = {};
+					subControlSettings.drawUtils[name] = subControlSettings.draw[name];
 				}
 			});
-			if ("coordinateInput" in __controlSettings) {
-				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput");
+			if ("coordinateInput" in subControlSettings) {
+				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput"); // tslint:disable-line
 			}
 
-			for (let setting in __controlSettings) {
+			for (let setting in subControlSettings) {
 				if (!(setting in this.controlSettings)) continue;
 
-				let newSetting = __controlSettings[setting];
+				let newSetting = subControlSettings[setting];
 				if (this.controlSettings[setting].constructor === Object) {
-					if (__controlSettings[setting].constructor === Object) {
-						newSetting = {...this.controlSettings[setting], ...__controlSettings[setting]};
+					if (subControlSettings[setting].constructor === Object) {
+						newSetting = {...this.controlSettings[setting], ...subControlSettings[setting]};
 					} else {
 						newSetting = Object.keys(this.controlSettings[setting]).reduce((subSettings, subSetting) => {
-							subSettings[subSetting] = __controlSettings[setting];
+							subSettings[subSetting] = subControlSettings[setting];
 							return subSettings;
 						}, {});
 					}
@@ -717,7 +746,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this.controlSettings[setting] = newSetting;
 			}
 
-			if (this.controlSettings.draw && isObject(this.controlSettings.draw) &&  "coordinateInput" in (<any> this.controlSettings.draw)) {
+			const drawContainsCoordinateInput = (
+				this.controlSettings.draw
+				&& isObject(this.controlSettings.draw)
+				&&  "coordinateInput" in (<any> this.controlSettings.draw)
+			);
+			if (drawContainsCoordinateInput) {
 				if (!isObject(this.controlSettings.drawUtils)) {
 					this.controlSettings.drawUtils = {};
 					this.controlSettings.drawUtils.coordinateInput = (<any> this.controlSettings.draw).coordinateInput;
@@ -735,13 +769,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		provide(this, "customControls");
 	}
 
-
 	_controlIsAllowed(name, custom = false) {
 		const dependencies = {
-			draw: [
+			"draw": [
 				() => this.drawIsAllowed()
 			],
-			drawUtils: [
+			"drawUtils": [
 				() => this.drawIsAllowed()
 			],
 			"drawUtils.coordinateInput": [
@@ -752,7 +785,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			"drawUtils.reverse": [
 				() => this.getDraw().polyline !== false
 			],
-			lineTransect: [
+			"lineTransect": [
 				() => isProvided(this, "lineTransect"),
 				() => (<any> this)._LTEditable
 			]
@@ -770,8 +803,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				subControl = splitted[1];
 			}
 
-			function dependenciesAreOk(controlName) {
-				return (dependencies[controlName] || []).every(dependency =>
+			function dependenciesAreOk(_controlName) {
+				return (dependencies[_controlName] || []).every(dependency =>
 					(typeof dependency === "function") ? dependency() : controlIsOk(dependency)
 				);
 			}
@@ -782,7 +815,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					!(controlName in controlSettings) ||
 					controlItem && // Pass custom controls
 					dependenciesAreOk(controlName) &&
-					(controlItem.constructor !== Object || Object.keys(controlItem).some(name => controlItem[name]))
+					(controlItem.constructor !== Object || Object.keys(controlItem).some(_name => controlItem[_name]))
 				);
 			} else {
 				return (
@@ -796,7 +829,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		return controlIsOk(name);
 	}
-
 
 	_addControl(name, control: L.Control) {
 		if (control && this._controlIsAllowed(name) || (<any> control)._custom) {
@@ -847,20 +879,18 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			}, {})
 		};
 
-
 		this.drawControl = new L.Control.Draw(drawOptions);
 		return this.drawControl;
 	}
 
-
 	_getCoordinatesControl(): L.Control {
 		const that = this;
-		const CoordinateControl = L.Control.extend({
+		const CoordinateControl = L.Control.extend({ // tslint:disable-line
 			options: {
 				position: "bottomleft"
 			},
 
-			onAdd: function() {
+			onAdd() {
 				const container = L.DomUtil.create(
 					"div",
 					"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
@@ -904,7 +934,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						else if (name === "ETRS-TM35FIN") coords = etrsTm35Fin;
 						nameCell.innerHTML = `<strong>${name}:</strong>`;
 						let coordsFormatted = undefined;
-						if (coords) switch(name) {
+						if (coords) switch (name) {
 						case "WGS84":
 							coordsFormatted = coords.join(", ");
 							break;
@@ -939,28 +969,28 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this.tileLayers[tileLayerName];
 		});
 		Object.keys(this.availableOverlaysByNames).forEach(overlayName => {
-			//if (this._getDefaultCRSLayers().includes(this.tileLayer) && ONLY_MML_OVERLAY_NAMES.includes(overlayName)) return;
-			overlays[translations[overlayName[0].toUpperCase() + overlayName.slice(1)]] = this.availableOverlaysByNames[overlayName];
+			overlays[translations[capitalizeFirstLetter(overlayName)]] = this.availableOverlaysByNames[overlayName];
 		});
 
 		const that = this;
-		const LayerControl = L.Control.Layers.extend({
-			onAdd: function (map) {
+		const LayerControl = L.Control.Layers.extend({ //tslint:disable-line
+			onAdd(map) {
 				const container = L.Control.Layers.prototype.onAdd.call(this, map);
 				L.DomEvent.disableClickPropagation(container);
 				map.on("moveend", () => this._checkDisabledLayers());
 				return container;
 			},
-			_onInputClick: function (e) {
+			_onInputClick(e) {
 				if (!e) return;
 
-				const inputs: NodeListOf<HTMLInputElement> = that.rootElem.querySelectorAll(".laji-map .leaflet-control-layers-list input");
+				const inputs: NodeListOf<HTMLInputElement> = that.rootElem
+					.querySelectorAll(".laji-map .leaflet-control-layers-list input");
 
 				const overlayIdsToAdd = (that.overlays || []).reduce((ids, overlay) => {
 					ids[L.Util.stamp(overlay)] = true;
 					return ids;
 				}, {});
-				for (let i = 0; i < inputs.length; i++) {
+				for (let i = 0; i < inputs.length; i++) { // tslint:disable-line
 					const input = inputs[i];
 					if (input.checked) {
 						for (let tileLayerName of tileLayersNames) {
@@ -997,7 +1027,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				that.layerControl.expand();
 				that.map.fire("controlClick", {name: "layer"});
 			},
-			_initLayout: function() {
+			_initLayout() {
 				(<any> L.Control.Layers.prototype)._initLayout.call(this);
 
 				if (!opacityControl) return;
@@ -1048,7 +1078,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 				that._slider = _noUiSlider;
 			},
-			_checkDisabledLayers: function() {
+			_checkDisabledLayers() {
 				if (!this._map) return;
 				(<any> L.Control.Layers.prototype)._checkDisabledLayers.call(this);
 				const labels = [
@@ -1082,7 +1112,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					} else if (this._outsideFinlandInfoSpanContainer && this._outsideFinlandInfoSpanContainer.parentElement) {
 						this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);
 					}
-					if (that._getDefaultCRSLayers().includes(that.tileLayer) && ONLY_MML_OVERLAY_NAMES.map(n => that.overlaysByNames[n]).includes(layer)) {
+
+					const shouldDisableYkjOverlays = that._getDefaultCRSLayers().includes(that.tileLayer)
+						&& ONLY_MML_OVERLAY_NAMES.map(n => that.overlaysByNames[n]).includes(layer);
+					if (shouldDisableYkjOverlays) {
 						label.style["text-decoration"] = "line-through";
 						if (i === inputs.length - 1) {
 							if (!this._onlyMMLInfoSpan) {
@@ -1106,18 +1139,18 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	getZoomControl(): L.Control.Zoom {
 		const that = this;
-		const ZoomControl = L.Control.Zoom.extend({
-			onZoomClick: function() {
+		const ZoomControl = L.Control.Zoom.extend({ // tslint:disable-line
+			onZoomClick() {
 				that.map.fire("controlClick", {name: "zoom"});
 			},
-			onAdd: function(map) {
+			onAdd(map) {
 				const container = L.Control.Zoom.prototype.onAdd.call(this, map);
 				L.DomEvent.disableClickPropagation(container);
 				this._zoomInButton.addEventListener("click", this.onZoomClick);
 				this._zoomOutButton.addEventListener("click", this.onZoomClick);
 				return container;
 			},
-			onRemove: function(map) {
+			onRemove(map) {
 				L.Control.Zoom.prototype.onRemove.call(this, map);
 				this._zoomInButton.removeEventListener("click", this.onZoomClick);
 				this._zoomOutButton.removeEventListener("click", this.onZoomClick);
@@ -1173,7 +1206,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		if (historyPointer <= 0 && !undoButton.className.includes("leaflet-disabled")) {
 			undoButton.className += " leaflet-disabled";
-		} else if (historyPointer > 0 && historyPointer < history.length && undoButton.className.includes("leaflet-disabled")) {
+		} else if (historyPointer > 0
+			&& historyPointer < history.length
+			&& undoButton.className.includes("leaflet-disabled")
+		) {
 			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
 		}
 		if (this._contextMenuItems) {
@@ -1188,7 +1224,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		if (historyPointer >= history.length - 1 && !redoButton.className.includes("leaflet-disabled")) {
 			redoButton.className += " leaflet-disabled";
-		} else if (historyPointer >= 0 && historyPointer < history.length - 1 && redoButton.className.includes("leaflet-disabled")) {
+		} else if (historyPointer >= 0
+			&& historyPointer < history.length - 1
+			&& redoButton.className.includes("leaflet-disabled")
+		) {
 			redoButton.className = redoButton.className.replace(" leaflet-disabled", "");
 		}
 
@@ -1301,7 +1340,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			const rectangleAllowed = that.getDraw().rectangle;
 			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
 			if (that.getDraw().marker) {
-				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`;
+				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`; // tslint:disable-line
 				else help = `${that.translations.EnterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`;
 			}
 			help += ".";
@@ -1367,7 +1406,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 			const feature = {
 				type: "Feature",
-				geometry: geometry,
+				geometry,
 				properties: {}
 			};
 
@@ -1442,17 +1481,17 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const pipeline = [
 			{ // GeoJSON -> GeoJSON with coordinates converted
 				commands: {
-					WGS84: standardizeGeoJSON,
-					YKJ: input => converterFor("EPSG:2393")(standardizeGeoJSON(input)),
+					"WGS84": standardizeGeoJSON,
+					"YKJ": input => converterFor("EPSG:2393")(standardizeGeoJSON(input)),
 					"ETRS-TM35FIN": input => converterFor("EPSG:3067")(standardizeGeoJSON(input))
 				},
 				position: TOP
 			},
 			{ // GeoJSON -> String
 				commands: {
-					GeoJSON: input => JSON.stringify(input, undefined, 2),
+					"GeoJSON": input => JSON.stringify(input, undefined, 2),
 					"ISO 6709": geoJSONToISO6709,
-					WKT: geoJSONToWKT
+					"WKT": geoJSONToWKT
 				},
 				position: LEFT
 			}
@@ -1484,11 +1523,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			})() : tabs;
 			tabs.className = "nav nav-tabs";
 
-			Object.keys(commands).map((label, idx) => {
+			Object.keys(commands).map((label, _idx) => {
 				const tab = document.createElement("li");
 				const text = document.createElement("a");
 
-				if (idx === 0) {
+				if (_idx === 0) {
 					setActiveTab(tab, label);
 				}
 
@@ -1698,7 +1737,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 			if (this.getDraw() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
 				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
-					text: text,
+					text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
 					callback: () => this.triggerDrawing(featureType)
 				});
@@ -1717,13 +1756,22 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if ("text" in control && this._controlIsAllowed(controlName)) {
 					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({
 						...control,
-						callback: () => (<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
+						callback: () =>
+						(<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
 					});
 					groupAdded = true;
 				}
 			});
 		};
-		this.controlItems.filter(item => item.contextMenu !== false).forEach(control => addControlGroup(control.controls ? control.name : undefined, control.controls ? control.controls : [control]));
+		const itemsWithContextMenu = this.controlItems.filter(item => item.contextMenu !== false);
+		itemsWithContextMenu.forEach(control => addControlGroup(
+			control.controls
+				? control.name
+				: undefined,
+			control.controls
+			? control.controls
+			: [control]
+		));
 
 		provide(this, "contextMenu");
 	}
@@ -1737,7 +1785,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		}
 	}
 
-	shouldNotPreventScrolling() : boolean {
+	shouldNotPreventScrolling(): boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
 	}
-} return _LajiMap; }
+} return LajiMapWithControls; } // tslint:disable-line

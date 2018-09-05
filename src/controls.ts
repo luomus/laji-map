@@ -1,6 +1,7 @@
 import * as L from "leaflet";
-import LajiMap from "./map";
-import { DrawOptions, DataItemType, LajiMapEvent, DataItemLayer  } from "./map";
+import * as LajiMap from "./map";
+import _LajiMap from "./map";
+import { DrawOptions, DataItemType, LajiMapEvent } from "./map";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator,
@@ -78,7 +79,7 @@ export interface InternalControlsOptions extends ControlsOptions {
 	drawUtils?: boolean | DrawControlOptions;
 }
 
-export interface LajiMapOptions {
+export interface Options {
 	controls?: boolean | ControlsOptions;
 }
 
@@ -92,7 +93,7 @@ export interface CustomControl extends L.Control {
 }
 
 type Constructor<LM> = new(...args: any[]) => LM;
-export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithControls extends Base { // tslint:disable-line
+export default function LajiMapWithControls<LM extends Constructor<_LajiMap>>(Base: LM) { class LajiMapWithControls extends Base { // tslint:disable-line
 
 	controls: L.Control[];
 	_customControls: CustomControl[];

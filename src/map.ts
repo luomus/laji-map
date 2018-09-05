@@ -133,8 +133,8 @@ export interface DrawHistoryEntry {
 
 export enum Lang {
 	fi = "fi",
-    en = "en",
-    sv = "sv"
+	en = "en",
+	sv = "sv"
 }
 
 export enum TileLayerName {
@@ -186,8 +186,6 @@ export interface Options {
 	marker?: boolean | L.DrawOptions.MarkerOptions;
 	bodyAsDialogRoot?: boolean;
 	clickBeforeZoomAndPan?: boolean;
-	lineTransect?: LineTransectOptions;
-	controls?: boolean | ControlsOptions;
 }
 
 export default class LajiMap {

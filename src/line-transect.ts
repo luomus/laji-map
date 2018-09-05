@@ -10,7 +10,8 @@ import {
 	ESC
 } from "./globals";
 import { IdxTuple, isPolyline } from "./map";
-import LajiMap from "./map";
+import * as LajiMap from "./map";
+import _LajiMap from "./map";
 
 const POINT_DIST_TRESHOLD = 50;
 const ODD_AMOUNT = 30;
@@ -42,8 +43,8 @@ const hintPointStyle: L.CircleMarkerOptions = {...closebyPointStyle, radius: 7};
 
 const LT_WIDTH_METERS = 25;
 
-export interface LajiMapOptions {
-	lineTransect?: LineTransectOptions
+export interface Options {
+	lineTransect?: LineTransectOptions;
 }
 
 export interface GetLineTransectFeatureStyleOptions {
@@ -138,7 +139,7 @@ function idxTupleToIdxTupleStr(idxTuple: IdxTuple): string {
 
 type Constructor<LM> = new(...args: any[]) => LM;
 
-export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithLineTransect extends Base { // tslint:disable-line
+export default function LajiMapWithLineTransect<LM extends Constructor<_LajiMap>>(Base: LM) { class LajiMapWithLineTransect extends Base { // tslint:disable-line
 	_hoveredIdxTuple: SegmentIdxTuple;
 	LTFeature: LineTransectFeature;
 	_LTEditPointIdxTuple: PointIdxTuple;

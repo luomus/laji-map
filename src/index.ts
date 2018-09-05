@@ -1,23 +1,18 @@
 /* tslint:disable */
+import { Options as LajiMapOptions} from "./map.defs";
+import { Options as LajiMapOptionsWithControls} from  "./controls.defs";
+import { Options as LajiMapOptionsWithLineTransect} from  "./line-transect.defs";
 
-// Compiled result doesn't resolve type definitions correctly without these.
-import * as CoreDefinitions from "./map";
-import * as ControlsDefinitions from "./controls";
-import * as LineTransectDefinitions from "./line-transect";
+import LajiMap from "./map";
+import WithControls from "./controls";
+import WithLineTransect from  "./line-transect";
 
-import _LajiMap, {Options as LajiMapOptions} from "./map";
-import WithControls, {Options as LajiMapOptionsWithControls} from  "./controls";
-import WithLineTransect, {Options as LajiMapOptionsWithLineTransect} from  "./line-transect";
+export default WithControls(WithLineTransect(LajiMap));
 
-export const LajiMap = WithControls(WithLineTransect(_LajiMap));
-export default LajiMap;
-export * from "./map";
-export * from "./controls";
-export * from "./line-transect";
+export * from "./map.defs";
+export * from "./controls.defs";
+export * from "./line-transect.defs";
 
 export interface Options extends LajiMapOptions, LajiMapOptionsWithControls, LajiMapOptionsWithLineTransect {
 
 }
-//export default WithLineTransect(LajiMap);
-//export default WithControls(LajiMap)
-//export default LajiMap

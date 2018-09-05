@@ -6,7 +6,7 @@ import {
 	EPSG3067WKTString
 } from "./globals";
 import * as G from "geojson";
-import {LineTransectFeature, LineTransectGeometry} from "./line-transect";
+import {LineTransectFeature, LineTransectGeometry} from "./line-transect.defs";
 
 export function reverseCoordinate(c: [number, number]): [number, number] {
 	return <[number, number]> c.slice(0).reverse();

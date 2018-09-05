@@ -14,6 +14,7 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
+import { GeoSearchControl, GoogleProvider } from "leaflet-geosearch";
 
 export interface ControlOptions {
 	name?: string;
@@ -58,17 +59,13 @@ export interface LineTransectControlOptions {
 	redo?: boolean;
 }
 
-export interface LocationControlOptions {
-	user?: boolean;
-	search?: boolean;
-}
-
 export interface ControlsOptions {
 	draw?: boolean | DrawControlOptions;
 	layer?: boolean;
 	zoom?: boolean;
 	scale?: boolean;
-	location?: boolean | LocationControlOptions;
+	location?: boolean;
+	geocoding?: boolean;
 	coordinates?: boolean;
 	lineTransect?: boolean | LineTransectControlOptions;
 	layerOpacity?: boolean;
@@ -216,7 +213,7 @@ export default function LajiMapWithControls<LM extends Constructor<_LajiMap>>(Ba
 	_updateUserLocate(value) {
 		if (!depsProvided(this, "_updateUserLocate", arguments)) return;
 		this._locateOn = value !== undefined ? value : this._locateOn;
-		const button = this._controlButtons["location.userLocation"];
+		const button = this._controlButtons.location;
 		if (!button) return;
 		if (this._locateOn && !button.className.includes(" on")) {
 			button.className = `${button.className} on`;
@@ -255,15 +252,14 @@ export default function LajiMapWithControls<LM extends Constructor<_LajiMap>>(Ba
 			{
 				name: "location",
 				position: "topleft",
-				controls: [
-					{
-						name: "userLocation",
-						text: this.translations.Geolocate,
-						iconCls: "glyphicon glyphicon-screenshot",
-						fn: () => this._toggleLocate(),
-					}
-				],
+                text: this.translations.Geolocate,
+                iconCls: "glyphicon glyphicon-screenshot",
+                fn: () => this._toggleLocate(),
 				contextMenu: false
+			},
+			{
+				name: "geocoding",
+				control: () => this.getGoogleGeocodingControl()
 			},
 			{
 				name: "zoom",
@@ -685,10 +681,8 @@ export default function LajiMapWithControls<LM extends Constructor<_LajiMap>>(Ba
 			},
 			layer: true,
 			zoom: true,
-			location: {
-				userLocation: true,
-				search: true
-			},
+			location: true,
+			geocoding: true,
 			coordinates: false,
 			scale: true,
 			attribution: true,
@@ -1775,6 +1769,21 @@ export default function LajiMapWithControls<LM extends Constructor<_LajiMap>>(Ba
 		));
 
 		provide(this, "contextMenu");
+	}
+
+	getGoogleGeocodingControl() {
+		const control = new GeoSearchControl({
+			provider: new GoogleProvider({params: {key: this.googleApiKey, language: this.lang}}),
+			showmarker: false,
+			autoClose: true,
+			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,
+			notFoundMessage: this.translations.GeocodingSearchFail
+		});
+		control.elements.resetButton.remove();
+		control.searchElement.elements.input.addEventListener("blur", () => {
+			control.closeResults();
+		})
+		return  control;
 	}
 
 	triggerDrawing(featureType: DataItemType) {

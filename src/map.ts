@@ -235,6 +235,7 @@ export interface Options {
 }
 
 export default class LajiMap {
+	googleApiKey: string;
 	container: HTMLElement;
 	mapElem: HTMLElement;
 	blockerElem: HTMLElement;
@@ -378,6 +379,7 @@ export default class LajiMap {
 			marker: true,
 			bodyAsDialogRoot: "setBodyAsDialogRoot",
 			clickBeforeZoomAndPan: "setClickBeforeZoomAndPan",
+			googleApiKey: true
 		};
 	}
 

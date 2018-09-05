@@ -1,4 +1,5 @@
 import * as G from "geojson";
+import {Control} from "leaflet";
 
 export interface ControlOptions {
 	name?: string;
@@ -15,7 +16,7 @@ export interface ControlOptions {
 	onAdd?: () => void;
 	disabled?: boolean;
 	controls?: ControlOptions[];
-	control?: () => L.Control;
+	control?: () => Control;
 	_custom?: boolean;
 }
 
@@ -68,7 +69,7 @@ export interface Options {
 	controls?: boolean | ControlsOptions;
 }
 
-export interface CustomControl extends L.Control {
+export interface CustomControl extends Control {
 	_custom: boolean;
 	group: string;
 }

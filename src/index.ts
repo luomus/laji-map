@@ -1,7 +1,11 @@
 /* tslint:disable */
-import { Options as LajiMapOptions} from "./map.defs";
-import { Options as LajiMapOptionsWithControls} from  "./controls.defs";
-import { Options as LajiMapOptionsWithLineTransect} from  "./line-transect.defs";
+import * as LM from "./map.defs";
+import * as C from "./controls.defs";
+import * as LT from "./line-transect.defs";
+
+import { Options as LajiMapOptions } from "./map.defs";
+import { Options as LajiMapOptionsWithControls } from  "./controls.defs";
+import { Options as LajiMapOptionsWithLineTransect } from  "./line-transect.defs";
 
 import LajiMap from "./map";
 import WithControls from "./controls";

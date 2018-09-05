@@ -7,11 +7,12 @@ import { Options as LajiMapOptions } from "./map.defs";
 import { Options as LajiMapOptionsWithControls } from  "./controls.defs";
 import { Options as LajiMapOptionsWithLineTransect } from  "./line-transect.defs";
 
-import LajiMap from "./map";
+import _LajiMap from "./map";
 import WithControls from "./controls";
 import WithLineTransect from  "./line-transect";
 
-export default WithControls(WithLineTransect(LajiMap));
+export const LajiMap = WithControls(WithLineTransect(_LajiMap));
+export default LajiMap;
 
 export * from "./map.defs";
 export * from "./controls.defs";

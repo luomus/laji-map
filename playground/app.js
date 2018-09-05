@@ -4,6 +4,8 @@ import * as utils from "../src/utils";
 
 import "../src/styles";
 
+import properties from "../properties.json";
+
 class App {
 	constructor() {
 		this.data = [
@@ -121,6 +123,7 @@ class App {
 		this.activeIdx = 0;
 
 		const options = {
+			googleApiKey: properties.googleApiKey,
 			rootElem: document.getElementById("root"),
 			lineTransect: {
 				feature: lineTransects.features[2],

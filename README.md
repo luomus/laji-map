@@ -107,7 +107,8 @@ draw                                            | Draw control options     | tru
 layer                                           | Boolean                  | true                                 | Shows a tile/baselayer control.
 zoom                                            | Boolean                  | true                                 | Shows a zoom control.
 scale                                           | Boolean                  | true                                 | Shows a scale control as meters.
-location                                        | Location control options | true                                 | Shows a location control.
+location                                        | Boolean                  | true                                 | Shows a location control.
+geocoding                                       | Boolean                  | true                                 | Shows a location control.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
 layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
@@ -130,16 +131,6 @@ reverse                                         | Boolean                  | fal
 delete                                          | Boolean                  | false                                | Shows a control for deleting features.
 undo                                            | Boolean                  | true                                 | Shows a control for undoing draw actions.
 redo                                            | Boolean                  | true                                 | Shows a control for redoing draw actions.
-
-#### Location control options ####
-
-If location control is `true`, it is interpreted as a location control options object with all default options.
-
-Option                                          | Type                     |  Default                             | Description
-------------------------------------------------|--------------------------|--------------------------------------|------------------------------------
-userLocation                                    | Boolean                  | true                                 | Controls whether to show the user locating button.
-search (NOT SUPPORTED YET)                      | Boolean                  | true                                 | Controls whether to show a place name search input.
-
 
 #### Line transect control options ####
 

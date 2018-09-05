@@ -610,4 +610,14 @@ export default {
 		en: "Forest zones important for biodiversity (regional)",
 		sv: "Skogszoner som är viktiga för biologisk mångfald (regional)"
 	},
+	geocodingSearchLabel: {
+		fi: "Kirjoita paikannimi",
+		en: "Enter place name",
+		sv: "Ange platsnamn"
+	},
+	geocodingSearchFail: {
+		fi: "Paikkaa ei löytynyt",
+		en: "No places found",
+		sv: "Inga platser hittades"
+	}
 };

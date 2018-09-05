@@ -1,4 +1,5 @@
 import * as L from "leaflet";
+import { GeoSearchControl, GoogleProvider } from "leaflet-geosearch";
 import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent } from "./map.defs";
 import {
@@ -146,7 +147,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	_updateUserLocate(value) {
 		if (!depsProvided(this, "_updateUserLocate", arguments)) return;
 		this._locateOn = value !== undefined ? value : this._locateOn;
-		const button = this._controlButtons["location.userLocation"];
+		const button = this._controlButtons.location;
 		if (!button) return;
 		if (this._locateOn && !button.className.includes(" on")) {
 			button.className = `${button.className} on`;
@@ -185,15 +186,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			{
 				name: "location",
 				position: "topleft",
-				controls: [
-					{
-						name: "userLocation",
-						text: this.translations.Geolocate,
-						iconCls: "glyphicon glyphicon-screenshot",
-						fn: () => this._toggleLocate(),
-					}
-				],
+                text: this.translations.Geolocate,
+                iconCls: "glyphicon glyphicon-screenshot",
+                fn: () => this._toggleLocate(),
 				contextMenu: false
+			},
+			{
+				name: "geocoding",
+				control: () => this.getGoogleGeocodingControl()
 			},
 			{
 				name: "zoom",
@@ -615,10 +615,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			layer: true,
 			zoom: true,
-			location: {
-				userLocation: true,
-				search: true
-			},
+			location: true,
+			geocoding: true,
 			coordinates: false,
 			scale: true,
 			attribution: true,
@@ -1705,6 +1703,21 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		));
 
 		provide(this, "contextMenu");
+	}
+
+	getGoogleGeocodingControl() {
+		const control = new GeoSearchControl({
+			provider: new GoogleProvider({params: {key: this.googleApiKey, language: this.lang}}),
+			showmarker: false,
+			autoClose: true,
+			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,
+			notFoundMessage: this.translations.GeocodingSearchFail
+		});
+		control.elements.resetButton.remove();
+		control.searchElement.elements.input.addEventListener("blur", () => {
+			control.closeResults();
+		})
+		return  control;
 	}
 
 	triggerDrawing(featureType: DataItemType) {

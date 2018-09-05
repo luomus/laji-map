@@ -1,7 +1,7 @@
-import * as L from "leaflet";
 import * as G from "geojson";
-
-export interface LajiMapFitBoundsOptions extends L.FitBoundsOptions {
+import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
+	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions } from "leaflet";
+export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
 }
@@ -21,7 +21,7 @@ export interface GetFeatureStyleOptions {
 	item?: Data;
 }
 
-export interface CustomPolylineOptions extends L.PolylineOptions {
+export interface CustomPolylineOptions extends PolylineOptions {
 	showStart?: boolean;
 	showDirection?: boolean;
 }
@@ -29,24 +29,24 @@ export interface CustomPolylineOptions extends L.PolylineOptions {
 export interface DataOptions {
 	featureCollection?: any;
 	geoData?: G.GeoJSON | string;
-	cluster?: boolean | L.MarkerClusterGroupOptions;
+	cluster?: boolean | MarkerClusterGroupOptions;
 	activeIdx?: number;
 	editable?: boolean;
 	hasActive?: boolean;
-	getClusterStyle?: (childCount: number) => L.PathOptions;
+	getClusterStyle?: (childCount: number) => PathOptions;
 	tooltipOptions?: any;
-	on?: {[type: string]: (e: L.LeafletEvent, data: {feature?: G.Feature, layer?: DataItemLayer, idx?: number}) => void};
+	on?: {[type: string]: (e: LeafletEvent, data: {feature?: G.Feature, layer?: DataItemLayer, idx?: number}) => void};
 	highlightOnHover?: boolean;
 	onChange?(events: LajiMapEvent[]): void;
-	getFeatureStyle?(options: GetFeatureStyleOptions): L.PathOptions;
-	getDraftStyle?(dataIdx?: number): L.PathOptions;
+	getFeatureStyle?(options: GetFeatureStyleOptions): PathOptions;
+	getDraftStyle?(dataIdx?: number): PathOptions;
 	getTooltip?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 	getPopup?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 }
 
 export interface Data extends DataOptions {
-	group: L.GeoJSON;
-	groupContainer: L.FeatureGroup;
+	group: GeoJSON;
+	groupContainer: FeatureGroup;
 	idx: number;
 }
 
@@ -67,7 +67,7 @@ export interface Draw extends Data {
 }
 
 export type IdxTuple = [number, number];
-export type DataItemLayer = L.Polygon | L.Polyline | L.Marker | L.Circle;
+export type DataItemLayer = Polygon | Polyline | Marker | Circle;
 export type DataItemType = "polygon" | "polyline" | "marker" | "circle" | "rectangle";
 
 export interface DrawHistoryEntry {
@@ -115,7 +115,7 @@ export interface Options {
 	availableOverlayNameBlacklist?: OverlayName[];
 	availableOverlayNameWhitelist?: OverlayName[];
 	tileLayerOpacity?: number;
-	center?: L.LatLngExpression;
+	center?: LatLngExpression;
 	zoom?: number;
 	zoomToData?: boolean | LajiMapFitBoundsOptions;
 	locate?: boolean;
@@ -123,12 +123,12 @@ export interface Options {
 	markerPopupOffset?: number;
 	featurePopupOffset?: number;
 	popupOnHover?: boolean;
-	on?: L.LeafletEventHandlerFnMap;
+	on?: LeafletEventHandlerFnMap;
 	polyline?: boolean | CustomPolylineOptions;
-	polygon?: boolean | L.DrawOptions.PolygonOptions;
-	rectangle?: boolean | L.DrawOptions.RectangleOptions;
-	circle?: boolean | L.DrawOptions.CircleOptions;
-	marker?: boolean | L.DrawOptions.MarkerOptions;
+	polygon?: boolean | DrawOptions.PolygonOptions;
+	rectangle?: boolean | DrawOptions.RectangleOptions;
+	circle?: boolean | DrawOptions.CircleOptions;
+	marker?: boolean | DrawOptions.MarkerOptions;
 	bodyAsDialogRoot?: boolean;
 	clickBeforeZoomAndPan?: boolean;
 }

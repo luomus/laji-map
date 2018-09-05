@@ -1,6 +1,6 @@
-import * as L from "leaflet";
 import * as G from "geojson";
 import {IdxTuple} from "./map.defs";
+import {PathOptions, Polyline, CircleMarker, Polygon} from "leaflet";
 
 export interface Options {
 	lineTransect?: LineTransectOptions;
@@ -10,14 +10,14 @@ export interface GetLineTransectFeatureStyleOptions {
 	lineIdx: number;
 	segmentIdx: number;
 	type: Function;
-	style: L.PathOptions;
+	style: PathOptions;
 }
 
 export interface LineTransectOptions {
 	feature: LineTransectFeature;
 	activeIdx?: number;
 	onChange?: (events: LineTransectEvent[]) => void;
-	getFeatureStyle?: (options: GetLineTransectFeatureStyleOptions) => L.PathOptions;
+	getFeatureStyle?: (options: GetLineTransectFeatureStyleOptions) => PathOptions;
 	getTooltip?: (lineIdx: number, text: string, callback?: (callbackText: string) => void) => string;
 	printMode?: boolean;
 	editable?: boolean;
@@ -51,7 +51,7 @@ export interface LineTransectEvent {
 	target?: number;
 }
 
-export type SegmentLayer = L.Polyline<G.LineString> | L.CircleMarker | L.Polygon<G.Polygon>;
+export type SegmentLayer = Polyline<G.LineString> | CircleMarker | Polygon<G.Polygon>;
 export type SegmentLayers = SegmentLayer[];
 
 export interface TooltipMessages {

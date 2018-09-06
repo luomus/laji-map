@@ -50,6 +50,7 @@ circle                                          | Object                    | - 
 marker                                          | Object                    | -                                   | Global Path style options.
 bodyAsDialogRoot                                | Boolean                   | true                                | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the map container will be used as the root DOM node for dialogs.
 clickBeforeZoomAndPan                           | Boolean                   | false                               | Block wheel and touchstart events before map is clicked/touched.
+googleApikey                                    | String                    | -                                   | Needed for geocoding control.
 
 ### Data options ###
 
@@ -108,7 +109,7 @@ layer                                           | Boolean                  | tru
 zoom                                            | Boolean                  | true                                 | Shows a zoom control.
 scale                                           | Boolean                  | true                                 | Shows a scale control as meters.
 location                                        | Boolean                  | true                                 | Shows a location control.
-geocoding                                       | Boolean                  | true                                 | Shows a location control.
+geocoding                                       | Boolean                  | true                                 | Shows a geocoding control. You need to provide `googleApiKey` also to the map options.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
 layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
@@ -189,6 +190,8 @@ Start the development playground with `yarn start`.
 To release a new version, run `yarn run publish-to-npm`.
 
 Try to keep the code style consistent - ```yarn run lint``` should pass without errors.
+
+In order to use the geocoding widget, you should provide the Google API key to properties.json. See properties.json.example.
 
 ## Known issues ##
 

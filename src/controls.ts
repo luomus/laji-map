@@ -186,9 +186,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			{
 				name: "location",
 				position: "topleft",
-                text: this.translations.Geolocate,
-                iconCls: "glyphicon glyphicon-screenshot",
-                fn: () => this._toggleLocate(),
+				text: this.translations.Geolocate,
+				iconCls: "glyphicon glyphicon-screenshot",
+				fn: () => this._toggleLocate(),
 				contextMenu: false
 			},
 			{
@@ -717,6 +717,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			"lineTransect": [
 				() => isProvided(this, "lineTransect"),
 				() => (<any> this)._LTEditable
+			],
+			"geocoding": [
+				() => this.googleApiKey
 			]
 		};
 
@@ -1717,7 +1720,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		resetButton.parentElement.removeChild(resetButton);
 		control.searchElement.elements.input.addEventListener("blur", () => {
 			control.closeResults();
-		})
+		});
 		return  control;
 	}
 

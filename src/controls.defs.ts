@@ -18,6 +18,7 @@ export interface ControlOptions {
 	controls?: ControlOptions[];
 	control?: () => Control;
 	_custom?: boolean;
+	dependencies?: (() => boolean)[];
 }
 
 export interface DrawControlOptions {
@@ -73,4 +74,3 @@ export interface CustomControl extends Control {
 	_custom: boolean;
 	group: string;
 }
-

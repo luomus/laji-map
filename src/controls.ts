@@ -1713,7 +1713,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,
 			notFoundMessage: this.translations.GeocodingSearchFail
 		});
-		control.elements.resetButton.remove();
+		const {resetButton} =  control.elements;
+		resetButton.parentElement.removeChild(resetButton);
 		control.searchElement.elements.input.addEventListener("blur", () => {
 			control.closeResults();
 		})

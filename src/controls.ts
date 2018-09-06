@@ -149,14 +149,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._locateOn = value !== undefined ? value : this._locateOn;
 		const button = this._controlButtons.location;
 		if (!button) return;
-		if (this._locateOn && !button.className.includes(" on")) {
+		if (this._locateOn && button.className.indexOf(" on") === -1) {
 			button.className = `${button.className} on`;
-		} else if (!this._locateOn && button.className.includes(" on")) {
+		} else if (!this._locateOn && button.className.indexOf(" on") !== -1) {
 			button.className = button.className.replace(" on", "");
 		}
-		if (!this._located && !button.className.includes(" locating")) {
+		if (!this._located && button.className.indexOf(" locating") === -1) {
 			button.className = `${button.className} locating`;
-		} else if (this._located && button.className.includes(" locating")) {
+		} else if (this._located && button.className.indexOf(" locating") !== -1) {
 			button.className = button.className.replace(" locating", "");
 		}
 	}
@@ -168,7 +168,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		const controlContainerNode = this.container.querySelector(".leaflet-control-container");
 
-		if (!controlContainerNode.className.includes("leaflet-touch")) {
+		if (controlContainerNode.className.indexOf("leaflet-touch") === -1) {
 			controlContainerNode.className += " leaflet-touch";
 		}
 
@@ -726,7 +726,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			if (controlName === undefined) return true;
 
 			let splitted, parentControl, subControl;
-			if (controlName.includes(".")) {
+			if (controlName.indexOf(".") !== -1) {
 				splitted = name.split(".");
 				parentControl = splitted[0];
 				subControl = splitted[1];
@@ -946,8 +946,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					}
 				}
 
-				if (overlaysToAdd.some(overlay => !(that.overlays || []).includes(overlay)) ||
-					(that.overlays || []).some(overlay => !overlaysToAdd.includes(overlay))) {
+				if (overlaysToAdd.some(overlay => (that.overlays || []).indexOf(overlay) === -1) ||
+					(that.overlays || []).some(overlay => overlaysToAdd.indexOf(overlay) === -1)) {
 					that.setOverlays(overlaysToAdd);
 				}
 
@@ -1025,7 +1025,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					input.disabled = false;
 					label.className = "";
 
-					if (that._isOutsideFinland(that.map.getCenter()) && that._getMMLCRSLayers().includes(layer)) {
+					if (that._isOutsideFinland(that.map.getCenter()) && that._getMMLCRSLayers().indexOf(layer) !== -1) {
 						input.disabled = true;
 						label.className = "disabled";
 						if (i === 0) {
@@ -1042,8 +1042,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);
 					}
 
-					const shouldDisableYkjOverlays = that._getDefaultCRSLayers().includes(that.tileLayer)
-						&& ONLY_MML_OVERLAY_NAMES.map(n => that.overlaysByNames[n]).includes(layer);
+					const shouldDisableYkjOverlays = that._getDefaultCRSLayers().indexOf(that.tileLayer) !== -1
+						&& ONLY_MML_OVERLAY_NAMES.map(n => that.overlaysByNames[n]).indexOf(layer) !== -1;
 					if (shouldDisableYkjOverlays) {
 						label.style["text-decoration"] = "line-through";
 						if (i === inputs.length - 1) {
@@ -1133,11 +1133,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const undoButton = this._controlButtons && this._controlButtons[buttonName];
 		if (!undoButton) return;
 
-		if (historyPointer <= 0 && !undoButton.className.includes("leaflet-disabled")) {
+		if (historyPointer <= 0 && undoButton.className.indexOf("leaflet-disabled") === -1) {
 			undoButton.className += " leaflet-disabled";
 		} else if (historyPointer > 0
 			&& historyPointer < history.length
-			&& undoButton.className.includes("leaflet-disabled")
+			&& undoButton.className.indexOf("leaflet-disabled") !== -1
 		) {
 			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
 		}
@@ -1151,11 +1151,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const redoButton = this._controlButtons && this._controlButtons[buttonName];
 		if (!redoButton) return;
 
-		if (historyPointer >= history.length - 1 && !redoButton.className.includes("leaflet-disabled")) {
+		if (historyPointer >= history.length - 1 && redoButton.className.indexOf("leaflet-disabled") === -1) {
 			redoButton.className += " leaflet-disabled";
 		} else if (historyPointer >= 0
 			&& historyPointer < history.length - 1
-			&& redoButton.className.includes("leaflet-disabled")
+			&& redoButton.className.indexOf("leaflet-disabled") !== -1
 		) {
 			redoButton.className = redoButton.className.replace(" leaflet-disabled", "");
 		}
@@ -1529,7 +1529,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			if (value === "") {
 				updateInfo();
 				button.setAttribute("disabled", "disabled");
-				if (container.className.includes(" has-error")) container.className = container.className.replace(" has-error", "");
+				if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
 			}
 			try {
 				const format = detectFormat(value);
@@ -1546,9 +1546,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				} else {
 					button.setAttribute("disabled", "disabled");
 				}
-				if (container.className.includes(" has-error")) container.className = container.className.replace(" has-error", "");
+				if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
 			} catch (e) {
-				if (value !== "" && !container.className.includes("has-error")) container.className += " has-error";
+				if (value !== "" && container.className.indexOf("has-error") === -1) container.className += " has-error";
 				updateInfo();
 			}
 		};

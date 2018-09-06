@@ -1,17 +1,18 @@
 {
-  "compilerOptions": {
-    "outDir": "./lib",
-    "target": "es5",
+	"compilerOptions": {
+		"outDir": "./lib",
+		"target": "es5",
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"experimentalDecorators": true,
-	  "allowJs": true,
-	  "lib": [
+		"allowJs": true,
+		"lib": [
 			"dom",
-			"es7"
+			"es7",
+			"es2016.array.include"
 		]
-  },
-  "include": [
-    "./src/**/*"
+	},
+	"include": [
+		"./src/**/*"
   ]
 }

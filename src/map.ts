@@ -49,10 +49,10 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 		if (width + x > mapWidth + mapX) {
 			const {x: _x, y: _y} = this._map.latLngToLayerPoint(latlng);
 			L.DomUtil.setPosition(this._container, new L.Point(_x - width - 30, _y));
-			if (!this._container.className.includes(" reversed")) {
+			if (this._container.className.indexOf(" reversed") === -1) {
 				this._container.className += " reversed";
 			}
-		} else if (this._container.className.includes(" reversed")) {
+		} else if (this._container.className.indexOf(" reversed") !== -1) {
 			this._container.className = this._container.className.replace(" reversed", "");
 		}
 
@@ -331,7 +331,7 @@ export default class LajiMap {
 		}
 		if (prevBodyRoot) {
 			if (this.blockerElem.parentNode === prevBodyRoot) prevBodyRoot.removeChild(this.blockerElem);
-			if (this.blockerElem.className.includes("fixed")) {
+			if (this.blockerElem.className.indexOf("fixed") !== -1) {
 				this.blockerElem.className = this.blockerElem.className.replace(" fixed", "");
 			}
 		}
@@ -711,7 +711,7 @@ export default class LajiMap {
 	}
 
 	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
-		if (!this._getDefaultCRSLayers().includes(this.tileLayer) && this._isOutsideFinland(latLng)) {
+		if (this._getDefaultCRSLayers().indexOf(this.tileLayer) === -1 && this._isOutsideFinland(latLng)) {
 			this._swapToForeignFlag = true;
 			this.setTileLayer(this.tileLayers.openStreetMap);
 		}
@@ -918,18 +918,18 @@ export default class LajiMap {
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
 		const center = this.map.getCenter();
-		this.map.options.crs = defaultCRSLayers.includes(layer) ? L.CRS.EPSG3857 : this.getMMLProj();
+		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.getMMLProj();
 		this.map.setView(center, this.map.getZoom());
 
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 
-		if (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(this.tileLayer)) {
+		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(this.tileLayer) === -1) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
 			projectionChanged = true;
-		} else if (defaultCRSLayers.includes(layer) && !defaultCRSLayers.includes(this.tileLayer)) {
+		} else if (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(this.tileLayer) === -1) {
 			zoom = zoom + 3;
 			projectionChanged = true;
 		}
@@ -1009,11 +1009,11 @@ export default class LajiMap {
 		});
 
 		ONLY_MML_OVERLAY_NAMES.forEach(onlyMML => {
-			this.overlaysByNames[onlyMML].setOpacity(this._getMMLCRSLayers().includes(this.tileLayer) ? 1 : 0);
+			this.overlaysByNames[onlyMML].setOpacity(this._getMMLCRSLayers().indexOf(this.tileLayer) !== -1 ? 1 : 0);
 		});
 
 		overlays.forEach(overlay => {
-			if (availableOverlays.includes(overlay)) {
+			if (availableOverlays.indexOf(overlay) !== -1) {
 				this.map.addLayer(overlay);
 			}
 		});
@@ -1069,14 +1069,14 @@ export default class LajiMap {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
-		return (this._getMMLCRSLayers().includes(tileLayer || this.tileLayer)) ? zoom : zoom - 3;
+		return (this._getMMLCRSLayers().indexOf(tileLayer || this.tileLayer) !== -1) ? zoom : zoom - 3;
 	}
 
 	getDenormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
-		return this._getDefaultCRSLayers().includes(tileLayer || this.tileLayer) ? zoom + 3 : zoom;
+		return this._getDefaultCRSLayers().indexOf(tileLayer || this.tileLayer) !== -1 ? zoom + 3 : zoom;
 	}
 
 	@dependsOn("map")
@@ -1146,7 +1146,7 @@ export default class LajiMap {
 		for (let lang in dictionaries) {
 			const dictionary = dictionaries[lang];
 			for (let key in dictionary) {
-				while (dictionary[key].includes("$")) {
+				while (dictionary[key].indexOf("$") !== -1) {
 					const keyToReplace = dictionary[key].match(/\$\w+/)[0];
 					const replaceKey = keyToReplace.substring(1);
 					dictionary[key] = dictionary[key].replace(keyToReplace, dictionary[replaceKey]);
@@ -2349,7 +2349,7 @@ export default class LajiMap {
 		const {featureCollection: {features}} = item;
 
 		const survivingIds = Object.keys(this.idsToIdxs[dataIdx])
-			.map(id => parseInt(id)).filter(id => !deleteIds.includes(id));
+			.map(id => parseInt(id)).filter(id => deleteIds.indexOf(id) === -1);
 
 		let changeActive = false;
 		let newActiveId = undefined;
@@ -2357,7 +2357,7 @@ export default class LajiMap {
 		if (item.hasActive) {
 			if (features && survivingIds.length === 0) {
 				changeActive = true;
-			} else if (activeIdx !== undefined && deleteIds.includes(activeId)) {
+			} else if (activeIdx !== undefined && deleteIds.indexOf(activeId) !== -1) {
 				changeActive = true;
 
 				let closestSmallerId = undefined;
@@ -2384,7 +2384,7 @@ export default class LajiMap {
 			}
 		}
 
-		item.featureCollection.features = features.filter((_item, i) => !deleteIdxs.includes(i));
+		item.featureCollection.features = features.filter((_item, i) => deleteIdxs.indexOf(i) === -1);
 
 		deleteIds.forEach(id => {
 			this._removeLayerFromItem(item, this._getLayerById(id));

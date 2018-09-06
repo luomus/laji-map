@@ -207,7 +207,7 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 			}
 
 			let sign = "+";
-			if (coordHalfStr.includes("-")) {
+			if (coordHalfStr.indexOf("-") !== -1) {
 				sign = "-";
 				coordHalfStr = coordHalfStr.slice(1);
 			}
@@ -450,9 +450,9 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 }
 
 export function detectFormat(data): CoordinateSystem {
-	if (typeof data === "string" && !data.match(/{.*}/) && data.includes("(")) {
+	if (typeof data === "string" && !data.match(/{.*}/) && data.indexOf("(") !== -1) {
 		return "WKT";
-	} else if (typeof data === "string" && !data.match(/{.*}/) && data.includes("/")) {
+	} else if (typeof data === "string" && !data.match(/{.*}/) && data.indexOf("/") !== -1) {
 		return "ISO 6709";
 	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
 		return "GeoJSON";
@@ -499,7 +499,7 @@ export function detectCRS(data: string | G.GeoJSON): CRSString {
 			if (geoJSON.crs) {
 				const name = geoJSON.crs.properties.name;
 				if (name === EPSG2393String) return "EPSG:2393";
-				else if (name.includes("ETRS-TM35FIN")) return "EPSG:3067";
+				else if (name.indexOf("ETRS-TM35FIN") !== -1) return "EPSG:3067";
 			}
 		}
 

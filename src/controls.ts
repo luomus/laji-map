@@ -30,6 +30,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	_customControls: CustomControl[];
 	layerControl: L.Control.Layers;
 	controlItems: ControlOptions[];
+	_controlItemsByName: {[controlName: string]: ControlOptions};
 	activeControl: L.Control;
 	controlSettings: InternalControlsOptions;
 	drawControl: L.Control.Draw;
@@ -193,7 +194,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			{
 				name: "geocoding",
-				control: () => this.getGoogleGeocodingControl()
+				control: () => this.getGoogleGeocodingControl(),
+				dependencies: [
+					() => !!this.googleApiKey
+				]
 			},
 			{
 				name: "zoom",
@@ -213,16 +217,28 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			{
 				name: "draw",
-				control: () => this._getDrawControl()
+				control: () => this._getDrawControl(),
+				dependencies: [
+					() => this.drawIsAllowed()
+				]
 			},
 			{
 				name: "drawUtils",
+				dependencies: [
+					() => this.drawIsAllowed()
+				],
+
 				controls: [
 					{
 						name: "coordinateInput",
 						text: this.translations.AddFeatureByCoordinates,
 						iconCls: "laji-map-coordinate-input-glyph",
-						fn: () => this.openCoordinatesInputDialog()
+						fn: () => this.openCoordinatesInputDialog(),
+						dependencies: [
+							() => (["marker", "rectangle"].some(type => {
+								return this.getDraw()[type] !== false;
+							}))
+						]
 					},
 					{
 						name: "copy",
@@ -367,9 +383,23 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						onAdd: () => this.updateLTRedoButton(),
 						disabled: !(<any> this)._LTHistory || (<any> this)._LTHistoryPointer >= (<any> this)._LTHistory.length - 1
 					}
-				]
+				],
+				dependencies: [
+					() => isProvided(this, "lineTransect"),
+					() => (<any> this)._LTEditable
+				],
 			}
 		];
+
+		const reducer = (prefix = "") => (byNames, controlItem) => {
+			byNames[`${prefix}${controlItem.name}`] = controlItem;
+			if (controlItem.controls) {
+				controlItem.controls.reduce(reducer(`${controlItem.name}.`), byNames);
+			}
+			return byNames;
+		};
+
+		this._controlItemsByName = this.controlItems.reduce(reducer(), {});
 
 		const controlGroups = this.controlItems.reduce((groups, group) => {
 			if (group.controls) groups[group.name] = group;
@@ -699,65 +729,38 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	_controlIsAllowed(name, custom = false) {
-		const dependencies = {
-			"draw": [
-				() => this.drawIsAllowed()
-			],
-			"drawUtils": [
-				() => this.drawIsAllowed()
-			],
-			"drawUtils.coordinateInput": [
-				() => (["marker", "rectangle"].some(type => {
-					return this.getDraw()[type] !== false;
-				}))
-			],
-			"drawUtils.reverse": [
-				() => this.getDraw().polyline !== false
-			],
-			"lineTransect": [
-				() => isProvided(this, "lineTransect"),
-				() => (<any> this)._LTEditable
-			],
-			"geocoding": [
-				() => this.googleApiKey
-			]
-		};
-
 		const {controlSettings} = this;
 
-		function controlIsOk(controlName) {
+		const controlIsOk = (controlName) => {
 			if (controlName === undefined) return true;
 
-			let splitted, parentControl, subControl;
-			if (controlName.indexOf(".") !== -1) {
-				splitted = name.split(".");
-				parentControl = splitted[0];
-				subControl = splitted[1];
-			}
+			const [parentControl, subControl] = name.split(".");
 
-			function dependenciesAreOk(_controlName) {
-				return (dependencies[_controlName] || []).every(dependency =>
+			function dependenciesAreOk(controlItem) {
+				return (controlItem.dependencies || []).every(dependency =>
 					(typeof dependency === "function") ? dependency() : controlIsOk(dependency)
 				);
 			}
 
-			if (!splitted) {
-				const controlItem = controlSettings[controlName];
+			if (!subControl) {
+				const controlItem = this._controlItemsByName[parentControl];
 				return (
 					!(controlName in controlSettings) ||
-					controlItem && // Pass custom controls
-					dependenciesAreOk(controlName) &&
-					(controlItem.constructor !== Object || Object.keys(controlItem).some(_name => controlItem[_name]))
+					controlItem // Pass custom controls
+					&& controlSettings[parentControl]
+					&& dependenciesAreOk(controlItem)
+					&& (controlItem.constructor !== Object || Object.keys(controlItem).some(_name => controlItem[_name]))
 				);
 			} else {
 				return (
-					controlSettings[parentControl] === true ||
-					(controlSettings[parentControl].constructor === Object && (controlSettings[parentControl][subControl] || custom))
-				) && (
-					dependenciesAreOk(parentControl) && dependenciesAreOk(`${parentControl}.${subControl}`)
-				);
+					controlSettings[parentControl] === true
+					|| (controlSettings[parentControl].constructor === Object && (controlSettings[parentControl][subControl] || custom))
+				)
+				&& controlSettings[parentControl][subControl]
+				&& dependenciesAreOk(this._controlItemsByName[parentControl])
+				&& dependenciesAreOk(this._controlItemsByName[`${parentControl}.${subControl}`]);
 			}
-		}
+		};
 
 		return controlIsOk(name);
 	}

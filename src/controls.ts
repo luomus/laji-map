@@ -1724,7 +1724,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		control.searchElement.elements.input.addEventListener("blur", () => {
 			control.closeResults();
 		});
-		return  control;
+		const {onAdd} = control.__proto__;
+		control.__proto__.onAdd = function(map) {
+			const container = onAdd.call(this, map);
+			L.DomEvent.disableClickPropagation(container);
+			return container;
+		};
+		return control;
 	}
 
 	triggerDrawing(featureType: DataItemType) {

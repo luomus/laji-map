@@ -391,16 +391,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			}
 		];
 
-		const reducer = (prefix = "") => (byNames, controlItem) => {
-			byNames[`${prefix}${controlItem.name}`] = controlItem;
-			if (controlItem.controls) {
-				controlItem.controls.reduce(reducer(`${controlItem.name}.`), byNames);
-			}
-			return byNames;
-		};
-
-		this._controlItemsByName = this.controlItems.reduce(reducer(), {});
-
 		const controlGroups = this.controlItems.reduce((groups, group) => {
 			if (group.controls) groups[group.name] = group;
 			return groups;
@@ -416,6 +406,17 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				return customControl;
 			});
 		}
+
+		const reducer = (prefix = "") => (byNames, controlItem) => {
+			byNames[`${prefix}${controlItem.name}`] = controlItem;
+			if (controlItem.controls) {
+				controlItem.controls.reduce(reducer(`${controlItem.name}.`), byNames);
+			}
+			return byNames;
+		};
+
+
+		this._controlItemsByName = this.controlItems.reduce(reducer(), {});
 
 		const that = this;
 
@@ -742,21 +743,24 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				);
 			}
 
+
 			if (!subControl) {
 				const controlItem = this._controlItemsByName[parentControl];
 				return (
-					!(controlName in controlSettings) ||
-					controlItem // Pass custom controls
-					&& controlSettings[parentControl]
-					&& dependenciesAreOk(controlItem)
-					&& (controlItem.constructor !== Object || Object.keys(controlItem).some(_name => controlItem[_name]))
+					custom
+					|| (
+						controlItem
+						&& controlSettings[parentControl]
+						&& dependenciesAreOk(controlItem)
+						&& (controlItem.constructor !== Object || Object.keys(controlItem).some(_name => controlItem[_name]))
+					)
 				);
 			} else {
 				return (
 					controlSettings[parentControl] === true
 					|| (controlSettings[parentControl].constructor === Object && (controlSettings[parentControl][subControl] || custom))
 				)
-				&& controlSettings[parentControl][subControl]
+				&& (controlSettings[parentControl][subControl] || custom)
 				&& dependenciesAreOk(this._controlItemsByName[parentControl])
 				&& dependenciesAreOk(this._controlItemsByName[`${parentControl}.${subControl}`]);
 			}

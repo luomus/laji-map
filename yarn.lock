@@ -2062,9 +2062,9 @@ leaflet-geometryutil@0.8.0:
   dependencies:
     leaflet ">=0.7.0"
 
-leaflet-geosearch@^2.7.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/leaflet-geosearch/-/leaflet-geosearch-2.7.0.tgz#0f7b319486ea344b00639b84b338b4087bf6b839"
+"leaflet-geosearch@git+https://git@github.com/olzraiti/leaflet-geosearch.git#d0fb4384742e22799074355a99094adcc2416577":
+  version "2.6.0"
+  resolved "git+https://git@github.com/olzraiti/leaflet-geosearch.git#d0fb4384742e22799074355a99094adcc2416577"
   dependencies:
     lodash.debounce "^4.0.8"
     nodent-runtime "^3.0.4"

@@ -1704,8 +1704,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				? control.name
 				: undefined,
 			control.controls
-			? control.controls
-			: [control]
+				? control.controls
+				: [control]
 		));
 
 		provide(this, "contextMenu");

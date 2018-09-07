@@ -8,3 +8,4 @@ npm-debug.log
 .vim*
 tags
 .tern-project
+properties.json

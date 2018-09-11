@@ -1578,7 +1578,8 @@ export default class LajiMap {
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
-					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
+					const layer = this._getLayerByIdxTuple([this.drawIdx, e.idx]);
+					layer && this.setActive(layer);
 					return true;
 				}
 			});

@@ -5,7 +5,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 module.exports = {
 	mode: "production",
 	entry: {
-		"laji-map": path.join(__dirname, "src", "map"),
+		"laji-map": path.join(__dirname, "src", "index"),
 		styles: path.join(__dirname, "src", "styles")
 	},
 	output: {

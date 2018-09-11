@@ -1213,9 +1213,12 @@ export default class LajiMap {
 
 		let item = <Data> options;
 		let {geoData, ..._item} = item;
-		if (geoData) {
+		if ("geoData" in item) {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
 			const anyToFeatureCollection = _geoJSON => {
+				if (!_geoJSON) {
+					return {type: "FeatureCollection", features: []}
+				}
 				switch (_geoJSON.type) {
 				case "FeatureCollection":
 					return _geoJSON;

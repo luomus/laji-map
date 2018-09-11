@@ -534,6 +534,9 @@ export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outp
 export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): G.GeoJSON;
 export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): string;
 export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): string | G.GeoJSON {
+	if (input === undefined) {
+		return undefined;
+	}
 	const inputFormat = detectFormat(input);
 	const inputCRS = detectCRS(input);
 

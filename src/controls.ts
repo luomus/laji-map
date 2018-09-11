@@ -1723,15 +1723,15 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,
 			notFoundMessage: this.translations.GeocodingSearchFail
 		});
-		const {resetButton} =  control.elements;
-		resetButton.parentElement.removeChild(resetButton);
-		control.searchElement.elements.input.addEventListener("blur", () => {
-			control.closeResults();
-		});
 		const {onAdd} = control.__proto__;
 		control.__proto__.onAdd = function(map) {
 			const container = onAdd.call(this, map);
 			L.DomEvent.disableClickPropagation(container);
+			const {resetButton} =  control.elements;
+			resetButton.parentElement.removeChild(resetButton);
+			control.searchElement.elements.input.addEventListener("blur", () => {
+				setTimeout(() => control.closeResults(), 100);
+			});
 			return container;
 		};
 		return control;

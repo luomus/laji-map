@@ -118,6 +118,7 @@ class App {
 				showDirection: true
 			},
 			activeIdx: 0,
+			single: true
 		};
 
 		this.activeIdx = 0;

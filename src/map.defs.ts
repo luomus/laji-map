@@ -42,6 +42,7 @@ export interface DataOptions {
 	getDraftStyle?(dataIdx?: number): PathOptions;
 	getTooltip?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
 	getPopup?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
+	single?: boolean;
 }
 
 export interface Data extends DataOptions {

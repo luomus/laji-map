@@ -8,11 +8,12 @@ import "leaflet-mml-layers";
 import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
+import { GoogleProvider } from "leaflet-geosearch";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
-	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError
+	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate
 } from "./utils";
-import { depsProvided, dependsOn, provide, isProvided } from "./dependency-utils";
+import { depsProvided, dependsOn, provide, isProvided, reflect } from "./dependency-utils";
 import {
 	NORMAL_COLOR,
 	DATA_LAYER_COLOR,
@@ -195,6 +196,7 @@ export default class LajiMap {
 	_tooltip: L.Draw.Tooltip;
 	_tooltipTranslationHook: () =>  void;
 	_onMouseMove: (e: any) => void;
+	provider: any;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -216,6 +218,7 @@ export default class LajiMap {
 		this.options = {};
 		this.setOptions({...options, ...props});
 		this._initializeMap();
+		this.setGeocodingProvider();
 		this._stopDrawRemove = this._stopDrawRemove.bind(this);
 		this._stopDrawReverse = this._stopDrawReverse.bind(this);
 		this._onDrawReverseHandler = this._onDrawReverseHandler.bind(this);
@@ -251,7 +254,7 @@ export default class LajiMap {
 			marker: true,
 			bodyAsDialogRoot: "setBodyAsDialogRoot",
 			clickBeforeZoomAndPan: "setClickBeforeZoomAndPan",
-			googleApiKey: true
+			googleApiKey: "setGoogleApiKey"
 		};
 	}
 
@@ -1084,7 +1087,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "setNormalizedZoom", arguments)) return;
 
 		this.zoom = zoom;
-		if (this.map) this.map.setZoom(this.getDenormalizedZoom(), options);
+		if (this.map) this.map.setZoom(this.getDenormalizedZoom(this.zoom), options);
 		provide(this, "zoom");
 	}
 
@@ -1446,7 +1449,8 @@ export default class LajiMap {
 		if (isPolyline(layer)) this._decoratePolyline(<L.Polyline> layer);
 	}
 
-	fitBounds(bounds: L.LatLngBounds, options: LajiMapFitBoundsOptions = {}) {
+	fitBounds(_bounds: L.LatLngBoundsExpression, options: LajiMapFitBoundsOptions = {}) {
+		let bounds = L.latLngBounds((<any> _bounds));
 		if (!bounds.isValid()) return;
 
 		const {paddingInMeters} = options;
@@ -1578,8 +1582,7 @@ export default class LajiMap {
 		if (events) {
 			events.some(e => {
 				if (e.type === "active") {
-					const layer = this._getLayerByIdxTuple([this.drawIdx, e.idx]);
-					layer && this.setActive(layer);
+					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
 					return true;
 				}
 			});
@@ -1644,7 +1647,7 @@ export default class LajiMap {
 		}));
 	}
 
-	clearItemData(item: Data) {
+	clearItemData(item: Data, commit = true) {
 		const prevFeatureCollection = {
 			type: "FeatureCollection",
 			features: this.cloneFeatures(this.data[item.idx].featureCollection.features)
@@ -1653,7 +1656,7 @@ export default class LajiMap {
 			type: "delete",
 			idxs: Object.keys(this.idxsToIds[item.idx]).map(idx => parseInt(idx))
 		};
-		this._triggerEvent(event, item.onChange);
+		commit && this._triggerEvent(event, item.onChange);
 
 		this.updateData(item.idx, <DataOptions> {
 			...item,
@@ -1661,7 +1664,7 @@ export default class LajiMap {
 			featureCollection: {type: "FeatureCollection", features: []}
 		});
 		this._resetIds(item.idx);
-		if (item.idx === this.drawIdx) this._updateDrawUndoStack(event, prevFeatureCollection);
+		if (commit && item.idx === this.drawIdx) this._updateDrawUndoStack(event, prevFeatureCollection);
 	}
 
 	clearDrawData() {
@@ -1839,6 +1842,7 @@ export default class LajiMap {
 			this.idxsToIds[dataIdx] = {};
 			this.idsToIdxs[dataIdx] = {};
 		}
+		if (featureIdx === -1) throw 'lol';
 		const id = L.Util.stamp(layer);
 		this.idxsToIds[dataIdx][featureIdx] = id;
 		this.idsToIdxs[dataIdx][id] = featureIdx;
@@ -2219,13 +2223,28 @@ export default class LajiMap {
 
 		const prevActiveIdx = this.data[dataIdx].activeIdx;
 
-		const item = this.data[dataIdx];
-		const {featureCollection: {features}} = item;
+		const prevFeatureCollection = {
+			type: "FeatureCollection",
+			features: this.cloneFeatures(this.data[dataIdx].featureCollection.features)
+		};
+
+		let item = this.data[dataIdx];
+		const {single, featureCollection: {features}} = item;
 		const feature = this.formatFeatureOut((<any> layer).toGeoJSON(), layer);
 
 		if (coordinateVerbatim && feature.geometry) {
 			(<any> feature.geometry).coordinateVerbatim = coordinateVerbatim;
 		}
+
+		if (single && features.length > 0) {
+			this.clearItemData(item, !"commit");
+			item = this.data[dataIdx];
+			item.featureCollection.features = [features[features.length - 1]];
+			item.group.addLayer(layer);
+			this._onEdit(dataIdx, {[L.Util.stamp(layer)]: layer});
+			return;
+		}
+
 		features.push(feature);
 
 		item.group.addLayer(layer);
@@ -2988,5 +3007,31 @@ export default class LajiMap {
 
 	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) {
 		console.warn("line transect mixin not included!");
+	}
+
+	setGoogleApiKey(googleApiKey: string) {
+		this.googleApiKey = googleApiKey;
+		provide(this, "googleApiKey");
+	}
+
+	@reflect()
+	@dependsOn("translations", "googleApiKey")
+	setGeocodingProvider() {
+		if (!depsProvided(this, "setGeocodingProvider", arguments)) return;
+		this.provider = new GoogleProvider({params: {key: this.googleApiKey, language: this.lang}});
+		provide(this, "geocodingProvider");
+	}
+
+	geocode(query: string, additional?: any, zoom?: number) {
+		this.provider.search({query, ...(additional || {})}).then((results = []) => {
+			const [first] = results;
+			const {bounds, x, y} = first;
+			this.map.panTo([y, x], {animate: false});
+			if (zoom) {
+				this.setNormalizedZoom(zoom);
+			}
+
+		});
+		return this.provider.search({query});
 	}
 }

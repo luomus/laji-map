@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import { GeoSearchControl, GoogleProvider } from "leaflet-geosearch";
+import { GeoSearchControl } from "leaflet-geosearch";
 import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent } from "./map.defs";
 import {
@@ -1717,7 +1717,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	getGoogleGeocodingControl() {
 		const control = new GeoSearchControl({
-			provider: new GoogleProvider({params: {key: this.googleApiKey, language: this.lang}}),
+			provider: this.provider,
 			showmarker: false,
 			autoClose: true,
 			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,

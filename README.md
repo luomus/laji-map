@@ -72,6 +72,7 @@ polygon                                                          | Object       
 polyline                                                         | Object                    | -                                   | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true).
 onChange                                                         | Function                  | -                                   | A callback function that fires events for draw data changes. Receives an array of event objects.
 highlightOnHover                                                 | Boolean                   | false                               | Highlights layers on hover even if the item isn't editable or doesn't have an active idx.
+single                                                           | Boolean                   | false                               | Allows only a single feature on the data. Adding new feature removes all other features.
 
 
 ### Draw options ###

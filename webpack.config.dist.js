@@ -6,6 +6,7 @@ module.exports = {
 	mode: "production",
 	entry: {
 		"laji-map": path.join(__dirname, "src", "index"),
+		"laji-map-no-line-transect": path.join(__dirname, "src", "index-no-line-transect"),
 		styles: path.join(__dirname, "src", "styles")
 	},
 	output: {

@@ -3023,15 +3023,19 @@ export default class LajiMap {
 	}
 
 	geocode(query: string, additional?: any, zoom?: number) {
+		if (!this.provider) {
+			console.warn("googleApiKey not provided for geocode");
+			return;
+		}
 		this.provider.search({query, ...(additional || {})}).then((results = []) => {
+			if (!results.length) return;
 			const [first] = results;
-			const {bounds, x, y} = first;
+			const {x, y} = first;
 			this.map.panTo([y, x], {animate: false});
 			if (zoom) {
 				this.setNormalizedZoom(zoom);
 			}
 
 		});
-		return this.provider.search({query});
 	}
 }

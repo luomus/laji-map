@@ -3018,7 +3018,7 @@ export default class LajiMap {
 	@dependsOn("translations", "googleApiKey")
 	setGeocodingProvider() {
 		if (!depsProvided(this, "setGeocodingProvider", arguments)) return;
-		this.provider = new GoogleProvider({params: {key: this.googleApiKey, language: this.lang}});
+		this.provider = new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}});
 		provide(this, "geocodingProvider");
 	}
 

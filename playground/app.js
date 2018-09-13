@@ -146,7 +146,7 @@ class App {
 			markerPopupOffset: 40,
 			featurePopupOffset: 5,
 			tileLayerName: "openStreetMap",
-			overlayNames: ["ykjGrid", "ykjGridLabels", "biodiversityForestZones"],
+			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
 				location: true,
 				coordinates: true,

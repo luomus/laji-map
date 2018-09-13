@@ -1730,7 +1730,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			const {resetButton} =  control.elements;
 			resetButton.parentElement.removeChild(resetButton);
 			control.searchElement.elements.input.addEventListener("blur", () => {
-				setTimeout(() => control.closeResults(), 100);
+				setTimeout(() => control.closeResults(), 300);
 			});
 			return container;
 		};

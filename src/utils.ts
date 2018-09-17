@@ -258,18 +258,18 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 
 function textualFormatToGeoJSON(
 		text: string,
-		lineToCoordinates: (line: string) => string[],
+		lineToCoordinates: (line: string) => number[][],
 		lineIsPolygon: (line: string) => boolean,
 		lineIsLineString: (line: string) => boolean,
 		lineIsPoint: (line: string) => boolean,
 		crsPrefix: string): G.GeoJSON {
-	const _lineToCoordinates = (line, idx): number[] => {
+	const _lineToCoordinates = (line, idx): number[][] => {
 		try  {
 			const coords = lineToCoordinates(line);
 			if (!coords || coords.length < 1 || coords.some(coord => coord.length < 2)) {
 				throw new LajiMapError("Coordinate parsing failed", "coordinateParsingError", idx);
 			}
-			return coords.map(c => +c);
+			return coords;
 		} catch (e) {
 			throw new LajiMapError("Line coordinate parsing failed", "CoordinateParsingError", idx);
 		}

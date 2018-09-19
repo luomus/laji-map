@@ -502,8 +502,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		}
 
 		if (overlappingPointIdxTuple) {
-			const overlappingPoint = this._getLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple);
-			const point = this._getLayerForIdxTuple(this._pointLayers, idxTuple);
+			const overlappingPoint = this._getLTLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple);
+			const point = this._getLTLayerForIdxTuple(this._pointLayers, idxTuple);
 			if (!idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple)
 				&& overlappingPoint.getLatLng().equals(point.getLatLng())) {
 				tooltip = `${getTooltipForLineIdx(overlappingPointIdxTuple[0])}, ${tooltip}`;
@@ -547,14 +547,14 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const [lineIdx, pointIdx] = idxTuple;
 		const overlappingPointIdxTuple =
 			this._overlappingNonadjacentPointIdxTuples[idxTupleToIdxTupleStr([lineIdx, pointIdx])];
-		const latLng = this._getLayerForIdxTuple(this._pointLayers, [lineIdx, pointIdx]).getLatLng();
+		const latLng = this._getLTLayerForIdxTuple(this._pointLayers, [lineIdx, pointIdx]).getLatLng();
 		const _latLng = overlappingPointIdxTuple
-			?  this._getLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple).getLatLng()
+			?  this._getLTLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple).getLatLng()
 			: undefined;
 		if (overlappingPointIdxTuple !== undefined && latLng.equals(_latLng)) {
 			const firstIdxTuple = overlappingPointIdxTuple;
 			const lastIdxTuple: PointIdxTuple = [lineIdx, pointIdx];
-			const lastPoint = this._getLayerForIdxTuple(this._pointLayers, lastIdxTuple);
+			const lastPoint = this._getLTLayerForIdxTuple(this._pointLayers, lastIdxTuple);
 
 			const translateHooks = [];
 
@@ -569,7 +569,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 			const onClick = (_idxTuple) => (e) => {
 				e.preventDefault();
-				const point = this._getLayerForIdxTuple(this._pointLayers, _idxTuple);
+				const point = this._getLTLayerForIdxTuple(this._pointLayers, _idxTuple);
 				this._overlappingPointDialogSegmentIdxTuple = undefined;
 				point.setStyle(pointStyle);
 				lastPoint.closePopup();
@@ -825,21 +825,21 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 					this.map.contextmenu.removeAllItems();
 					this._getContextMenuForPoint(this._closebyPointIdxTuple).contextmenuItems
 						.forEach(item => this.map.contextmenu.addItem(item));
-					const layer = this._getLayerForIdxTuple(this._pointLayers, this._closebyPointIdxTuple);
+					const layer = this._getLTLayerForIdxTuple(this._pointLayers, this._closebyPointIdxTuple);
 					if (layer && this.map.hasLayer(layer)) layer.bringToFront();
 					if (this._LTdragPoint) this._LTdragPoint.bringToFront();
 				}
 				[prevClosestPointIdxTuple, this._closebyPointIdxTuple].forEach(_idxTuple => {
 					if (!_idxTuple) return;
 					const layers = this._layerExistsForIdxTuple(this._pointLayers, _idxTuple)
-						? [this._getLayerForIdxTuple(this._pointLayers, _idxTuple)]
+						? [this._getLTLayerForIdxTuple(this._pointLayers, _idxTuple)]
 						: [];
 					const overlappingNonadjacentIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleStr];
 					const overlappingAdjacentIdxTuple = this._overlappingAdjacentPointIdxTuples[idxTupleStr];
 					if (overlappingNonadjacentIdxTuple) {
-						layers.push(this._getLayerForIdxTuple(this._pointLayers, overlappingNonadjacentIdxTuple));
+						layers.push(this._getLTLayerForIdxTuple(this._pointLayers, overlappingNonadjacentIdxTuple));
 					} else if (overlappingAdjacentIdxTuple) {
-						layers.push(this._getLayerForIdxTuple(this._pointLayers, overlappingAdjacentIdxTuple));
+						layers.push(this._getLTLayerForIdxTuple(this._pointLayers, overlappingAdjacentIdxTuple));
 					}
 					layers.forEach(layer => layer && this._setStyleForLTLayer(layer));
 				});
@@ -938,8 +938,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const [precedingLineIdx, precedingSegmentIdx] = precedingIdxTuple || <PointIdxTuple> [undefined, undefined];
 		const [followingLineIdx, followingSegmentIdx] = followingIdxTuple || <PointIdxTuple> [undefined, undefined];
 
-		let precedingSegment = precedingIdxTuple ? this._getLayerForIdxTuple(this._lineLayers, precedingIdxTuple) : undefined;
-		let followingSegment = followingIdxTuple ? this._getLayerForIdxTuple(this._lineLayers, followingIdxTuple) : undefined;
+		let precedingSegment = precedingIdxTuple ? this._getLTLayerForIdxTuple(this._lineLayers, precedingIdxTuple) : undefined;
+		let followingSegment = followingIdxTuple ? this._getLTLayerForIdxTuple(this._lineLayers, followingIdxTuple) : undefined;
 		let precedingLine = this._lineLayers[precedingLineIdx];
 		let followingLine = this._lineLayers[followingLineIdx];
 		if (precedingLine === followingLine) {
@@ -1016,7 +1016,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 		const overlappingSeamPointIdx = this._overlappingAdjacentPointIdxTuples[idxTupleToIdxTupleStr([lineIdx, pointIdx])];
 		if (overlappingSeamPointIdx) {
-			const overlappingPoint = this._getLayerForIdxTuple(this._pointLayers, overlappingSeamPointIdx);
+			const overlappingPoint = this._getLTLayerForIdxTuple(this._pointLayers, overlappingSeamPointIdx);
 			overlappingPoint.remove();
 		}
 
@@ -1026,7 +1026,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		if (pointIdx === undefined) {
 			return;
 		}
-		const point = this._getLayerForIdxTuple(this._pointLayers, [lineIdx, pointIdx]);
+		const point = this._getLTLayerForIdxTuple(this._pointLayers, [lineIdx, pointIdx]);
 		this._LTPointLatLngBeforeDrag = point.getLatLng();
 		const style = {color: "#ff0000", opacity: 0.5, fillColor: "#ffffff", fillOpacity: 0.3};
 		this._LTdragPoint = new L.CircleMarker(point.getLatLng(), {radius: POINT_DIST_TRESHOLD, ...style});
@@ -1062,8 +1062,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		].filter(i => i)
 			.map(_idxTuple => [this._lineLayers, this._corridorLayers].map(layers => {
 				return layers === this._lineLayers
-				? this._getLayerForIdxTuple(<L.Polyline<G.LineString>[][]> layers, _idxTuple)
-				: this._getLayerForIdxTuple(<L.Polygon[][]> layers, _idxTuple);
+				? this._getLTLayerForIdxTuple(<L.Polyline<G.LineString>[][]> layers, _idxTuple)
+				: this._getLTLayerForIdxTuple(<L.Polygon[][]> layers, _idxTuple);
 			}))
 			.forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 
@@ -1084,7 +1084,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 		[precedingIdxTuple, followingIdxTuple].forEach(tuple => {
 			if (tuple) {
-				this._getLayerForIdxTuple(this._corridorLayers, tuple).off("mousedown").off("mouseup");
+				this._getLTLayerForIdxTuple(this._corridorLayers, tuple).off("mousedown").off("mouseup");
 				this._updateLTStyleForIdxTuple(tuple);
 			}
 		});
@@ -1197,16 +1197,16 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 		let precedingLine, precedingCorridor;
 		if (precedingIdxTuple) {
-			precedingLine = this._getLayerForIdxTuple(this._lineLayers, precedingIdxTuple);
-			precedingCorridor = this._getLayerForIdxTuple(this._corridorLayers, precedingIdxTuple);
+			precedingLine = this._getLTLayerForIdxTuple(this._lineLayers, precedingIdxTuple);
+			precedingCorridor = this._getLTLayerForIdxTuple(this._corridorLayers, precedingIdxTuple);
 		}
 
 		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();
 
 		let followingLine, followingCorridor;
 		if (followingIdxTuple) {
-			followingLine = this._getLayerForIdxTuple(this._lineLayers, followingIdxTuple);
-			followingCorridor = this._getLayerForIdxTuple(this._corridorLayers, followingIdxTuple);
+			followingLine = this._getLTLayerForIdxTuple(this._lineLayers, followingIdxTuple);
+			followingCorridor = this._getLTLayerForIdxTuple(this._corridorLayers, followingIdxTuple);
 		}
 
 		if (precedingIdxTuple) {
@@ -1231,7 +1231,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		}
 	}
 
-	_getLayerForIdxTuple<T extends SegmentLayer>(layers: T[][], idxTuple: IdxTuple): T {
+	_getLTLayerForIdxTuple<T extends SegmentLayer>(layers: T[][], idxTuple: IdxTuple): T {
 		const [lineIdx, segmentIdx] = idxTuple;
 		return layers[lineIdx][segmentIdx];
 	}
@@ -1664,8 +1664,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			const lineIdx = parseInt(_lineIdx);
 			const groupIdx = this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx];
 			if (groupIdx === 0) {
-				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, [lineIdx, 0]));
-				this._setStyleForLTLayer(this._getLayerForIdxTuple(
+				this._setStyleForLTLayer(this._getLTLayerForIdxTuple(this._pointLayers, [lineIdx, 0]));
+				this._setStyleForLTLayer(this._getLTLayerForIdxTuple(
 					this._pointLayers,
 					[lineIdx, this._pointLayers[lineIdx].length - 1]
 				));
@@ -1680,8 +1680,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			const lineIdx = parseInt(_lineIdx);
 			const groupIdx = this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx];
 			if (groupIdx === 0) {
-				this._setStyleForLTLayer(this._getLayerForIdxTuple(this._pointLayers, [lineIdx, 0]));
-				this._setStyleForLTLayer(this._getLayerForIdxTuple(
+				this._setStyleForLTLayer(this._getLTLayerForIdxTuple(this._pointLayers, [lineIdx, 0]));
+				this._setStyleForLTLayer(this._getLTLayerForIdxTuple(
 					this._pointLayers,
 					[lineIdx, this._pointLayers[lineIdx].length - 1]
 				));

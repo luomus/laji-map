@@ -1220,7 +1220,7 @@ export default class LajiMap {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
 			const anyToFeatureCollection = _geoJSON => {
 				if (!_geoJSON) {
-					return {type: "FeatureCollection", features: []}
+					return {type: "FeatureCollection", features: []};
 				}
 				switch (_geoJSON.type) {
 				case "FeatureCollection":
@@ -1842,7 +1842,6 @@ export default class LajiMap {
 			this.idxsToIds[dataIdx] = {};
 			this.idsToIdxs[dataIdx] = {};
 		}
-		if (featureIdx === -1) throw 'lol';
 		const id = L.Util.stamp(layer);
 		this.idxsToIds[dataIdx][featureIdx] = id;
 		this.idsToIdxs[dataIdx][id] = featureIdx;
@@ -1913,7 +1912,8 @@ export default class LajiMap {
 			if (!latlng) return;
 			if (that.editIdxTuple && that.editIdxTuple[0] === dataIdx && that.editIdxTuple[1] ===  featureIdx) return;
 
-			const offset = (layer instanceof L.Marker) ? (-that.markerPopupOffset  || 0) : (-that.featurePopupOffset || 0);
+			const {markerPopupOffset = 40, featurePopupOffset = 5} = that;
+			const offset = (layer instanceof L.Marker) ? (-markerPopupOffset  || 0) : (-featurePopupOffset || 0);
 
 			that.popup = new (<any> L).Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
 				.setContent(content)
@@ -2099,7 +2099,13 @@ export default class LajiMap {
 		if (this.locate && this.locate[1]) this.locate[1](e);
 	}
 
-	_getLayerByIdxTuple(idxTuple: IdxTuple): DataItemLayer {
+	getDrawLayerByIdx(idx: number) {
+		return this._getLayerByIdxTuple([this.drawIdx, idx]);
+	}
+
+	_getLayerByIdxTuple = this.getLayerByIdxTuple;
+
+	getLayerByIdxTuple(idxTuple: IdxTuple): DataItemLayer {
 		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
 		const id = this.idxsToIds[dataIdx][featureIdx];

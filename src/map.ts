@@ -1899,7 +1899,7 @@ export default class LajiMap {
 	}
 
 	_initializePopup(layer: DataItemLayer) {
-		const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
+		const [dataIdx] = this._getIdxTupleByLayer(layer);
 
 		const item = this.data[dataIdx];
 		if (!item.getPopup) return;
@@ -1909,6 +1909,7 @@ export default class LajiMap {
 		let latlng = undefined;
 
 		function openPopup(content) {
+			const [_, featureIdx] = that._getIdxTupleByLayer(layer);
 			if (!latlng) return;
 			if (that.editIdxTuple && that.editIdxTuple[0] === dataIdx && that.editIdxTuple[1] ===  featureIdx) return;
 
@@ -1928,6 +1929,7 @@ export default class LajiMap {
 		}
 
 		function getContentAndOpenPopup(_latlng) {
+			const [_, featureIdx] = that._getIdxTupleByLayer(layer);
 			if (!that.popupCounter) that.popupCounter = 0;
 			that.popupCounter++;
 
@@ -1969,22 +1971,36 @@ export default class LajiMap {
 	}
 
 	_initializeTooltip(layer: DataItemLayer) {
-		const [dataIdx] = this._getIdxTupleByLayer(layer);
+		const openTooltip = () => {
+			const [dataIdx, featureIdx] = this._getIdxTupleByLayer(layer);
 
-		const item = this.data[dataIdx];
-		if (!item.getTooltip) return;
+			const item = this.data[dataIdx];
+			if (!item.getTooltip) return;
 
-		function openTooltip(content) {
-			layer.bindTooltip(content, item.tooltipOptions);
+			function _openTooltip(content) {
+				layer.bindTooltip(content, item.tooltipOptions).openTooltip();
+			}
+
+			// Allow either returning content or firing a callback with content.
+			const content = item.getTooltip(
+				featureIdx,
+				this.formatFeatureOut(layer.toGeoJSON(), layer),
+				callbackContent => _openTooltip(callbackContent)
+			);
+			console.log(content);
+			if (content !== undefined && typeof content !== "function") _openTooltip(content);
 		}
 
-		// Allow either returning content or firing a callback with content.
-		const content = item.getTooltip(
-			dataIdx,
-			this.formatFeatureOut(layer.toGeoJSON(), layer),
-			callbackContent => openTooltip(callbackContent)
-		);
-		if (content !== undefined && typeof content !== "function") openTooltip(content);
+		const closeTooltip = () =>  {
+			layer.unbindTooltip();
+		}
+
+		layer.on("mouseover", () => {
+			openTooltip();
+		});
+		layer.on("mouseout", () => {
+			closeTooltip();
+		});
 	}
 
 	@dependsOn("translations")

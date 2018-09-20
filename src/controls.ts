@@ -415,7 +415,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			return byNames;
 		};
 
-
 		this._controlItemsByName = this.controlItems.reduce(reducer(), {});
 
 		const that = this;
@@ -742,7 +741,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					(typeof dependency === "function") ? dependency() : controlIsOk(dependency)
 				);
 			}
-
 
 			if (!subControl) {
 				const controlItem = this._controlItemsByName[parentControl];

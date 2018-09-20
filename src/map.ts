@@ -1987,13 +1987,12 @@ export default class LajiMap {
 				this.formatFeatureOut(layer.toGeoJSON(), layer),
 				callbackContent => _openTooltip(callbackContent)
 			);
-			console.log(content);
 			if (content !== undefined && typeof content !== "function") _openTooltip(content);
-		}
+		};
 
 		const closeTooltip = () =>  {
 			layer.unbindTooltip();
-		}
+		};
 
 		layer.on("mouseover", () => {
 			openTooltip();

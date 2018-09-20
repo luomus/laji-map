@@ -110,6 +110,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	_overlappingNonadjacentPointIdxTuples: {[idxTupleString: string]: PointIdxTuple};
 	_overlappingAdjacentPointIdxTuples: {[idxTupleString: string]: PointIdxTuple};
 	_lineIdxsTupleStringsToLineGroupIdxs: {[idxTupleString: string]: number};
+	_groupIdxsToLineIdxs: {[groupIdx: number]: number[]};
 	_LTStartText: L.Polyline;
 	_LTGroups: L.FeatureGroup[];
 	_tooltipIdx: number;
@@ -448,6 +449,13 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 				...this._pointLayers[lineIdx], ...this._corridorLayers[lineIdx]
 			]);
 		});
+
+		this._groupIdxsToLineIdxs = Object.keys(this._lineIdxsTupleStringsToLineGroupIdxs).reduce((d, _lineIdx) => {
+			const group = d[this._lineIdxsTupleStringsToLineGroupIdxs[_lineIdx]] || [];
+			d[this._lineIdxsTupleStringsToLineGroupIdxs[_lineIdx]] = group;
+			group.push(+_lineIdx);
+			return d;
+		}, {});
 
 		this._setIdxTupleMappings();
 		this._setLineTransectEvents();
@@ -1214,11 +1222,14 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			followingCorridor = this._getLTLayerForIdxTuple(this._corridorLayers, followingIdxTuple);
 		}
 
-		if (!precedingIdxTuple || !followingIdxTuple) {
+		if (this._LTPointIdxTupleIsGroupFirstOrLast(idxs)) {
 			const closestPoint: L.CircleMarker =
 				<L.CircleMarker> L.GeometryUtil.closestLayer(this.map, this._allPoints.filter(p => p !== point), latlng).layer;
 			const closestIdxTuple = this._pointIdsToIdxTuples[L.Util.stamp(closestPoint)];
-			if (closestIdxTuple && this._pointCanBeShiftedTo(closestIdxTuple)) {
+			if (closestIdxTuple
+				&& this._LTPointIdxTupleIsGroupFirstOrLast(closestIdxTuple)
+				&& this._LTIdxTuplesAreFromSameGroup(idxs, closestIdxTuple)
+			) {
 				const precedingToClosest = this._getIdxTuplePrecedingPoint(closestIdxTuple);
 				const followingToClosest = this._getIdxTupleFollowingPoint(closestIdxTuple);
 				const closestPointPixelPoint = this.map.latLngToLayerPoint(closestPoint.getLatLng());
@@ -1670,6 +1681,20 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		this.map.on("mousemove", this._mouseMoveLTLineSplitHandler);
 		this._mouseMoveLTLineSplitHandler({latlng: this._mouseLatLng});
 		this._createTooltip("SplitLineTooltip");
+	}
+
+	_LTPointIdxTupleIsGroupFirstOrLast(idxTuple: PointIdxTuple): boolean {
+		const [lineIdx, segmentIdx] = idxTuple;
+		const groupIdx = this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx];
+		const group = this._groupIdxsToLineIdxs[groupIdx];
+		return !!(lineIdx === group[0] && segmentIdx === 0
+			|| lineIdx === group[group.length - 1] && segmentIdx === this._pointLayers[lineIdx].length - 1);
+	}
+
+	_LTIdxTuplesAreFromSameGroup(idxTuple: IdxTuple, idxTuple2: IdxTuple): boolean {
+		const [lineIdx, segmentIdx] = idxTuple;
+		const [lineIdx2, segmentIdx2] = idxTuple2;
+		return this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx2];
 	}
 
 	_pointCanBeShiftedTo(idxTuple: PointIdxTuple): boolean {

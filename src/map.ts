@@ -262,7 +262,7 @@ export default class LajiMap {
 
 	setOptions(options: Options = {}, init = false) {
 		Object.keys(options).forEach((option: keyof Options) => {
-			this.setOption(option, options[option]);
+			this.setOption(option, options[option], init);
 		});
 	}
 

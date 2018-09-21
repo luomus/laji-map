@@ -197,6 +197,7 @@ export default class LajiMap {
 	_tooltipTranslationHook: () =>  void;
 	_onMouseMove: (e: any) => void;
 	provider: any;
+	leafletOptions: L.MapOptions;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -216,7 +217,8 @@ export default class LajiMap {
 		};
 
 		this.options = {};
-		this.setOptions({...options, ...props});
+		this.leafletOptions = {};
+		this.setOptions({...options, ...props}, !!"init");
 		this._initializeMap();
 		this.setGeocodingProvider();
 		this._stopDrawRemove = this._stopDrawRemove.bind(this);
@@ -258,16 +260,21 @@ export default class LajiMap {
 		};
 	}
 
-	setOptions(options: Options = {}) {
+	setOptions(options: Options = {}, init = false) {
 		Object.keys(options).forEach((option: keyof Options) => {
 			this.setOption(option, options[option]);
 		});
 	}
 
-	setOption(option: keyof Options, value) {
+	setOption(option: keyof Options, value, init = false) {
 		const optionKeys = this.getOptionKeys();
 
 		if (!optionKeys.hasOwnProperty(option)) {
+			if (init) {
+				this.leafletOptions[option] = value;
+			} else {
+				console.warn(`setting leaflet options works only during initialization. '${option}' isn't a LajiMap option.`);
+			}
 			return;
 		}
 
@@ -563,7 +570,8 @@ export default class LajiMap {
 				attributionControl: false,
 				doubleClickZoom: false,
 				zoomSnap: 0,
-				maxZoom: 19
+				maxZoom: 19,
+				...this.leafletOptions
 			});
 
 			this.tileLayers = {};

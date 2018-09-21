@@ -126,12 +126,12 @@ class App {
 		const options = {
 			googleApiKey: properties.googleApiKey,
 			rootElem: document.getElementById("root"),
-			lineTransect: {
-				feature: lineTransects.features[2],
-				activeIdx: 0,
-				onChange: this.onLTChange,
-				//printMode: true,
-			},
+			//lineTransect: {
+			//	feature: lineTransects.features[2],
+			//	activeIdx: 0,
+			//	onChange: this.onLTChange,
+			//	//printMode: true,
+			//},
 			//draw: this.drawOptions,
 			//data: this.data,
 			lang: "fi",
@@ -143,7 +143,7 @@ class App {
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
 			//locate: true,
-			tileLayerName: "openStreetMap",
+			tileLayerName: "taustakartta",
 			overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
 				location: true,
@@ -166,7 +166,7 @@ class App {
 					showArea: true
 				}
 			},
-			clickBeforeZoomAndPan: true
+			clickBeforeZoomAndPan: true,
 		};
 
 

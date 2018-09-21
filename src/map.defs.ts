@@ -104,7 +104,7 @@ export enum OverlayName {
 	ykjGridLabels = "ykjGridLabels"
 }
 
-export interface Options {
+export interface Options extends L.MapOptions {
 	rootElem?: HTMLElement;
 	lang?: Lang;
 	data?: DataOptions[];

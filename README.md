@@ -17,6 +17,8 @@ var map = new LajiMap(options);
 
 ## Options ##
 
+You can also pass any options that Leaflet accepts when initializing LajiMap. Setting Leaflet options after initialization doesn't work.
+
 Option                                          | Type                      |  Default                            | Description
 ------------------------------------------------|---------------------------|-------------------------------------|------------------------------------
 rootElem                                        | HTML elem                 | -                                   | The node where to mount.

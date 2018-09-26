@@ -190,11 +190,20 @@ Install the dependencies with `yarn start`.
 
 Start the development playground with `yarn start`.
 
-To release a new version, run `yarn run publish-to-npm`.
+To release a new version, run `npm run publish-to-npm`.
 
 Try to keep the code style consistent - ```yarn run lint``` should pass without errors.
 
 In order to use the geocoding widget, you should provide the Google API key to properties.json. See properties.json.example.
+
+### Playground query parameters ###
+
+Option | Default | Description
+-------|---------|---------------------------------------------------------------------------------------------------------
+lt     | `true`  | Show example line transect.
+draw   | `true`  | Show example draw data.
+data   | `true`  | Show example data.
+
 
 ## Known issues ##
 

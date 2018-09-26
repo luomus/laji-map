@@ -6,8 +6,22 @@ import "../src/styles";
 
 import properties from "../properties.json";
 
+
 class App {
 	constructor() {
+
+		function getJsonFromUrl() {
+			var query = location.search.substr(1);
+			var result = {};
+			query.split("&").forEach(function(part) {
+				var item = part.split("=");
+				result[item[0]] = decodeURIComponent(item[1]);
+			});
+			return result;
+		}
+
+		const query = getJsonFromUrl();
+
 		this.data = [
 			{
 				featureCollection: {
@@ -126,14 +140,6 @@ class App {
 		const options = {
 			googleApiKey: properties.googleApiKey,
 			rootElem: document.getElementById("root"),
-			//lineTransect: {
-			//	feature: lineTransects.features[2],
-			//	activeIdx: 0,
-			//	onChange: this.onLTChange,
-			//	//printMode: true,
-			//},
-			//draw: this.drawOptions,
-			//data: this.data,
 			lang: "fi",
 			popupOnHover: true,
 			center: {
@@ -169,6 +175,20 @@ class App {
 			clickBeforeZoomAndPan: true
 		};
 
+		if (query.lt !== "false") {
+			options.lineTransect = {
+				feature: lineTransects.features[2],
+				activeIdx: 0,
+				onChange: this.onLTChange,
+				//printMode: true,
+			}
+		}
+		if (query.draw !== "false") {
+			options.draw = this.drawOptions;
+		}
+		if (query.data !== "false") {
+			options.data = this.data;
+		}
 
 		const map = new LajiMap(options);
 		this.map = map;

@@ -503,33 +503,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			return `<b>${prevDistance}-${distance}m</b>`;
 		};
 
-		let tooltip = getTooltipForLineIdx(lineIdx);
-
-		const overlappingPointIdxTuple = this._overlappingNonadjacentPointIdxTuples[idxTupleToIdxTupleStr(idxTuple)];
-		const precedingIdxTuple = this._getIdxTuplePrecedingPoint(idxTuple);
-		const followingIdxTuple = this._getIdxTupleFollowingPoint(idxTuple);
-
-		if (type !== L.Marker) {
-			return tooltip;
-		}
-
-		if (overlappingPointIdxTuple) {
-			const overlappingPoint = this._getLTLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple);
-			const point = this._getLTLayerForIdxTuple(this._pointLayers, idxTuple);
-			if (!idxTuplesEqual(idxTuple, this._LTEditPointIdxTuple)
-				&& overlappingPoint.getLatLng().equals(point.getLatLng())) {
-				tooltip = `${getTooltipForLineIdx(overlappingPointIdxTuple[0])}, ${tooltip}`;
-			}
-		}
-
-		if (precedingIdxTuple && pointIdx === 0) {
-			tooltip += `, ${getTooltipForLineIdx(precedingIdxTuple[0])}`;
-		}
-		if (followingIdxTuple && pointIdx === this._lineLayers[lineIdx].length) {
-			tooltip += `, ${getTooltipForLineIdx(followingIdxTuple[0])}`;
-		}
-
-		return tooltip;
+		return getTooltipForLineIdx(lineIdx);
 	}
 
 	_clearTooltipDescription() {

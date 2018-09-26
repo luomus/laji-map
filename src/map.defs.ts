@@ -1,6 +1,6 @@
 import * as G from "geojson";
 import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
-	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions } from "leaflet";
+	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions } from "leaflet";
 export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
@@ -104,7 +104,7 @@ export enum OverlayName {
 	ykjGridLabels = "ykjGridLabels"
 }
 
-export interface Options extends L.MapOptions {
+export interface Options extends MapOptions {
 	rootElem?: HTMLElement;
 	lang?: Lang;
 	data?: DataOptions[];

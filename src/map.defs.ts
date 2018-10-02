@@ -96,6 +96,7 @@ export enum TileLayerName {
 export enum OverlayName {
 	geobiologicalProvinces = "geobiologicalProvinces",
 	geobiologicalProvinceBorders = "geobiologicalProvinceBorders",
+	municipalities = "municipalities",
 	forestVegetationZones = "forestVegetationZones",
 	mireVegetationZones = "mireVegetationZones",
 	threatenedSpeciesEvaluationZones = "threatenedSpeciesEvaluationZones",

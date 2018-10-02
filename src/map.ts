@@ -627,6 +627,12 @@ export default class LajiMap {
 					transparent: true,
 					version: "1.1.0",
 				}),
+				municipalities: L.tileLayer.wms(
+				"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+					layers: "kunta1000k_2018",
+					transparent: true,
+					format: "image/png",
+				}),
 				forestVegetationZones: L.tileLayer.wms(
 					"http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,

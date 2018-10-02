@@ -619,5 +619,10 @@ export default {
 		fi: "Paikkaa ei löytynyt",
 		en: "No places found",
 		sv: "Inga platser hittades"
+	},
+	municipalities: {
+		fi: "Kunnat",
+		en: "Municipalities",
+		sv: "Kommuner"
 	}
 };

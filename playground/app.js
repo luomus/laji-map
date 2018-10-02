@@ -6,7 +6,6 @@ import "../src/styles";
 
 import properties from "../properties.json";
 
-
 class App {
 	constructor() {
 

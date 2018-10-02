@@ -3063,7 +3063,7 @@ export default class LajiMap {
 			return;
 		}
 		this.provider.search({query, ...(additional || {})}).then((results = []) => {
-			if (!results.length) return;
+			if (!this.map || !results.length) return;
 			const [first] = results;
 			const {x, y} = first;
 			this.map.panTo([y, x], {animate: false});

@@ -1433,26 +1433,48 @@ export default class LajiMap {
 	zoomToData(options: LajiMapFitBoundsOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
-		const featureGroup = L.featureGroup(this._getAllData().filter(item => item).reduce((layers, item) => {
-			const newLayers = item.group.getLayers().map(layer => {
-				if (layer instanceof L.Circle) {  // getBounds fails for circles
-					const {lat, lng} = layer.getLatLng();
-					const polygonGeoJSON = circleToPolygon([lat, lng], layer.getRadius(), 4);
-					return L.polygon(polygonGeoJSON.coordinates.map(c => c.reverse()));
-				}
-				return layer;
-			});
-			layers = [...layers, ...newLayers];
-			return layers;
-		}, []));
-
-		let bounds = featureGroup.getBounds();
+		const bounds = this.getBoundsForData();
 
 		if (options && !isObject(options)) {
 			options = {};
 		}
 
 		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
+	}
+
+	getBoundsForDraw() {
+		return this.getBoundsForIdxs(this.drawIdx);
+	}
+
+	getBoundsForIdxs(...idxs) {
+		return this.getBoundsForData(idxs.map(i => this.data[i]));
+	}
+
+	getBoundsForData(datas?: {group: L.FeatureGroup}[]) {
+		if (!datas) {
+			datas = this._getAllData();
+		}
+		const featureGroup = L.featureGroup(datas.filter(item => item).reduce((layers, item) => {
+			const newLayers = this._mapLayersToBoundableLayers(item.group.getLayers());
+			layers = [...layers, ...newLayers];
+			return layers;
+		}, []));
+		return featureGroup.getBounds();
+	}
+
+	getBoundsForLayers(layers: L.Layer[]) {
+		return L.featureGroup(this._mapLayersToBoundableLayers(layers)).getBounds();
+	}
+
+	_mapLayersToBoundableLayers(layers: L.Layer[]) {
+		return layers.map(layer => {
+			if (layer instanceof L.Circle) {  // getBounds fails for circles
+				const {lat, lng} = layer.getLatLng();
+				const polygonGeoJSON = circleToPolygon([lat, lng], layer.getRadius(), 4);
+				return L.polygon(polygonGeoJSON.coordinates.map(c => c.reverse()));
+			}
+			return layer;
+		});
 	}
 
 	_initializeLayer(layer: DataItemLayer, idxTuple: IdxTuple) {
@@ -2387,7 +2409,6 @@ export default class LajiMap {
 		if (dataIdx === this.drawIdx) {
 			this._updateDrawUndoStack(event, prevFeatureCollection);
 		}
-
 	}
 
 	_onDelete(dataIdx, deleteIds) {

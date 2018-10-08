@@ -172,7 +172,6 @@ export default class LajiMap {
 	_swapToForeignFlag: boolean;
 	_mouseLatLng: L.LatLng;
 	_contextMenuLayer: L.Layer;
-	initializeViewAfterLocateFail: boolean;
 	_preventScrollDomCleaner: () => void;
 	_onDrawStopPreventScrolling: () => void;
 	_onDrawStartPreventScrolling: () => void;
@@ -220,6 +219,7 @@ export default class LajiMap {
 		this.leafletOptions = {};
 		this.setOptions({...options, ...props}, !!"init");
 		this._initializeMap();
+		this._initializeView();
 		this.setGeocodingProvider();
 		this._stopDrawRemove = this._stopDrawRemove.bind(this);
 		this._stopDrawReverse = this._stopDrawReverse.bind(this);
@@ -557,7 +557,7 @@ export default class LajiMap {
 		return mmlProj;
 	}
 
-	@dependsOn("rootElem")
+	@dependsOn("rootElem", "center", "zoom")
 	_initializeMap() {
 		try {
 			if (!depsProvided(this, "_initializeMap", arguments)) return;
@@ -571,6 +571,8 @@ export default class LajiMap {
 				doubleClickZoom: false,
 				zoomSnap: 0,
 				maxZoom: 19,
+				zoom: this.zoom,
+				center: this.center,
 				...this.leafletOptions
 			});
 
@@ -683,7 +685,6 @@ export default class LajiMap {
 			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 			if (this.locate) {
-				this.initializeViewAfterLocateFail = true;
 				this._setLocateOn();
 			}
 
@@ -705,10 +706,7 @@ export default class LajiMap {
 		}
 	}
 
-	@dependsOn("map", "tileLayer", "center", "zoom", "_zoomToData")
 	_initializeView() {
-		if (!depsProvided(this, "_initializeView", arguments)) return;
-
 		const setView = () => {
 			this.map.setView(
 				this.center,
@@ -716,11 +714,19 @@ export default class LajiMap {
 				{animate: false}
 			);
 		};
-		if (this._zoomToData) {
-			this.zoomToData(this._zoomToData) || setView();
-		} else {
-			setView();
-		}
+		const zoomToDataOrSetView = () => {
+			if (this._zoomToData) {
+				this.zoomToData(this._zoomToData);
+			} else {
+				setView();
+			}
+		};
+		// Initializing view triggers tileLayer initialisation.
+		// After tileLayer has been set, we need to set the view again
+		// (tileLayer init can change zoom level, and we need to fix it if data was zoomed to).
+		zoomToDataOrSetView();
+		provide(this, "view");
+		zoomToDataOrSetView();
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
@@ -728,7 +734,7 @@ export default class LajiMap {
 	}
 
 	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
-		if (this._getDefaultCRSLayers().indexOf(this.tileLayer) === -1 && this._isOutsideFinland(latLng)) {
+		if (this.tileLayer && this._getDefaultCRSLayers().indexOf(this.tileLayer) === -1 && this._isOutsideFinland(latLng)) {
 			this._swapToForeignFlag = true;
 			this.setTileLayer(this.tileLayers.openStreetMap);
 		}
@@ -927,7 +933,7 @@ export default class LajiMap {
 		this.setAvailableTileLayers(names, true);
 	}
 
-	@dependsOn("map", "center", "zoom")
+	@dependsOn("map", "view")
 	setTileLayer(layer: L.TileLayer) {
 		if (!depsProvided(this, "setTileLayer", arguments)) return;
 
@@ -936,12 +942,12 @@ export default class LajiMap {
 
 		const center = this.map.getCenter();
 		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.getMMLProj();
-		this.map.setView(center, this.map.getZoom());
+		this.tileLayer && this.map.setView(center, this.map.getZoom());
 
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 
-		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(this.tileLayer) === -1) {
+		if (this.tileLayer && mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(this.tileLayer) === -1) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
@@ -988,6 +994,10 @@ export default class LajiMap {
 
 		if (isProvided(this, "tileLayer")) {
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
+		}
+
+		if (!isProvided(this, "tileLayer")) {
+			this._swapToForeignOutsideFinland(this.map.getCenter());
 		}
 
 		provide(this, "tileLayer");
@@ -1098,19 +1108,31 @@ export default class LajiMap {
 
 	@dependsOn("map")
 	setNormalizedZoom(zoom, options = {animate: false}) {
-		if (!depsProvided(this, "setNormalizedZoom", arguments)) return;
-
 		this.zoom = zoom;
-		if (this.map) this.map.setZoom(this.getDenormalizedZoom(this.zoom), options);
+
+		if (!depsProvided(this, "setNormalizedZoom", arguments)) {
+			provide(this, "zoom");
+			return;
+		}
+
+		if (this.map) {
+			this.map.setZoom(this.getDenormalizedZoom(this.zoom), options);
+		}
 		provide(this, "zoom");
 	}
 
 	@dependsOn("zoom")
 	setCenter(center: L.LatLngExpression) {
-		if (!depsProvided(this, "setCenter", arguments)) return;
-
 		this.center = center;
-		if (this.map) this.map.setView(center, this.getDenormalizedZoom(this.zoom), {animate: false});
+
+		if (!depsProvided(this, "setCenter", arguments)) {
+			provide(this, "center");
+			return;
+		}
+
+		if (this.map) {
+			this.map.setView(center, this.getDenormalizedZoom(this.zoom), {animate: false});
+		}
 		provide(this, "center");
 	}
 
@@ -1425,7 +1447,9 @@ export default class LajiMap {
 
 	setZoomToData(options?: LajiMapFitBoundsOptions | boolean) {
 		this._zoomToData = options;
-		if (options && !this.locate) this.zoomToData(options);
+		if (options && !this.locate) {
+			this.zoomToData(options);
+		}
 		provide(this, "_zoomToData");
 	}
 

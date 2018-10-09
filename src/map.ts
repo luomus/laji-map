@@ -197,6 +197,7 @@ export default class LajiMap {
 	_onMouseMove: (e: any) => void;
 	provider: any;
 	leafletOptions: L.MapOptions;
+	_viewCriticalSection: boolean;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -714,19 +715,16 @@ export default class LajiMap {
 				{animate: false}
 			);
 		};
-		const zoomToDataOrSetView = () => {
-			if (this._zoomToData) {
-				this.zoomToData(this._zoomToData);
-			} else {
-				setView();
-			}
-		};
-		// Initializing view triggers tileLayer initialisation.
-		// After tileLayer has been set, we need to set the view again
+		if (this._zoomToData) {
+			this.zoomToData(this._zoomToData);
+		} else {
+			setView();
+		}
+		// Initializing view triggers tileLayer initialization.
+		// After tileLayer has been set, we need to zoom to data again
 		// (tileLayer init can change zoom level, and we need to fix it if data was zoomed to).
-		zoomToDataOrSetView();
 		provide(this, "view");
-		zoomToDataOrSetView();
+		this._zoomToData && this.zoomToData(this._zoomToData);
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
@@ -808,6 +806,9 @@ export default class LajiMap {
 				this.map.fire("mousemove", {latlng: this._mouseLatLng});
 			},
 			"moveend": () => {
+				if (this._viewCriticalSection) {
+					return;
+				}
 				if (this._swapToForeignFlag) {
 					this._swapToForeignFlag = false;
 					return;
@@ -947,7 +948,7 @@ export default class LajiMap {
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 
-		if (this.tileLayer && mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(this.tileLayer) === -1) {
+		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(this.tileLayer) === -1) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
@@ -978,9 +979,12 @@ export default class LajiMap {
 		const {maxZoom} = this.tileLayer.options;
 		this.map.setMaxZoom(19);
 		if (projectionChanged) {
+			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
+			this._viewCriticalSection = true;
 			 // Redraw all layers according to new projection.
 			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true);
 			this.map.setView(center, zoom, {animate: false});
+			this._viewCriticalSection = false;
 		}
 		this.map.setMaxZoom(maxZoom);
 

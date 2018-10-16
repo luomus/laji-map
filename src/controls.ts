@@ -1247,14 +1247,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			return true;
 		}
 
-		function submitValidate(inputValues) {
-			const validators = [];
-			if (wgs84Allowed) validators.push(wgs84Validator);
-			if (ykjAllowed) validators.push(ykjValidator, ykjGridStrictValidator);
-			if (etrsTm35FinAllowed) validators.push(etrsTm35FinValidator);
-			return validators.some(validator => validateLatLng(inputValues, validator));
-		}
-
 		const container = document.createElement("form");
 		container.className = "laji-map-coordinates";
 
@@ -1286,6 +1278,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		translateHooks.push(this.addTranslationHook(helpSpan, getHelpTxt));
 
+		const {
+			validate,
+			elem: formatDetectorElem,
+			unmount: unmountFormatDetector
+		} = this.createFormatDetectorElem({displayFormat: false});
+
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
 			let prevVal = "";
@@ -1312,7 +1310,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				prevVal = target.value;
 
 				inputValues[i] = target.value;
-				if (submitValidate(inputValues)) {
+				if (validate(`${inputValues[0]}:${inputValues[1]}/`)) {
 					submitButton.removeAttribute("disabled");
 				} else {
 					submitButton.setAttribute("disabled", "disabled");
@@ -1395,12 +1393,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		container.appendChild(helpSpan);
 		container.appendChild(latLabelInput);
 		container.appendChild(lngLabelInput);
+		container.appendChild(formatDetectorElem);
 		container.appendChild(submitButton);
 
 		this._showDialog(container, () => {
 			translateHooks.forEach(hook => {
 				that.removeTranslationHook(hook);
 			});
+			unmountFormatDetector();
 		});
 
 		latInput.focus();
@@ -1529,6 +1529,66 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		updateOutput();
 	}
 
+	createFormatDetectorElem(options: {displayFormat?: boolean} = {}):
+	{elem: HTMLElement, validate: (value?: string) => boolean, unmount: () => void} {
+		const _container = document.createElement("div");
+		const formatContainer = document.createElement("div");
+		const crsContainer = document.createElement("div");
+		const formatInfo = document.createElement("span");
+		const crsInfo = document.createElement("span");
+		const formatValue = document.createElement("span");
+		const crsValue = document.createElement("span");
+
+		formatContainer.className = "form-group text-success";
+		crsContainer.className = "form-group text-success";
+
+		_container.appendChild(formatContainer);
+		_container.appendChild(crsContainer);
+		formatContainer.appendChild(formatInfo);
+		formatContainer.appendChild(formatValue);
+		crsContainer.appendChild(crsInfo);
+		crsContainer.appendChild(crsValue);
+
+		let translationsHooks = [];
+		translationsHooks.push(this.addTranslationHook(formatInfo, () => `${this.translations.DetectedFormat}: `));
+		translationsHooks.push(this.addTranslationHook(crsInfo, () => `${this.translations.DetectedCRS}: `));
+
+		const {displayFormat = true} = options;
+
+		const updateInfo = (value = "") => {
+			let format, crs, valid;
+			try {
+				format = detectFormat(value);
+				crs = detectCRS(value);
+				valid = convertAnyToWGS84GeoJSON(value);
+			} catch (e) {
+				;
+			} finally {
+				if (displayFormat && format) {
+					formatContainer.style.display = "block";
+				} else {
+					formatContainer.style.display = "none";
+				}
+				if (crs) {
+					crsContainer.style.display = "block";
+				} else {
+					crsContainer.style.display = "none";
+				}
+				formatValue.innerHTML = format;
+				crsValue.innerHTML = this.translations[crs] ? this.translations[crs] : crs;
+			}
+			return !!(format && crs && valid);
+		};
+
+		updateInfo();
+
+		const unmount = () => {
+			translationsHooks.forEach(hook => this.removeTranslationHook(hook));
+		};
+
+		return {elem: _container, validate: updateInfo, unmount};
+	}
+
 	openDrawUploadDialog() {
 		const container = document.createElement("form");
 
@@ -1543,71 +1603,23 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		translationsHooks.push(this.addTranslationHook(button, "UploadDrawnFeatures"));
 		button.setAttribute("disabled", "disabled");
 
+		const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} = this.createFormatDetectorElem();
+
 		textarea.oninput = (e) => {
 			const {value} = <HTMLInputElement> e.target;
-			if (value === "") {
-				updateInfo();
-				button.setAttribute("disabled", "disabled");
-				if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
-			}
-			try {
-				const format = detectFormat(value);
-				const crs = detectCRS(value);
-				const valid = convertAnyToWGS84GeoJSON(value);
-
-				updateInfo(format, crs);
-				if (format && crs && valid) {
-					button.removeAttribute("disabled");
-					if (alert) {
-						container.removeChild(alert);
-						alert = undefined;
-					}
-				} else {
-					button.setAttribute("disabled", "disabled");
+			if (validate(value)) {
+				button.removeAttribute("disabled");
+				if (alert) {
+					container.removeChild(alert);
+					alert = undefined;
 				}
-				if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
-			} catch (e) {
-				if (value !== "" && container.className.indexOf("has-error") === -1) container.className += " has-error";
-				updateInfo();
+			} else {
+				button.setAttribute("disabled", "disabled");
 			}
+			if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
 		};
 
 		const that = this;
-
-		const formatContainer = document.createElement("div");
-		const crsContainer = document.createElement("div");
-		const formatInfo = document.createElement("span");
-		const crsInfo = document.createElement("span");
-		const formatValue = document.createElement("span");
-		const crsValue = document.createElement("span");
-
-		formatContainer.className = "form-group text-success";
-		crsContainer.className = "form-group text-success";
-
-		formatContainer.appendChild(formatInfo);
-		formatContainer.appendChild(formatValue);
-		crsContainer.appendChild(crsInfo);
-		crsContainer.appendChild(crsValue);
-
-		translationsHooks.push(that.addTranslationHook(formatInfo, () => `${this.translations.DetectedFormat}: `));
-		translationsHooks.push(that.addTranslationHook(crsInfo, () => `${this.translations.DetectedCRS}: `));
-
-		updateInfo();
-
-		function updateInfo(format = "", crs = "") {
-			if (format) {
-				formatContainer.style.display = "block";
-			} else {
-				formatContainer.style.display = "none";
-			}
-			if (crs) {
-				crsContainer.style.display = "block";
-			} else {
-				crsContainer.style.display = "none";
-			}
-			formatValue.innerHTML = format;
-			crsValue.innerHTML = that.translations[crs] ? that.translations[crs] : crs;
-		}
 
 		let alert = undefined;
 		let alertTranslationHook = undefined;
@@ -1650,13 +1662,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		button.addEventListener("click", convertText);
 
 		container.appendChild(textarea);
-		container.appendChild(formatContainer);
-		container.appendChild(crsContainer);
+		container.appendChild(formatDetectorElem);
 		container.appendChild(button);
 
 		this._showDialog(container, () => {
 			translationsHooks.forEach(hook => this.removeTranslationHook(hook));
 			if (alertTranslationHook) this.removeTranslationHook(alertTranslationHook);
+			unmountFormatDetector();
 		});
 
 		textarea.focus();

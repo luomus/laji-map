@@ -1241,7 +1241,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		function inputValidate(e, value) {
 			if (!value.match(inputRegexp)) {
-				if (e) e.preventDefault();
+				e && e.preventDefault && e.preventDefault();
 				return false;
 			}
 			return true;
@@ -1290,6 +1290,19 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		[latInput, lngInput].forEach((input, i) => {
 			let prevVal = "";
 			input.addEventListener("keypress", formatter(input));
+			input.onpaste = (e) => {
+				const matches = (e.clipboardData || (<any> window).clipboardData).getData("text")
+					.match(/-?[0-9]+((\.|,)?[0-9]+)/g) || ["", ""];
+				const [latMatch, lngMatch] = document.activeElement === lngInput
+					? matches.reverse()
+					: matches;
+				if ([latMatch, lngMatch].every(match => typeof match === "string" && match.length > 0)) {
+					[[latInput, latMatch], [lngInput, lngMatch]].forEach(([_input, match]: [HTMLInputElement, string]) => {
+						_input.value = match;
+						_input.oninput(<any> {target: _input});
+					});
+				}
+			};
 			input.oninput = (e) => {
 				const target = <HTMLInputElement> e.target;
 				if (!inputValidate(e, target.value)) {

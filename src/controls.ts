@@ -1404,13 +1404,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const features = this.getDraw().featureCollection.features.map(this.formatFeatureOut);
 		const originalGeoJSON = {...this.getDraw().featureCollection, features};
 
-		function converterFor(proj) {
-			return input => {
-				const reprojected = convertGeoJSON(input, "WGS84", proj);
-				(<any> reprojected).crs = getCRSObjectForGeoJSON(reprojected, proj);
-				return reprojected;
-			};
-		}
+		const converterFor = (proj) => (input) => {
+			const reprojected = convertGeoJSON(input, "WGS84", proj);
+			(<any> reprojected).crs = getCRSObjectForGeoJSON(reprojected, proj);
+			return reprojected;
+		};
 
 		const TOP = "TOP";
 		const LEFT = "LEFT";

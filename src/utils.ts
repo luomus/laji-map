@@ -46,7 +46,7 @@ function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) 
 				_updater(_obj[key]);
 			});
 		}
-		return obj;
+		return _obj;
 	}
 
 	return _updater(parseJSON(JSON.stringify(obj)));

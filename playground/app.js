@@ -171,7 +171,10 @@ class App {
 					showArea: true
 				}
 			},
-			clickBeforeZoomAndPan: true
+			clickBeforeZoomAndPan: true,
+			on: {
+				click: () => console.log("MOI")
+			}
 		};
 
 		if (query.lt !== "false") {

@@ -233,7 +233,7 @@ export default class LajiMap {
 			rootElem: "setRootElem",
 			lang: "setLang",
 			data: "setData",
-			draw: "setDraw",
+			draw: ["setDraw", () => this.getDraw()],
 			tileLayerName: "setTileLayerByName",
 			availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
 			availableTileLayerNamesWhitelist: "setAvailableTileLayerWhitelist",
@@ -242,20 +242,20 @@ export default class LajiMap {
 			availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 			tileLayerOpacity: "setTileLayerOpacity",
 			center: "setCenter",
-			zoom: "setNormalizedZoom",
+			zoom: ["setNormalizedZoom", () => this.getNormalizedZoom()],
 			zoomToData: ["setZoomToData", "_zoomToData"],
 			locate: ["setLocate", "locate"],
 			onPopupClose: true,
 			markerPopupOffset: true,
 			featurePopupOffset: true,
 			popupOnHover: true,
-			on: "setEventListeners",
+			on: ["setEventListeners", "_listenedEvent"],
 			polyline: true,
 			polygon: true,
 			rectangle: true,
 			circle: true,
 			marker: true,
-			bodyAsDialogRoot: "setBodyAsDialogRoot",
+			bodyAsDialogRoot: ["setBodyAsDialogRoot", () => this._dialogRoot === document.body],
 			clickBeforeZoomAndPan: ["setClickBeforeZoomAndPan", "_clickBeforeZoomAndPan"],
 			googleApiKey: "setGoogleApiKey"
 		};
@@ -888,6 +888,7 @@ export default class LajiMap {
 	@dependsOn("map")
 	setEventListeners(eventListeners: L.LeafletEventHandlerFnMap) {
 		if (!depsProvided(this, "setEventListeners", arguments)) return;
+		if (!eventListeners) return;
 
 		if (this._listenedEvents) {
 			Object.keys(this._listenedEvents).forEach(name => {

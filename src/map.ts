@@ -256,7 +256,7 @@ export default class LajiMap {
 			circle: true,
 			marker: true,
 			bodyAsDialogRoot: "setBodyAsDialogRoot",
-			clickBeforeZoomAndPan: "setClickBeforeZoomAndPan",
+			clickBeforeZoomAndPan: ["setClickBeforeZoomAndPan", "_clickBeforeZoomAndPan"],
 			googleApiKey: "setGoogleApiKey"
 		};
 	}
@@ -288,16 +288,22 @@ export default class LajiMap {
 		}
 	}
 
+	getOption(option: keyof Options) {
+		const optionKeys = this.getOptionKeys();
+
+		if (Array.isArray(optionKeys[option])) {
+			const getter = optionKeys[option][1];
+			return typeof getter === "function" ? getter() : this[getter];
+		} else if (option in this) {
+			return this[option];
+		}
+	}
+
 	getOptions(): Options {
 		const optionKeys = this.getOptionKeys();
 
-		return Object.keys(optionKeys).reduce((options, key) => {
-			if (Array.isArray(optionKeys[key])) {
-				const getter = optionKeys[key][1];
-				options[key] = typeof getter === "function" ? getter() : this[getter];
-			} else if (key in this) {
-				options[key] = this[key];
-			}
+		return Object.keys(optionKeys).reduce((options, key: keyof Options) => {
+			options[key] = this.getOption(key);
 			return options;
 		}, {});
 	}

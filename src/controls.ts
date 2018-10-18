@@ -1282,7 +1282,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			validate,
 			elem: formatDetectorElem,
 			unmount: unmountFormatDetector
-		} = this.createFormatDetectorElem({displayFormat: false});
+		} = this.createFormatDetectorElem({displayFormat: false, allowYKJGrid: true});
 
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
@@ -1529,7 +1529,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		updateOutput();
 	}
 
-	createFormatDetectorElem(options: {displayFormat?: boolean} = {}):
+	createFormatDetectorElem(options: {displayFormat?: boolean, allowYKJGrid?: boolean} = {}):
 	{elem: HTMLElement, validate: (value?: string) => boolean, unmount: () => void} {
 		const _container = document.createElement("div");
 		const formatContainer = document.createElement("div");
@@ -1553,13 +1553,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		translationsHooks.push(this.addTranslationHook(formatInfo, () => `${this.translations.DetectedFormat}: `));
 		translationsHooks.push(this.addTranslationHook(crsInfo, () => `${this.translations.DetectedCRS}: `));
 
-		const {displayFormat = true} = options;
+		const {displayFormat = true, allowYKJGrid = false} = options;
 
 		const updateInfo = (value = "") => {
 			let format, crs, valid;
 			try {
 				format = detectFormat(value);
-				crs = detectCRS(value);
+				crs = detectCRS(value, allowYKJGrid);
 				valid = convertAnyToWGS84GeoJSON(value);
 			} catch (e) {
 				;
@@ -1577,7 +1577,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				formatValue.innerHTML = format;
 				crsValue.innerHTML = this.translations[crs] ? this.translations[crs] : crs;
 			}
-			return !!(format && crs && valid);
+			return !!(format && crs && allowYKJGrid || valid);
 		};
 
 		updateInfo();

@@ -459,22 +459,22 @@ export function detectFormat(data): CoordinateSystem {
 	}
 }
 
-export function detectCRSFromLatLng(latLng): CRSString {
+export function detectCRSFromLatLng(latLng, allowYKJGrid = false): CRSString {
 	if (isObject(latLng) && latLng.lat && latLng.lng) {
 		latLng = [latLng.lat, latLng.lng];
 	}
 	if (validateLatLng(latLng, wgs84Validator)) {
 		return "WGS84";
-	} else if (validateLatLng(latLng, ykjValidator)) {
+	} else if (validateLatLng(latLng, ykjValidator) || allowYKJGrid && validateLatLng(latLng, ykjGridStrictValidator)) {
 		return "EPSG:2393";
 	} else if (validateLatLng(latLng, etrsTm35FinValidator)) {
 		return "EPSG:3067";
 	}
 }
 
-export function detectCRS(data: string | G.GeoJSON): CRSString {
+export function detectCRS(data: string | G.GeoJSON, allowYKJGrid = false): CRSString {
 	try {
-		return detectCRSFromLatLng(data);
+		return detectCRSFromLatLng(data, allowYKJGrid);
 	} catch (e) {
 		const format = detectFormat(data);
 		let geoJSON = undefined;
@@ -519,7 +519,7 @@ export function detectCRS(data: string | G.GeoJSON): CRSString {
 				let coordinateSample = geometrySample.coordinates;
 				while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
 				coordinateSample = coordinateSample.map(c => `${c}`).reverse();
-				return detectCRSFromLatLng(coordinateSample);
+				return detectCRSFromLatLng(coordinateSample, allowYKJGrid);
 			}
 		}
 	}

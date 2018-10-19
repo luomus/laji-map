@@ -305,7 +305,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						fn: (...params) => {
 							this._startDrawReverse();
 						},
-						finishFn: (...params) => this._finishDrawReverse()
+						finishFn: (...params) => this._finishDrawReverse(),
+						dependencies: [
+							() => this.getDraw().polyline !== false
+						]
 					},
 					{
 						name: "undo",

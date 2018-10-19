@@ -1299,6 +1299,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						_input.value = match;
 						_input.oninput(<any> {target: _input});
 					});
+					submitButton.focus();
 				}
 			};
 			input.oninput = (e) => {

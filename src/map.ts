@@ -2945,6 +2945,9 @@ export default class LajiMap {
 			...userDefined,
 			shapeOptions: {
 				showArea: true,
+				poly: {
+					allowIntersection: false
+				},
 				...baseStyle,
 				...(additionalOptions.shapeOptions || {}),
 				...userDefined

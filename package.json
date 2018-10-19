@@ -51,7 +51,7 @@
     "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#17601bee91f2dae098a0a76e96714d59ec958fe6",
     "leaflet": "1.3.4",
     "leaflet-contextmenu": "1.4.0",
-    "leaflet-draw": "1.0.0",
+    "leaflet-draw": "1.0.3",
     "leaflet-geometryutil": "0.8.0",
     "leaflet-geosearch": "git+https://git@github.com/olzraiti/leaflet-geosearch.git#d0fb4384742e22799074355a99094adcc2416577",
     "leaflet-mml-layers": "2.0.1",

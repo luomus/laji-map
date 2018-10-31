@@ -738,7 +738,11 @@ export default class LajiMap {
 	}
 
 	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
-		if (this.tileLayer && this._getDefaultCRSLayers().indexOf(this.tileLayer) === -1 && this._isOutsideFinland(latLng)) {
+		if (this.tileLayer
+			&& this._getDefaultCRSLayers().indexOf(this.tileLayer) === -1
+			&& this.availableTileLayers.openStreetMap
+			&& this._isOutsideFinland(latLng)
+		) {
 			this._swapToForeignFlag = true;
 			this.setTileLayer(this.tileLayers.openStreetMap);
 		}

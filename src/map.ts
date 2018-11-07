@@ -26,7 +26,7 @@ import {
 import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
-	GetFeatureStyleOptions
+	GetFeatureStyleOptions, ZoomToDataFitBoundsOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1313,7 +1313,7 @@ export default class LajiMap {
 					features: _featureCollection.features.reduce((features, f) => {
 						if (f.geometry.type === "GeometryCollection") {
 							f.geometry.geometries.forEach(g => {
-								features.push({type: "Feature", geometry: g});
+								features.push({type: "Feature", geometry: g, properties: f.properties});
 							});
 						} else {
 							features.push(f);
@@ -1469,14 +1469,20 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data", "draw", "center", "zoom")
-	zoomToData(options: LajiMapFitBoundsOptions | boolean = {}) {
+	zoomToData(options: ZoomToDataFitBoundsOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
-
-		const bounds = this.getBoundsForData();
 
 		if (options && !isObject(options)) {
 			options = {};
 		}
+
+		const {dataIdxs, draw} = <ZoomToDataFitBoundsOptions> options;
+		const datasToZoom = dataIdxs || draw
+			? [...(dataIdxs || []), ...(draw ? [-1] : [])]
+			: undefined;
+		const bounds = datasToZoom
+			? this.getBoundsForIdxs(datasToZoom)
+			: this.getBoundsForData();
 
 		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}

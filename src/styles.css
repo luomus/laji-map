@@ -383,6 +383,29 @@
 	color: #dddddd;
 }
 
-.laji-map .leaflet-control-layers label.disabled {
+.laji-map-dialog .leaflet-control-layers label.disabled {
 	cursor: not-allowed;
+}
+.laji-map-dialog .geojson-validations li span.error-path {
+    font-style: italic;
+    font-size: 9px;
+    position: absolute;
+    right: 6px;
+    top: -4px;
+}
+.laji-map-dialog ul.geojson-validations {
+	list-style: none;
+	padding-left: 0px;
+}
+.laji-map-dialog ul.geojson-validations li {
+	padding: 5px;
+	margin-bottom: 4px;
+	position: relative;
+}
+.laji-map-dialog .warning-title {
+	border-bottom: 1px solid #8a6d3b;
+}
+
+.laji-map-dialog .text-warning:not(.warning-title) {
+	font-size: 13px
 }

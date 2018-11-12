@@ -624,5 +624,65 @@ export default {
 		fi: "Kunnat",
 		en: "Municipalities",
 		sv: "Kommuner"
-	}
+	},
+	invalidCoordinates: {
+		fi: "Virheelliset koordinaatit",
+		en: "Invalid coordinates",
+		sv: "Ogiltiga koordinater"
+	},
+	polygonStartAndEndMustBeEqual: {
+		fi: "Polygonin koordinaattien alun ja lopun täytyy olla sama",
+		en: "Polygon coordinates must have same start and end",
+		sv: "Polygonkoordinater måste ha samma start och slut"
+	},
+	polygonHoleCoordinatesShouldBeClockWise: {
+		fi: "Polygonin koordinaatit pitäisi olla vastapäivään",
+		en: "Polygon coordinates should be anti clockwise",
+		sv: "Polygonkoordinater ska vara moturs"
+	},
+	polygonCoordinatesShouldBeAntiClockWise: {
+		fi: "Polygonin reikien koordinaattien pitäisi olla myötäpäivään",
+		en: "Polygon holes' coordinates should be clockwise",
+		sv: "Polygonhålens koordinater ska vara medurs"
+	},
+	noFeatures: {
+		fi: "Puuttuu 'features'",
+		en: "Missing 'features'",
+		sv: "Saknar 'features'"
+	},
+	noGeometries: {
+		fi: "Puuttuu 'geometries'",
+		en: "Missing 'geometries'",
+		sv: "Saknar 'geometries'"
+	},
+	noGeometry: {
+		fi: "Puuttuu 'geometry'",
+		en: "Missing 'geometry'",
+		sv: "Saknar 'geometry'"
+	},
+	noCoordinates: {
+		fi: "Puuttuu 'coordinates'",
+		en: "Missing 'coordinates'",
+		sv: "Saknar 'coordinates'"
+	},
+	parsingJSONFailed: {
+		fi: "JSON:nin parsiminen epäonnistui",
+		en: "Parsing JSON failed",
+		sv: "Parsing JSON misslyckades"
+	},
+	geoJSONUploadWarningsTitle: {
+		fi: "Alla olevat varoitukset korjataan automaattisesti",
+		en: "The warnings below will be fixed automatically",
+		sv: "Varningarna nedan kommer att åtgärdas automatiskt"
+	},
+	coordinate: {
+		fi: "Koordinaatti",
+		en: "Coordinate",
+		sv: "Koordinate"
+	},
+	erronous: {
+		fi: "Virheellinen",
+		en: "Erronous",
+		sv: "Felaktig"
+	},
 };

@@ -6,14 +6,15 @@ import {
 	EPSG3067WKTString
 } from "./globals";
 import * as G from "geojson";
-import {LineTransectFeature, LineTransectGeometry} from "./line-transect.defs";
+import { LineTransectFeature, LineTransectGeometry } from "./line-transect.defs";
+
+export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
+export type CoordinateSystem = "GeoJSON" | "WKT" | "ISO 6709";
+export interface GeoJSONValidationErrors { [path: string]: { message: string; }; }
 
 export function reverseCoordinate(c: [number, number]): [number, number] {
 	return <[number, number]> c.slice(0).reverse();
 }
-
-export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
-export type CoordinateSystem = "GeoJSON" | "WKT" | "ISO 6709";
 
 export function convertLatLng(latlng: [number, number], from: CRSString, to: CRSString) {
 	function formatToProj4Format(format) {
@@ -32,6 +33,9 @@ export function convertLatLng(latlng: [number, number], from: CRSString, to: CRS
 	}
 	if (validator && validator.formatter) {
 		latlng = <[number, number]> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+	}
+	if (validator && (validator.regexp || validator.range)) {
+		validateLatLng(latlng.map(c => `${c}`), validator, !!"throwMode");
 	}
 
 	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
@@ -53,9 +57,27 @@ function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) 
 }
 
 export function convertGeoJSON(geoJSON: G.GeoJSON, from: CRSString, to: CRSString): G.GeoJSON {
-	const convertCoordinates = coords => (typeof coords[0] === "number") ?
-			convertLatLng(reverseCoordinate(coords), from, to) :
-			coords.map(convertCoordinates);
+	const convertCoordinates = coords => {
+
+		if (typeof coords[0] === "number") {
+			let validator = undefined;
+			switch (from) {
+				case "EPSG:2393":
+					validator = ykjValidator;
+					break;
+				case "EPSG:3067":
+					validator = etrsValidator;
+					break;
+				case "WGS84":
+					validator = wgs84Validator;
+					break;
+			}
+			validator && validateLatLng(coords.slice(0).reverse().map(_c => `${_c}`), validator, !!"throwMode");
+			return convertLatLng(reverseCoordinate(coords), from, to);
+		} else {
+			return coords.map(convertCoordinates);
+		}
+	};
 
 	return updateImmutablyRecursivelyWith(geoJSON, (key, obj) => {
 		if (key === "coordinates") obj = convertCoordinates(obj);
@@ -281,7 +303,12 @@ function textualFormatToGeoJSON(
 		.filter(line => line && !line.startsWith(crsPrefix))
 		.map((line, idx) => {
 			if (lineIsPolygon(line)) {
-				return {type: "Polygon", coordinates: [_lineToCoordinates(line, idx)]};
+				const coordinates = [_lineToCoordinates(line, idx)];
+				coordinates[0].push(coordinates[0][0]);
+				if (coordinatesAreClockWise(coordinates[0])) {
+					coordinates[0] = coordinates[0].reverse();
+				}
+				return {type: "Polygon", coordinates};
 			} else if (lineIsLineString(line)) {
 				return {type: "LineString", coordinates: _lineToCoordinates(line, idx)};
 			} else if (lineIsPoint(line)) {
@@ -380,7 +407,7 @@ export function latLngOrTupleToTuple(latLng) {
 }
 
 export function latLngTuplesEqual(first, second) {
-	return [0, 1].every(idx => first[idx] === second[idx]);
+	return [0, 1, 2].every(idx => first[idx] === second[idx]);
 }
 
 // Copy pasted from leaflet/src/geo/crs/CRS.Earth.js for headless usage.
@@ -455,6 +482,14 @@ export function detectFormat(data): CoordinateSystem {
 	} else if (typeof data === "string" && !data.match(/{.*}/) && data.indexOf("/") !== -1) {
 		return "ISO 6709";
 	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+		if (typeof data === "string") {
+			try {
+				JSON.parse(data);
+			} catch (e) {
+				throw new LajiMapError("Parsing JSON failed", "ParsingJSONFailed");
+			}
+		}
+
 		return "GeoJSON";
 	}
 }
@@ -525,15 +560,15 @@ export function detectCRS(data: string | G.GeoJSON, allowYKJGrid = false): CRSSt
 	}
 }
 
-export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON): G.GeoJSON {
-	return convert(data, "GeoJSON", "WGS84");
+export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, strictMode = false): G.GeoJSON {
+	return convert(data, "GeoJSON", "WGS84", strictMode);
 }
 
-export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: CRSString): string;
-export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: CRSString): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): string;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString): string | G.GeoJSON {
+export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: CRSString, strictMode?: boolean): string;
+export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: CRSString, strictMode?: boolean): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, strictMode?: boolean): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, strictMode?: boolean): string;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, strictMode?: boolean): string | G.GeoJSON { // tslint:disable-line
 	if (input === undefined) {
 		return undefined;
 	}
@@ -559,16 +594,185 @@ export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSyste
 
 	if (outputCRS !== "WGS84") geoJSON.crs = getCRSObjectForGeoJSON(geoJSON, outputCRS);
 
+	let result = undefined;
+
 	switch (outputFormat) {
 	case "WKT":
 		return geoJSONToWKT(geoJSON);
 	case "ISO 6709":
 		return geoJSONToISO6709(geoJSON);
 	case "GeoJSON":
-		return geoJSON;
+		result = geoJSON;
+		const {errors, geoJSON: _geoJSON} = validateGeoJSON(geoJSON, outputCRS);
+		if (errors.length && (strictMode || errors.some(e => { return !(<any> e).fixable; }))) {
+			throw new LajiMapGeoJSONConversionError("GeoJSON validation failed", errors, _geoJSON);
+		}
+		return result;
 	default:
 		throw new Error("Unknown output format");
 	}
+}
+
+export function validateGeoJSON(geoJSON, crs?: CRSString): {errors: Error[], geoJSON: G.GeoJSON} {
+	if (!crs) {
+		crs = detectCRS(geoJSON);
+	}
+
+	const errors = [];
+
+	const addError = (e: Error): void => {
+		errors.push(e);
+	};
+
+	const addGeoJSONError = (path: string, message: string, fixable = false): void => {
+		addError(new LajiMapGeoJSONError(message, path, fixable));
+	};
+
+	const validateCoordinate = (c: G.Position, path) => {
+		if (c.length !== 2 && c.length !== 3) {
+			addGeoJSONError(path, "InvalidCoordinates");
+		}
+
+		try {
+			let validator = undefined;
+			switch (crs) {
+				case "EPSG:2393":
+					validator = ykjValidator;
+					break;
+				case "EPSG:3067":
+					validator = etrsValidator;
+					break;
+				case "WGS84":
+					validator = wgs84Validator;
+					break;
+			}
+			validator && validateLatLng(c.slice(0).reverse().map(_c => `${_c}`), validator, !!"throwMode");
+		} catch (e) {
+			if (e.latOrLng) {
+				addError(new CoordinateError(e.translationKey, e.latOrLng, e.half, path));
+			}
+		}
+	};
+
+	const validateRing = (ring: G.Position[], isHole: boolean, _path: string): G.Position[] => {
+		ring.forEach((c, j) => {
+			validateCoordinate(c, `${_path}/${j}`);
+		});
+		if (!latLngTuplesEqual(ring[0], ring[ring.length - 1])) {
+			addGeoJSONError(_path, "PolygonStartAndEndMustBeEqual");
+		}
+		if (!isHole ? coordinatesAreClockWise(ring) : !coordinatesAreClockWise(ring)) {
+			addGeoJSONError(
+				_path,
+				!isHole
+				? "PolygonHoleCoordinatesShouldBeClockWise"
+				: "PolygonCoordinatesShouldBeAntiClockWise",
+				!!"fixable"
+			);
+			return ring.reverse();
+		}
+		return ring;
+	};
+
+	const validator = (_geoJSON: G.GeoJSON, _path: string): G.GeoJSON => {
+		switch (_geoJSON.type) {
+			case "FeatureCollection":
+				_geoJSON = <G.FeatureCollection> _geoJSON;
+				if (!_geoJSON.features) {
+					addGeoJSONError(_path, "NoFeatures");
+					return _geoJSON;
+				}
+				return <G.FeatureCollection> {
+					..._geoJSON,
+					features: _geoJSON.features.map((g, i)  => validator(g, `${_path}/features/${i}`))
+				};
+			case "GeometryCollection":
+				_geoJSON = <G.GeometryCollection> _geoJSON;
+				if (!_geoJSON.geometries) {
+					addGeoJSONError(_path,  "NoGeometries");
+					return _geoJSON;
+				}
+				return <G.GeometryCollection> {
+					..._geoJSON,
+					geometries: _geoJSON.geometries.map((g, i) => validator(g,  `${_path}/geometries/${i}`))
+				};
+			case "Feature":
+				_geoJSON = <G.Feature> _geoJSON;
+				if (!_geoJSON.geometry) {
+					addGeoJSONError(_path, "NoGeometry");
+					return _geoJSON;
+				}
+				return <G.Feature> {
+					..._geoJSON,
+					feature: validator(_geoJSON.geometry, `${_path}/geometry`)
+				};
+			case "Point":
+				_geoJSON = <G.Point> _geoJSON;
+				if (!_geoJSON.coordinates) {
+					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+				} else {
+					validateCoordinate(_geoJSON.coordinates, `${_path}/coordinates`);
+				}
+				return _geoJSON;
+			case "LineString":
+				_geoJSON = <G.LineString> _geoJSON;
+				if (!_geoJSON.coordinates) {
+					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+					return _geoJSON;
+				}
+				_geoJSON.coordinates.forEach((c, i) => {
+					validateCoordinate(c, `${_path}/coordinates/${i}`);
+				});
+				return _geoJSON;
+			case "MultiLineString":
+				_geoJSON = <G.MultiLineString> _geoJSON;
+				if (!_geoJSON.coordinates) {
+					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+					return _geoJSON;
+				}
+				_geoJSON.coordinates.forEach((line, i) => {
+					line.forEach((c, j) => {
+						validateCoordinate(c, `${_path}/coordinates${i}/${j}`);
+					});
+				});
+				return _geoJSON;
+			case "Polygon":
+				_geoJSON = <G.Polygon> _geoJSON;
+				if (!_geoJSON.coordinates) {
+					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+					return _geoJSON;
+				}
+				_geoJSON.coordinates = _geoJSON.coordinates.map((ring, i) => validateRing(ring, !!i, `${_path}/coordinates/${i}`));
+				return _geoJSON;
+			case "MultiPolygon":
+				_geoJSON = <G.MultiPolygon> _geoJSON;
+				if (!_geoJSON.coordinates) {
+					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+					return _geoJSON;
+				}
+				_geoJSON.coordinates.forEach((coordinates, i) => {
+					_geoJSON = <G.MultiPolygon> _geoJSON;
+					geoJSON.coordinates[i] = _geoJSON.coordinates[i].map((ring, j) => validateRing(ring, !!i, `${_path}/coordinates/${i}/${j}`));
+
+				});
+				return _geoJSON;
+		}
+	};
+
+	geoJSON = validator(JSON.parse(JSON.stringify(geoJSON)), "");
+	return {errors, geoJSON};
+}
+
+export function coordinatesAreClockWise(coordinates: G.Position[]) {
+	const sum = coordinates.map((c, i) => {
+		const next = coordinates[i + 1];
+		if (next) return [c, next];
+	}).filter(c => c)
+		.reduce((_sum, edge) =>
+			(_sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
+			0);
+	const isClockwise = sum >= 0;
+	return isClockwise;
 }
 
 export function getCRSObjectForGeoJSON(geoJSON: G.GeoJSON, crs: CRSString): {type: "name", properties: {name: string}} {
@@ -590,12 +794,105 @@ export class LajiMapError extends Error {
 		this.translationKey = translationKey;
 		if (lineIdx !== undefined) this.lineIdx = lineIdx;
 	}
+
+	stringify = (translations: any): string => {
+		let msg = this.translationKey && translations[this.translationKey]
+			? translations[this.translationKey]
+			: this.message;
+		if ("lineIdx" in this) msg  += `. ${translations.Line}: ${this.lineIdx}`;
+		return msg;
+	}
+}
+
+export class LajiMapGeoJSONConversionError extends Error {
+	public _lajiMapGeoJSONConversionError = true;
+	public errors: Error[];
+	public geoJSON: G.GeoJSON;
+
+	constructor(message: string, errors: Error[], geoJSON: G.GeoJSON) {
+		super(message);
+		this.errors = errors;
+		this.geoJSON = geoJSON;
+	}
+}
+
+// Extending error with methods doesn't work, so we have error rendering here.
+function renderGeoJSONError(e, translations) {
+	const errorElem = document.createElement("li");
+
+	const errorPath = document.createElement("span");
+	errorPath.className = "error-path";
+	errorPath.innerHTML = (typeof e.path === "string" ? e.path : "").replace(/\//g, ".").substring(1);
+
+	const errorMessage = document.createElement("span");
+	errorMessage.className = "error-message";
+	errorMessage.innerHTML =  translations[e.translationKey];
+	errorElem.appendChild(errorMessage);
+	if (e.path) {
+		errorElem.appendChild(errorPath);
+	}
+	return errorElem;
+}
+
+export class LajiMapGeoJSONError extends LajiMapError {
+	public translationKey: string;
+	public path: string;
+	public fixable: boolean;
+
+	constructor(translationKey: string, path = "", fixable = false) {
+		super("", translationKey);
+		this.path = path;
+		this.fixable = fixable;
+	}
+
+	render = (translations: any) => {
+		return renderGeoJSONError(this, translations);
+	}
+}
+
+export type HalfString = "lat" | "lng";
+
+export class CoordinateError extends LajiMapGeoJSONError {
+	latOrLng: string;
+	half: HalfString;
+
+	constructor(translationKey: string, latOrLng: string, half?: HalfString, path?: string) {
+		super(translationKey, path);
+		this.latOrLng = latOrLng;
+		this.half = half;
+	}
+
+	stringify = (translations: any): string => {
+		const msg = this.translationKey && translations[this.translationKey]
+			? translations[this.translationKey]
+			: "";
+		const coordinateStr = this.half
+			? `${translations.Erronous} ${translations[this.half === "lat" ? "Latitude" : "Longitude"]} ${this.latOrLng}`
+			: `${translations.Coordinate}: ${this.latOrLng}`;
+
+		return [msg, coordinateStr].filter(s => s).join(". ");
+	}
+
+	render = (translations) => {
+		const elem = renderGeoJSONError(this, translations);
+		const errorElem = elem.children[0];
+		errorElem.innerHTML = this.stringify(translations);
+		return elem;
+	}
 }
 
 export function stringifyLajiMapError(error: LajiMapError, translations: any): string {
-	let msg = `${translations.errorHTML} ${error.translationKey && translations[error.translationKey] ? translations[error.translationKey] : error.message}.`; // tslint:disable-line
-	if ("lineIdx" in error) msg  += ` ${translations.Line}: ${error.lineIdx}`;
-	return msg;
+	return error.stringify(translations);
+}
+
+export function renderLajiMapError(error: LajiMapError, translations: any, elemType = "span"): HTMLElement {
+	if ((<any> error).render) {
+		return (<any> error).render(translations);
+	} else {
+		const elem = document.createElement(elemType);
+		elem.innerHTML = error.stringify ? stringifyLajiMapError(error, translations) : error.message;
+		return elem;
+	}
 }
 
 export function parseJSON(json: string): any {
@@ -646,15 +943,22 @@ const ykjGridValidator = ykjGridStrictValidator; // For backward compability
 
 export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, etrsTm35FinValidator, etrsValidator};
 
-export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[]) {
+export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[], throwError = false) {
 	return latlng.every((value, i) => {
 		value = `${value}`;
 		const validator = latLngValidator[i];
+		if (!validator) {
+			return true;
+		}
 		const formatted = +(validator.formatter ? validator.formatter(value) : value);
-		return (
+		const isValid = (
 			value !== "" && value.match(validator.regexp) &&
 			formatted >= validator.range[0] && formatted <= validator.range[1]
 		);
+		if (!isValid && throwError) {
+			throw new CoordinateError(undefined, latlng[i], i === 1 ? "lng" : "lat");
+		}
+		return isValid;
 	});
 }
 

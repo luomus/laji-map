@@ -11,7 +11,9 @@ import "leaflet-textpath";
 import { GoogleProvider } from "leaflet-geosearch";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
-	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate
+	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate,
+	coordinatesAreClockWise
+
 } from "./utils";
 import { depsProvided, dependsOn, provide, isProvided, reflect } from "./dependency-utils";
 import {
@@ -1230,15 +1232,7 @@ export default class LajiMap {
 		} else if  (feature.geometry.type === "Polygon") {
 			// If the coordinates are ordered counterclockwise, reverse them.
 			const coordinates = feature.geometry.coordinates[0].slice(0);
-
-			const sum = coordinates.map((c, i) => {
-				const next = coordinates[i + 1];
-				if (next) return [c, next];
-			}).filter(c => c)
-				.reduce((_sum, edge) =>
-					(_sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
-				0);
-			const isClockwise = sum >= 0;
+			const isClockwise = !coordinatesAreClockWise(coordinates);
 
 			if (!isClockwise) {
 				feature = {...feature, geometry: {...feature.geometry, coordinates: [coordinates.reverse()]}};
@@ -3005,7 +2999,9 @@ export default class LajiMap {
 		alert.style.display = "block";
 		alert.className = "laji-map-popup alert alert-danger";
 		const lajiMapError = ((<any> e)._lajiMapError) ? <LajiMapError> e : undefined;
-		const message = () => lajiMapError ? stringifyLajiMapError(lajiMapError, this.translations) : e.message;
+		const message = () => `${translations.errorHTML} ` + lajiMapError
+				? stringifyLajiMapError(lajiMapError, this.translations)
+				: e.message;
 		const translationHook = this.addTranslationHook(alert, message);
 
 		this.showClosableElement(alert, () => {

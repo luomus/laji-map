@@ -1,4 +1,5 @@
 import * as L from "leaflet";
+import * as G from "geojson";
 import { GeoSearchControl } from "leaflet-geosearch";
 import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent } from "./map.defs";
@@ -6,7 +7,7 @@ import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator,
 	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
-	capitalizeFirstLetter
+	capitalizeFirstLetter, renderLajiMapError
 } from "./utils";
 import {
 	ESC,
@@ -1285,7 +1286,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			validate,
 			elem: formatDetectorElem,
 			unmount: unmountFormatDetector
-		} = this.createFormatDetectorElem({displayFormat: false, allowYKJGrid: true});
+		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowYKJGrid: true});
 
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
@@ -1314,7 +1315,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				prevVal = target.value;
 
 				inputValues[i] = target.value;
-				if (validate(`${inputValues[0]}:${inputValues[1]}/`)) {
+
+				const {valid, geoJSON} = validate(`${inputValues[0]}:${inputValues[1]}/`);
+				if (valid) {
 					submitButton.removeAttribute("disabled");
 				} else {
 					submitButton.setAttribute("disabled", "disabled");
@@ -1533,8 +1536,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		updateOutput();
 	}
 
-	createFormatDetectorElem(options: {displayFormat?: boolean, allowYKJGrid?: boolean} = {}):
-	{elem: HTMLElement, validate: (value?: string) => boolean, unmount: () => void} {
+	createFormatDetectorElem(options: {displayFormat?: boolean, displayErrors?: boolean, allowYKJGrid?: boolean} = {}):
+	{elem: HTMLElement, validate: (value?: string) => {valid: boolean, geoJSON: G.GeoJSON}, unmount: () => void} {
 		const _container = document.createElement("div");
 		const formatContainer = document.createElement("div");
 		const crsContainer = document.createElement("div");
@@ -1542,31 +1545,92 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const crsInfo = document.createElement("span");
 		const formatValue = document.createElement("span");
 		const crsValue = document.createElement("span");
+		const geoJSONErrorsContainer = document.createElement("ul");
+		const geoJSONWarningsContainer = document.createElement("ul");
 
 		formatContainer.className = "form-group text-success";
 		crsContainer.className = "form-group text-success";
+		geoJSONErrorsContainer.className = "geojson-validations";
+		geoJSONWarningsContainer.className = "geojson-validations";
 
 		_container.appendChild(formatContainer);
 		_container.appendChild(crsContainer);
+		_container.appendChild(geoJSONErrorsContainer);
+		_container.appendChild(geoJSONWarningsContainer);
 		formatContainer.appendChild(formatInfo);
 		formatContainer.appendChild(formatValue);
 		crsContainer.appendChild(crsInfo);
 		crsContainer.appendChild(crsValue);
 
-		let translationsHooks = [];
-		translationsHooks.push(this.addTranslationHook(formatInfo, () => `${this.translations.DetectedFormat}: `));
-		translationsHooks.push(this.addTranslationHook(crsInfo, () => `${this.translations.DetectedCRS}: `));
+		let alert = undefined;
 
-		const {displayFormat = true, allowYKJGrid = false} = options;
+		const {displayFormat = true, displayErrors = true, allowYKJGrid = false} = options;
 
+		let storedValue = "";
 		const updateInfo = (value = "") => {
-			let format, crs, valid;
+			storedValue = value;
+			let format, crs, valid, hasErrors, hasWarnings, fixedGeoJSON;
+
+			formatInfo.innerHTML =  `${this.translations.DetectedFormat}: `;
+			crsInfo.innerHTML =  `${this.translations.DetectedCRS}: `;
+
+			[geoJSONWarningsContainer, geoJSONErrorsContainer].forEach(container => {
+				container.style.display = "none";
+				while (container.firstChild) {
+						container.removeChild(container.firstChild);
+				}
+			});
+
+			if (alert) {
+				_container.removeChild(alert);
+				alert = undefined;
+			}
 			try {
 				format = detectFormat(value);
 				crs = detectCRS(value, allowYKJGrid);
-				valid = convertAnyToWGS84GeoJSON(value);
+				valid = convertAnyToWGS84GeoJSON(value, !!"strict");
 			} catch (e) {
-				;
+				if (displayErrors && e._lajiMapError) {
+					if (e.translationKey !== "GeoDataFormatDetectionError") {
+						alert = document.createElement("div");
+						alert.className = "alert alert-danger";
+						alert.innerHTML = e.stringify(this.translations);
+						_container.appendChild(alert);
+					}
+				} else if (displayErrors && e._lajiMapGeoJSONConversionError) {
+					fixedGeoJSON = e.geoJSON;
+					e.errors.forEach(_e => {
+						const {translationKey, fixable, path} = _e;
+						const target = fixable ? geoJSONWarningsContainer : geoJSONErrorsContainer;
+						const firstWarning = fixable && !hasWarnings;
+						if (fixable) {
+							hasWarnings = true;
+						} else {
+							hasErrors = true;
+						}
+						if (format !== "GeoJSON") {
+							_e.path = undefined;
+						}
+						const errorElem = renderLajiMapError(_e, this.translations, "li");
+						errorElem.className = fixable ? "alert alert-warning" : "alert alert-danger";
+
+						if (firstWarning) {
+							const warningContainer = document.createElement("li");
+							const warningTitle = document.createElement("span");
+							warningTitle.innerHTML = this.translations.GeoJSONUploadWarningsTitle;
+							warningTitle.className = "form-group text-warning warning-title";
+							warningContainer.appendChild(warningTitle);
+							target.appendChild(warningContainer);
+						}
+						target.appendChild(errorElem);
+					});
+					if (!hasErrors && geoJSONWarningsContainer.style.display === "none") {
+						geoJSONWarningsContainer.style.display = "block";
+					}
+					if (hasErrors && geoJSONErrorsContainer.style.display === "none") {
+						geoJSONErrorsContainer.style.display = "block";
+					}
+				}
 			} finally {
 				if (displayFormat && format) {
 					formatContainer.style.display = "block";
@@ -1579,15 +1643,19 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					crsContainer.style.display = "none";
 				}
 				formatValue.innerHTML = format;
+				if (!hasErrors && hasWarnings) {
+					valid = convertAnyToWGS84GeoJSON(fixedGeoJSON);
+				}
 				crsValue.innerHTML = this.translations[crs] ? this.translations[crs] : crs;
 			}
-			return !!(format && crs && allowYKJGrid || valid);
+			return {valid: !!(format && crs && allowYKJGrid || valid), geoJSON: valid};
 		};
 
 		updateInfo();
 
+		this.addTranslationHook(() => updateInfo(storedValue));
 		const unmount = () => {
-			translationsHooks.forEach(hook => this.removeTranslationHook(hook));
+			this.removeTranslationHook(updateInfo);
 		};
 
 		return {elem: _container, validate: updateInfo, unmount};
@@ -1609,9 +1677,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} = this.createFormatDetectorElem();
 
+		let fixedGeoJSON = undefined;
+
 		textarea.oninput = (e) => {
 			const {value} = <HTMLInputElement> e.target;
-			if (validate(value)) {
+			const {valid, geoJSON} = validate(value);
+			fixedGeoJSON = geoJSON;
+			if (valid) {
 				button.removeAttribute("disabled");
 				if (alert) {
 					container.removeChild(alert);
@@ -1623,45 +1695,43 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
 		};
 
-		const that = this;
-
 		let alert = undefined;
 		let alertTranslationHook = undefined;
 
-		function updateAlert(error) {
+		const updateAlert = (error) => {
 			if (alert) container.removeChild(alert);
 			alert = document.createElement("div");
 			alert.className = "alert alert-danger";
-			if (alertTranslationHook) that.removeTranslationHook(alertTranslationHook);
-			alertTranslationHook = that.addTranslationHook(alert, () => stringifyLajiMapError(error, that.translations));
+			if (alertTranslationHook) this.removeTranslationHook(alertTranslationHook);
+			alertTranslationHook = this.addTranslationHook(alert, () => stringifyLajiMapError(error, this.translations));
 			container.appendChild(alert);
-		}
+		};
 
-		function convertText(e) {
+		const convertText = (e) => {
 			e.preventDefault();
 			try {
 				const prevFeatureCollection = {
 					type: "FeatureCollection",
-					features: that.cloneFeatures(that.getDraw().featureCollection.features)
+					features: this.cloneFeatures(this.getDraw().featureCollection.features)
 				};
 				const events: LajiMapEvent[] = [{
 					type: "delete",
-					idxs: Object.keys(that.idxsToIds[that.drawIdx]).map(idx => parseInt(idx))
+					idxs: Object.keys(this.idxsToIds[this.drawIdx]).map(idx => parseInt(idx))
 				}];
-				that.updateDrawData(<DrawOptions> {...that.getDraw(), featureCollection: undefined, geoData: textarea.value});
-				that.getDraw().featureCollection.features.forEach(feature => {
+				this.updateDrawData(<DrawOptions> {...this.getDraw(), featureCollection: undefined, geoData: fixedGeoJSON || textarea.value});
+				this.getDraw().featureCollection.features.forEach(feature => {
 					events.push({type: "create", feature});
 				});
-				that._triggerEvent(events, that.getDraw().onChange);
-				that._updateDrawUndoStack(events, prevFeatureCollection);
-				that._closeDialog(e);
+				this._triggerEvent(events, this.getDraw().onChange);
+				this._updateDrawUndoStack(events, prevFeatureCollection);
+				this._closeDialog(e);
 			} catch (e) {
-				updateAlert(e);
+				if (e.stringify) updateAlert(e);
 				throw e;
 			}
-			const bounds = that.getDraw().group.getBounds();
-			if (Object.keys(bounds).length) that.map.fitBounds(bounds);
-		}
+			const bounds = this.getDraw().group.getBounds();
+			if (Object.keys(bounds).length) this.map.fitBounds(bounds);
+		};
 
 		button.addEventListener("click", convertText);
 

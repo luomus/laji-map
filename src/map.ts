@@ -1307,7 +1307,7 @@ export default class LajiMap {
 					features: _featureCollection.features.reduce((features, f) => {
 						if (f.geometry.type === "GeometryCollection") {
 							f.geometry.geometries.forEach(g => {
-								features.push({type: "Feature", geometry: g});
+								features.push({type: "Feature", geometry: g, properties: f.properties});
 							});
 						} else {
 							features.push(f);
@@ -1471,16 +1471,12 @@ export default class LajiMap {
 		}
 
 		const {dataIdxs, draw} = <ZoomToDataOptions> options;
-
-		let idxs = undefined;
-		if (dataIdxs) {
-			idxs = dataIdxs;
-		}
-		if (draw) {
-			idxs ? idxs.push(this.drawIdx) : [this.drawIdx];
-		}
-
-		const bounds = this.getBoundsForData(idxs && idxs.map(i => this.data[i]));
+		const datasToZoom = dataIdxs || draw
+			? [...(dataIdxs || []), ...(draw ? [-1] : [])]
+			: undefined;
+		const bounds = datasToZoom
+			? this.getBoundsForIdxs(datasToZoom)
+			: this.getBoundsForData();
 
 		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}

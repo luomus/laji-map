@@ -28,7 +28,7 @@ import {
 import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
-	GetFeatureStyleOptions
+	GetFeatureStyleOptions, ZoomToDataOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1463,14 +1463,24 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data", "draw", "center", "zoom")
-	zoomToData(options: LajiMapFitBoundsOptions | boolean = {}) {
+	zoomToData(options: ZoomToDataOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
-
-		const bounds = this.getBoundsForData();
 
 		if (options && !isObject(options)) {
 			options = {};
 		}
+
+		const {dataIdxs, draw} = <ZoomToDataOptions> options;
+
+		let idxs = undefined;
+		if (dataIdxs) {
+			idxs = dataIdxs;
+		}
+		if (draw) {
+			idxs ? idxs.push(this.drawIdx) : [this.drawIdx];
+		}
+
+		const bounds = this.getBoundsForData(idxs && idxs.map(i => this.data[i]));
 
 		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}

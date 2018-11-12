@@ -6,6 +6,11 @@ export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	minZoom?: number;
 }
 
+export interface ZoomToDataOptions extends LajiMapFitBoundsOptions {
+	dataIdxs?: number[];
+	draw?: boolean;
+}
+
 export interface LajiMapEvent {
 	type: string;
 	idxs?: number[];

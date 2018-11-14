@@ -1588,7 +1588,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			try {
 				format = detectFormat(value);
 				crs = detectCRS(value, allowYKJGrid);
-				valid = convertAnyToWGS84GeoJSON(value, !!"strict");
+				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
 			} catch (e) {
 				if (displayErrors && e._lajiMapError) {
 					if (e.translationKey !== "GeoDataFormatDetectionError") {

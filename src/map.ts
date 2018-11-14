@@ -1472,8 +1472,9 @@ export default class LajiMap {
 
 		const {dataIdxs, draw} = <ZoomToDataOptions> options;
 		const datasToZoom = dataIdxs || draw
-			? [...(dataIdxs || []), ...(draw ? [-1] : [])]
+			? [...(dataIdxs || []), ...(draw ? [this.drawIdx] : [])]
 			: undefined;
+
 		const bounds = datasToZoom
 			? this.getBoundsForIdxs(datasToZoom)
 			: this.getBoundsForData();

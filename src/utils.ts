@@ -560,15 +560,15 @@ export function detectCRS(data: string | G.GeoJSON, allowYKJGrid = false): CRSSt
 	}
 }
 
-export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, strictMode = false): G.GeoJSON {
-	return convert(data, "GeoJSON", "WGS84", strictMode);
+export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, validate: boolean | "errors" = false): G.GeoJSON {
+	return convert(data, "GeoJSON", "WGS84", validate);
 }
 
-export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: CRSString, strictMode?: boolean): string;
-export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: CRSString, strictMode?: boolean): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, strictMode?: boolean): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, strictMode?: boolean): string;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, strictMode?: boolean): string | G.GeoJSON { // tslint:disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: CRSString, validate?: boolean | "errors"): string;
+export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: CRSString, validate?: boolean | "errors"): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, validate?: boolean | "errors"): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, validate?: boolean | "errors"): string;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, validate?: boolean | "errors"): string | G.GeoJSON { // tslint:disable-line
 	if (input === undefined) {
 		return undefined;
 	}
@@ -603,9 +603,11 @@ export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSyste
 		return geoJSONToISO6709(geoJSON);
 	case "GeoJSON":
 		result = geoJSON;
-		const {errors, geoJSON: _geoJSON} = validateGeoJSON(geoJSON, outputCRS);
-		if (errors.length && (strictMode || errors.some(e => { return !(<any> e).fixable; }))) {
-			throw new LajiMapGeoJSONConversionError("GeoJSON validation failed", errors, _geoJSON);
+		if (validate) {
+			const {errors, geoJSON: _geoJSON} = validateGeoJSON(geoJSON, outputCRS, validate !== "errors");
+			if (errors.length) {
+				throw new LajiMapGeoJSONConversionError("GeoJSON validation failed", errors, _geoJSON);
+			}
 		}
 		return result;
 	default:
@@ -613,7 +615,7 @@ export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSyste
 	}
 }
 
-export function validateGeoJSON(geoJSON, crs?: CRSString): {errors: Error[], geoJSON: G.GeoJSON} {
+export function validateGeoJSON(geoJSON, crs?: CRSString, warnings = true): {errors: Error[], geoJSON: G.GeoJSON} {
 	if (!crs) {
 		crs = detectCRS(geoJSON);
 	}
@@ -625,6 +627,7 @@ export function validateGeoJSON(geoJSON, crs?: CRSString): {errors: Error[], geo
 	};
 
 	const addGeoJSONError = (path: string, message: string, fixable = false): void => {
+		if (fixable && !warnings) return;
 		addError(new LajiMapGeoJSONError(message, path, fixable));
 	};
 

@@ -998,6 +998,7 @@ export default class LajiMap {
 			 // Redraw all layers according to new projection.
 			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true);
 			this.map.setView(center, zoom, {animate: false});
+			this.recluster();
 			this._viewCriticalSection = false;
 		}
 		this.map.setMaxZoom(maxZoom);

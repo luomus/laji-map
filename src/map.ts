@@ -613,6 +613,7 @@ export default class LajiMap {
 			this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 				attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors" // tslint:disable-line
 			});
+
 			this.tileLayers.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
 				subdomains: ["mt0", "mt1", "mt2", "mt3"],
 				attribution: "&copy; <a href=\"https://developers.google.com/maps/terms\" target=\"_blank\" rel=\"noopener noreferrer\">Google</a>" // tslint:disable-line
@@ -1369,10 +1370,7 @@ export default class LajiMap {
 		item.group = layer;
 		item.groupContainer = layer;
 		if (item.cluster) {
-			item.groupContainer = L.markerClusterGroup({
-				iconCreateFunction: this._getClusterIcon(item),
-				...(isObject(item.cluster) ? <L.MarkerClusterGroupOptions> item.cluster : {})
-			});
+			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item));
 			item.group.addTo(item.groupContainer);
 		}
 		item.groupContainer.addTo(this.map);
@@ -1937,12 +1935,17 @@ export default class LajiMap {
 		if (this.data) this.data.forEach(item => this._reclusterDataItem(item));
 	}
 
+	getClusterOptionsFor(item: Data) {
+		return {
+			iconCreateFunction: this._getClusterIcon(item),
+			...(isObject(item.cluster) ? <L.MarkerClusterGroupOptions> item.cluster : {})
+		};
+	}
+
 	_reclusterDataItem(item: Data) {
 		if (item.cluster) {
 			this.map.removeLayer(item.groupContainer);
-			item.groupContainer = L.markerClusterGroup({
-				iconCreateFunction: (cluster) => this._getClusterIcon(item)(cluster)
-			}).addTo(this.map);
+			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item)).addTo(this.map);
 			item.groupContainer.addLayer(item.group);
 		}
 	}

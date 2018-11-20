@@ -300,7 +300,7 @@ function textualFormatToGeoJSON(
 	const features: G.Feature[] = <G.Feature[]> text
 		.split("\n")
 		.map(line => line.trim())
-		.filter(line => line && !line.startsWith(crsPrefix))
+		.filter(line => line && !line.match(`^${crsPrefix}`))
 		.map((line, idx) => {
 			if (lineIsPolygon(line)) {
 				const coordinates = [_lineToCoordinates(line, idx)];
@@ -388,13 +388,13 @@ export function WKTToGeoJSON(WKT: string): G.GeoJSON {
 	}
 
 	function lineIsPolygon(line) {
-		return line.startsWith("POLYGON");
+		return line.match(`^${("POLYGON")}`);
 	}
 	function lineIsLineString(line) {
-		return line.startsWith("LINESTRING");
+		return line.match(`^${("LINESTRING")}`);
 	}
 	function lineIsPoint(line) {
-		return line.startsWith("POINT");
+		return line.match(`^${("POINT")}`);
 	}
 	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "PROJCS");
 }

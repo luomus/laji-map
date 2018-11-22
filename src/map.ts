@@ -1345,7 +1345,7 @@ export default class LajiMap {
 		this._idxsToHovered[dataIdx] = [];
 		this._idxsToContextMenuOpen[dataIdx] = [];
 
-		if (this.data[dataIdx]) {
+		if (this.data[dataIdx] && this.data[dataIdx].groupContainer) {
 			this.data[dataIdx].groupContainer.clearLayers();
 		}
 
@@ -1556,9 +1556,14 @@ export default class LajiMap {
 			this.data.forEach((item, idx) => {
 				(idx !== this.drawIdx && item) && item.groupContainer.clearLayers();
 			});
+			const draw = this.getDraw();
+			this.data = [];
+			if (draw) {
+				this.data[this.drawIdx] = draw;
+			}
 		}
 		if (!Array.isArray(data)) data = [data];
-		data.filter(item => item).forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
+		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
 		provide(this, "data");
 	}
 

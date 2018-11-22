@@ -1261,7 +1261,7 @@ export default class LajiMap {
 	initializeDataItem(options: DataOptions, dataIdx?: number) {
 		dataIdx = dataIdx === undefined ? this.data.length : dataIdx;
 
-		let item = <Data> options;
+		let item = <Data> (options || {});
 		let {geoData, ..._item} = item;
 		if ("geoData" in item) {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);

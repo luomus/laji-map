@@ -1455,9 +1455,9 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			return styleObject.seam;
 		} else if (isEdit && this._LTEditable) {
 			return styleObject.edit;
-		} else if (isHover && this._LTEditable) {
+		} else if (isHover && !this._LTPrintMode) {
 			return styleObject.hover;
-		} else if (isActive && this._LTEditable) {
+		} else if (isActive && !this._LTPrintMode) {
 			return styleObject.active;
 		} else {
 			if (this._getLTFeatureStyle) {

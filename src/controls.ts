@@ -1005,7 +1005,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				});
 				_noUiSlider.on("update", () => {
 					that._opacitySetBySlide = true;
-					that.setTileLayerOpacity(_noUiSlider.get());
+					if (that.tileLayerOpacity === undefined) {
+						return;
+					}
+					that.setTileLayerOpacity(+_noUiSlider.get());
 				});
 				_noUiSlider.on("end", () => {
 					that.map.fire("tileLayerOpacityChangeEnd", {tileLayerOpacity: _noUiSlider.get()});

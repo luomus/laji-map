@@ -245,8 +245,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 				})
 			)).addTo(this.map).bringToBack();
 		}
-
-		if (this.getOptions().zoomToData) this.zoomToData(this.getOptions().zoomToData);
 	}
 
 	setLTActiveIdx(idx: number) {

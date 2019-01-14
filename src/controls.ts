@@ -1236,6 +1236,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (charCode >= 48 && charCode <= 57) { // Is a number
 					// The input cursor isn't necessary at the EOL, but this validation works regardless.
 					inputValidate(e, input.value + String.fromCharCode(charCode));
+				} else if (charCode === 58) { // is colon
+					lngInput.focus();
+					lngInput.select();
 				}
 			};
 		}

@@ -210,7 +210,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	}
 
 	_getAllData() {
-		return this._lineLayerGroup ? [...super._getAllData(), {group: this._lineLayerGroup}] : super._getAllData();
+		return this._lineLayerGroup ? [...super._getAllData(), {group: this._corridorLayerGroup}] : super._getAllData();
 	}
 
 	@dependsOn("map")

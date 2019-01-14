@@ -1200,7 +1200,7 @@ export default class LajiMap {
 			for (let lang in translations[word]) {
 				const translation = translations[word][lang];
 				if (!dictionaries.hasOwnProperty(lang)) dictionaries[lang] = {};
-				dictionaries[lang][word] = decapitalizeFirstLetter(translation);
+				dictionaries[lang][decapitalizeFirstLetter(word)] = decapitalizeFirstLetter(translation);
 				dictionaries[lang][capitalizeFirstLetter(word)] = capitalizeFirstLetter(translation);
 			}
 		}

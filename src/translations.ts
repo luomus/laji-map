@@ -245,25 +245,25 @@ export default {
 		en: "$errorHTML An error occurred. Please try again later.",
 		sv: "$errorHTML Ett fel uppstod. Försök igen senare."
 	},
-	enterETRSTM35FINCoordinates: {
-		fi: "Anna pisteen koordinaatit ETRS-TM35FIN-muodossa",
-		en: "Enter a marker's coordinates in ETRS-TM35FIN format",
-		sv: "Ange markörens koordinater i ETRS-TM35FIN format"
+	ETRSTM35FINCoordinates: {
+		fi: "pisteen koordinaatit ETRS-TM35FIN-muodossa",
+		en: "a marker's coordinates in ETRS-TM35FIN format",
+		sv: "markörens koordinater i ETRS-TM35FIN format"
 	},
-	enterWgs84Coordinates: {
-		fi: "Anna pisteen koordinaatit WGS84-muodossa",
-		en: "Enter a marker's coordinates in WGS84 format",
-		sv: "Ange markörens koordinater i WGS84 format"
+	WGS84PointCoordinates: {
+		fi: "pisteen koordinaatit WGS84-muodossa",
+		en: "a marker's coordinates in WGS84 format",
+		sv: "markörens koordinater i WGS84 format"
 	},
 	or: {
 		fi: "Tai",
 		en: "Or",
 		sv: "Eller"
 	},
-	enterYKJRectangle: {
-		fi: "Anna yhtenäiskoordinaatit",
-		en: "Give Finnish Uniform Grid coordinates",
-		sv: "Ge enhetskoordinaterna"
+	YKJRectangle: {
+		fi: "Yhtenäiskoordinaatit",
+		en: "Finnish Uniform Grid coordinates",
+		sv: "Enhetskoordinaterna"
 	},
 	latitude: {
 		fi: "Pohjoiskoordinaatti",
@@ -684,5 +684,20 @@ export default {
 		fi: "Virheellinen",
 		en: "Erronous",
 		sv: "Felaktig"
+	},
+	ETRSRectangle: {
+		fi: "ETRS-koordinaatit",
+		en: "ETRS coordinates",
+		sv: "ETRS koordinaterna"
+	},
+	enter: {
+		fi: "Anna",
+		en: "Enter",
+		sv: "Ange"
+	},
+	WGS84Coordinates: {
+		fi: "WGS84-koordinaatit",
+		en: "WGS84 coordinates",
+		sv: "WGS84 koordinaterna"
 	},
 };

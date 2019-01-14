@@ -494,22 +494,23 @@ export function detectFormat(data): CoordinateSystem {
 	}
 }
 
-export function detectCRSFromLatLng(latLng, allowYKJGrid = false): CRSString {
+export function detectCRSFromLatLng(latLng, allowGrid = false): CRSString {
 	if (isObject(latLng) && latLng.lat && latLng.lng) {
 		latLng = [latLng.lat, latLng.lng];
 	}
 	if (validateLatLng(latLng, wgs84Validator)) {
 		return "WGS84";
-	} else if (validateLatLng(latLng, ykjValidator) || allowYKJGrid && validateLatLng(latLng, ykjGridStrictValidator)) {
+	} else if (validateLatLng(latLng, ykjValidator) || allowGrid && validateLatLng(latLng, ykjGridStrictValidator)) {
 		return "EPSG:2393";
-	} else if (validateLatLng(latLng, etrsTm35FinValidator)) {
+	} else if (validateLatLng(latLng, etrsTm35FinValidator)
+		|| allowGrid && latLng[0].length === latLng[1].length && validateLatLng(latLng, etrsTm35FinGridStrictValidator)) {
 		return "EPSG:3067";
 	}
 }
 
-export function detectCRS(data: string | G.GeoJSON, allowYKJGrid = false): CRSString {
+export function detectCRS(data: string | G.GeoJSON, allowGrid = false): CRSString {
 	try {
-		return detectCRSFromLatLng(data, allowYKJGrid);
+		return detectCRSFromLatLng(data, allowGrid);
 	} catch (e) {
 		const format = detectFormat(data);
 		let geoJSON = undefined;
@@ -554,7 +555,7 @@ export function detectCRS(data: string | G.GeoJSON, allowYKJGrid = false): CRSSt
 				let coordinateSample = geometrySample.coordinates;
 				while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
 				coordinateSample = coordinateSample.map(c => `${c}`).reverse();
-				return detectCRSFromLatLng(coordinateSample, allowYKJGrid);
+				return detectCRSFromLatLng(coordinateSample, allowGrid);
 			}
 		}
 	}
@@ -909,12 +910,13 @@ export function parseJSON(json: string): any {
 interface CoordinateValidator {
 	regexp: RegExp;
 	range: number[];
-	formatter? (value: string): string;
+	formatter (value: string): string;
 }
 
 const wgs84Check: CoordinateValidator = {
 	regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
-	range: [-180, 180]
+	range: [-180, 180],
+	formatter: c => c
 };
 const wgs84Validator = [wgs84Check, wgs84Check];
 
@@ -924,13 +926,13 @@ function formatterForLength(length) {
 const ykjRegexp = /^[0-9]{7}$/;
 
 const ykjValidator: CoordinateValidator[] = [
-	{regexp: ykjRegexp, range: [6600000, 7800000]},
-	{regexp: ykjRegexp, range: [3000000, 3800000]}
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: c => c},
+	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: c => c}
 ];
 
 const etrsTm35FinValidator: CoordinateValidator[] = [
-	{regexp: ykjRegexp, range: [6600000, 7800000]},
-	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000]}
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: c => c},
+	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000], formatter: c => c}
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
@@ -944,7 +946,13 @@ const ykjGridStrictValidator: CoordinateValidator[] = ykjValidator.map(validator
 }));
 const ykjGridValidator = ykjGridStrictValidator; // For backward compability
 
-export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, etrsTm35FinValidator, etrsValidator};
+const etrsTm35FinGridStrictValidator = etrsTm35FinValidator.map((validator, i) => ({
+	...validator,
+	regexp: i === 0 ? /^[0-9]{3,6}$/ : /^8[0-9]{2,5}$/,
+	formatter: i === 0 ? formatterForLength(7) : str => formatterForLength(6)((str).substr(1, 7))
+}));
+
+export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, etrsTm35FinValidator, etrsValidator, etrsTm35FinGridStrictValidator};
 
 export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[], throwError = false) {
 	return latlng.every((value, i) => {

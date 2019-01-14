@@ -5,7 +5,7 @@ import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent } from "./map.defs";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
-	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, wgs84Validator,
+	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, etrsTm35FinGridStrictValidator, wgs84Validator,
 	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
 	capitalizeFirstLetter, renderLajiMapError
 } from "./utils";
@@ -1272,12 +1272,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		helpSpan.className = "help-block";
 
 		function getHelpTxt() {
-			let help = "";
-			const rectangleAllowed = that.getDraw().rectangle;
-			if (rectangleAllowed) help = that.translations.EnterYKJRectangle;
+			let help = `${that.translations.Enter} ${that.translations.yKJRectangle}`;
+			const rectangleAllowed = that.getDraw().rectangle || that.getDraw().polygon;
+			const {or} = that.translations;
+			help += (rectangleAllowed && !that.getDraw().marker ? ` ${or} ` : `, `) + that.translations.ETRSRectangle;
 			if (that.getDraw().marker) {
-				if (rectangleAllowed) help += ` ${that.translations.or} ${that.translations.enterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`; // tslint:disable-line
-				else help = `${that.translations.EnterWgs84Coordinates} ${that.translations.or} ${that.translations.enterETRSTM35FINCoordinates}`;
+				help += ` ${or} ${rectangleAllowed ? that.translations.wGS84PointCoordinates : that.translations.WGS84Coordinates}`; // tslint:disable-line
 			}
 			help += ".";
 			return help;
@@ -1289,7 +1289,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			validate,
 			elem: formatDetectorElem,
 			unmount: unmountFormatDetector
-		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowYKJGrid: true});
+		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowGrid: true});
 
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
@@ -1328,14 +1328,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			};
 		});
 
-		function toYKJFormat(coords) {
-			let strFormat = "" + coords;
-			while (strFormat.length < 7) {
-				strFormat = strFormat += "0";
-			}
-			return +strFormat;
-		}
-
 		function convert(coords, crs: CRSString = "EPSG:2393") {
 			return convertLatLng(coords, crs, "WGS84");
 		}
@@ -1350,11 +1342,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			const isETRS = validateLatLng(latlngStr, etrsTm35FinValidator);
 			const isYKJ = validateLatLng(latlngStr, ykjValidator);
 			const isYKJGrid = validateLatLng(latlngStr, ykjGridStrictValidator);
+			const isETRSGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, etrsTm35FinGridStrictValidator);
 
 			let geometry = {
 				type: "Point",
 				coordinates: (isYKJ)
-					? convert(latlng.map(toYKJFormat), "EPSG:2393")
+					? convert(latlng, "EPSG:2393")
 					: (isETRS)
 						? convert(latlng, "EPSG:3067")
 						: (isWGS84Coordinates)
@@ -1368,12 +1361,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				properties: {}
 			};
 
-			if (isYKJGrid) {
-				const latStart = toYKJFormat(latlng[0]);
-				const latEnd = toYKJFormat(latlng[0] + 1);
+			if (isYKJGrid || isETRSGrid) {
+				const validator = isYKJ ? ykjGridStrictValidator : etrsTm35FinGridStrictValidator;
+				const latStart = validator[0].formatter(`${latlng[0]}`);
+				const latEnd = validator[0].formatter(`${latlng[0] + 1}`);
 
-				const lonStart = toYKJFormat(latlng[1]);
-				const lonEnd = toYKJFormat(latlng[1] + 1);
+				const lonStart = validator[1].formatter(`${latlng[1]}`);
+				const lonEnd = validator[1].formatter(`${latlng[1] + 1}`);
 
 				geometry.type = "Polygon";
 				geometry.coordinates = [[
@@ -1382,7 +1376,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					[latEnd, lonEnd],
 					[latEnd, lonStart],
 					[latStart, lonStart]
-				].map(coordinatePair => convert(coordinatePair, "EPSG:2393"))];
+				].map(coordinatePair => convert(coordinatePair, isYKJ ? "EPSG:2393" : "EPSG:3067"))];
 			}
 
 			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);
@@ -1539,7 +1533,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		updateOutput();
 	}
 
-	createFormatDetectorElem(options: {displayFormat?: boolean, displayErrors?: boolean, allowYKJGrid?: boolean} = {}):
+	createFormatDetectorElem(options: {displayFormat?: boolean, displayErrors?: boolean, allowGrid?: boolean} = {}):
 	{elem: HTMLElement, validate: (value?: string) => {valid: boolean, geoJSON: G.GeoJSON}, unmount: () => void} {
 		const _container = document.createElement("div");
 		const formatContainer = document.createElement("div");
@@ -1567,7 +1561,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		let alert = undefined;
 
-		const {displayFormat = true, displayErrors = true, allowYKJGrid = false} = options;
+		const {displayFormat = true, displayErrors = true, allowGrid = false} = options;
 
 		let storedValue = "";
 		const updateInfo = (value = "") => {
@@ -1590,7 +1584,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			}
 			try {
 				format = detectFormat(value);
-				crs = detectCRS(value, allowYKJGrid);
+				crs = detectCRS(value, allowGrid);
 				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
 			} catch (e) {
 				if (displayErrors && e._lajiMapError) {
@@ -1651,7 +1645,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 				crsValue.innerHTML = this.translations[crs] ? this.translations[crs] : crs;
 			}
-			return {valid: !!(format && crs && allowYKJGrid || valid), geoJSON: valid};
+			return {valid: !!(format && crs && allowGrid || valid), geoJSON: valid};
 		};
 
 		updateInfo();

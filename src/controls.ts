@@ -1344,7 +1344,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			const isWGS84Coordinates = validateLatLng(latlngStr, wgs84Validator);
 			const isETRS = validateLatLng(latlngStr, etrsTm35FinValidator);
 			const isYKJ = validateLatLng(latlngStr, ykjValidator);
-			const isYKJGrid = validateLatLng(latlngStr, ykjGridStrictValidator);
+			const isYKJGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, ykjGridStrictValidator);
 			const isETRSGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, etrsTm35FinGridStrictValidator);
 
 			let geometry = {

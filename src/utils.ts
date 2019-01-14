@@ -500,7 +500,8 @@ export function detectCRSFromLatLng(latLng, allowGrid = false): CRSString {
 	}
 	if (validateLatLng(latLng, wgs84Validator)) {
 		return "WGS84";
-	} else if (validateLatLng(latLng, ykjValidator) || allowGrid && validateLatLng(latLng, ykjGridStrictValidator)) {
+	} else if (validateLatLng(latLng, ykjValidator)
+		|| latLng[0].length === latLng[1].length && allowGrid && validateLatLng(latLng, ykjGridStrictValidator)) {
 		return "EPSG:2393";
 	} else if (validateLatLng(latLng, etrsTm35FinValidator)
 		|| allowGrid && latLng[0].length === latLng[1].length && validateLatLng(latLng, etrsTm35FinGridStrictValidator)) {

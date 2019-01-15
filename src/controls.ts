@@ -1365,12 +1365,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			};
 
 			if (isYKJGrid || isETRSGrid) {
-				const validator = isYKJ ? ykjGridStrictValidator : etrsTm35FinGridStrictValidator;
-				const latStart = validator[0].formatter(`${latlng[0]}`);
-				const latEnd = validator[0].formatter(`${latlng[0] + 1}`);
+				const validator = isYKJGrid ? ykjGridStrictValidator : etrsTm35FinGridStrictValidator;
+				const latStart = +validator[0].formatter(`${latlng[0]}`);
+				const latEnd = +validator[0].formatter(`${latlng[0] + 1}`);
 
-				const lonStart = validator[1].formatter(`${latlng[1]}`);
-				const lonEnd = validator[1].formatter(`${latlng[1] + 1}`);
+				const lonStart = +validator[1].formatter(`${latlng[1]}`);
+				const lonEnd = +validator[1].formatter(`${latlng[1] + 1}`);
 
 				geometry.type = "Polygon";
 				geometry.coordinates = [[
@@ -1379,7 +1379,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					[latEnd, lonEnd],
 					[latEnd, lonStart],
 					[latStart, lonStart]
-				].map(coordinatePair => convert(coordinatePair, isYKJ ? "EPSG:2393" : "EPSG:3067"))];
+				].map(coordinatePair => convert(coordinatePair, isYKJGrid ? "EPSG:2393" : "EPSG:3067"))];
 			}
 
 			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);

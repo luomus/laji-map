@@ -28,7 +28,7 @@ import {
 import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
-	GetFeatureStyleOptions, ZoomToDataOptions
+	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -166,8 +166,11 @@ export default class LajiMap {
 	availableOverlaysByNames: {[name: string]: L.TileLayer};
 	overlays: L.TileLayer[];
 	savedMMLOverlays: {[name: string]: L.TileLayer};
+	finnishTileLayers: {[name: string]: L.TileLayer};
+	worldTileLayers: {[name: string]: L.TileLayer};
 	tileLayers: {[name: string]: L.TileLayer};
 	tileLayerName: TileLayerName;
+	_tileLayers: TileLayersOptions;
 	availableTileLayers: {[name: string]: L.TileLayer};
 	_listenedEvents: L.LeafletEventHandlerFnMap;
 	_keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
@@ -200,6 +203,7 @@ export default class LajiMap {
 	provider: any;
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection: boolean;
+	_tileLayersSet: boolean;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -243,6 +247,7 @@ export default class LajiMap {
 			availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
 			availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 			tileLayerOpacity: "setTileLayerOpacity",
+			tileLayers: "setTileLayers",
 			center: "setCenter",
 			zoom: ["setNormalizedZoom", () => this.getNormalizedZoom()],
 			zoomToData: ["setZoomToData", "_zoomToData"],
@@ -286,7 +291,7 @@ export default class LajiMap {
 		if (optionKey === true) {
 			this[option] = value;
 		} else {
-			this[optionKey](value);
+			this[optionKey](value, init);
 		}
 	}
 
@@ -585,43 +590,64 @@ export default class LajiMap {
 				...this.leafletOptions
 			});
 
-			this.tileLayers = {};
+			this.finnishTileLayers = {};
 
 			["maastokartta", "taustakartta"].forEach(tileLayerName => {
-				this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
+				this.finnishTileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 					layer: tileLayerName
 				});
-				this.tileLayers[tileLayerName].setUrl((<any> this.tileLayers[tileLayerName])._url.replace(
+				this.finnishTileLayers[tileLayerName].setUrl((<any> this.finnishTileLayers[tileLayerName])._url.replace(
 					"avoindata.maanmittauslaitos.fi/mapcache/",
 					"avoin-karttakuva.maanmittauslaitos.fi/avoin/"
 				));
 			});
 
-			this.tileLayers.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
-				layers: "osm_finland:Sea",
-				format: "image/png",
-				transparent: false,
-				version: "1.1.0",
-				attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>" // tslint:disable-line
-			});
+			this.finnishTileLayers = {
+				...this.finnishTileLayers,
+				pohjakartta: L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
+					layers: "osm_finland:Sea",
+					format: "image/png",
+					transparent: false,
+					version: "1.1.0",
+					attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>" // tslint:disable-line
+				}),
+				ortokuva: L.tileLayer.mml("Ortokuva_3067"),
+				laser: L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
+					maxZoom: 19,
+					minZoom: 0,
+					tileSize: 256,
+					attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>, <a href=\"http://www.mapant.fi\"target=\"_blank\" rel=\"noopener noreferrer\">Mapant</a>" // tslint:disable-line
+				}),
+				ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+					maxZoom: 15,
+					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
+					format: "image/png",
+					transparent: true,
+					version: "1.1.0",
+				}),
+				ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+					maxZoom: 15,
+					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
+					format: "image/png",
+					transparent: true,
+					version: "1.1.0",
+				})
+			};
 
-			this.tileLayers.ortokuva = L.tileLayer.mml("Ortokuva_3067");
+			this.worldTileLayers = {
+				openStreetMap: L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+					attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors" // tslint:disable-line
+				}),
+				googleSatellite: L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+					subdomains: ["mt0", "mt1", "mt2", "mt3"],
+					attribution: "&copy; <a href=\"https://developers.google.com/maps/terms\" target=\"_blank\" rel=\"noopener noreferrer\">Google</a>" // tslint:disable-line
+				})
+			};
 
-			this.tileLayers.laser = L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
-				maxZoom: 19,
-				minZoom: 0,
-				tileSize: 256,
-				attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>, <a href=\"http://www.mapant.fi\"target=\"_blank\" rel=\"noopener noreferrer\">Mapant</a>" // tslint:disable-line
-			});
-
-			this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-				attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors" // tslint:disable-line
-			});
-
-			this.tileLayers.googleSatellite = L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
-				subdomains: ["mt0", "mt1", "mt2", "mt3"],
-				attribution: "&copy; <a href=\"https://developers.google.com/maps/terms\" target=\"_blank\" rel=\"noopener noreferrer\">Google</a>" // tslint:disable-line
-			});
+			this.tileLayers = {
+				...this.finnishTileLayers,
+				...this.worldTileLayers
+			};
 
 			this.availableTileLayers = this.tileLayers;
 
@@ -678,20 +704,6 @@ export default class LajiMap {
 					maxZoom: 15,
 					layers: "8"
 				}).setOpacity(0.5),
-				ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
-					maxZoom: 15,
-					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
-				}),
-				ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
-					maxZoom: 15,
-					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
-				})
 			};
 
 			this.availableOverlaysByNames = this.overlaysByNames;
@@ -744,14 +756,24 @@ export default class LajiMap {
 		return !L.latLngBounds(FINLAND_BOUNDS).contains(latLng);
 	}
 
+	@dependsOn("tileLayer")
 	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
-		if (this.tileLayer
-			&& this._getDefaultCRSLayers().indexOf(this.tileLayer) === -1
-			&& this.availableTileLayers.openStreetMap
+		if (!depsProvided(this, "_swapToForeignOutsideFinland", arguments)) return;
+
+		if (Object.keys(this.worldTileLayers).some(name => !!this.availableTileLayers[name])
 			&& this._isOutsideFinland(latLng)
 		) {
 			this._swapToForeignFlag = true;
-			this.setTileLayer(this.tileLayers.openStreetMap);
+			let options;
+			const someWorldMapVisible = Object.keys(this.worldTileLayers).some(name =>
+				!!this._getLayerOptions(this._tileLayers.layers.name).visible
+			);
+			if (someWorldMapVisible) {
+				options = {...this._tileLayers, active: "world"};
+			} else {
+				options = {...this._tileLayers, layers: {...this._tileLayers.layers, openStreetMap: true}, active: "world"}
+			}
+			this.setTileLayers(options);
 		}
 	}
 
@@ -912,7 +934,10 @@ export default class LajiMap {
 	}
 
 	_getDefaultCRSLayers(): L.TileLayer[] {
-		return [this.tileLayers.openStreetMap, this.tileLayers.googleSatellite];
+		return [
+			this.tileLayers.openStreetMap,
+			this.tileLayers.googleSatellite,
+		];
 	}
 
 	_getMMLCRSLayers(): L.TileLayer[] {
@@ -926,8 +951,11 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setTileLayerByName(name: TileLayerName) {
+	setTileLayerByName(name: TileLayerName, init = false) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
+		if (init && this._tileLayersSet) {
+			return;
+		}
 		this.setTileLayer(this.tileLayers[name]);
 	}
 
@@ -952,49 +980,122 @@ export default class LajiMap {
 		this.setAvailableTileLayers(names, true);
 	}
 
-	@dependsOn("map", "view")
 	setTileLayer(layer: L.TileLayer) {
-		if (!depsProvided(this, "setTileLayer", arguments)) return;
+		const name = Object.keys(this.tileLayers).find(_name => {
+			if (this.tileLayers[_name] === layer) {
+				return !!_name;
+			}
+		});
+		this.setTileLayers({layers: {[name]: {opacity: 1, visible: true}}});
+	}
+
+	_getLayerOptions(layerOptions: TileLayerOptions | boolean) {
+		return typeof layerOptions === "boolean" || layerOptions === undefined
+			? {opacity: 1, visible: layerOptions}
+			: layerOptions;
+	}
+
+	getActiveLayers(options: TileLayersOptions): TileLayersOptions["layers"] {
+		let {layers, active} = options;
+		if (!active) {
+			let useFinnishProj;
+			let foundMultiple = false;
+			Object.keys(layers).some(name => {
+				if (foundMultiple) {
+					return true;
+				}
+				const layerOptions = layers[name];
+				const _layerOptions = typeof layerOptions === "boolean"
+					? {opacity: 1, visible: layerOptions}
+					: layerOptions;
+				const isWorldMapLayer = _layerOptions.visible && this.worldTileLayers[name];
+				if (!_layerOptions.visible) {
+					return;
+				}
+				if (useFinnishProj === undefined) {
+					useFinnishProj = this.finnishTileLayers[name];
+				} else if (useFinnishProj && this.worldTileLayers[name] || !useFinnishProj && !this.finnishTileLayers[name]) {
+					useFinnishProj = true;
+					foundMultiple = true;
+				}
+			});
+			active = useFinnishProj ? "finnish" : "world";
+		}
+		return Object.keys(layers).reduce((_layers, name) => {
+			if (this.overlaysByNames[name]
+				|| active === "finnish" && this.finnishTileLayers[name]
+				|| active === "world" && this.worldTileLayers[name]
+			) {
+				_layers[name] = layers[name];
+			}
+			return _layers;
+		}, {});
+	}
+
+	@dependsOn("map", "view")
+	setTileLayers(options: TileLayersOptions) {
+		const {layers, active} = options;
+		this._tileLayersSet = true;
+		if (!depsProvided(this, "setTileLayers", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
+		const activeLayers = this.getActiveLayers(options);
+
+		const findNonOverlay = name => !!this.finnishTileLayers[name] || !!this.worldTileLayers[name];
+
+		const layer = this.tileLayers[Object.keys(activeLayers).find(findNonOverlay)];
+
+		// For BW compatibility.
+		this.tileLayer = layer;
+		const existingLayer = this._tileLayers && this.tileLayers[Object.keys(this.getActiveLayers(this._tileLayers)).find(findNonOverlay)];
+
 		const center = this.map.getCenter();
 		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.getMMLProj();
-		this.tileLayer && this.map.setView(center, this.map.getZoom());
+		existingLayer && this.map.setView(center, this.map.getZoom());
 
 		let projectionChanged = false;
 		let zoom = this.map.getZoom();
 
-		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(this.tileLayer) === -1) {
+		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
 			projectionChanged = true;
-		} else if (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(this.tileLayer) === -1) {
+		} else if (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1) {
 			zoom = zoom + 3;
 			projectionChanged = true;
 		}
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
-		if (this.tileLayer) {
-			this.map.removeLayer(this.tileLayer);
+		if (this._tileLayers) {
+			Object.keys(this._tileLayers.layers).forEach(name => {
+				this.map.removeLayer(this.tileLayers[name] || this.overlaysByNames[name]);
+			});
 		}
-		this.tileLayer = layer;
-		this.map.addLayer(this.tileLayer);
+		this._tileLayers = options;
+		Object.keys(activeLayers).forEach(name => {
+			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
+			const layerOptions = this._tileLayers.layers[name];
+			const _layerOptions = typeof layerOptions === "boolean"
+				? {opacity: 1, visible: layerOptions}
+				: layerOptions;
+			const {opacity, visible = true} = _layerOptions;
+			visible && this.map.addLayer(_layer);
+			_layer.setOpacity(opacity);
+		});
 		if (this.tileLayerOpacity !== undefined) {
 			this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
-		}
-
-		if (projectionChanged) {
-			this.setOverlays(this.overlays, !"trigger event");
 		}
 
 		// Zoom levels behave differently on different projections.
 		// We bypass the default max zoom behaviour and handle it manually
 		// below.
-		const {maxZoom} = this.tileLayer.options;
+		const {maxZoom} = layer.options;
+		// TODO väärä maxZoom yllä, pitäis ettiä max
+		// const {maxZoom} = this.tileLayer.options;
 		this.map.setMaxZoom(19);
 		if (projectionChanged) {
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
@@ -1017,6 +1118,7 @@ export default class LajiMap {
 
 		if (isProvided(this, "tileLayer")) {
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
+			this.map.fire("tileLayersChange", this._tileLayers);
 		}
 
 		if (!isProvided(this, "tileLayer")) {

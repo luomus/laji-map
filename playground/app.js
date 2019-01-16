@@ -148,8 +148,14 @@ class App {
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
 			//locate: true,
-			tileLayerName: "taustakartta",
-			overlayNames: ["ykjGrid", "ykjGridLabels"],
+			//tileLayerName: "taustakartta",
+			tileLayers: {
+				layers: {
+					taustakartta: {opacity: 0.5, visible: true},
+					ortokuva: {opacity: 0.5, visible: true}
+				}
+			},
+			//overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
 				location: true,
 				coordinates: true,

@@ -110,12 +110,25 @@ export enum OverlayName {
 	ykjGridLabels = "ykjGridLabels"
 }
 
+export interface TileLayerOptions {
+	opacity: number;
+	visible: boolean;
+}
+
+export interface TileLayersOptions {
+	layers: {
+		[layerName: string]: TileLayerOptions | boolean
+	};
+	active?: "finnish" | "world";
+};
+
 export interface Options extends MapOptions {
 	rootElem?: HTMLElement;
 	lang?: Lang;
 	data?: DataOptions[];
 	draw?: DrawOptions | boolean;
 	tileLayerName?: TileLayerName;
+	tileLayers?: TileLayersOptions;
 	availableTileLayerNamesBlacklist?: TileLayerName[];
 	availableTileLayerNamesWhitelist?: TileLayerName[];
 	overlayNames?: OverlayName[];

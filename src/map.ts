@@ -785,7 +785,7 @@ export default class LajiMap {
 			this._swapToForeignFlag = true;
 			let options;
 			const someWorldMapVisible = Object.keys(this.worldTileLayers).some(name =>
-				!!this._tileLayers.layers.name.visible
+				!!this._tileLayers.layers[name].visible
 			);
 			if (someWorldMapVisible) {
 				options = {...this._tileLayers, active: "world"};

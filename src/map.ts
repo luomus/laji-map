@@ -174,7 +174,7 @@ export default class LajiMap {
 	availableTileLayers: {[name: string]: L.TileLayer};
 	_listenedEvents: L.LeafletEventHandlerFnMap;
 	_keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
-	_swapToForeignFlag: boolean;
+	_swapToWorldFlag: boolean;
 	_mouseLatLng: L.LatLng;
 	_contextMenuLayer: L.Layer;
 	_preventScrollDomCleaner: () => void;
@@ -776,13 +776,13 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	_swapToForeignOutsideFinland(latLng: L.LatLngExpression) {
-		if (!depsProvided(this, "_swapToForeignOutsideFinland", arguments)) return;
+	_swapToWorldOutsideFinland(latLng: L.LatLngExpression) {
+		if (!depsProvided(this, "_swapToWorldOutsideFinland", arguments)) return;
 
 		if (Object.keys(this.worldTileLayers).some(name => !!this.availableTileLayers[name])
 			&& this._isOutsideFinland(latLng)
 		) {
-			this._swapToForeignFlag = true;
+			this._swapToWorldFlag = true;
 			let options;
 			const someWorldMapVisible = Object.keys(this.worldTileLayers).some(name =>
 				!!this._tileLayers.layers[name].visible
@@ -867,11 +867,11 @@ export default class LajiMap {
 				if (this._viewCriticalSection) {
 					return;
 				}
-				if (this._swapToForeignFlag) {
-					this._swapToForeignFlag = false;
+				if (this._swapToWorldFlag) {
+					this._swapToWorldFlag = false;
 					return;
 				}
-				this._swapToForeignOutsideFinland(this.map.getCenter());
+				this._swapToWorldOutsideFinland(this.map.getCenter());
 			}
 		});
 
@@ -1148,7 +1148,7 @@ export default class LajiMap {
 		}
 
 		if (!isProvided(this, "tileLayer")) {
-			this._swapToForeignOutsideFinland(this.map.getCenter());
+			this._swapToWorldOutsideFinland(this.map.getCenter());
 		}
 
 		provide(this, "tileLayer");
@@ -1668,7 +1668,7 @@ export default class LajiMap {
 			);
 		}
 		const {minZoom, maxZoom, ..._options} = options;
-		this._swapToForeignOutsideFinland(bounds.getCenter());
+		this._swapToWorldOutsideFinland(bounds.getCenter());
 		this.map.fitBounds(bounds, <L.FitBoundsOptions> {animate: false, ..._options});
 		if (options.hasOwnProperty("maxZoom")) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);

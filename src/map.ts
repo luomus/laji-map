@@ -1056,7 +1056,7 @@ export default class LajiMap {
 			layers: Object.keys({...this.tileLayers, ...this.overlaysByNames}).reduce((_layers, name) => {
 				const layerOptions = options.layers[name];
 				_layers[name] = typeof layerOptions === "boolean" || layerOptions === undefined
-					? {opacity: layerOptions ? 1 : 0, visible: layerOptions}
+					? {opacity: layerOptions ? 1 : 0, visible: !!layerOptions}
 					: {
 						opacity: layerOptions.opacity,
 						visible: layerOptions.hasOwnProperty("visible") ? layerOptions.visible : !!layerOptions.opacity

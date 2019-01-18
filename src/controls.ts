@@ -1094,7 +1094,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 							|| tagName !== "FIELDSET" && tagName !== "LEGEND") {
 							return;
 						}
-						const layerOptions = Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
+						const layerOptions = active === "finnish"
+							|| Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
 							? that._tileLayers.layers
 							: {...that._tileLayers.layers, openStreetMap: true};
 						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});

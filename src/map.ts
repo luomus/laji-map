@@ -205,6 +205,24 @@ export default class LajiMap {
 	_viewCriticalSection: boolean;
 	_tileLayersSet: boolean;
 	activeProjName: string;
+	_tileLayerOrder = [
+		"pohjakartta",
+		"taustakartta",
+		"maastokartta",
+		"laser",
+		"ortokuva",
+		"ykjGrid",
+		"ykjGridLabels",
+		"openStreetMap",
+		"googleSatellite",
+		"geobiologicalProvinces",
+		"geobiologicalProvinceBorders",
+		"municipalities",
+		"forestVegetationZones",
+		"mireVegetationZones",
+		"threatenedSpeciesEvaluationZones",
+		"biodiversityForestZones",
+	]
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -1086,7 +1104,7 @@ export default class LajiMap {
 				this.map.removeLayer(this.tileLayers[name] || this.overlaysByNames[name]);
 			});
 		}
-		Object.keys(activeLayers).forEach(name => {
+		Object.keys(activeLayers).sort((a, b) => this._tileLayerOrder.indexOf(a) - this._tileLayerOrder.indexOf(b)).forEach(name => {
 			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
 			const layerOptions = <TileLayerOptions> this._tileLayers.layers[name];
 			const {opacity, visible} = layerOptions;

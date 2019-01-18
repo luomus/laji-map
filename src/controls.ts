@@ -929,7 +929,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				L.DomEvent.disableScrollPropagation(container);
 
 				if (collapsed) {
-					this._map.on("click", this.collapse, this);
+					this._map.on("click", L.Control.Layers.prototype.collapse.bind(this), this);
 
 					if (!L.Browser.android) {
 						L.DomEvent.on(container, {
@@ -1073,7 +1073,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					this.translateHooks.push(that.addTranslationHook(legend, capitalizeFirstLetter(label)));
 
 					list.appendChild(legend);
-					Object.keys(tileLayers).forEach(name => {
+					Object.keys(tileLayers).sort((a, b) => that._tileLayerOrder.indexOf(a) - that._tileLayerOrder.indexOf(b)).forEach(name => {
 						list.appendChild(createListItem(name, that._tileLayers.layers[name]));
 					});
 					this.layers = {

@@ -409,3 +409,87 @@
 .laji-map-dialog .text-warning:not(.warning-title) {
 	font-size: 13px
 }
+
+.laji-map .laji-map-control-layers input[type="checkbox"] {
+    top: -4px;
+    position: absolute;
+    width: 19px;
+    height: 19px;
+}
+.laji-map .laji-map-control-layers fieldset {
+    list-style: none;
+    padding: 0px 8px;
+    margin: 4px;
+    padding: 4px;
+    min-width: 200px;
+}
+.laji-map .laji-map-control-layers fieldset > div {
+    position: relative;
+    margin-bottom: 4px;
+}
+.laji-map .laji-map-control-layers .noUi-horizontal .noUi-handle {
+    display: none;
+}
+.laji-map .laji-map-control-layers fieldset > div span {
+    padding-left: 27px;
+    font-size: 14px;
+}
+.laji-map .laji-map-control-layers fieldset > div.active span {
+	font-weight: bold;
+}
+.laji-map .laji-map-control-layers .noUi-target {
+    opacity: 0.5;
+    position: absolute;
+    width: 92%;
+    top: 0;
+    left: 21px;
+	background: unset;
+}
+.laji-map .laji-map-control-layers .noUi-base {
+	background: #e4e4e4;
+}
+.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers div:not(.active):hover .noUi-base {
+	background: #f1f1f1;
+}
+.laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers div:not(.active):hover .noUi-target {
+	border-color: #e2e2e2;
+}
+.laji-map .laji-map-control-layers fieldset > div:not(.active) .noUi-connect, .laji-map .laji-map-control-layers fieldset.nonactive-list .noUi-connect {
+    background-color: #cee0df;
+}
+.laji-map .laji-map-control-layers fieldset {
+    border: 1px solid;
+	border-radius: 2px;
+}
+
+.laji-map .laji-map-control-layers fieldset legend {
+    font-size: 14px;
+	font-weight: bold;
+    width: auto;
+    padding: 0px 3px;
+    border-bottom: none;
+    margin-bottom: 0px;
+}
+.laji-map .laji-map-control-layers fieldset.nonactive-list legend {
+    color: #c3c3c3;
+}
+.laji-map .laji-map-control-layers .active-list, .laji-map .laji-map-control-layers .nonactive-list {
+	border-width: 2px;
+}
+.laji-map .laji-map-control-layers .nonactive-list {
+    border-color: #c3c3c3;
+	border-style: dotted;
+}
+.laji-map .laji-map-control-layers fieldset.active-list legend {
+    color: #3FB8AF;
+}
+.laji-map .laji-map-control-layers .active-list {
+	border-color: #3FB8AF;
+}
+
+.laji-map .laji-map-control-layers .nonactive-list, .laji-map .laji-map-control-layers fieldset > div:not(.active) {
+	opacity: 0.5;
+}
+.laji-map .laji-map-control-layers .nonactive-list:hover, .laji-map .laji-map-control-layers fieldset > div:not(.active):hover {
+	opacity: 1;
+}

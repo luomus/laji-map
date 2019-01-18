@@ -122,6 +122,13 @@ export interface TileLayersOptions {
 	active?: "finnish" | "world";
 };
 
+export interface InternalTileLayersOptions {
+	layers: {
+		[layerName: string]: TileLayerOptions
+	};
+	active?: "finnish" | "world";
+};
+
 export interface Options extends MapOptions {
 	rootElem?: HTMLElement;
 	lang?: Lang;

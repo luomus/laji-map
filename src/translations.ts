@@ -700,4 +700,19 @@ export default {
 		en: "WGS84 coordinates",
 		sv: "WGS84 koordinaterna"
 	},
+	finnishMaps: {
+		fi: "Suomen kartat",
+		en: "Finnish maps",
+		sv: "Finska kartor"
+	},
+	worldMaps: {
+		fi: "Maailman kartat",
+		en: "World maps",
+		sv: "Världs kartor"
+	},
+	overlays: {
+		fi: "Kerrokset",
+		en: "Overlays",
+		sv: "Skikt"
+	},
 };

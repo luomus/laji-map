@@ -40,6 +40,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	_opacitySetBySlide: boolean;
 	_slider: any;
 	_contextMenuItems: {[buttonName: string]: HTMLElement};
+	_internalTileLayersUpdate: boolean;
 
 	getOptionKeys() {
 		return {
@@ -144,6 +145,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._updateUserLocate(this._locateOn);
 	}
 
+	setTileLayers(options) {
+		const provided = isProvided(this, "tileLayer");
+		super.setTileLayers(options);
+		if (!provided && isProvided(this, "tileLayer")) {
+			this._updateMapControls();
+		}
+	}
+
 	@reflect()
 	@dependsOn("controls")
 	_updateUserLocate(value) {
@@ -183,7 +192,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this.controlItems = [
 			{
 				name: "layer",
-				control: () => this._getLayerControl(this.controlSettings.layerOpacity)
+				control: () => this._getLayerControl()
 			},
 			{
 				name: "location",
@@ -228,7 +237,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				dependencies: [
 					() => this.drawIsAllowed()
 				],
-
 				controls: [
 					{
 						name: "coordinateInput",
@@ -615,13 +623,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._updateMapControls();
 	}
 
-	@reflect()
-	@dependsOn("tileLayer", "overlays")
-	_updateLayersControls() {
-		if (!depsProvided(this, "_updateLayersControls", arguments)) return;
-		this._updateMapControls();
-	}
-
 	setControlsWarn(controlSettings) {
 		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'"); // tslint:disable-line
 		this.setControls(controlSettings);
@@ -900,185 +901,233 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		return new CoordinateControl();
 	}
 
-	_getLayerControl(opacityControl = true): L.Control.Layers {
-		const baseMaps = {}, overlays = {};
-		const {translations} = this;
-
-		const tileLayersNames = Object.keys(this.availableTileLayers);
-
-		tileLayersNames.forEach(tileLayerName => {
-			baseMaps[translations[tileLayerName[0].toUpperCase() + tileLayerName.slice(1)]] = this.tileLayers[tileLayerName];
-		});
-		Object.keys(this.availableOverlaysByNames).forEach(overlayName => {
-			overlays[translations[capitalizeFirstLetter(overlayName)]] = this.availableOverlaysByNames[overlayName];
-		});
-
+	_getLayerControl(): L.Control {
+		if (!this._tileLayers) {
+			return;
+		}
 		const that = this;
-		const LayerControl = L.Control.Layers.extend({ //tslint:disable-line
+		const LayerControl = L.Control.extend({
+			options: L.Control.Layers.prototype.options,
+			initialize(options) {
+				L.Util.setOptions(this, options);
+				this._checkDisabledLayers = () => { ; }
+			},
 			onAdd(map) {
-				const container = L.Control.Layers.prototype.onAdd.call(this, map);
+				this._map = map;
+
+				/* Code below copied from L.Control.Layers._initLayout() with some modifications */
+				const className = "laji-map-control-layers leaflet-control-layers",
+					container = this._container = L.DomUtil.create("div", className),
+					collapsed = this.options.collapsed;
+
+				const section = this._section = L.DomUtil.create("section", className + "-list");
+
+				// makes this work on IE touch devices by stopping it from firing a mouseout event when the touch is released
+				container.setAttribute("aria-haspopup", "true");
+
 				L.DomEvent.disableClickPropagation(container);
-				map.on("moveend", () => this._checkDisabledLayers());
+				L.DomEvent.disableScrollPropagation(container);
+
+				if (collapsed) {
+					this._map.on("click", this.collapse, this);
+
+					if (!L.Browser.android) {
+						L.DomEvent.on(container, {
+							mouseenter: L.Control.Layers.prototype.expand.bind(this),
+							mouseleave: L.Control.Layers.prototype.collapse.bind(this)
+						}, this);
+					}
+				}
+
+				const link = this._layersLink = <HTMLAnchorElement> L.DomUtil.create("a", className + "-toggle", container);
+				link.href = "#";
+				link.title = "Layers";
+
+				if (L.Browser.touch) {
+					L.DomEvent.on(link, "click", L.DomEvent.stop);
+					L.DomEvent.on(link, "click", L.Control.Layers.prototype.expand, this);
+				} else {
+					L.DomEvent.on(link, "focus", L.Control.Layers.prototype.expand, this);
+				}
+
+				container.appendChild(section);
+
+				/* end of copy */
+
+				this.translateHooks = [];
+				this.initLayout();
+				this.updateLayout();
+
+				Object.keys(that.tileLayers).forEach(name => {
+					that.tileLayers[name].on("add remove", this.updateLists, this);
+				});
+
+				this._map.on("projectionChanged", this.updateActiveProj, this);
+
 				return container;
 			},
-			_onInputClick(e) {
-				if (!e) return;
-
-				const inputs: NodeListOf<HTMLInputElement> = that.rootElem
-					.querySelectorAll(".laji-map .leaflet-control-layers-list input");
-
-				const overlayIdsToAdd = (that.overlays || []).reduce((ids, overlay) => {
-					ids[L.Util.stamp(overlay)] = true;
-					return ids;
-				}, {});
-				for (let i = 0; i < inputs.length; i++) { // tslint:disable-line
-					const input = inputs[i];
-					if (input.checked) {
-						for (let tileLayerName of tileLayersNames) {
-							if (L.Util.stamp(that.tileLayers[tileLayerName]) === (<any> input).layerId) {
-								that.setTileLayer(that.tileLayers[tileLayerName]);
-								break;
-							}
-						}
-					}
-
-					for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
-						const overlay = that.overlaysByNames[overlayName];
-						if (L.Util.stamp(overlay) === (<any> input).layerId) {
-							overlayIdsToAdd[(<any> input).layerId] = input.checked;
-						}
-					}
-				}
-
-				let overlaysToAdd = [];
-				for (let overlayName of Object.keys(that.availableOverlaysByNames)) {
-					const overlay = that.overlaysByNames[overlayName];
-					if (overlayIdsToAdd[L.Util.stamp(overlay)]) {
-						overlaysToAdd.push(overlay);
-					}
-				}
-
-				if (overlaysToAdd.some(overlay => (that.overlays || []).indexOf(overlay) === -1) ||
-					(that.overlays || []).some(overlay => overlaysToAdd.indexOf(overlay) === -1)) {
-					that.setOverlays(overlaysToAdd);
-				}
-
-				this._handlingClick = false;
-
-				that.layerControl.expand();
-				that.map.fire("controlClick", {name: "layer"});
+			onRemove() {
+				Object.keys(that.tileLayers).forEach(name => {
+					that.tileLayers[name].off("add remove", this.updateLists, this);
+				});
+				this.translateHooks.forEach(hook => {
+					that.removeTranslationHook(hook);
+				});
 			},
-			_initLayout() {
-				(<any> L.Control.Layers.prototype)._initLayout.call(this);
+			initLayout() {
+				const createListItem = (name, layerOptions) => {
+					const li = document.createElement("div");
+					const checkbox = document.createElement("input");
+					checkbox.type = "checkbox";
+					checkbox.addEventListener("change", (e) => {
+						const {layers} = that._tileLayers;
+						const _layerOptions = layers[name];
+						that.setTileLayers({
+							...that._tileLayers,
+							active: that.finnishTileLayers[name]
+								? "finnish"
+								: that.worldTileLayers[name]
+									? "world"
+									: that._tileLayers.active,
+							layers: {
+								...layers,
+								[name]: {
+									..._layerOptions,
+									visible: !_layerOptions.visible,
+									opacity: !_layerOptions.visible && !_layerOptions.opacity ? 1 : _layerOptions.opacity
+								}
+							}
+						});
+					});
 
-				if (!opacityControl) return;
+					const label = document.createElement("span");
+					this.translateHooks.push(that.addTranslationHook(label, capitalizeFirstLetter(name)));
+					li.appendChild(label);
 
-				function disableSelect(e) {
-					e.preventDefault();
-				}
+					const checkboxContainer = document.createElement("div");
+					checkboxContainer.appendChild(checkbox);
+					li.appendChild(checkboxContainer);
 
-				const sliderContainer = document.createElement("div");
-				sliderContainer.className = "slider-container";
+					const sliderInput = document.createElement("div");
+					li.appendChild(sliderInput);
 
-				const sliderLabel = document.createElement("label");
-				that.addTranslationHook(sliderLabel, "TileLayerOpacityLabel");
-				sliderContainer.appendChild(sliderLabel);
+					const slider = noUiSlider.create(sliderInput, {
+						start: that._tileLayers.layers[name].opacity,
+						range: {
+							min: [0],
+							max: [1]
+						},
+						step: 0.01,
+						connect: [true, false],
+						behaviour: "snap"
+					});
+					let firstUpdated = false;
+					slider.on("update", () => {
+						if (!firstUpdated) {
+							firstUpdated = true;
+							return;
+						}
+						if (that._internalTileLayersUpdate) return;
+						const opacity = +slider.get();
+						const {layers} = that._tileLayers;
+						const _layerOptions = layers[name];
+						const active = that.finnishTileLayers[name]
+								? "finnish"
+								: that.worldTileLayers[name]
+									? "world"
+									: that._tileLayers.active;
+						const prevActive = that._tileLayers.active || "finnish";
+						if (!_layerOptions.visible || active !== prevActive) {
+							that.setTileLayers({
+								...that._tileLayers,
+								active,
+								layers: {
+									...layers, [name]: {..._layerOptions, visible: true, opacity}
+								}
+							});
+						} else {
+							that._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
+							(that.tileLayers[name] || that.overlaysByNames[name]).setOpacity(opacity);
+						}
+					});
 
-				const sliderInput = document.createElement("div");
-				sliderContainer.appendChild(sliderInput);
-
-				this._separator.parentElement.insertBefore(sliderContainer, layerControl._separator);
-
-				const sliderSeparator = document.createElement("div");
-				sliderSeparator.className = "leaflet-control-layers-separator";
-				sliderContainer.parentElement.insertBefore(sliderSeparator, sliderContainer);
-
-				const _noUiSlider = noUiSlider.create(sliderInput, {
-					start: that.tileLayerOpacity !== undefined ? that.tileLayerOpacity : 1,
-					range: {
-						min: [0],
-						max: [1]
-					},
-					step: 0.01,
-					connect: [true, false],
-					behaviour: "snap"
-				});
-				_noUiSlider.on("update", () => {
-					that._opacitySetBySlide = true;
-					if (that.tileLayerOpacity === undefined) {
-						return;
+					function disableSelect(e) {
+						e.preventDefault();
 					}
-					that.setTileLayerOpacity(+_noUiSlider.get());
-				});
-				_noUiSlider.on("end", () => {
-					that.map.fire("tileLayerOpacityChangeEnd", {tileLayerOpacity: _noUiSlider.get()});
-				});
-				_noUiSlider.on("start", () => {
-					document.addEventListener("selectstart", disableSelect);
-				});
-				_noUiSlider.on("end", () => {
-					document.removeEventListener("selectstart", disableSelect);
-				});
 
-				that._slider = _noUiSlider;
+					slider.on("start", () => {
+						document.addEventListener("selectstart", disableSelect);
+					});
+					slider.on("end", () => {
+						document.removeEventListener("selectstart", disableSelect);
+					});
+
+					this.elems[name] = {li, slider, checkbox};
+
+					return li;
+				};
+
+				const createList = (tileLayers, label) => {
+					const list = document.createElement("fieldset");
+					const legend = document.createElement("legend");
+					this.translateHooks.push(that.addTranslationHook(legend, capitalizeFirstLetter(label)));
+
+					list.appendChild(legend);
+					Object.keys(tileLayers).forEach(name => {
+						list.appendChild(createListItem(name, that._tileLayers.layers[name]));
+					});
+					this.layers = {
+						...(this.layers || {}),
+						...tileLayers
+					};
+					this._section.appendChild(list);
+					return list;
+				};
+
+				this.elems = {};
+				this.finnishList = createList(that.finnishTileLayers, "FinnishMaps");
+				this.worldList = createList(that.worldTileLayers,  "WorldMaps");
+
+				[[this.finnishList, "finnish"], [this.worldList, "world"]].forEach(([list, active]) => {
+					list.addEventListener("click", ({target: {tagName}}) => {
+						if (active === that._tileLayers.active
+							|| tagName !== "FIELDSET" && tagName !== "LEGEND") {
+							return;
+						}
+						const layerOptions = Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
+							? that._tileLayers.layers
+							: {...that._tileLayers.layers, openStreetMap: true};
+						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});
+					});
+				});
+				createList(that.overlaysByNames, "Overlays");
 			},
-			_checkDisabledLayers() {
-				if (!this._map) return;
-				(<any> L.Control.Layers.prototype)._checkDisabledLayers.call(this);
-				const labels = [
-					...Array.prototype.slice.call(this._baseLayersList.children, 0),
-					...Array.prototype.slice.call(this._overlaysList.children, 0)
-				];
-
-				const inputs = this._layerControlInputs;
-				for (let i = inputs.length - 1; i >= 0; i--) {
-					const input = inputs[i];
-					const layer = this._getLayer(input.layerId).layer;
-					const label = labels[i];
-
-					// Prevents default behaviour where Leaflet disables layers if their maxZoom is exceeded.
-					input.disabled = false;
-					label.className = "";
-
-					if (that._isOutsideFinland(that.map.getCenter()) && that._getMMLCRSLayers().indexOf(layer) !== -1) {
-						input.disabled = true;
-						label.className = "disabled";
-						if (i === 0) {
-							if (!this._outsideFinlandInfoSpan) {
-								this._outsideFinlandInfoSpanContainer = document.createElement("div");
-								this._outsideFinlandInfoSpan = document.createElement("span");
-								that.addTranslationHook(this._outsideFinlandInfoSpan, "OutsideFinlandLayerControlInfo");
-								this._outsideFinlandInfoSpan.className = "info";
-								this._outsideFinlandInfoSpanContainer.appendChild(this._outsideFinlandInfoSpan);
-							}
-							label.parentElement.parentElement.insertBefore(this._outsideFinlandInfoSpanContainer, label.parentElement);
-						}
-					} else if (this._outsideFinlandInfoSpanContainer && this._outsideFinlandInfoSpanContainer.parentElement) {
-						this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);
-					}
-
-					const shouldDisableYkjOverlays = that._getDefaultCRSLayers().indexOf(that.tileLayer) !== -1
-						&& ONLY_MML_OVERLAY_NAMES.map(n => that.overlaysByNames[n]).indexOf(layer) !== -1;
-					if (shouldDisableYkjOverlays) {
-						label.style["text-decoration"] = "line-through";
-						if (i === inputs.length - 1) {
-							if (!this._onlyMMLInfoSpan) {
-								this._onlyMMLInfoSpanContainer = document.createElement("div");
-								this._onlyMMLInfoSpan = document.createElement("span");
-								that.addTranslationHook(this._onlyMMLInfoSpan, "OnlyMMLLayersInfo");
-								this._onlyMMLInfoSpan.className = "info";
-								this._onlyMMLInfoSpanContainer.appendChild(this._onlyMMLInfoSpan);
-							}
-							label.parentElement.parentElement.appendChild(this._onlyMMLInfoSpanContainer);
-						}
-					}
-				}
+			updateLayout() {
+				this.updateActiveProj();
+				this.updateLists();
+			},
+			updateActiveProj() {
+				const {activeProjName} = that;
+				const [activeList, nonActiveList] = activeProjName === "finnish"
+					? [this.finnishList, this.worldList]
+					: [this.worldList, this.finnishList];
+				activeList.className = "active-list";
+				nonActiveList.className = "nonactive-list";
+			},
+			updateLists() {
+				Object.keys(this.layers).forEach(name => {
+					const {opacity, visible} = that._tileLayers.layers[name];
+					const {slider, checkbox, li} = this.elems[name];
+					that._internalTileLayersUpdate = true;
+					li.className = visible ? "active" : "";
+					slider.set(opacity);
+					that._internalTileLayersUpdate = false;
+					checkbox.checked = visible;
+				});
 			}
 		});
 
-		const layerControl = new LayerControl(baseMaps, overlays, {position: "topleft"});
-		this.layerControl = layerControl;
-		return layerControl;
+		return new LayerControl({position: "topleft"});
 	}
 
 	getZoomControl(): L.Control.Zoom {

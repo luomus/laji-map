@@ -28,7 +28,7 @@ import {
 import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
-	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions
+	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -170,7 +170,7 @@ export default class LajiMap {
 	worldTileLayers: {[name: string]: L.TileLayer};
 	tileLayers: {[name: string]: L.TileLayer};
 	tileLayerName: TileLayerName;
-	_tileLayers: TileLayersOptions;
+	_tileLayers: InternalTileLayersOptions;
 	availableTileLayers: {[name: string]: L.TileLayer};
 	_listenedEvents: L.LeafletEventHandlerFnMap;
 	_keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
@@ -204,6 +204,7 @@ export default class LajiMap {
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection: boolean;
 	_tileLayersSet: boolean;
+	activeProjName: string;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -766,12 +767,12 @@ export default class LajiMap {
 			this._swapToForeignFlag = true;
 			let options;
 			const someWorldMapVisible = Object.keys(this.worldTileLayers).some(name =>
-				!!this._getLayerOptions(this._tileLayers.layers.name).visible
+				!!this._tileLayers.layers.name.visible
 			);
 			if (someWorldMapVisible) {
 				options = {...this._tileLayers, active: "world"};
 			} else {
-				options = {...this._tileLayers, layers: {...this._tileLayers.layers, openStreetMap: true}, active: "world"}
+				options = {...this._tileLayers, layers: {...this._tileLayers.layers, openStreetMap: true}, active: "world"};
 			}
 			this.setTileLayers(options);
 		}
@@ -989,13 +990,7 @@ export default class LajiMap {
 		this.setTileLayers({layers: {[name]: {opacity: 1, visible: true}}});
 	}
 
-	_getLayerOptions(layerOptions: TileLayerOptions | boolean) {
-		return typeof layerOptions === "boolean" || layerOptions === undefined
-			? {opacity: 1, visible: layerOptions}
-			: layerOptions;
-	}
-
-	getActiveLayers(options: TileLayersOptions): TileLayersOptions["layers"] {
+	getActiveLayers(options: InternalTileLayersOptions): TileLayersOptions["layers"] {
 		let {layers, active} = options;
 		if (!active) {
 			let useFinnishProj;
@@ -1005,11 +1000,8 @@ export default class LajiMap {
 					return true;
 				}
 				const layerOptions = layers[name];
-				const _layerOptions = typeof layerOptions === "boolean"
-					? {opacity: 1, visible: layerOptions}
-					: layerOptions;
-				const isWorldMapLayer = _layerOptions.visible && this.worldTileLayers[name];
-				if (!_layerOptions.visible) {
+				const isWorldMapLayer = layerOptions.visible && this.worldTileLayers[name];
+				if (!layerOptions.visible) {
 					return;
 				}
 				if (useFinnishProj === undefined) {
@@ -1034,14 +1026,30 @@ export default class LajiMap {
 
 	@dependsOn("map", "view")
 	setTileLayers(options: TileLayersOptions) {
-		const {layers, active} = options;
 		this._tileLayersSet = true;
+		const {layers, active} = options;
 		if (!depsProvided(this, "setTileLayers", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
-		const activeLayers = this.getActiveLayers(options);
+		const newOptions = {
+			...options,
+			layers: Object.keys({...this.tileLayers, ...this.overlaysByNames}).reduce((_layers, name) => {
+				const layerOptions = options.layers[name];
+				_layers[name] = typeof layerOptions === "boolean" || layerOptions === undefined
+					? {opacity: layerOptions ? 1 : 0, visible: layerOptions}
+					: {
+						opacity: layerOptions.opacity,
+						visible: layerOptions.hasOwnProperty("visible") ? layerOptions.visible : !!layerOptions.opacity
+					};
+				return _layers;
+			}, {})
+		};
+		const activeLayers = this.getActiveLayers(newOptions);
+		newOptions.active = Object.keys(activeLayers).length === 0 || this.finnishTileLayers[Object.keys(activeLayers)[0]]
+			? "finnish"
+			: "world";
 
 		const findNonOverlay = name => !!this.finnishTileLayers[name] || !!this.worldTileLayers[name];
 
@@ -1055,34 +1063,33 @@ export default class LajiMap {
 		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.getMMLProj();
 		existingLayer && this.map.setView(center, this.map.getZoom());
 
-		let projectionChanged = false;
+		let projectionChanged;
 		let zoom = this.map.getZoom();
 
 		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
-			projectionChanged = true;
+			projectionChanged = "finnish";
 		} else if (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1) {
 			zoom = zoom + 3;
-			projectionChanged = true;
+			projectionChanged = "world";
 		}
+		this.activeProjName = projectionChanged;
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
-		if (this._tileLayers) {
-			Object.keys(this._tileLayers.layers).forEach(name => {
+		const oldOptions = this._tileLayers;
+		this._tileLayers = newOptions;
+		if (oldOptions) {
+			Object.keys(oldOptions.layers).forEach(name => {
 				this.map.removeLayer(this.tileLayers[name] || this.overlaysByNames[name]);
 			});
 		}
-		this._tileLayers = options;
 		Object.keys(activeLayers).forEach(name => {
 			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
-			const layerOptions = this._tileLayers.layers[name];
-			const _layerOptions = typeof layerOptions === "boolean"
-				? {opacity: 1, visible: layerOptions}
-				: layerOptions;
-			const {opacity, visible = true} = _layerOptions;
+			const layerOptions = <TileLayerOptions> this._tileLayers.layers[name];
+			const {opacity, visible} = layerOptions;
 			visible && this.map.addLayer(_layer);
 			_layer.setOpacity(opacity);
 		});
@@ -1105,6 +1112,7 @@ export default class LajiMap {
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
 			this._viewCriticalSection = false;
+			this.map.fire("projectionChanged", projectionChanged);
 		}
 		this.map.setMaxZoom(maxZoom);
 

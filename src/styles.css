@@ -422,6 +422,7 @@
     margin: 4px;
     padding: 4px;
     min-width: 200px;
+	user-select: none;
 }
 .laji-map .laji-map-control-layers fieldset > div {
     position: relative;
@@ -455,7 +456,7 @@
 	border-color: #e2e2e2;
 }
 .laji-map .laji-map-control-layers fieldset > div:not(.active) .noUi-connect, .laji-map .laji-map-control-layers fieldset.nonactive-list .noUi-connect {
-    background-color: #cee0df;
+    background-color: #93c1bf;
 }
 .laji-map .laji-map-control-layers fieldset {
     border: 1px solid;

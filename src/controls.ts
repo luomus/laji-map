@@ -978,6 +978,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					checkbox.addEventListener("change", (e) => {
 						const {layers} = that._tileLayers;
 						const _layerOptions = layers[name];
+						const _layer = {...that.tileLayers, ...that.overlaysByNames}[name];
 						that.setTileLayers({
 							...that._tileLayers,
 							active: that.finnishTileLayers[name]
@@ -990,7 +991,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 								[name]: {
 									..._layerOptions,
 									visible: !_layerOptions.visible,
-									opacity: !_layerOptions.visible && !_layerOptions.opacity ? 1 : _layerOptions.opacity
+									opacity: !_layerOptions.visible && !_layerOptions.opacity ? (_layer.options.defaultOpacity || 1) : _layerOptions.opacity
 								}
 							}
 						});

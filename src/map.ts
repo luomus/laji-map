@@ -222,7 +222,7 @@ export default class LajiMap {
 		"mireVegetationZones",
 		"threatenedSpeciesEvaluationZones",
 		"biodiversityForestZones",
-	]
+	];
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -678,7 +678,8 @@ export default class LajiMap {
 					format: "image/png",
 					transparent: true,
 					version: "1.3.0",
-				}).setOpacity(0.5),
+					defaultOpacity: 0.5
+				}),
 				geobiologicalProvinceBorders: L.tileLayer.wms(
 					"http://maps.luomus.fi/geoserver/INSPIRE/wms", {
 					maxZoom: 15,
@@ -700,16 +701,18 @@ export default class LajiMap {
 					layers: "Metsakasvillisuusvyohykkeet",
 					format: "image/png",
 					transparent: true,
-					version: "1.3.0"
-				}).setOpacity(0.5),
+					version: "1.3.0",
+					defaultOpacity: 0.5
+				}),
 				mireVegetationZones: L.tileLayer.wms(
 					"http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,
 					layers: "Suokasvillisuusvyohykkeet",
 					format: "image/png",
 					transparent: true,
-					version: "1.3.0"
-				}).setOpacity(0.5),
+					version: "1.3.0",
+					defaultOpacity: 0.5
+				}),
 				threatenedSpeciesEvaluationZones: L.tileLayer.wms(
 					"http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
 					maxZoom: 15,
@@ -721,8 +724,9 @@ export default class LajiMap {
 				biodiversityForestZones: L.tileLayer.wms(
 					"http://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // tslint:disable-line
 					maxZoom: 15,
-					layers: "8"
-				}).setOpacity(0.5),
+					layers: "8",
+					defaultOpacity: 0.5
+				})
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};
@@ -1061,7 +1065,7 @@ export default class LajiMap {
 			layers: Object.keys({...this.tileLayers, ...this.overlaysByNames}).reduce((_layers, name) => {
 				const layerOptions = options.layers[name];
 				_layers[name] = typeof layerOptions === "boolean" || layerOptions === undefined
-					? {opacity: layerOptions ? 1 : 0, visible: !!layerOptions}
+					? {opacity: layerOptions ? (_layers[name].options.defaultOpacity || 1) : 0, visible: !!layerOptions}
 					: {
 						opacity: layerOptions.opacity,
 						visible: layerOptions.hasOwnProperty("visible") ? layerOptions.visible : !!layerOptions.opacity
@@ -1120,7 +1124,7 @@ export default class LajiMap {
 		Object.keys(changedLayers).forEach(name => {
 			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
 			const {opacity, visible} = this._tileLayers.layers[name];
-			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer)
+			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
 			visible && activeLayers[name] && _layer.setOpacity(opacity);
 		});
 		if (this.tileLayerOpacity !== undefined) {

@@ -725,6 +725,11 @@ export default class LajiMap {
 				}).setOpacity(0.5),
 			};
 
+			const combined = {...this.tileLayers, ...this.overlaysByNames};
+			Object.keys(combined).forEach(name => {
+				combined[name].setZIndex(this._tileLayerOrder.indexOf(name));
+			});
+
 			this.availableOverlaysByNames = this.overlaysByNames;
 
 			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
@@ -1008,7 +1013,7 @@ export default class LajiMap {
 		this.setTileLayers({layers: {[name]: {opacity: 1, visible: true}}});
 	}
 
-	getActiveLayers(options: InternalTileLayersOptions): TileLayersOptions["layers"] {
+	getActiveLayers(options: InternalTileLayersOptions): InternalTileLayersOptions["layers"] {
 		let {layers, active} = options;
 		if (!active) {
 			let useFinnishProj;
@@ -1064,6 +1069,7 @@ export default class LajiMap {
 				return _layers;
 			}, {})
 		};
+		const prevActiveLayers = this._tileLayers && this.getActiveLayers(this._tileLayers);
 		const activeLayers = this.getActiveLayers(newOptions);
 		newOptions.active = Object.keys(activeLayers).length === 0 || this.finnishTileLayers[Object.keys(activeLayers)[0]]
 			? "finnish"
@@ -1097,19 +1103,25 @@ export default class LajiMap {
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
-		const oldOptions = this._tileLayers;
+		const prevOptions = this._tileLayers;
 		this._tileLayers = newOptions;
-		if (oldOptions) {
-			Object.keys(oldOptions.layers).forEach(name => {
-				this.map.removeLayer(this.tileLayers[name] || this.overlaysByNames[name]);
-			});
-		}
-		Object.keys(activeLayers).sort((a, b) => this._tileLayerOrder.indexOf(a) - this._tileLayerOrder.indexOf(b)).forEach(name => {
+		const changedLayers = Object.keys(this._tileLayers.layers).reduce((changed, name) => {
+			if (!prevActiveLayers || (activeLayers[name] || {visible: false}).visible !== (prevActiveLayers[name] || {visible: false}).visible) {
+			changed[name] = true;
+			}
+			return changed;
+		}, {});
+
+		prevOptions && Object.keys(changedLayers).forEach(name => {
 			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
-			const layerOptions = <TileLayerOptions> this._tileLayers.layers[name];
-			const {opacity, visible} = layerOptions;
-			visible && this.map.addLayer(_layer);
-			_layer.setOpacity(opacity);
+			const {visible} = this._tileLayers.layers[name];
+			(!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.setOpacity(0);
+		});
+		Object.keys(changedLayers).forEach(name => {
+			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
+			const {opacity, visible} = this._tileLayers.layers[name];
+			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer)
+			visible && activeLayers[name] && _layer.setOpacity(opacity);
 		});
 		if (this.tileLayerOpacity !== undefined) {
 			this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
@@ -1130,7 +1142,7 @@ export default class LajiMap {
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
 			this._viewCriticalSection = false;
-			this.map.fire("projectionChanged", projectionChanged);
+			this.map.fire("projectionChange", projectionChanged);
 		}
 		this.map.setMaxZoom(maxZoom);
 

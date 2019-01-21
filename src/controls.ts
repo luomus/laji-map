@@ -958,21 +958,17 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this.initLayout();
 				this.updateLayout();
 
-				Object.keys(that.tileLayers).forEach(name => {
-					that.tileLayers[name].on("add remove", this.updateLists, this);
-				});
-
-				this._map.on("projectionChanged", this.updateActiveProj, this);
+				this._map.on("tileLayersChange", this.updateLists, this);
+				this._map.on("projectionChange", this.updateActiveProj, this);
 
 				return container;
 			},
 			onRemove() {
-				Object.keys(that.tileLayers).forEach(name => {
-					that.tileLayers[name].off("add remove", this.updateLists, this);
-				});
 				this.translateHooks.forEach(hook => {
 					that.removeTranslationHook(hook);
 				});
+				this._map.off("tileLayersChange", this.updateLists);
+				this._map.off("projectionChange", this.updateActiveProj);
 			},
 			initLayout() {
 				const createListItem = (name, layerOptions) => {

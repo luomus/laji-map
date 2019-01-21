@@ -625,6 +625,7 @@ export default class LajiMap {
 				...this.finnishTileLayers,
 				pohjakartta: L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
 					layers: "osm_finland:Sea",
+					maxZoom: 14,
 					format: "image/png",
 					transparent: false,
 					version: "1.1.0",
@@ -1041,11 +1042,13 @@ export default class LajiMap {
 			active = useFinnishProj ? "finnish" : "world";
 		}
 		return Object.keys(layers).reduce((_layers, name) => {
-			if (this.overlaysByNames[name]
-				|| active === "finnish" && this.finnishTileLayers[name]
-				|| active === "world" && this.worldTileLayers[name]
-			) {
-				_layers[name] = layers[name];
+			if (layers[name].visible
+				&& (
+					this.overlaysByNames[name]
+					|| active === "finnish" && this.finnishTileLayers[name]
+					|| active === "world" && this.worldTileLayers[name]
+			)) {
+				_layers[name] = true;
 			}
 			return _layers;
 		}, {});
@@ -1134,9 +1137,15 @@ export default class LajiMap {
 		// Zoom levels behave differently on different projections.
 		// We bypass the default max zoom behaviour and handle it manually
 		// below.
-		const {maxZoom} = layer.options;
-		// TODO väärä maxZoom yllä, pitäis ettiä max
-		// const {maxZoom} = this.tileLayer.options;
+		const maxZoom = Object.keys(activeLayers).reduce((_maxZoom, name) => {
+			if (!activeLayers[name]) {
+				return;
+			}
+			const _layer = this.tileLayers[name];
+			return _layer && _layer.options.maxZoom < _maxZoom
+				? _layer.options.maxZoom
+				: _maxZoom;
+		}, 19);
 		this.map.setMaxZoom(19);
 		if (projectionChanged) {
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.

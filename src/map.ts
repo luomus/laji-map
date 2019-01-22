@@ -1063,12 +1063,13 @@ export default class LajiMap {
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
+		const combinedLayers = {...this.tileLayers, ...this.overlaysByNames};
 		const newOptions = {
 			...options,
-			layers: Object.keys({...this.tileLayers, ...this.overlaysByNames}).reduce((_layers, name) => {
+			layers: Object.keys(combinedLayers).reduce((_layers, name) => {
 				const layerOptions = options.layers[name];
 				_layers[name] = typeof layerOptions === "boolean" || layerOptions === undefined
-					? {opacity: layerOptions ? (_layers[name].options.defaultOpacity || 1) : 0, visible: !!layerOptions}
+					? {opacity: layerOptions ? (combinedLayers[name].options.defaultOpacity || 1) : 0, visible: !!layerOptions}
 					: {
 						opacity: layerOptions.opacity,
 						visible: layerOptions.hasOwnProperty("visible") ? layerOptions.visible : !!layerOptions.opacity
@@ -1120,12 +1121,12 @@ export default class LajiMap {
 		}, {});
 
 		prevOptions && Object.keys(changedLayers).forEach(name => {
-			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
+			const _layer = combinedLayers[name];
 			const {visible} = this._tileLayers.layers[name];
 			(!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.setOpacity(0);
 		});
 		Object.keys(changedLayers).forEach(name => {
-			const _layer = this.tileLayers[name] || this.overlaysByNames[name];
+			const _layer = combinedLayers[name];
 			const {opacity, visible} = this._tileLayers.layers[name];
 			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
 			visible && activeLayers[name] && _layer.setOpacity(opacity);

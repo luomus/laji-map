@@ -593,7 +593,7 @@ export default class LajiMap {
 				});
 				this.tileLayers[tileLayerName].setUrl((<any> this.tileLayers[tileLayerName])._url.replace(
 					"avoindata.maanmittauslaitos.fi/mapcache/",
-					"avoin-karttakuva.maanmittauslaitos.fi/avoin/"
+					"proxy.laji.fi/mml/avoin/"
 				));
 			});
 
@@ -614,7 +614,7 @@ export default class LajiMap {
 				attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>, <a href=\"http://www.mapant.fi\"target=\"_blank\" rel=\"noopener noreferrer\">Mapant</a>" // tslint:disable-line
 			});
 
-			this.tileLayers.openStreetMap = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+			this.tileLayers.openStreetMap = L.tileLayer("https://proxy.laji.fi/osm/{z}/{x}/{y}.png", {
 				attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors" // tslint:disable-line
 			});
 

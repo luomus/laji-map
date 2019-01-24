@@ -206,6 +206,7 @@ export default class LajiMap {
 
 		const options: Options = {
 			tileLayerName: TileLayerName.taustakartta,
+			tileLayerOpacity: 1,
 			lang: Lang.en,
 			data: [],
 			locate: false,

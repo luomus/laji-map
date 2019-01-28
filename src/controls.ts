@@ -225,10 +225,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			{
 				name: "drawUtils",
-				dependencies: [
-					() => this.drawIsAllowed()
-				],
-
 				controls: [
 					{
 						name: "coordinateInput",
@@ -238,7 +234,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						dependencies: [
 							() => (["marker", "rectangle"].some(type => {
 								return this.getDraw()[type] !== false;
-							}))
+							})),
+							() => this.drawIsAllowed()
 						]
 					},
 					{
@@ -251,7 +248,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "upload",
 						text: this.translations.UploadDrawnFeatures,
 						iconCls: "glyphicon glyphicon-floppy-open",
-						fn: () => this.openDrawUploadDialog()
+						fn: () => this.openDrawUploadDialog(),
+						dependencies: [
+							() => this.drawIsAllowed()
+						]
 					},
 					{
 						name: "clear",
@@ -288,7 +288,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 							});
 
 							yesButton.focus();
-						}
+						},
+						dependencies: [
+							() => this.drawIsAllowed()
+						]
+
 					},
 					{
 						name: "delete",
@@ -297,7 +301,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						fn: (...params) => {
 							this._startDrawRemove();
 						},
-						finishFn: (...params) => this._finishDrawRemove()
+						finishFn: (...params) => this._finishDrawRemove(),
+						dependencies: [
+							() => this.drawIsAllowed()
+						]
+
 					},
 					{
 						name: "reverse",
@@ -308,7 +316,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						},
 						finishFn: (...params) => this._finishDrawReverse(),
 						dependencies: [
-							() => this.getDraw().polyline !== false
+							() => this.getDraw().polyline !== false,
+							() => this.drawIsAllowed()
 						]
 					},
 					{
@@ -317,7 +326,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						iconCls: "laji-map-line-transect-undo-glyph",
 						fn: () => this.drawUndo(),
 						onAdd: () => this.updateDrawUndoButton(),
-						disabled: this._drawHistoryPointer <= 0
+						disabled: this._drawHistoryPointer <= 0,
+						dependencies: [
+							() => this.drawIsAllowed()
+						]
 					},
 					{
 						name: "redo",
@@ -325,7 +337,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						iconCls: "laji-map-line-transect-redo-glyph",
 						fn: () => this.drawRedo(),
 						onAdd: () => this.updateDrawRedoButton(),
-						disabled: this._drawHistoryPointer >= this._drawHistory.length - 1
+						disabled: this._drawHistoryPointer >= this._drawHistory.length - 1,
+						dependencies: [
+							() => this.drawIsAllowed()
+						]
 					}
 				]
 			},

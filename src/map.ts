@@ -592,10 +592,9 @@ export default class LajiMap {
 				this.tileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 					layer: tileLayerName
 				});
-				this.tileLayers[tileLayerName].setUrl((<any> this.tileLayers[tileLayerName])._url.replace(
-					"avoindata.maanmittauslaitos.fi/mapcache/",
-					"proxy.laji.fi/mml/avoin/"
-				));
+				[["http", "https"], ["avoindata.maanmittauslaitos.fi/mapcache/", "proxy.laji.fi/mml/avoin/"]].forEach(([a, b]) =>
+					this.tileLayers[tileLayerName].setUrl((<any> this.tileLayers[tileLayerName])._url.replace(a, b))
+				);
 			});
 
 			this.tileLayers.pohjakartta = L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {

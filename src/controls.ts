@@ -1784,7 +1784,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this.getFeatureTypes().forEach(featureType => {
 			const text = join("Draw", featureType);
 
-			if (this.getDraw() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
+			if (this.getDraw() && this.drawIsAllowed() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
 				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
 					text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,

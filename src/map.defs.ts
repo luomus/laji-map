@@ -24,6 +24,9 @@ export interface GetFeatureStyleOptions {
 	featureIdx?: number;
 	feature?: G.Feature;
 	item?: Data;
+	active?: boolean;
+	editing?: boolean;
+	hovered?: boolean;
 }
 
 export interface CustomPolylineOptions extends PolylineOptions {
@@ -54,6 +57,7 @@ export interface Data extends DataOptions {
 	group: GeoJSON;
 	groupContainer: FeatureGroup;
 	idx: number;
+	hasCustomGetFeatureStyle: boolean;
 }
 
 export interface DrawOptions extends DataOptions {

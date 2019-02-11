@@ -229,6 +229,7 @@ export default class LajiMap {
 
 		const options: Options = {
 			tileLayerName: TileLayerName.taustakartta,
+			tileLayerOpacity: 1,
 			lang: Lang.en,
 			data: [],
 			locate: false,
@@ -615,10 +616,9 @@ export default class LajiMap {
 				this.finnishTileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 					layer: tileLayerName
 				});
-				this.finnishTileLayers[tileLayerName].setUrl((<any> this.finnishTileLayers[tileLayerName])._url.replace(
-					"avoindata.maanmittauslaitos.fi/mapcache/",
-					"avoin-karttakuva.maanmittauslaitos.fi/avoin/"
-				));
+				[["http", "https"], ["avoindata.maanmittauslaitos.fi/mapcache/", "proxy.laji.fi/mml/avoin/"]].forEach(([a, b]) =>
+					this.finnishTileLayers[tileLayerName].setUrl((<any> this.finnishTileLayers[tileLayerName])._url.replace(a, b))
+				);
 			});
 
 			this.finnishTileLayers = {
@@ -655,7 +655,7 @@ export default class LajiMap {
 			};
 
 			this.worldTileLayers = {
-				openStreetMap: L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+				openStreetMap: L.tileLayer("https://proxy.laji.fi/osm/{z}/{x}/{y}.png", {
 					attribution: "&copy; <a href=\"http://osm.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\">OpenStreetMap</a> contributors" // tslint:disable-line
 				}),
 				googleSatellite: L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
@@ -1493,6 +1493,9 @@ export default class LajiMap {
 				type: "FeatureCollection",
 				features: this.cloneFeatures(features)
 			},
+			hasCustomGetFeatureStyle: item.hasOwnProperty("hasCustomGetFeatureStyle")
+				? item.hasCustomGetFeatureStyle
+				: !!item.getFeatureStyle,
 			idx: dataIdx
 		};
 
@@ -1773,6 +1776,7 @@ export default class LajiMap {
 			getFeatureStyle: () => this._getDefaultDrawStyle(),
 			getClusterStyle: () => this._getDefaultDrawClusterStyle(),
 			getDraftStyle: () => this._getDefaultDrawDraftStyle(),
+			hasCustomGetFeatureStyle: !!(<any> draw).getFeatureStyle,
 			editable: true,
 			...draw,
 		};
@@ -2519,12 +2523,18 @@ export default class LajiMap {
 				feature
 			},
 		];
-		if (item.hasActive) events.push(this._getOnActiveChangeEvent([dataIdx, features.length - 1]));
+		if (item.hasActive) {
+			events.push({type: "active", idx: features.length - 1});
+		}
 
 		this._triggerEvent(events, item.onChange);
 
 		if (dataIdx === this.drawIdx) {
 			this._updateDrawUndoStack(events, undefined, prevActiveIdx);
+		}
+
+		if (item.hasActive) {
+			this.setActive(this._getLayerByIdxTuple([dataIdx, features.length - 1]));
 		}
 	}
 
@@ -2689,8 +2699,8 @@ export default class LajiMap {
 			idxs: deleteIdxs
 		}];
 
-		if (newActiveId !== undefined && changeActive) {
-			events.push(this._getOnActiveChangeEvent([dataIdx, this.idsToIdxs[dataIdx][newActiveId]]));
+		if (changeActive) {
+			events.push({type: "active", idx: this.idsToIdxs[dataIdx][newActiveId]});
 		}
 
 		this._triggerEvent(events, item.onChange);
@@ -2698,6 +2708,11 @@ export default class LajiMap {
 		if (dataIdx === this.drawIdx) {
 			this._updateDrawUndoStack(events, prevFeatureCollection, newActiveId ? activeIdx : undefined);
 		}
+
+		if (changeActive) {
+			this.setActive(this._getLayerByIdxTuple([dataIdx, this.idsToIdxs[dataIdx][newActiveId]]));
+		}
+
 	}
 
 	_removeLayerFromItem(item: Data, layer: DataItemLayer) {
@@ -2709,19 +2724,13 @@ export default class LajiMap {
 		}
 	}
 
-	_getOnActiveChangeEvent(idxTuple: IdxTuple): LajiMapEvent {
-		const [dataIdx, featureIdx] = idxTuple;
-		this.setActive(this._getLayerByIdxTuple(idxTuple));
-		return {
-			type: "active",
-			idx: featureIdx
-		};
-	}
-
 	_onActiveChange(idxTuple: IdxTuple) {
-		const [dataIdx] = idxTuple;
+		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
-		if (item.hasActive) this._triggerEvent(this._getOnActiveChangeEvent(idxTuple), item.onChange);
+		if (item.hasActive) {
+			this._triggerEvent({type: "active", idx: featureIdx}, item.onChange);
+			this.setActive(this._getLayerByIdxTuple(idxTuple));
+		}
 	}
 
 	focusToLayerByIdxs(idxTuple: IdxTuple) {
@@ -2906,13 +2915,31 @@ export default class LajiMap {
 		}
 		const item = this.data[dataIdx];
 		const feature = item.featureCollection.features[featureIdx];
+		const active = item.activeIdx === featureIdx;
+		let editing = false;
+		if (this.editIdxTuple) {
+			const [_dataIdx, _featureIdx] = this.editIdxTuple;
+
+			if (_dataIdx === dataIdx && _featureIdx === featureIdx) {
+				editing = true;
+			}
+		}
+		const hovered = (
+			dataIdx !== undefined &&
+			featureIdx !== undefined &&
+			this._idxsToHovered[dataIdx][featureIdx]
+		);
+
 		let dataStyles = undefined;
 		if (item.getFeatureStyle) {
 			dataStyles = item.getFeatureStyle({
 				dataIdx,
 				featureIdx,
 				feature,
-				item
+				item,
+				active,
+				editing,
+				hovered
 			});
 			if (dataStyles.color && !dataStyles.fillColor) {
 				dataStyles.fillColor = dataStyles.color;
@@ -2947,34 +2974,17 @@ export default class LajiMap {
 
 		const colors = [];
 
-		let editing = false;
-		if (this.editIdxTuple) {
-			const [_dataIdx, _featureIdx] = this.editIdxTuple;
-
-			if (_dataIdx === dataIdx && _featureIdx === featureIdx) {
-				editing = true;
-			}
-		}
-
-		let active = false;
-		if (item.activeIdx === featureIdx) {
-			active = true;
+		if (!item.hasCustomGetFeatureStyle && active) {
 			colors.push(["#00ff00", 80]);
 		}
 
-		if (editing) {
+		if (!item.hasCustomGetFeatureStyle && editing) {
 			const r = active ? "--" : "00";
 			const b = r;
 			colors.push([`#${r}ff${b}`, 30]);
 		}
 
-		const hovered = (
-			dataIdx !== undefined &&
-			featureIdx !== undefined &&
-			this._idxsToHovered[dataIdx][featureIdx]
-		);
-
-		if (hovered) {
+		if (!item.hasCustomGetFeatureStyle && hovered) {
 			colors.push(["#ffffff", 30]);
 		}
 
@@ -2995,7 +3005,6 @@ export default class LajiMap {
 				}
 			});
 		}
-		if (style.color === "#0adf3d") throw new Error();
 		return style;
 	}
 

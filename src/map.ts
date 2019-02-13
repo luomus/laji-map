@@ -1093,7 +1093,6 @@ export default class LajiMap {
 
 		const center = this.map.getCenter();
 		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.getMMLProj();
-		existingLayer && this.map.setView(center, this.map.getZoom());
 
 		let projectionChanged;
 		let zoom = this.map.getZoom();

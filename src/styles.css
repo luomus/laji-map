@@ -421,7 +421,7 @@
     padding: 0px 8px;
     margin: 4px;
     padding: 4px;
-    min-width: 410px;
+    min-width: 325px;
 	user-select: none;
 }
 .laji-map .laji-map-control-layers fieldset > div {
@@ -433,7 +433,7 @@
 }
 .laji-map .laji-map-control-layers fieldset > div span {
     padding-left: 27px;
-    font-size: 14px;
+    font-size: 11px;
 }
 .laji-map .laji-map-control-layers fieldset > div.active span {
 	font-weight: bold;
@@ -464,7 +464,7 @@
 }
 
 .laji-map .laji-map-control-layers fieldset legend {
-    font-size: 14px;
+    font-size: 11px;
 	font-weight: bold;
     width: auto;
     padding: 0px 3px;

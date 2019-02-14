@@ -1132,9 +1132,6 @@ export default class LajiMap {
 			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
 			visible && activeLayers[name] && _layer.setOpacity(opacity);
 		});
-		if (layer && this.tileLayerOpacity !== undefined) {
-			this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
-		}
 
 		// Zoom levels behave differently on different projections.
 		// We bypass the default max zoom behaviour and handle it manually

@@ -1174,11 +1174,12 @@ export default class LajiMap {
 			this.map.fire("tileLayersChange", this._tileLayers);
 		}
 
-		if (!isProvided(this, "tileLayer")) {
+		// We need to provide before swapping, or else swapping causes callback loop since it might call this function.
+		const _isProvided = isProvided(this, "tileLayer");
+		if (!_isProvided) {
+			provide(this, "tileLayer");
 			this._swapToWorldOutsideFinland(this.map.getCenter());
 		}
-
-		provide(this, "tileLayer");
 	}
 
 	getTileLayers(): {[name: string]: L.TileLayer[]} {

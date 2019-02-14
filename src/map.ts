@@ -1097,16 +1097,18 @@ export default class LajiMap {
 		let projectionChanged;
 		let zoom = this.map.getZoom();
 
-		if (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1) {
+		if (this.activeProjName !== "finnish" && mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
 			projectionChanged = "finnish";
-		} else if (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1) {
+		} else if (this.activeProjName !== "world" && defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1) {
 			zoom = zoom + 3;
 			projectionChanged = "world";
 		}
-		this.activeProjName = projectionChanged;
+		if (projectionChanged) {
+			this.activeProjName = projectionChanged;
+		}
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
@@ -1130,7 +1132,7 @@ export default class LajiMap {
 			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
 			visible && activeLayers[name] && _layer.setOpacity(opacity);
 		});
-		if (this.tileLayerOpacity !== undefined) {
+		if (layer && this.tileLayerOpacity !== undefined) {
 			this.setTileLayerOpacity(this.tileLayerOpacity, !"trigger event");
 		}
 

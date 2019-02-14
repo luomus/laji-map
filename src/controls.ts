@@ -1152,13 +1152,23 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					Object.keys(that.finnishTileLayers).forEach(name => {
 						this.elems[name].slider.target.setAttribute("disabled", "disabled");
 					});
+					if (!this._outsideFinlandInfoSpan) {
+						this._outsideFinlandInfoSpanContainer = document.createElement("div");
+						this._outsideFinlandInfoSpan = document.createElement("span");
+						that.addTranslationHook(this._outsideFinlandInfoSpan, "OutsideFinlandLayerControlInfo");
+						this._outsideFinlandInfoSpan.className = "info";
+						this._outsideFinlandInfoSpanContainer.appendChild(this._outsideFinlandInfoSpan);
+					}
+					this.finnishList.parentElement.insertBefore(this._outsideFinlandInfoSpanContainer, this.finnishList);
 				} else if (this._finnishDisabled) {
 					this._finnishDisabled = false;
 					this.finnishList.removeAttribute("disabled");
 					Object.keys(that.finnishTileLayers).forEach(name => {
 						this.elems[name].slider.target.removeAttribute("disabled");
 					});
+					this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);
 				}
+
 			}
 		});
 

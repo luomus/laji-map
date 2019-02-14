@@ -929,10 +929,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			options: L.Control.Layers.prototype.options,
 			initialize(options) {
 				L.Util.setOptions(this, options);
-				this._checkDisabledLayers = () => { ; }
 			},
 			onAdd(map) {
 				this._map = map;
+				this.__checkDisabledLayers = () => this._checkDisabledLayers();
+				map.on("moveend", this.__checkDisabledLayers);
 
 				/* Code below copied from L.Control.Layers._initLayout() with some modifications */
 				const className = "laji-map-control-layers leaflet-control-layers",
@@ -988,6 +989,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				});
 				this._map.off("tileLayersChange", this.updateLists);
 				this._map.off("projectionChange", this.updateActiveProj);
+				this._map.off("moveend", this.__checkDisabledLayers);
 			},
 			initLayout() {
 				const createListItem = (name, layerOptions) => {
@@ -1141,6 +1143,22 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					that._internalTileLayersUpdate = false;
 					checkbox.checked = visible;
 				});
+			},
+			_checkDisabledLayers() {
+				const latLng = this._map.getCenter();
+				if (that._isOutsideFinland(latLng)) {
+					this._finnishDisabled = true;
+					this.finnishList.setAttribute("disabled", "disabled");
+					Object.keys(that.finnishTileLayers).forEach(name => {
+						this.elems[name].slider.target.setAttribute("disabled", "disabled");
+					});
+				} else if (this._finnishDisabled) {
+					this._finnishDisabled = false;
+					this.finnishList.removeAttribute("disabled");
+					Object.keys(that.finnishTileLayers).forEach(name => {
+						this.elems[name].slider.target.removeAttribute("disabled");
+					});
+				}
 			}
 		});
 

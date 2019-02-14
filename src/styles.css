@@ -449,10 +449,10 @@
 .laji-map .laji-map-control-layers .noUi-base {
 	background: #e4e4e4;
 }
-.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers div:not(.active):hover .noUi-base {
+.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled])div:not(.active):hover .noUi-base {
 	background: #f1f1f1;
 }
-.laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers div:not(.active):hover .noUi-target {
+.laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers fieldset:not([disabled]) div:not(.active):hover .noUi-target {
 	border-color: #e2e2e2;
 }
 .laji-map .laji-map-control-layers fieldset > div:not(.active) .noUi-connect, .laji-map .laji-map-control-layers fieldset.nonactive-list .noUi-connect {
@@ -491,6 +491,6 @@
 .laji-map .laji-map-control-layers .nonactive-list, .laji-map .laji-map-control-layers fieldset > div:not(.active) {
 	opacity: 0.5;
 }
-.laji-map .laji-map-control-layers .nonactive-list:hover, .laji-map .laji-map-control-layers fieldset > div:not(.active):hover {
+.laji-map .laji-map-control-layers .nonactive-list:hover:not([disabled]), .laji-map .laji-map-control-layers fieldset:not([disabled]) > div:not(.active):hover {
 	opacity: 1;
 }

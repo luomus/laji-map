@@ -937,7 +937,7 @@ const etrsTm35FinValidator: CoordinateValidator[] = [
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
-// Valid ykj grid input can not overlap etrsTm35Fin coordinate point. Unvalidate cases where x-coordinate length is 7
+// Valid ykj grid input can not overlap etrsTm35Fin coordinate point. Invalidate cases where x-coordinate length is 7
 // digits or y-coordinate doesn't start with '3' or y-coordinate length is 7 digits. This leaves an unlikely corner
 // case where the user wants to input 1 m wide or 1 m long rectangle.
 const ykjGridStrictValidator: CoordinateValidator[] = ykjValidator.map(validator => ({

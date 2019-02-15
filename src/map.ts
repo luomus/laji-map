@@ -200,6 +200,7 @@ export default class LajiMap {
 	provider: any;
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection: boolean;
+	viewLocked: boolean;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -217,6 +218,7 @@ export default class LajiMap {
 			draw: false,
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
+			viewLocked: false,
 		};
 
 		this.options = {};
@@ -260,7 +262,8 @@ export default class LajiMap {
 			marker: true,
 			bodyAsDialogRoot: ["setBodyAsDialogRoot", () => this._dialogRoot === document.body],
 			clickBeforeZoomAndPan: ["setClickBeforeZoomAndPan", "_clickBeforeZoomAndPan"],
-			googleApiKey: "setGoogleApiKey"
+			googleApiKey: "setGoogleApiKey",
+			viewLocked: "setViewLocked"
 		};
 	}
 
@@ -363,9 +366,13 @@ export default class LajiMap {
 		return !!(this.drawing || this._LTEditPointIdxTuple);
 	}
 
-	@dependsOn("rootElem", "map", "translations")
+	@dependsOn("rootElem", "map", "translations", "viewLocked")
 	setClickBeforeZoomAndPan(value = true) {
 		if (!depsProvided(this, "setClickBeforeZoomAndPan", arguments)) return;
+
+		if (this.viewLocked && value) {
+			return;
+		}
 
 		const valueWas = this._clickBeforeZoomAndPan;
 		this._clickBeforeZoomAndPan = value;
@@ -459,7 +466,7 @@ export default class LajiMap {
 			this._startPreventScrollingTimeout();
 			if (!this._preventScroll && isOutside) {
 				this._preventScrolling();
-			} else if (this._preventScroll && !isOutside) {
+			} else if (this._preventScroll && !isOutside && !this.viewLocked) {
 				this.map.scrollWheelZoom.enable();
 				this.map.dragging.enable();
 				hidePreventElem();
@@ -480,8 +487,8 @@ export default class LajiMap {
 			this._onTouchPreventScrolling = onTouchOrMouse(!!"touch");
 			this._onMouseDownPreventScrolling = onTouchOrMouse(!"mouse");
 			this._onControlClickPreventScrolling = () => _onTouchOrMouseEventAgnostic(false);
-			this._onDrawStartPreventScrolling = () => this.map.dragging.disable();
-			this._onDrawStopPreventScrolling = () => this.map.dragging.enable();
+			this._onDrawStartPreventScrolling = () => !this.viewLocked && this.map.dragging.disable();
+			this._onDrawStopPreventScrolling = () => !this.viewLocked && this.map.dragging.enable();
 		}
 
 		if (this._preventScrollDomCleaner) {
@@ -512,8 +519,8 @@ export default class LajiMap {
 			this._scrollPreventTextElemContainer = undefined;
 			(this._scrollPreventScrollListeners || []).forEach(([name, fn]) => window.removeEventListener(name, fn));
 			this._scrollPreventScrollListeners = undefined;
-			this.map.scrollWheelZoom.enable();
-			this.map.dragging.enable();
+			!this.viewLocked && this.map.scrollWheelZoom.enable();
+			!this.viewLocked && this.map.dragging.enable();
 		};
 
 		if (value && !valueWas) {
@@ -3160,5 +3167,25 @@ export default class LajiMap {
 			}
 
 		});
+	}
+
+	@dependsOn("map")
+	setViewLocked(value) {
+		if (!depsProvided(this, "setViewLocked", arguments)) return;
+		const method = value ? "disable" : "enable";
+		this.map.dragging[method]();
+		this.map.touchZoom[method]();
+		this.map.doubleClickZoom[method]();
+		this.map.scrollWheelZoom[method]();
+		this.map.boxZoom[method]();
+		this.map.keyboard[method]();
+		if (this.map.tap) {
+			this.map.tap[method]();
+		}
+		this.viewLocked = value;
+		if (isProvided(this, "viewLocked")) {
+			this.setClickBeforeZoomAndPan(this._clickBeforeZoomAndPan);
+		}
+		provide(this, "viewLocked");
 	}
 }

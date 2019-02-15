@@ -142,4 +142,5 @@ export interface Options extends MapOptions {
 	marker?: boolean | DrawOptions.MarkerOptions;
 	bodyAsDialogRoot?: boolean;
 	clickBeforeZoomAndPan?: boolean;
+	viewLocked?: boolean;
 }

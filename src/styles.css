@@ -470,6 +470,7 @@
     padding: 0px 3px;
     border-bottom: none;
     margin-bottom: 0px;
+	background: white;
 }
 .laji-map .laji-map-control-layers fieldset.nonactive-list legend {
     color: #c3c3c3;

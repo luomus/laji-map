@@ -1009,6 +1009,24 @@ export default class LajiMap {
 		this.setAvailableTileLayers(names, true);
 	}
 
+	getAvailableOverlaysByNames(): {[name: string]: L.TileLayer[]} {
+		return this.getAvailableLayersFor(this.overlaysByNames, this.availableOverlaysByNames);
+	}
+	getAvailableWorldTileLayers(): {[name: string]: L.TileLayer[]} {
+		return this.getAvailableLayersFor(this.worldTileLayers, this.availableTileLayers);
+	}
+	getAvailableFinnishTileLayers(): {[name: string]: L.TileLayer[]} {
+		return this.getAvailableLayersFor(this.finnishTileLayers, this.availableTileLayers);
+	}
+	getAvailableLayersFor(_layers, availables): {[name: string]: L.TileLayer[]} {
+		return Object.keys(_layers).reduce((layers, name) => {
+			if (availables[name]) {
+				layers[name] = _layers[name]
+			}
+			return layers;
+		}, {});
+	}
+
 	setTileLayer(layer: L.TileLayer) {
 		const name = Object.keys(this.tileLayers).find(_name => {
 			if (this.tileLayers[_name] === layer) {
@@ -1063,7 +1081,7 @@ export default class LajiMap {
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
 
-		const combinedLayers = {...this.tileLayers, ...this.overlaysByNames};
+		const combinedLayers = {...this.availableTileLayers, ...this.availableOverlaysByNames};
 		const newOptions = {
 			...options,
 			layers: Object.keys(combinedLayers).reduce((_layers, name) => {

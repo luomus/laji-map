@@ -1086,6 +1086,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				};
 
 				const createList = (tileLayers, label) => {
+					if (Object.keys(tileLayers).length === 0) {
+						return;
+					}
 					const list = document.createElement("fieldset");
 					const legend = document.createElement("legend");
 					this.translateHooks.push(that.addTranslationHook(legend, capitalizeFirstLetter(label)));
@@ -1103,10 +1106,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				};
 
 				this.elems = {};
-				this.finnishList = createList(that.finnishTileLayers, "FinnishMaps");
-				this.worldList = createList(that.worldTileLayers,  "WorldMaps");
+				this.finnishList = createList(that.getAvailableFinnishTileLayers(), "FinnishMaps");
+				this.worldList = createList(that.getAvailableWorldTileLayers(),  "WorldMaps");
 
-				[[this.finnishList, "finnish"], [this.worldList, "world"]].forEach(([list, active]) => {
+				[[this.finnishList, "finnish"], [this.worldList, "world"]].filter(([list]) => list).forEach(([list, active]) => {
 					list.addEventListener("click", ({target: {tagName}}) => {
 						if (active === that._tileLayers.active
 							|| tagName !== "FIELDSET" && tagName !== "LEGEND") {
@@ -1119,7 +1122,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});
 					});
 				});
-				createList(that.overlaysByNames, "Overlays");
+				createList(that.getAvailableOverlaysByNames(), "Overlays");
 			},
 			updateLayout() {
 				this.updateActiveProj();
@@ -1131,7 +1134,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					? [this.finnishList, this.worldList]
 					: [this.worldList, this.finnishList];
 				activeList.className = "active-list";
-				nonActiveList.className = "nonactive-list";
+				if (nonActiveList) {
+					nonActiveList.className = "nonactive-list";
+				}
 			},
 			updateLists() {
 				Object.keys(this.layers).forEach(name => {

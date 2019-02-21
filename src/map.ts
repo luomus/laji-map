@@ -1397,7 +1397,9 @@ export default class LajiMap {
 				const idx = feature.properties.lajiMapIdx;
 				if (eventName === "click" && this._interceptClick()) return;
 				item.on[eventName](e, {
-					idx,
+					idx, // for bw compatibility
+					featureIdx: idx,
+					dataIdx,
 					layer: _layer,
 					feature: feature && _layer
 						? this.formatFeatureOut(feature, _layer)

@@ -1551,7 +1551,7 @@ export default class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToForeignOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, <L.FitBoundsOptions> {animate: false, ..._options});
+		this.map.fitBounds(bounds, <L.FitBoundsOptions> _options);
 		if (options.hasOwnProperty("maxZoom")) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}

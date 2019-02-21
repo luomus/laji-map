@@ -43,7 +43,16 @@ export interface DataOptions {
 	hasActive?: boolean;
 	getClusterStyle?: (childCount: number) => PathOptions;
 	tooltipOptions?: any;
-	on?: {[type: string]: (e: LeafletEvent, data: {feature?: G.Feature, layer?: DataItemLayer, idx?: number}) => void};
+	on?: {[type: string]: (
+		e: LeafletEvent,
+		data: {
+			feature?: G.Feature,
+			layer?: DataItemLayer,
+			idx?: number,
+			dataIdx?: number,
+			featureIdx?: number
+		}
+	) => void};
 	highlightOnHover?: boolean;
 	onChange?(events: LajiMapEvent[]): void;
 	getFeatureStyle?(options: GetFeatureStyleOptions): PathOptions;
@@ -162,4 +171,5 @@ export interface Options extends MapOptions {
 	marker?: boolean | DrawOptions.MarkerOptions;
 	bodyAsDialogRoot?: boolean;
 	clickBeforeZoomAndPan?: boolean;
+	viewLocked?: boolean;
 }

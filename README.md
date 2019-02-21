@@ -52,6 +52,7 @@ circle                                          | Object                    | - 
 marker                                          | Object                    | -                                   | Global Path style options.
 bodyAsDialogRoot                                | Boolean                   | true                                | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the map container will be used as the root DOM node for dialogs.
 clickBeforeZoomAndPan                           | Boolean                   | false                               | Block wheel and touchstart events before map is clicked/touched.
+viewLocked                                      | Boolean                   | false                               | Prevent all view interaction (panning, zooming).
 googleApikey                                    | String                    | -                                   | Needed for geocoding control.
 
 ### Data options ###

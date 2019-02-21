@@ -223,6 +223,7 @@ export default class LajiMap {
 		"threatenedSpeciesEvaluationZones",
 		"biodiversityForestZones",
 	];
+	viewLocked: boolean;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -240,6 +241,7 @@ export default class LajiMap {
 			draw: false,
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
+			viewLocked: false,
 		};
 
 		this.options = {};
@@ -284,7 +286,8 @@ export default class LajiMap {
 			marker: true,
 			bodyAsDialogRoot: ["setBodyAsDialogRoot", () => this._dialogRoot === document.body],
 			clickBeforeZoomAndPan: ["setClickBeforeZoomAndPan", "_clickBeforeZoomAndPan"],
-			googleApiKey: "setGoogleApiKey"
+			googleApiKey: "setGoogleApiKey",
+			viewLocked: "setViewLocked"
 		};
 	}
 
@@ -387,9 +390,13 @@ export default class LajiMap {
 		return !!(this.drawing || this._LTEditPointIdxTuple);
 	}
 
-	@dependsOn("rootElem", "map", "translations")
+	@dependsOn("rootElem", "map", "translations", "viewLocked")
 	setClickBeforeZoomAndPan(value = true) {
 		if (!depsProvided(this, "setClickBeforeZoomAndPan", arguments)) return;
+
+		if (this.viewLocked && value) {
+			return;
+		}
 
 		const valueWas = this._clickBeforeZoomAndPan;
 		this._clickBeforeZoomAndPan = value;
@@ -483,7 +490,7 @@ export default class LajiMap {
 			this._startPreventScrollingTimeout();
 			if (!this._preventScroll && isOutside) {
 				this._preventScrolling();
-			} else if (this._preventScroll && !isOutside) {
+			} else if (this._preventScroll && !isOutside && !this.viewLocked) {
 				this.map.scrollWheelZoom.enable();
 				this.map.dragging.enable();
 				hidePreventElem();
@@ -504,8 +511,8 @@ export default class LajiMap {
 			this._onTouchPreventScrolling = onTouchOrMouse(!!"touch");
 			this._onMouseDownPreventScrolling = onTouchOrMouse(!"mouse");
 			this._onControlClickPreventScrolling = () => _onTouchOrMouseEventAgnostic(false);
-			this._onDrawStartPreventScrolling = () => this.map.dragging.disable();
-			this._onDrawStopPreventScrolling = () => this.map.dragging.enable();
+			this._onDrawStartPreventScrolling = () => !this.viewLocked && this.map.dragging.disable();
+			this._onDrawStopPreventScrolling = () => !this.viewLocked && this.map.dragging.enable();
 		}
 
 		if (this._preventScrollDomCleaner) {
@@ -536,8 +543,8 @@ export default class LajiMap {
 			this._scrollPreventTextElemContainer = undefined;
 			(this._scrollPreventScrollListeners || []).forEach(([name, fn]) => window.removeEventListener(name, fn));
 			this._scrollPreventScrollListeners = undefined;
-			this.map.scrollWheelZoom.enable();
-			this.map.dragging.enable();
+			!this.viewLocked && this.map.scrollWheelZoom.enable();
+			!this.viewLocked && this.map.dragging.enable();
 		};
 
 		if (value && !valueWas) {
@@ -1561,7 +1568,9 @@ export default class LajiMap {
 				const idx = feature.properties.lajiMapIdx;
 				if (eventName === "click" && this._interceptClick()) return;
 				item.on[eventName](e, {
-					idx,
+					idx, // for bw compatibility
+					featureIdx: idx,
+					dataIdx,
 					layer: _layer,
 					feature: feature && _layer
 						? this.formatFeatureOut(feature, _layer)
@@ -1687,8 +1696,8 @@ export default class LajiMap {
 		return layers.map(layer => {
 			if (layer instanceof L.Circle) {  // getBounds fails for circles
 				const {lat, lng} = layer.getLatLng();
-				const polygonGeoJSON = circleToPolygon([lat, lng], layer.getRadius(), 4);
-				return L.polygon(polygonGeoJSON.coordinates.map(c => c.reverse()));
+				const polygonGeoJSON = circleToPolygon([lng, lat], layer.getRadius(), 4);
+				return L.polygon(polygonGeoJSON.coordinates[0].map(c => c.slice(0).reverse()));
 			}
 			return layer;
 		});
@@ -1715,7 +1724,7 @@ export default class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToWorldOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, <L.FitBoundsOptions> {animate: false, ..._options});
+		this.map.fitBounds(bounds, <L.FitBoundsOptions> _options);
 		if (options.hasOwnProperty("maxZoom")) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}
@@ -3331,5 +3340,25 @@ export default class LajiMap {
 			}
 
 		});
+	}
+
+	@dependsOn("map")
+	setViewLocked(value) {
+		if (!depsProvided(this, "setViewLocked", arguments)) return;
+		const method = value ? "disable" : "enable";
+		this.map.dragging[method]();
+		this.map.touchZoom[method]();
+		this.map.doubleClickZoom[method]();
+		this.map.scrollWheelZoom[method]();
+		this.map.boxZoom[method]();
+		this.map.keyboard[method]();
+		if (this.map.tap) {
+			this.map.tap[method]();
+		}
+		this.viewLocked = value;
+		if (isProvided(this, "viewLocked")) {
+			this.setClickBeforeZoomAndPan(this._clickBeforeZoomAndPan);
+		}
+		provide(this, "viewLocked");
 	}
 }

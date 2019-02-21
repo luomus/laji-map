@@ -1523,8 +1523,8 @@ export default class LajiMap {
 		return layers.map(layer => {
 			if (layer instanceof L.Circle) {  // getBounds fails for circles
 				const {lat, lng} = layer.getLatLng();
-				const polygonGeoJSON = circleToPolygon([lat, lng], layer.getRadius(), 4);
-				return L.polygon(polygonGeoJSON.coordinates.map(c => c.reverse()));
+				const polygonGeoJSON = circleToPolygon([lng, lat], layer.getRadius(), 4);
+				return L.polygon(polygonGeoJSON.coordinates[0].map(c => c.slice(0).reverse()));
 			}
 			return layer;
 		});

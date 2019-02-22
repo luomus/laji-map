@@ -1198,6 +1198,7 @@ export default class LajiMap {
 		if (isProvided(this, "tileLayer")) {
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
 			this.map.fire("tileLayersChange", this._tileLayers);
+			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});
 		}
 
 		// We need to provide before swapping, or else swapping causes callback loop since it might call this function.
@@ -1227,7 +1228,7 @@ export default class LajiMap {
 		if (!initialCall && triggerEvent) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
 	}
 
-	setOverlays(overlays: L.TileLayer[] = [], triggerEvent = true) {
+	setOverlays(overlays: L.TileLayer[] = []) {
 		const bwCompatibleOverlays = {
 			...this.overlaysByNames,
 			ykjGrid: this.tileLayers.ykjGrid,
@@ -1250,16 +1251,12 @@ export default class LajiMap {
 
 		this.setTileLayers({layers: {...this._tileLayers.layers, ...changes}});
 
-		if (triggerEvent) {
-			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});
-		}
-
 		provide(this, "overlays");
 	}
 
 	// Wrapper that prevents overlay event triggering on initial call.
 	_setOverlaysByName(overlayNames: OverlayName[]) {
-		this.setOverlaysByName(overlayNames, false);
+		this.setOverlaysByName(overlayNames);
 	}
 
 	getOverlaysByName(): OverlayName[] {
@@ -1276,9 +1273,9 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	setOverlaysByName(overlayNames: OverlayName[] = [], triggerEvent: boolean = true) {
+	setOverlaysByName(overlayNames: OverlayName[] = []) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
-		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name] || this.tileLayers[name]), triggerEvent);
+		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name] || this.tileLayers[name]));
 	}
 
 	setAvailableOverlaysBlacklist(overlayNames: OverlayName[]) {

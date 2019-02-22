@@ -1228,17 +1228,23 @@ export default class LajiMap {
 	}
 
 	setOverlays(overlays: L.TileLayer[] = [], triggerEvent = true) {
-		const urlsToNames = Object.keys(this.overlaysByNames).reduce((_map, name) => {
-			_map[(<any> this.overlaysByNames[name])._url] = name;
+		const bwCompatibleOverlays = {
+			...this.overlaysByNames,
+			ykjGrid: this.tileLayers.ykjGrid,
+			ykjGridLabels: this.tileLayers.ykjGridLabels
+		};
+		const uniq = (layer) => layer._url + JSON.stringify(layer.options) + JSON.stringify(layer.wmsParams);
+		const urlsToNames = Object.keys(bwCompatibleOverlays).reduce((_map, name) => {
+			_map[uniq(bwCompatibleOverlays[name])] = name;
 			return _map;
 		}, {});
 		const names = overlays.reduce((_names, layer) => {
-			_names[urlsToNames[(<any> layer)._url]] = true;
+			_names[urlsToNames[uniq(layer)]] = true;
 			return _names;
 		}, {});
 
-		const changes = Object.keys(this.overlaysByNames).reduce((_names, name) => {
-			_names[name] = {visible: !!names[name], opacity: this.overlaysByNames.defaultOpacity || 1};
+		const changes = Object.keys(bwCompatibleOverlays).reduce((_names, name) => {
+			_names[name] = {visible: !!names[name], opacity: bwCompatibleOverlays[name].defaultOpacity || 1};
 			return _names;
 		}, {});
 
@@ -1257,7 +1263,7 @@ export default class LajiMap {
 	}
 
 	getOverlaysByName(): OverlayName[] {
-		return Object.keys(this._tileLayers.layers).reduce((names, name) => {
+		return this._tileLayers ? Object.keys(this._tileLayers.layers).reduce((names, name) => {
 			if (!this.overlaysByNames[name]) {
 				return names;
 			}
@@ -1266,13 +1272,13 @@ export default class LajiMap {
 				names.push(name);
 			}
 			return names;
-		}, []);
+		}, []) : [];
 	}
 
 	@dependsOn("tileLayer")
 	setOverlaysByName(overlayNames: OverlayName[] = [], triggerEvent: boolean = true) {
 		if (!depsProvided(this, "setOverlaysByName", arguments)) return;
-		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name]), triggerEvent);
+		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name] || this.tileLayers[name]), triggerEvent);
 	}
 
 	setAvailableOverlaysBlacklist(overlayNames: OverlayName[]) {

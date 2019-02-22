@@ -1040,7 +1040,11 @@ export default class LajiMap {
 				return !!_name;
 			}
 		});
-		this.setTileLayers({layers: {[name]: {opacity: 1, visible: true}}});
+		const overlays = this.getOverlaysByName().reduce((_overlays, _name) => {
+			_overlays[_name] = this._tileLayers.layers[_name];
+			return _overlays;
+		}, {});
+		this.setTileLayers({layers: {[name]: {opacity: 1, visible: true}, ...overlays}});
 	}
 
 	getActiveLayers(options: InternalTileLayersOptions): InternalTileLayersOptions["layers"] {
@@ -1224,27 +1228,21 @@ export default class LajiMap {
 	}
 
 	setOverlays(overlays: L.TileLayer[] = [], triggerEvent = true) {
-		this.overlays = overlays;
+		const urlsToNames = Object.keys(this.overlaysByNames).reduce((_map, name) => {
+			_map[(<any> this.overlaysByNames[name])._url] = name;
+			return _map;
+		}, {});
+		const names = overlays.reduce((_names, layer) => {
+			_names[urlsToNames[(<any> layer)._url]] = true;
+			return _names;
+		}, {});
 
-		Object.keys(this.overlaysByNames).forEach(name => {
-			const overlay = this.overlaysByNames[name];
-			if (this.map.hasLayer(overlay)) this.map.removeLayer(overlay);
-		});
+		const changes = Object.keys(this.overlaysByNames).reduce((_names, name) => {
+			_names[name] = {visible: !!names[name], opacity: this.overlaysByNames.defaultOpacity || 1};
+			return _names;
+		}, {});
 
-		const availableOverlays = [];
-		Object.keys(this.availableOverlaysByNames).forEach(name => {
-			availableOverlays.push(this.overlaysByNames[name]);
-		});
-
-		ONLY_MML_OVERLAY_NAMES.forEach(onlyMML => {
-			this.overlaysByNames[onlyMML].setOpacity(this._getMMLCRSLayers().indexOf(this.tileLayer) !== -1 ? 1 : 0);
-		});
-
-		overlays.forEach(overlay => {
-			if (availableOverlays.indexOf(overlay) !== -1) {
-				this.map.addLayer(overlay);
-			}
-		});
+		this.setTileLayers({layers: {...this._tileLayers.layers, ...changes}});
 
 		if (triggerEvent) {
 			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});
@@ -1259,11 +1257,16 @@ export default class LajiMap {
 	}
 
 	getOverlaysByName(): OverlayName[] {
-		const names = [];
-		(this.overlays || []).forEach(overlay => {
-			names.push(Object.keys(this.overlaysByNames).find(n => this.overlaysByNames[n] === overlay));
-		});
-		return names;
+		return Object.keys(this._tileLayers.layers).reduce((names, name) => {
+			if (!this.overlaysByNames[name]) {
+				return names;
+			}
+			const {visible, opacity} = this._tileLayers.layers[name];
+			if (visible && opacity) {
+				names.push(name);
+			}
+			return names;
+		}, []);
 	}
 
 	@dependsOn("tileLayer")

@@ -1397,7 +1397,9 @@ export default class LajiMap {
 				const idx = feature.properties.lajiMapIdx;
 				if (eventName === "click" && this._interceptClick()) return;
 				item.on[eventName](e, {
-					idx,
+					idx, // for bw compatibility
+					featureIdx: idx,
+					dataIdx,
 					layer: _layer,
 					feature: feature && _layer
 						? this.formatFeatureOut(feature, _layer)
@@ -1523,8 +1525,8 @@ export default class LajiMap {
 		return layers.map(layer => {
 			if (layer instanceof L.Circle) {  // getBounds fails for circles
 				const {lat, lng} = layer.getLatLng();
-				const polygonGeoJSON = circleToPolygon([lat, lng], layer.getRadius(), 4);
-				return L.polygon(polygonGeoJSON.coordinates.map(c => c.reverse()));
+				const polygonGeoJSON = circleToPolygon([lng, lat], layer.getRadius(), 4);
+				return L.polygon(polygonGeoJSON.coordinates[0].map(c => c.slice(0).reverse()));
 			}
 			return layer;
 		});
@@ -1551,7 +1553,7 @@ export default class LajiMap {
 		}
 		const {minZoom, maxZoom, ..._options} = options;
 		this._swapToForeignOutsideFinland(bounds.getCenter());
-		this.map.fitBounds(bounds, <L.FitBoundsOptions> {animate: false, ..._options});
+		this.map.fitBounds(bounds, <L.FitBoundsOptions> _options);
 		if (options.hasOwnProperty("maxZoom")) {
 			if (this.getNormalizedZoom() > maxZoom) this.setNormalizedZoom(maxZoom);
 		}

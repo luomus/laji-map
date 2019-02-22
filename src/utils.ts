@@ -100,32 +100,31 @@ export function circleToPolygon(center, radius, numberOfSegments) {
 	function offset(c1, distance, bearing) {
 		var lat1 = toRadians(c1[1]); // tslint:disable-line
 		var lon1 = toRadians(c1[0]); // tslint:disable-line
-		// distance divided by 6378137 (radius of the earth) wgs84
+		 // distance divided by 6378137 (radius of the earth) wgs84
 		var dByR = distance / 6378137;// tslint:disable-line
 		var lat = Math.asin( // tslint:disable-line
 			Math.sin(lat1) * Math.cos(dByR) +
 			Math.cos(lat1) * Math.sin(dByR) * Math.cos(bearing));
 		var lon = lon1 + Math.atan2( // tslint:disable-line
-				Math.sin(bearing) * Math.sin(dByR) * Math.cos(lat1),
-				Math.cos(dByR) - Math.sin(lat1) * Math.sin(lat));
+			Math.sin(bearing) * Math.sin(dByR) * Math.cos(lat1),
+			Math.cos(dByR) - Math.sin(lat1) * Math.sin(lat));
 		return [toDegrees(lon), toDegrees(lat)];
 	}
-
 	var n = numberOfSegments ? numberOfSegments : 32; // tslint:disable-line
 	var flatCoordinates = []; // tslint:disable-line
 	var coordinates = []; // tslint:disable-line
-	for (let i = 0; i < n; ++i) {
+	for (var i = 0; i < n; ++i) { // tslint:disable-line
 		flatCoordinates.push.apply(flatCoordinates, offset(center, radius, 2 * Math.PI * i / n));
 	}
 	flatCoordinates.push(flatCoordinates[0], flatCoordinates[1]);
 
-	for (let i = 0, j = 0; j < flatCoordinates.length; j += 2) {
+	for (var i = 0, j = 0; j < flatCoordinates.length; j += 2) { // tslint:disable-line
 		coordinates[i++] = flatCoordinates.slice(j, j + 2);
 	}
 
 	return {
-		type: "Polygon",
-		coordinates: [coordinates]
+		type: 'Polygon', // tslint:disable-line
+		coordinates: [coordinates.reverse()]
 	};
 }
 

@@ -1771,7 +1771,7 @@ export default class LajiMap {
 	removeData(dataIdx: number) {
 		if (this.data[dataIdx]) {
 			this.data[dataIdx].groupContainer.clearLayers();
-			this.data[dataIdx] = undefined;
+			delete this.data[dataIdx];
 		}
 	}
 

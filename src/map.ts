@@ -269,7 +269,7 @@ export default class LajiMap {
 			availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
 			availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 			tileLayerOpacity: "setTileLayerOpacity",
-			tileLayers: "setTileLayers",
+			tileLayers: ["setTileLayers", () => this._tileLayers],
 			center: "setCenter",
 			zoom: ["setNormalizedZoom", () => this.getNormalizedZoom()],
 			zoomToData: ["setZoomToData", "_zoomToData"],
@@ -996,8 +996,10 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableTileLayers(names: TileLayerName[] = [], condition) {
+	setAvailableTileLayers(names: TileLayerName[], condition) {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
+		if (!names) return;
+
 		const list = names.reduce((_list, name) => {
 			_list[name] = true;
 			return _list;
@@ -1125,7 +1127,6 @@ export default class LajiMap {
 		const center = this.map.getCenter();
 		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.getMMLProj();
 
-		let projectionChanged;
 		let zoom = this.map.getZoom();
 
 		if (newOptions.active !== this.activeProjName) {
@@ -1136,16 +1137,14 @@ export default class LajiMap {
 				if (isProvided(this, "tileLayer")) {
 					zoom = zoom - 3;
 				}
-				projectionChanged = "finnish";
 			} else if (this.activeProjName !== "world"
 				&& (!layer
 					|| (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1))
 			) {
 				zoom = zoom + 3;
-				projectionChanged = "world";
 			}
 		}
-		this.activeProjName = projectionChanged || newOptions.active;
+		this.activeProjName = newOptions.active;
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
@@ -1232,7 +1231,15 @@ export default class LajiMap {
 		let initialCall = this.tileLayerOpacity === undefined;
 
 		this.tileLayerOpacity = val;
-		this.tileLayer.setOpacity(val);
+		if (this.tileLayerName) {
+			this.setTileLayers({
+				...this._tileLayers,
+				layers: {
+					...this._tileLayers.layers,
+					[this.tileLayerName]: {...this._tileLayers.layers[this.tileLayerName], opacity: val}
+				}
+			});
+		}
 		if (!initialCall && triggerEvent) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
 	}
 

@@ -1154,7 +1154,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (that._isOutsideFinland(latLng)) {
 					this._finnishDisabled = true;
 					this.finnishList.setAttribute("disabled", "disabled");
-					Object.keys(that.finnishTileLayers).forEach(name => {
+					Object.keys(that.getAvailableFinnishTileLayers()).forEach(name => {
 						this.elems[name].slider.target.setAttribute("disabled", "disabled");
 					});
 					if (!this._outsideFinlandInfoSpan) {
@@ -1168,7 +1168,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				} else if (this._finnishDisabled) {
 					this._finnishDisabled = false;
 					this.finnishList.removeAttribute("disabled");
-					Object.keys(that.finnishTileLayers).forEach(name => {
+					Object.keys(that.getAvailableFinnishTileLayers()).forEach(name => {
 						this.elems[name].slider.target.removeAttribute("disabled");
 					});
 					this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);

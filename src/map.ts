@@ -1108,9 +1108,11 @@ export default class LajiMap {
 		};
 		const prevActiveLayers = this._tileLayers && this.getActiveLayers(this._tileLayers);
 		const activeLayers = this.getActiveLayers(newOptions);
-		newOptions.active = Object.keys(activeLayers).length === 0 || this.finnishTileLayers[Object.keys(activeLayers)[0]]
-			? "finnish"
-			: "world";
+		const oldActive = this.activeProjName;
+		newOptions.active = options.active
+			|| (Object.keys(activeLayers).length === 0 || this.finnishTileLayers[Object.keys(activeLayers)[0]]
+				? "finnish"
+				: "world");
 
 		const findNonOverlay = name => !!this.finnishTileLayers[name] || !!this.worldTileLayers[name];
 
@@ -1126,18 +1128,24 @@ export default class LajiMap {
 		let projectionChanged;
 		let zoom = this.map.getZoom();
 
-		if (this.activeProjName !== "finnish" && mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1) {
-			if (isProvided(this, "tileLayer")) {
-				zoom = zoom - 3;
+		if (newOptions.active !== this.activeProjName) {
+			if (this.activeProjName !== "finnish"
+				&& (!layer
+					|| (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1))
+				) {
+				if (isProvided(this, "tileLayer")) {
+					zoom = zoom - 3;
+				}
+				projectionChanged = "finnish";
+			} else if (this.activeProjName !== "world"
+				&& (!layer
+					|| (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1))
+			) {
+				zoom = zoom + 3;
+				projectionChanged = "world";
 			}
-			projectionChanged = "finnish";
-		} else if (this.activeProjName !== "world" && defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1) {
-			zoom = zoom + 3;
-			projectionChanged = "world";
 		}
-		if (projectionChanged) {
-			this.activeProjName = projectionChanged;
-		}
+		this.activeProjName = projectionChanged || newOptions.active;
 
 		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
 
@@ -1175,7 +1183,7 @@ export default class LajiMap {
 				: _maxZoom;
 		}, 19);
 		this.map.setMaxZoom(19);
-		if (projectionChanged) {
+		if (this.activeProjName !== oldActive) {
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
 			this._viewCriticalSection = true;
 			 // Redraw all layers according to new projection.
@@ -1183,7 +1191,7 @@ export default class LajiMap {
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
 			this._viewCriticalSection = false;
-			this.map.fire("projectionChange", projectionChanged);
+			this.map.fire("projectionChange", newOptions.active);
 		}
 		this.map.setMaxZoom(maxZoom);
 

@@ -3177,13 +3177,13 @@ export default class LajiMap {
 		const method = value ? "disable" : "enable";
 		this.map.dragging[method]();
 		this.map.touchZoom[method]();
-		this.map.doubleClickZoom[method]();
 		this.map.scrollWheelZoom[method]();
 		this.map.boxZoom[method]();
 		this.map.keyboard[method]();
 		if (this.map.tap) {
 			this.map.tap[method]();
 		}
+		this._disableDblClickZoom = value;
 		this.viewLocked = value;
 		if (isProvided(this, "viewLocked")) {
 			this.setClickBeforeZoomAndPan(this._clickBeforeZoomAndPan);

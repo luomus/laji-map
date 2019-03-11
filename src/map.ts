@@ -624,7 +624,7 @@ export default class LajiMap {
 					layer: tileLayerName
 				});
 				[["http", "https"], ["avoindata.maanmittauslaitos.fi/mapcache/", "proxy.laji.fi/mml_wmts/maasto/"]].forEach(([a, b]) =>
-					this.tileLayers[tileLayerName].setUrl((<any> this.tileLayers[tileLayerName])._url.replace(a, b))
+					this.finnishTileLayers[tileLayerName].setUrl((<any> this.finnishTileLayers[tileLayerName])._url.replace(a, b))
 				);
 			});
 

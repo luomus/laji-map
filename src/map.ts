@@ -271,6 +271,7 @@ export default class LajiMap {
 			tileLayerOpacity: "setTileLayerOpacity",
 			tileLayers: ["setTileLayers", () => this._tileLayers],
 			center: "setCenter",
+			center: ["setCenter", () => this.map.getCenter()],
 			zoom: ["setNormalizedZoom", () => this.getNormalizedZoom()],
 			zoomToData: ["setZoomToData", "_zoomToData"],
 			locate: ["setLocate", "locate"],
@@ -623,8 +624,8 @@ export default class LajiMap {
 				this.finnishTileLayers[tileLayerName] = L.tileLayer.mml_wmts({
 					layer: tileLayerName
 				});
-				[["http", "https"], ["avoindata.maanmittauslaitos.fi/mapcache/", "proxy.laji.fi/mml2/maasto/"]].forEach(([a, b]) =>
-					this.finnishTileLayers[tileLayerName].setUrl((<any> this.finnishTileLayers[tileLayerName])._url.replace(a, b))
+				[["http", "https"], ["avoindata.maanmittauslaitos.fi/mapcache/", "proxy.laji.fi/mml_wmts/maasto/"]].forEach(([a, b]) =>
+					this.tileLayers[tileLayerName].setUrl((<any> this.tileLayers[tileLayerName])._url.replace(a, b))
 				);
 			});
 
@@ -2233,8 +2234,7 @@ export default class LajiMap {
 
 			// Allow either returning content or firing a callback with content.
 
-			const content = item.getPopup(featureIdx,
-				that.formatFeatureOut(layer.toGeoJSON(), layer),
+			const content = item.getPopup({dataIdx, featureIdx, feature: that.formatFeatureOut(layer.toGeoJSON(), layer), item},
 				callbackContent => that.popupCounter === popupCounter && openPopup(callbackContent)
 			);
 			content !== undefined && typeof content !== "function" && openPopup(content);
@@ -2277,8 +2277,7 @@ export default class LajiMap {
 
 			// Allow either returning content or firing a callback with content.
 			const content = item.getTooltip(
-				featureIdx,
-				this.formatFeatureOut(layer.toGeoJSON(), layer),
+				{dataIdx, featureIdx, feature: this.formatFeatureOut(layer.toGeoJSON(), layer), item},
 				callbackContent => _openTooltip(callbackContent)
 			);
 			if (content !== undefined && typeof content !== "function") _openTooltip(content);
@@ -3369,13 +3368,13 @@ export default class LajiMap {
 		const method = value ? "disable" : "enable";
 		this.map.dragging[method]();
 		this.map.touchZoom[method]();
-		this.map.doubleClickZoom[method]();
 		this.map.scrollWheelZoom[method]();
 		this.map.boxZoom[method]();
 		this.map.keyboard[method]();
 		if (this.map.tap) {
 			this.map.tap[method]();
 		}
+		this._disableDblClickZoom = value;
 		this.viewLocked = value;
 		if (isProvided(this, "viewLocked")) {
 			this.setClickBeforeZoomAndPan(this._clickBeforeZoomAndPan);

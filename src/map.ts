@@ -2041,8 +2041,7 @@ export default class LajiMap {
 
 			// Allow either returning content or firing a callback with content.
 
-			const content = item.getPopup(featureIdx,
-				that.formatFeatureOut(layer.toGeoJSON(), layer),
+			const content = item.getPopup({dataIdx, featureIdx, feature: that.formatFeatureOut(layer.toGeoJSON(), layer), item},
 				callbackContent => that.popupCounter === popupCounter && openPopup(callbackContent)
 			);
 			content !== undefined && typeof content !== "function" && openPopup(content);
@@ -2085,8 +2084,7 @@ export default class LajiMap {
 
 			// Allow either returning content or firing a callback with content.
 			const content = item.getTooltip(
-				featureIdx,
-				this.formatFeatureOut(layer.toGeoJSON(), layer),
+				{dataIdx, featureIdx, feature: this.formatFeatureOut(layer.toGeoJSON(), layer), item},
 				callbackContent => _openTooltip(callbackContent)
 			);
 			if (content !== undefined && typeof content !== "function") _openTooltip(content);

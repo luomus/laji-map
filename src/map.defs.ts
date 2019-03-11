@@ -19,11 +19,14 @@ export interface LajiMapEvent {
 	feature?: G.Feature;
 }
 
-export interface GetFeatureStyleOptions {
+export interface GetPopupOptions {
 	dataIdx?: number;
 	featureIdx?: number;
 	feature?: G.Feature;
 	item?: Data;
+}
+
+export interface GetFeatureStyleOptions extends GetPopupOptions {
 	active?: boolean;
 	editing?: boolean;
 	hovered?: boolean;
@@ -57,8 +60,8 @@ export interface DataOptions {
 	onChange?(events: LajiMapEvent[]): void;
 	getFeatureStyle?(options: GetFeatureStyleOptions): PathOptions;
 	getDraftStyle?(dataIdx?: number): PathOptions;
-	getTooltip?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
-	getPopup?(dataIdx: number, feature: G.Feature, callback: (content: string) => void): string;
+	getTooltip?(options: GetPopupOptions, callback: (content: string) => void): string;
+	getPopup?(options: GetPopupOptions, callback: (content: string) => void): string;
 	single?: boolean;
 }
 

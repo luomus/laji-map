@@ -998,7 +998,6 @@ export default class LajiMap {
 	@dependsOn("map")
 	setAvailableTileLayers(names: TileLayerName[], condition) {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
-		if (!names) return;
 
 		const list = names.reduce((_list, name) => {
 			_list[name] = true;
@@ -1008,13 +1007,22 @@ export default class LajiMap {
 			if (name in list === condition) tileLayers[name] = this.tileLayers[name];
 			return tileLayers;
 		}, {});
+		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
 
 	setAvailableTileLayerBlacklist(names: TileLayerName[]) {
+		if (!names) {
+			names = [];
+		}
 		this.setAvailableTileLayers(names, false);
 	}
 
+	@dependsOn("map")
 	setAvailableTileLayerWhitelist(names: TileLayerName[]) {
+		if (!depsProvided(this, "setAvailableTileLayerWhitelist", arguments)) return;
+		if (!names) {
+			names = <TileLayerName[]> Object.keys(this.tileLayers);
+		}
 		this.setAvailableTileLayers(names, true);
 	}
 
@@ -1294,10 +1302,18 @@ export default class LajiMap {
 	}
 
 	setAvailableOverlaysBlacklist(overlayNames: OverlayName[]) {
+		if (!overlayNames) {
+			overlayNames = [];
+		}
 		this.setAvailableOverlays(overlayNames, false);
 	}
 
+	@dependsOn("map")
 	setAvailableOverlaysWhitelist(overlayNames: OverlayName[]) {
+		if (!depsProvided(this, "setAvailableOverlaysWhitelist", arguments)) return;
+		if (!overlayNames) {
+			overlayNames = <OverlayName[]> Object.keys(this.overlaysByNames);
+		}
 		this.setAvailableOverlays(overlayNames, true);
 	}
 
@@ -1312,6 +1328,7 @@ export default class LajiMap {
 			if (name in list === condition) overlaysByNames[name] = this.overlaysByNames[name];
 			return overlaysByNames;
 		}, {});
+		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
 
 	getNormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {

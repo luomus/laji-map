@@ -1140,6 +1140,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			updateLists() {
 				Object.keys(this.layers).forEach(name => {
+					const available = that._tileLayers.layers[name];
+
+					this.elems[name].li.style.display = available ? "block" : "none";
+					if (!available) {
+						return;
+					}
 					const {opacity, visible} = that._tileLayers.layers[name];
 					const {slider, checkbox, li} = this.elems[name];
 					that._internalTileLayersUpdate = true;

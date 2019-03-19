@@ -178,7 +178,7 @@ class App {
 				}
 			},
 			clickBeforeZoomAndPan: true,
-			viewLocked: true
+			//viewLocked: true
 		};
 
 		if (query.lt !== "false") {

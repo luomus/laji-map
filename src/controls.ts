@@ -1130,10 +1130,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			updateActiveProj() {
 				const {activeProjName} = that;
+				const lists = [this.finnishList, this.worldList];
 				const [activeList, nonActiveList] = activeProjName === "finnish"
-					? [this.finnishList, this.worldList]
-					: [this.worldList, this.finnishList];
-				activeList.className = "active-list";
+					? lists
+					: lists.reverse();
+				if (activeList) {
+					activeList.className = "active-list";
+				}
 				if (nonActiveList) {
 					nonActiveList.className = "nonactive-list";
 				}
@@ -1157,6 +1160,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			_checkDisabledLayers() {
 				const latLng = this._map.getCenter();
+				if (!this.finnishList) {
+					return;
+				}
 				if (that._isOutsideFinland(latLng)) {
 					this._finnishDisabled = true;
 					this.finnishList.setAttribute("disabled", "disabled");

@@ -13,7 +13,6 @@ import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
 	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate,
 	coordinatesAreClockWise
-
 } from "./utils";
 import { depsProvided, dependsOn, provide, isProvided, reflect } from "./dependency-utils";
 import {
@@ -260,7 +259,7 @@ export default class LajiMap {
 		return {
 			rootElem: "setRootElem",
 			lang: "setLang",
-			data: "setData",
+			data: ["setData", () => this.getData()],
 			draw: ["setDraw", () => this.getDraw()],
 			tileLayerName: "setTileLayerByName",
 			availableTileLayerNamesBlacklist: "setAvailableTileLayerBlacklist",
@@ -1137,7 +1136,7 @@ export default class LajiMap {
 
 		let zoom = this.map.getZoom();
 
-		if (newOptions.active !== this.activeProjName) {
+		if (this.activeProjName && newOptions.active !== this.activeProjName) {
 			if (this.activeProjName !== "finnish"
 				&& (!layer
 					|| (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1))
@@ -1790,6 +1789,12 @@ export default class LajiMap {
 		if (!Array.isArray(data)) data = [data];
 		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
 		provide(this, "data");
+	}
+
+	getData = () => {
+		const data = [...this.data];
+		delete data[-1];
+		return data;
 	}
 
 	addData(items: DataOptions[]) {

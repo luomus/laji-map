@@ -229,7 +229,6 @@ export default class LajiMap {
 
 		const options: Options = {
 			tileLayerName: TileLayerName.taustakartta,
-			tileLayerOpacity: 1,
 			lang: Lang.en,
 			data: [],
 			locate: false,
@@ -1086,7 +1085,7 @@ export default class LajiMap {
 					|| active === "finnish" && this.finnishTileLayers[name]
 					|| active === "world" && this.worldTileLayers[name]
 			)) {
-				_layers[name] = true;
+				_layers[name] = layers[name];
 			}
 			return _layers;
 		}, {});
@@ -1158,20 +1157,20 @@ export default class LajiMap {
 		const prevOptions = this._tileLayers;
 		this._tileLayers = newOptions;
 		const changedLayers = Object.keys(this._tileLayers.layers).reduce((changed, name) => {
-			if (!prevActiveLayers || (activeLayers[name] || {visible: false}).visible !== (prevActiveLayers[name] || {visible: false}).visible) {
+			const activeLayer = activeLayers[name] || {visible: false, opacity: 0};
+			const prevActiveLayer = (prevActiveLayers || {})[name] || {visible: false, opacity: 0};
+			if (!prevActiveLayers
+				|| activeLayer.visible !== prevActiveLayer.visible
+				|| activeLayer.opacity !== prevActiveLayer.opacity) {
 			changed[name] = true;
 			}
 			return changed;
 		}, {});
 
-		prevOptions && Object.keys(changedLayers).forEach(name => {
-			const _layer = combinedLayers[name];
-			const {visible} = this._tileLayers.layers[name];
-			(!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.setOpacity(0);
-		});
 		Object.keys(changedLayers).forEach(name => {
 			const _layer = combinedLayers[name];
 			const {opacity, visible} = this._tileLayers.layers[name];
+			prevOptions && (!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.setOpacity(0);
 			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
 			visible && activeLayers[name] && _layer.setOpacity(opacity);
 		});
@@ -1232,8 +1231,9 @@ export default class LajiMap {
 	}
 
 	@dependsOn("tileLayer")
-	setTileLayerOpacity(val = 1, triggerEvent = true) {
+	setTileLayerOpacity(val, triggerEvent = true) {
 		if (!depsProvided(this, "setTileLayerOpacity", arguments)) return;
+		if (val === undefined) return;
 
 		let initialCall = this.tileLayerOpacity === undefined;
 

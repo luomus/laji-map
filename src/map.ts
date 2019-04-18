@@ -1298,11 +1298,33 @@ export default class LajiMap {
 					throw new Error(`Invalid geoJSON type in data[${dataIdx}]`);
 				}
 			};
+			const flattenMultiLineStringsAndMultiPolygons = (features: G.Feature[]): G.Feature[] => {
+				const flattened = [];
+				console.log(features);
+				features.forEach(f => {
+					switch (f.geometry.type) {
+						case "MultiLineString":
+							(<G.MultiLineString> f.geometry).coordinates.forEach(line => {
+								flattened.push({type: "Feature", geometry: {type: "LineString", coordinates: line}, properties: f.properties});
+							});
+							break;
+						case "MultiPolygon":
+							(<G.MultiPolygon> f.geometry).coordinates.forEach(polygon => {
+								flattened.push({type: "Feature", geometry: {type: "Polygon", coordinates: polygon}, properties: f.properties});
+							});
+							break;
+						default:
+							flattened.push(f);
+					}
+				});
+				console.log(flattened);
+				return flattened;
+			};
 			item = {
 				..._item,
 				featureCollection: {
 					type: "FeatureCollection",
-					features: this.cloneFeatures(anyToFeatureCollection(geoJSON).features)
+					features: this.cloneFeatures(flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features))
 				},
 			};
 			this.initializeDataItem(item, dataIdx);
@@ -1714,9 +1736,10 @@ export default class LajiMap {
 
 		const wrapCoordinates = (e) => {
 			(e.features ? Object.keys(e.features).map(k => e.features[k]) : [e.feature]).forEach(feature => {
-				if (feature.geometry.type === "Polygon") {
-					feature.geometry.coordinates[0] = feature.geometry.coordinates[0].map(c => this.wrapGeoJSONCoordinate(c));
-				} else if (feature.geometry.type !== "Point") {
+				const {type} = feature.geometry;
+				if (type === "Polygon") {
+					feature.geometry.coordinates = feature.geometry.coordinates.map(coordArr => coordArr.map(c => this.wrapGeoJSONCoordinate(c)));
+				} else if (type !== "Point") {
 					feature.geometry.coordinates = feature.geometry.coordinates.map(c => this.wrapGeoJSONCoordinate(c));
 				} else {
 					feature.geometry.coordinates = this.wrapGeoJSONCoordinate(feature.geometry.coordinates);

@@ -1707,7 +1707,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			} else {
 				button.setAttribute("disabled", "disabled");
 			}
-			if (container.className.indexOf(" has-error") !== -1) container.className = container.className.replace(" has-error", "");
+			if (container.className.indexOf(" has-error") !== -1) {
+				container.className = container.className.replace(" has-error", "");
+			}
 		};
 
 		let alert = undefined;

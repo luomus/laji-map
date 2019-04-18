@@ -80,7 +80,7 @@ class App {
 						}
 					]
 				},
-				getPopup: (idx) => {
+				getPopup: ({featureIdx: idx}) => {
 					return `gray ${idx}`;
 				},
 				getFeatureStyle: () => {
@@ -110,11 +110,11 @@ class App {
 					}}
 				],
 			},
-			getPopup: (idx, geometry, callback) => {
+			getPopup: ({featureIdx: idx}, callback) => {
 				setTimeout(() => callback(`${idx}`), 2000);
 			},
-			getTooltip: (idx, geometry) => {
-				return geometry.type;
+			getTooltip: ({feature}) => {
+				return feature.geometry.type;
 			},
 			cluster: true,
 			on: {
@@ -171,8 +171,8 @@ class App {
 					showArea: true
 				}
 			},
-			clickBeforeZoomAndPan: true,
-			viewLocked: true
+			//clickBeforeZoomAndPan: true,
+			//viewLocked: true
 		};
 
 		if (query.lt !== "false") {

@@ -177,7 +177,7 @@ class App {
 					showArea: true
 				}
 			},
-			clickBeforeZoomAndPan: true,
+			//clickBeforeZoomAndPan: true,
 			//viewLocked: true
 		};
 

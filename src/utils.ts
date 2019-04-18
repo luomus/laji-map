@@ -757,7 +757,6 @@ export function validateGeoJSON(geoJSON, crs?: CRSString, warnings = true): {err
 				_geoJSON.coordinates.forEach((coordinates, i) => {
 					_geoJSON = <G.MultiPolygon> _geoJSON;
 					geoJSON.coordinates[i] = _geoJSON.coordinates[i].map((ring, j) => validateRing(ring, !!i, `${_path}/coordinates/${i}/${j}`));
-
 				});
 				return _geoJSON;
 		}

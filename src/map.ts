@@ -164,7 +164,6 @@ export default class LajiMap {
 	overlaysByNames: {[name: string]: L.TileLayer};
 	availableOverlaysByNames: {[name: string]: L.TileLayer};
 	overlays: L.TileLayer[];
-	savedMMLOverlays: {[name: string]: L.TileLayer};
 	finnishTileLayers: {[name: string]: L.TileLayer};
 	worldTileLayers: {[name: string]: L.TileLayer};
 	tileLayers: {[name: string]: L.TileLayer};
@@ -1152,8 +1151,6 @@ export default class LajiMap {
 		}
 		this.activeProjName = newOptions.active;
 
-		if (!this.savedMMLOverlays) this.savedMMLOverlays = {};
-
 		const prevOptions = this._tileLayers;
 		this._tileLayers = newOptions;
 		const changedLayers = Object.keys(this._tileLayers.layers).reduce((changed, name) => {
@@ -1161,7 +1158,8 @@ export default class LajiMap {
 			const prevActiveLayer = (prevActiveLayers || {})[name] || {visible: false, opacity: 0};
 			if (!prevActiveLayers
 				|| activeLayer.visible !== prevActiveLayer.visible
-				|| activeLayer.opacity !== prevActiveLayer.opacity) {
+				|| activeLayer.opacity !== prevActiveLayer.opacity
+				|| (oldActive && oldActive !== newOptions.active && this.overlaysByNames[name])) {
 			changed[name] = true;
 			}
 			return changed;
@@ -1171,6 +1169,8 @@ export default class LajiMap {
 			const _layer = combinedLayers[name];
 			const {opacity, visible} = this._tileLayers.layers[name];
 			prevOptions && (!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.setOpacity(0);
+			// Overlays must be reapplied if projection changed.
+			oldActive && oldActive !== newOptions.active && this.overlaysByNames[name] && this.map.removeLayer(_layer);
 			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
 			visible && activeLayers[name] && _layer.setOpacity(opacity);
 		});

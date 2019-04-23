@@ -1035,7 +1035,7 @@ export default class LajiMap {
 	getAvailableLayersFor(_layers, availables): {[name: string]: L.TileLayer[]} {
 		return Object.keys(_layers).reduce((layers, name) => {
 			if (availables[name]) {
-				layers[name] = _layers[name]
+				layers[name] = _layers[name];
 			}
 			return layers;
 		}, {});
@@ -1508,7 +1508,6 @@ export default class LajiMap {
 			};
 			const flattenMultiLineStringsAndMultiPolygons = (features: G.Feature[]): G.Feature[] => {
 				const flattened = [];
-				console.log(features);
 				features.forEach(f => {
 					switch (f.geometry.type) {
 						case "MultiLineString":
@@ -1525,7 +1524,6 @@ export default class LajiMap {
 							flattened.push(f);
 					}
 				});
-				console.log(flattened);
 				return flattened;
 			};
 			item = {

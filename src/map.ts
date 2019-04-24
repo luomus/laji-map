@@ -12,7 +12,7 @@ import { GoogleProvider } from "leaflet-geosearch";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
 	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate,
-	coordinatesAreClockWise
+	coordinatesAreClockWise, flattenMultiLineStringsAndMultiPolygons, anyToFeatureCollection
 } from "./utils";
 import { depsProvided, dependsOn, provide, isProvided, reflect } from "./dependency-utils";
 import {
@@ -1484,55 +1484,17 @@ export default class LajiMap {
 		let {geoData, ..._item} = item;
 		if ("geoData" in item) {
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
-			const anyToFeatureCollection = _geoJSON => {
-				if (!_geoJSON) {
-					return {type: "FeatureCollection", features: []};
-				}
-				switch (_geoJSON.type) {
-				case "FeatureCollection":
-					return _geoJSON;
-				case "Feature":
-					return {type: "FeatureCollection", features: [_geoJSON]};
-				case "Point":
-				case "Polygon":
-				case "LineString":
-					return {type: "FeatureCollection", features: [{type: "Feature", geometry: _geoJSON}]};
-				case "GeometryCollection":
-					return {
+			try {
+				item = {
+					..._item,
+					featureCollection: {
 						type: "FeatureCollection",
-						features: _geoJSON.geometries.map(geom => {return { type: "Feature", geometry: geom}; })
-					};
-				default:
-					throw new Error(`Invalid geoJSON type in data[${dataIdx}]`);
-				}
-			};
-			const flattenMultiLineStringsAndMultiPolygons = (features: G.Feature[]): G.Feature[] => {
-				const flattened = [];
-				features.forEach(f => {
-					switch (f.geometry.type) {
-						case "MultiLineString":
-							(<G.MultiLineString> f.geometry).coordinates.forEach(line => {
-								flattened.push({type: "Feature", geometry: {type: "LineString", coordinates: line}, properties: f.properties});
-							});
-							break;
-						case "MultiPolygon":
-							(<G.MultiPolygon> f.geometry).coordinates.forEach(polygon => {
-								flattened.push({type: "Feature", geometry: {type: "Polygon", coordinates: polygon}, properties: f.properties});
-							});
-							break;
-						default:
-							flattened.push(f);
-					}
-				});
-				return flattened;
-			};
-			item = {
-				..._item,
-				featureCollection: {
-					type: "FeatureCollection",
-					features: this.cloneFeatures(flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features))
-				},
-			};
+						features: this.cloneFeatures(flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features))
+					},
+				};
+			} catch (e) {
+				throw new Error(`Invalid geoJSON type in data[${dataIdx}]`);
+			}
 			this.initializeDataItem(item, dataIdx);
 			return;
 		// Flatten features which have a geometry collection a geometry to features of the featureCollection

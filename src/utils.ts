@@ -1068,3 +1068,52 @@ export function getLineTransectStartEndDistancesForIdx(LTFeature: LineTransectFe
 }
 
 export const capitalizeFirstLetter = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+export function anyToFeatureCollection(_geoJSON: G.GeoJSON): G.FeatureCollection {
+	if (!_geoJSON) {
+		return {type: "FeatureCollection", features: []};
+	}
+	switch (_geoJSON.type) {
+		case "FeatureCollection":
+			return _geoJSON;
+		case "Feature":
+			return {type: "FeatureCollection", features: [_geoJSON]};
+		case "Point":
+		case "Polygon":
+		case "LineString":
+			return {type: "FeatureCollection", features: [{type: "Feature", properties: {}, geometry: _geoJSON}]};
+		case "GeometryCollection":
+			return {
+				type: "FeatureCollection",
+				features:  _geoJSON.geometries.map(geometry => <G.Feature> ({type: "Feature", properties: {}, geometry}))
+			};
+		default:
+			throw new Error("Invalid geoJSON type");
+	}
+};
+
+export function flattenMultiLineStringsAndMultiPolygons(features: G.Feature[]): G.Feature[] {
+	const flattened = [];
+	features.forEach(f => {
+		switch (f.geometry.type) {
+			case "MultiLineString":
+				(<G.MultiLineString> f.geometry).coordinates.forEach(line => {
+					flattened.push({type: "Feature", geometry: {type: "LineString", coordinates: line}, properties: f.properties});
+				});
+				break;
+			case "MultiPolygon":
+				(<G.MultiPolygon> f.geometry).coordinates.forEach(polygon => {
+					flattened.push({type: "Feature", geometry: {type: "Polygon", coordinates: polygon}, properties: f.properties});
+				});
+				break;
+			default:
+				flattened.push(f);
+		}
+	});
+	return flattened;
+};
+
+export const geoJSONAsFeatureCollection = (geoJSON: G.GeoJSON): G.FeatureCollection => ({
+	type: "FeatureCollection",
+	features: flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features)
+});

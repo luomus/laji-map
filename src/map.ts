@@ -2039,7 +2039,7 @@ export default class LajiMap {
 		this._stopDrawReverse();
 		if (!layers || !layers.length) return;
 		const editData = layers.reduce((idToLayer, layer) => {
-			idToLayer[L.Util.stamp(layer)] = layer;
+			idToLayer[L.Util.stamp(layer)] = {layer};
 			return idToLayer;
 		}, {});
 		this._onEdit(this.drawIdx, editData);
@@ -2329,7 +2329,7 @@ export default class LajiMap {
 					callback: () => {
 						this._reversePolyline(layer);
 						const id = this.idxsToIds[dataIdx][featureIdx];
-						this._onEdit(dataIdx, {[id]: layer});
+						this._onEdit(dataIdx, {[id]: {layer}});
 					},
 					iconCls: "glyphicon glyphicon-sort"
 				});
@@ -2536,58 +2536,6 @@ export default class LajiMap {
 		};
 	}
 
-	_onAdd(dataIdx: number, layer: DataItemLayer, coordinateVerbatim?: string) {
-		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
-
-		const prevActiveIdx = this.data[dataIdx].activeIdx;
-
-		const prevFeatureCollection = {
-			type: "FeatureCollection",
-			features: this.cloneFeatures(this.data[dataIdx].featureCollection.features)
-		};
-
-		let item = this.data[dataIdx];
-		const {single, featureCollection: {features}} = item;
-		const feature = this.formatFeatureOut((<any> layer).toGeoJSON(), layer);
-
-		if (coordinateVerbatim && feature.geometry) {
-			(<any> feature.geometry).coordinateVerbatim = coordinateVerbatim;
-		}
-
-		if (single && features.length > 0) {
-			this.clearItemData(item, !"commit");
-			item = this.data[dataIdx];
-			item.featureCollection.features = [features[features.length - 1]];
-			item.group.addLayer(layer);
-			this._onEdit(dataIdx, {[L.Util.stamp(layer)]: layer});
-			return;
-		}
-
-		features.push(feature);
-
-		item.group.addLayer(layer);
-
-		const events: LajiMapEvent[] = [
-			{
-				type: "create",
-				feature
-			},
-		];
-		if (item.hasActive) {
-			events.push({type: "active", idx: features.length - 1});
-		}
-
-		this._triggerEvent(events, item.onChange);
-
-		if (dataIdx === this.drawIdx) {
-			this._updateDrawUndoStack(events, undefined, prevActiveIdx);
-		}
-
-		if (item.hasActive) {
-			this.setActive(this._getLayerByIdxTuple([dataIdx, features.length - 1]));
-		}
-	}
-
 	_updateDrawUndoStack(events: LajiMapEvent[] | LajiMapEvent, prevFeatureCollection, prevActiveIdx?) {
 		if (this._drawHistoryPointer < this._drawHistory.length - 1) {
 			this._drawHistory = this._drawHistory.splice(0).splice(0, this._drawHistoryPointer + 1);
@@ -2641,6 +2589,59 @@ export default class LajiMap {
 		this._drawHistoryPointer++;
 	}
 
+
+	_onAdd(dataIdx: number, layer: DataItemLayer, coordinateVerbatim?: string) {
+		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
+
+		const prevActiveIdx = this.data[dataIdx].activeIdx;
+
+		const prevFeatureCollection = {
+			type: "FeatureCollection",
+			features: this.cloneFeatures(this.data[dataIdx].featureCollection.features)
+		};
+
+		let item = this.data[dataIdx];
+		const {single, featureCollection: {features}} = item;
+		const feature = this.formatFeatureOut((<any> layer).toGeoJSON(), layer);
+
+		if (coordinateVerbatim && feature.geometry) {
+			(<any> feature.geometry).coordinateVerbatim = coordinateVerbatim;
+		}
+
+		if (single && features.length > 0) {
+			this.clearItemData(item, !"commit");
+			item = this.data[dataIdx];
+			item.featureCollection.features = [features[features.length - 1]];
+			item.group.addLayer(layer);
+			this._onEdit(dataIdx, {[L.Util.stamp(layer)]: {layer, coordinateVerbatim}});
+			return;
+		}
+
+		features.push(feature);
+
+		item.group.addLayer(layer);
+
+		const events: LajiMapEvent[] = [
+			{
+				type: "create",
+				feature
+			},
+		];
+		if (item.hasActive) {
+			events.push({type: "active", idx: features.length - 1});
+		}
+
+		this._triggerEvent(events, item.onChange);
+
+		if (dataIdx === this.drawIdx) {
+			this._updateDrawUndoStack(events, undefined, prevActiveIdx);
+		}
+
+		if (item.hasActive) {
+			this.setActive(this._getLayerByIdxTuple([dataIdx, features.length - 1]));
+		}
+	}
+
 	_onEdit(dataIdx, data) {
 		const eventData = {};
 
@@ -2650,7 +2651,11 @@ export default class LajiMap {
 		};
 
 		for (let id in data) {
-			const feature = this.formatFeatureOut(data[id].toGeoJSON(), data[id]);
+			const {layer, coordinateVerbatim} = data[id]
+			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
+			if (coordinateVerbatim && feature.geometry) {
+				(<any> feature.geometry).coordinateVerbatim = coordinateVerbatim;
+			}
 			const idx = this.idsToIdxs[dataIdx][id];
 			eventData[idx] = feature;
 			this.data[dataIdx].featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
@@ -2849,7 +2854,7 @@ export default class LajiMap {
 		this._clearEditable();
 		const editLayer = this._getLayerByIdxTuple(editIdxTuple);
 		this.updateLayerStyle(editLayer);
-		this._onEdit(dataIdx, {[editId]: editLayer});
+		this._onEdit(dataIdx, {[editId]: {layer: editLayer}});
 	}
 
 	// Returns true if click was intercepted

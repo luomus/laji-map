@@ -1134,20 +1134,20 @@ export default class LajiMap {
 
 		let zoom = this.map.getZoom();
 
-		if (this.activeProjName && newOptions.active !== this.activeProjName) {
-			if (this.activeProjName !== "finnish"
-				&& (!layer
-					|| (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1))
-				) {
-				if (isProvided(this, "tileLayer")) {
-					zoom = zoom - 3;
-				}
-			} else if (this.activeProjName !== "world"
-				&& (!layer
-					|| (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1))
+		if (this.activeProjName && newOptions.active !== this.activeProjName
+			&& this.activeProjName !== "finnish"
+			&& (!layer
+				|| (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1))
 			) {
-				zoom = zoom + 3;
+			if (isProvided(this, "tileLayer")) {
+				zoom = zoom - 3;
 			}
+		} else if (newOptions.active !== this.activeProjName
+			&& this.activeProjName !== "world"
+			&& (!layer
+				|| (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1))
+		) {
+			zoom = zoom + 3;
 		}
 		this.activeProjName = newOptions.active;
 

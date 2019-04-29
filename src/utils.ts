@@ -924,14 +924,16 @@ function formatterForLength(length) {
 }
 const ykjRegexp = /^[0-9]{7}$/;
 
+const stripLeadingZeros = c => `${parseInt(c, 10)}`;
+
 const ykjValidator: CoordinateValidator[] = [
-	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: c => c},
-	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: c => c}
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: stripLeadingZeros},
+	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: stripLeadingZeros}
 ];
 
 const etrsTm35FinValidator: CoordinateValidator[] = [
-	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: c => c},
-	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000], formatter: c => c}
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: stripLeadingZeros},
+	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000], formatter: stripLeadingZeros}
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
@@ -960,9 +962,10 @@ export function validateLatLng(latlng: string[], latLngValidator: CoordinateVali
 		if (!validator) {
 			return true;
 		}
-		const formatted = +(validator.formatter ? validator.formatter(value) : value);
+		const formattedStr = validator.formatter ? validator.formatter(value) : value;
+		const formatted = +(formattedStr);
 		const isValid = (
-			value !== "" && value.match(validator.regexp) &&
+			value !== "" && formattedStr.match(validator.regexp) &&
 			formatted >= validator.range[0] && formatted <= validator.range[1]
 		);
 		if (!isValid && throwError) {

@@ -924,16 +924,14 @@ function formatterForLength(length) {
 }
 const ykjRegexp = /^[0-9]{7}$/;
 
-const stripLeadingZeros = c => `${parseInt(c, 10)}`;
-
 const ykjValidator: CoordinateValidator[] = [
-	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: stripLeadingZeros},
-	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: stripLeadingZeros}
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: c => c},
+	{regexp: ykjRegexp, range: [3000000, 3800000], formatter: c => c}
 ];
 
 const etrsTm35FinValidator: CoordinateValidator[] = [
-	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: stripLeadingZeros},
-	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000], formatter: stripLeadingZeros}
+	{regexp: ykjRegexp, range: [6600000, 7800000], formatter: c => c},
+	{regexp: /^[0-9]{5,6}$/, range: [50000, 760000], formatter: c => c}
 ];
 const etrsValidator = etrsTm35FinValidator; // For backward compability
 
@@ -955,17 +953,18 @@ const etrsTm35FinGridStrictValidator = etrsTm35FinValidator.map((validator, i) =
 
 export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, etrsTm35FinValidator, etrsValidator, etrsTm35FinGridStrictValidator};
 
+const stripLeadingZeros = c => `${parseInt(c, 10)}`;
+
 export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[], throwError = false) {
 	return latlng.every((value, i) => {
-		value = `${value}`;
+		value = stripLeadingZeros(`${value}`);
 		const validator = latLngValidator[i];
 		if (!validator) {
 			return true;
 		}
-		const formattedStr = validator.formatter ? validator.formatter(value) : value;
-		const formatted = +(formattedStr);
+		const formatted = +(validator.formatter ? validator.formatter(value) : value);
 		const isValid = (
-			value !== "" && formattedStr.match(validator.regexp) &&
+			value !== "" && value.match(validator.regexp) &&
 			formatted >= validator.range[0] && formatted <= validator.range[1]
 		);
 		if (!isValid && throwError) {

@@ -176,3 +176,10 @@ export interface Options extends MapOptions {
 	clickBeforeZoomAndPan?: boolean;
 	viewLocked?: boolean;
 }
+
+export interface UserLocationOptions {
+	on: boolean
+	onLocationFound: (latlng?: L.LatLng, accuracy?: number) => void;
+	onLocationError: (e: L.ErrorEvent) => void;
+	userLocation: {latlng: L.LatLng, accuracy: number};
+}

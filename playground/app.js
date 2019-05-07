@@ -177,6 +177,8 @@ class App {
 					showArea: true
 				}
 			},
+			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
+			//locate: {on: false, onLocationFound: () => console.log("FOUND")}
 			//clickBeforeZoomAndPan: true,
 			//viewLocked: true
 		};

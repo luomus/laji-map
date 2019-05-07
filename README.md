@@ -32,7 +32,7 @@ overlayNames                                    | String[]                  | - 
 center                                          | LatLng                    | [65, 26]                            | The coordinates for the initial center of the map.
 zoom                                            | Int                       | 2                                   | The initial zoom level for the map.
 zoomToData                                      | FitBounds options         | false                               | Zooms the map to given data & draw data. Additional options are: {paddingInMeters: number, minZoom: number, dataIdxs: number[], draw: boolean}.
-locate                                          | Boolean / [fn, fn]        | false                               | The map is centered to the user location if found. Options can be callbacks: [onSuccess(latlng, radius), onFailed()]
+locate                                          | Object                    | false                               | The map is centered to the user location if found. Options: {on: boolean, onLocationFound: fn(latlng, radius), onLocationError: fn(event), userLocation: {latlng, accuracy}}
 onPopupClose()                                  | Function                  | -                                   | Function to call when a popup is closed
 markerPopupOffset                               | Int                       | 40                                  | Offset (towards up) for popups for markers.
 featurePopupOffset                              | Int                       | 5                                   | Offset (towards up) for popups for features other than markers.

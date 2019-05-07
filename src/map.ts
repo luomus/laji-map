@@ -27,7 +27,8 @@ import {
 import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
-	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions
+	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
+	UserLocationOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -222,6 +223,10 @@ export default class LajiMap {
 		"biodiversityForestZones",
 	];
 	viewLocked: boolean;
+	onLocationFound: UserLocationOptions["onLocationFound"];
+	onLocationError: UserLocationOptions["onLocationError"];
+	userLocationParam: UserLocationOptions["userLocation"];
+	locateOptions: UserLocationOptions | boolean;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -740,8 +745,6 @@ export default class LajiMap {
 			});
 
 			this.availableOverlaysByNames = this.overlaysByNames;
-
-			this.userLocationLayer = new L.LayerGroup().addTo(this.map);
 
 			if (this.locate) {
 				this._setLocateOn();
@@ -2343,9 +2346,29 @@ export default class LajiMap {
 
 	}
 
-	setLocate(locate = false) {
-		this.locate = locate;
-		locate
+	setLocate(locate: UserLocationOptions | boolean = false) {
+		const defaultOptions: UserLocationOptions = {on: true, onLocationFound: undefined, onLocationError: undefined, userLocation: undefined};
+		let options = defaultOptions;
+		if (isObject(locate)) {
+			options = {...defaultOptions, ...(<any> locate)};
+		} else if (Array.isArray(locate)) {
+			console.warn("laji-map warning: locate signature has changed, read the README. Options in array format will be removed in the future!");
+			options = {
+				...defaultOptions,
+				onLocationFound: locate[0],
+				onLocationError: locate[1],
+				userLocation: locate[2]
+			};
+		}
+		const locateOn = locate
+			? options.on
+			: !!locate;
+		this.locateOptions = locate;
+		this.locate = locateOn;
+		this.onLocationFound = options.onLocationFound;
+		this.onLocationError = options.onLocationError;
+		this.userLocationParam = options.userLocation;
+		locateOn
 			? this._setLocateOn()
 			: this.userLocationMarker
 				? this.userLocationMarker.remove() && this.userLocationRadiusMarker.remove()
@@ -2355,60 +2378,79 @@ export default class LajiMap {
 	@dependsOn("map")
 	_setLocateOn(triggerEvent = false) {
 		if (!depsProvided(this, "_setLocateOn", arguments)) return;
+
+		if (this.locate && this._located === undefined && this.userLocationParam) {
+			this._onLocationFound(<L.LocationEvent> this.userLocationParam);
+		}
 		this.map.locate({watch: true, enableHighAccuracy: true});
-		triggerEvent && this.map.fire("locateToggle", {locate: this.locate});
+		triggerEvent && this.map.fire("locateToggle", {locate: this.locateOptions});
 	}
 
 	@dependsOn("map")
 	_setLocateOff() {
 		if (!depsProvided(this, "_setLocateOff", arguments)) return;
 		this.map.stopLocate();
-		if (this.userLocationMarker) {
-			this.userLocationMarker.remove();
+		if (this.userLocationLayer) {
+			this.userLocationLayer.remove();
+			this.userLocationLayer = undefined;
 			this.userLocationMarker = undefined;
-			this.userLocationRadiusMarker.remove();
 			this.userLocationRadiusMarker = undefined;
 		}
-		if (this.locate && this.locate[0]) this.locate[0](undefined);
+		if (this.locate && this.onLocationFound) this.onLocationFound(undefined);
 		this._located = false;
-		this.map.fire("locateToggle", {locate: false});
+		this.map.fire("locateToggle", {locate: (typeof this.locateOptions === "boolean" || Array.isArray(this.locateOptions))
+			? false
+			: {...this.locateOptions, on: false}
+		});
 	}
 
 	@dependsOn("map")
 	_onLocationFound({latlng, accuracy, bounds}: L.LocationEvent) {
 		if (!depsProvided(this, "_onLocationFound", arguments)) return;
 
-		if (!this._located) this.map.fitBounds(bounds);
+		if (!this._located && bounds) this.map.fitBounds(bounds);
 		this._located = true;
 
-		if (this.userLocationRadiusMarker) {
+		if (this.userLocationLayer) {
 			this.userLocationRadiusMarker.setLatLng(latlng).setRadius(accuracy);
 			this.userLocationMarker.setLatLng(latlng);
 		} else {
-			this.userLocationRadiusMarker = L.circle(latlng, accuracy,
-				{
-					color: USER_LOCATION_COLOR,
-					fillColor: USER_LOCATION_COLOR,
-					opacity: 0
-				}).addTo(this.userLocationLayer);
-			this.userLocationMarker = new L.CircleMarker(latlng,
-				{
-					color: USER_LOCATION_COLOR,
-					fillColor: USER_LOCATION_COLOR,
-					fillOpacity: 0.7
-				}).addTo(this.userLocationLayer);
+			const {layerGroup, markerLayer, radiusLayer} = this.createUserLocationLayer(latlng, accuracy);
+			this.userLocationLayer = layerGroup;
+			this.userLocationRadiusMarker = radiusLayer;
+			this.userLocationMarker = markerLayer;
+
+			layerGroup.addTo(this.map);
 		}
 
-		this.userLocationMarker.on("click", () => {
-			!this._interceptClick() && this.map.fitBounds(this.userLocationRadiusMarker.getBounds());
+		this.userLocation = {latlng, accuracy};
+		if (this.onLocationFound) this.onLocationFound(latlng, accuracy);
+	}
+
+	createUserLocationLayer(latlng: L.LatLng, accuracy: number): {layerGroup: L.LayerGroup, markerLayer: L.CircleMarker, radiusLayer: L.Circle} {
+		const layerGroup = L.layerGroup();
+		const radiusLayer = L.circle(latlng,
+			{
+				radius: accuracy,
+				color: USER_LOCATION_COLOR,
+				fillColor: USER_LOCATION_COLOR,
+				opacity: 0
+			}).addTo(layerGroup);
+		const markerLayer = L.circleMarker(latlng,
+			{
+				color: USER_LOCATION_COLOR,
+				fillColor: USER_LOCATION_COLOR,
+				fillOpacity: 0.7
+			}).addTo(layerGroup);
+		markerLayer.on("click", () => {
+			!this._interceptClick() && this.map.fitBounds(radiusLayer.getBounds());
 		});
 
-		this.userLocation = {latlng, accuracy};
-		if (this.locate && this.locate[0]) this.locate[0](latlng, accuracy);
+		return {layerGroup, markerLayer, radiusLayer};
 	}
 
 	_onLocationNotFound(e: L.ErrorEvent) {
-		if (this.locate && this.locate[1]) this.locate[1](e);
+		if (this.onLocationError) this.onLocationError(e);
 	}
 
 	getDrawLayerByIdx(idx: number) {
@@ -2589,7 +2631,6 @@ export default class LajiMap {
 		this._drawHistoryPointer++;
 	}
 
-
 	_onAdd(dataIdx: number, layer: DataItemLayer, coordinateVerbatim?: string) {
 		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
 
@@ -2651,7 +2692,7 @@ export default class LajiMap {
 		};
 
 		for (let id in data) {
-			const {layer, coordinateVerbatim} = data[id]
+			const {layer, coordinateVerbatim} = data[id];
 			const feature = this.formatFeatureOut(layer.toGeoJSON(), layer);
 			if (coordinateVerbatim && feature.geometry) {
 				(<any> feature.geometry).coordinateVerbatim = coordinateVerbatim;

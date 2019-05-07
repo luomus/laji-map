@@ -955,7 +955,10 @@ export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, 
 
 const stripLeadingZeros = c => `${parseInt(c, 10)}`;
 
-export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[], throwError = false) {
+export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[], throwError = false): boolean {
+	if (!latlng || !Array.isArray(latlng)) {
+		return false;
+	}
 	return latlng.every((value, i) => {
 		value = stripLeadingZeros(`${value}`);
 		const validator = latLngValidator[i];

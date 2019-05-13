@@ -1,6 +1,6 @@
 import * as G from "geojson";
 import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
-	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions } from "leaflet";
+	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng, ErrorEvent } from "leaflet";
 export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
@@ -178,8 +178,8 @@ export interface Options extends MapOptions {
 }
 
 export interface UserLocationOptions {
-	on: boolean
-	onLocationFound: (latlng?: L.LatLng, accuracy?: number) => void;
-	onLocationError: (e: L.ErrorEvent) => void;
-	userLocation: {latlng: L.LatLng, accuracy: number};
+	on: boolean;
+	onLocationFound: (latlng?: LatLng, accuracy?: number) => void;
+	onLocationError: (e: ErrorEvent) => void;
+	userLocation: {latlng: LatLng, accuracy: number};
 }

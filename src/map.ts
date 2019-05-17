@@ -227,6 +227,8 @@ export default class LajiMap {
 	onLocationError: UserLocationOptions["onLocationError"];
 	userLocationParam: UserLocationOptions["userLocation"];
 	locateOptions: UserLocationOptions | boolean;
+	availableTileLayersWhitelist: TileLayerName[];
+	availableTileLayersBlacklist: TileLayerName[];
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -995,35 +997,48 @@ export default class LajiMap {
 		this.setTileLayer(this.tileLayers[name]);
 	}
 
-	@dependsOn("map")
-	setAvailableTileLayers(names: TileLayerName[], condition) {
-		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
-
+	_getListForAvailableTileLayer(names: TileLayerName[], condition, _tileLayers?: {[name: string]: L.TileLayer}) {
 		const list = names.reduce((_list, name) => {
 			_list[name] = true;
 			return _list;
 		}, {});
-		this.availableTileLayers = Object.keys(this.tileLayers).reduce((tileLayers, name) => {
+		return Object.keys(_tileLayers || this.tileLayers).reduce((tileLayers, name) => {
 			if (name in list === condition) tileLayers[name] = this.tileLayers[name];
 			return tileLayers;
 		}, {});
+	}
+
+	@dependsOn("map")
+	setAvailableTileLayers(names: TileLayerName[], condition: boolean, _tileLayers?: {[name: string]: L.TileLayer}) {
+		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
+
+		this.availableTileLayers = this._getListForAvailableTileLayer(names, condition, _tileLayers);
 		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
 
+	getDefaultTileLayerBlacklist(): TileLayerName[] { return  []; }
+	getDefaultTileLayerWhitelist(): TileLayerName[] { return <TileLayerName[]> Object.keys(this.tileLayers); }
+
+	@dependsOn("map")
 	setAvailableTileLayerBlacklist(names: TileLayerName[]) {
+		if (!depsProvided(this, "setAvailableTileLayerBlacklist", arguments)) return;
 		if (!names) {
-			names = [];
+			names = this.getDefaultTileLayerBlacklist();
 		}
-		this.setAvailableTileLayers(names, false);
+		this.availableTileLayersBlacklist = names;
+		const layers = this._getListForAvailableTileLayer(this.availableTileLayersWhitelist || this.getDefaultTileLayerWhitelist(), true);
+		this.setAvailableTileLayers(names, false, layers);
 	}
 
 	@dependsOn("map")
 	setAvailableTileLayerWhitelist(names: TileLayerName[]) {
 		if (!depsProvided(this, "setAvailableTileLayerWhitelist", arguments)) return;
 		if (!names) {
-			names = <TileLayerName[]> Object.keys(this.tileLayers);
+			names = this.getDefaultTileLayerWhitelist();
 		}
-		this.setAvailableTileLayers(names, true);
+		this.availableTileLayersWhitelist = names;
+		const layers = this._getListForAvailableTileLayer(this.availableTileLayersBlacklist || this.getDefaultTileLayerBlacklist(), false);
+		this.setAvailableTileLayers(names, true, layers);
 	}
 
 	getAvailableOverlaysByNames(): {[name: string]: L.TileLayer[]} {

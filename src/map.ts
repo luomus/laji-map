@@ -246,6 +246,7 @@ export default class LajiMap {
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
 			viewLocked: false,
+			availableTileLayerNamesBlacklist: [TileLayerName.pohjakartta]
 		};
 
 		this.options = {};

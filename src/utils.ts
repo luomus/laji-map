@@ -16,13 +16,44 @@ export function reverseCoordinate(c: [number, number]): [number, number] {
 	return <[number, number]> c.slice(0).reverse();
 }
 
-export function convertLatLng(latlng: [number, number], from: CRSString, to: CRSString) {
+proj4.defs("EPSG:2393", EPSG2393String);
+proj4.defs("EPSG:3076", EPSG3067String);
+
+// There are two sets of ETRS-GKn. Read more: http://latuviitta.org/documents/ETRS-GKn_ja_EPSG-koodit.html
+// Old ETRS-GKn
+proj4.defs("EPSG:3126", "+proj=tmerc +lat_0=0 +lon_0=19 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3127", "+proj=tmerc +lat_0=0 +lon_0=20 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3128", "+proj=tmerc +lat_0=0 +lon_0=21 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3129", "+proj=tmerc +lat_0=0 +lon_0=22 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3130", "+proj=tmerc +lat_0=0 +lon_0=23 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3131", "+proj=tmerc +lat_0=0 +lon_0=24 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3132", "+proj=tmerc +lat_0=0 +lon_0=25 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3133", "+proj=tmerc +lat_0=0 +lon_0=26 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3134", "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3135", "+proj=tmerc +lat_0=0 +lon_0=28 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3136", "+proj=tmerc +lat_0=0 +lon_0=29 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3137", "+proj=tmerc +lat_0=0 +lon_0=30 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3138", "+proj=tmerc +lat_0=0 +lon_0=31 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+
+// New ETRS-GKn
+proj4.defs("EPSG:3873", "+proj=tmerc +lat_0=0 +lon_0=19 +k=1 +x_0=19500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3873", "+proj=tmerc +lat_0=0 +lon_0=19 +k=1 +x_0=19500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3874", "+proj=tmerc +lat_0=0 +lon_0=20 +k=1 +x_0=20500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3875", "+proj=tmerc +lat_0=0 +lon_0=21 +k=1 +x_0=21500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3876", "+proj=tmerc +lat_0=0 +lon_0=22 +k=1 +x_0=22500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3877", "+proj=tmerc +lat_0=0 +lon_0=23 +k=1 +x_0=23500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3878", "+proj=tmerc +lat_0=0 +lon_0=24 +k=1 +x_0=24500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3879", "+proj=tmerc +lat_0=0 +lon_0=25 +k=1 +x_0=25500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3880", "+proj=tmerc +lat_0=0 +lon_0=26 +k=1 +x_0=26500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3881", "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=27500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3882", "+proj=tmerc +lat_0=0 +lon_0=28 +k=1 +x_0=28500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3883", "+proj=tmerc +lat_0=0 +lon_0=29 +k=1 +x_0=29500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3884", "+proj=tmerc +lat_0=0 +lon_0=30 +k=1 +x_0=30500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+proj4.defs("EPSG:3885", "+proj=tmerc +lat_0=0 +lon_0=31 +k=1 +x_0=31500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+
+export function convertLatLng(latlng: [number, number], from: string, to: string) {
 	function formatToProj4Format(format) {
-		switch (format) {
-		case "EPSG:2393": return EPSG2393String;
-		case "EPSG:3067": return EPSG3067String;
-		default: return proj4.defs(format);
-		}
+		return proj4.defs(format) || format;
 	}
 
 	let validator = undefined;
@@ -56,7 +87,7 @@ function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) 
 	return _updater(parseJSON(JSON.stringify(obj)));
 }
 
-export function convertGeoJSON(geoJSON: G.GeoJSON, from: CRSString, to: CRSString): G.GeoJSON {
+export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string): G.GeoJSON {
 	const convertCoordinates = coords => {
 
 		if (typeof coords[0] === "number") {
@@ -271,7 +302,13 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 
 	if ((<any> geoJSON).crs) {
 		const projString = (<any> geoJSON).crs.properties.name;
-		ISOGeo += `\nCRS${(projString === EPSG2393String) ? "EPSG:2393" : "EPSG:3067"}`;
+		if (projString === EPSG2393String) {
+			ISOGeo += "\nCRSEPSG:2393";
+		} else if (projString === EPSG3067String) {
+			ISOGeo += "\nCRSEPSG:3067";
+		} else {
+			ISOGeo += `\nCRS${projString}`;
+		}
 	}
 
 	return ISOGeo;
@@ -326,16 +363,13 @@ export function ISO6709ToGeoJSON(ISO6709: string): G.GeoJSON {
 			return coordString.match(/-?\d+\.?\d*/g).map(n => +n).reverse();
 		});
 	}
-
 	function lineIsPolygon(line) {
 		return line.match(/^\//);
 	}
-
 	function lineIsLineString(line) {
 		const result = line.match(/^(.+(\+|-|:).+\/){2,}$/g);
 		return result;
 	}
-
 	function lineIsPoint(line) {
 		return line.match(/^(\+|-)?\d+\.?\d*(\+|-|:)\d+\.?\d*\/$/);
 	}
@@ -350,15 +384,12 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 	function coordinateJoiner(coords) {
 		return coords.join(",");
 	}
-
 	function coordinateStrToPoint(coords) {
 		return `POINT(${coords})`;
 	}
-
 	function coordinateStrToLine(coords) {
 		return `LINESTRING(${coords})`;
 	}
-
 	function coordinateStrToPolygon(coords) {
 		return `POLYGON((${coords}))`;
 	}
@@ -375,7 +406,13 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 
 	if ((<any> geoJSON).crs) {
 		const projString = (<any> geoJSON).crs.properties.name;
-		WKTGeo += "\n" + ((projString === EPSG2393String) ? EPSG2393WKTString : EPSG3067WKTString);
+		if (projString === EPSG2393String) {
+			WKTGeo += `\n${EPSG2393WKTString}`;
+		} else if (projString === EPSG3067String) {
+			WKTGeo += `\n${EPSG3067WKTString}`;
+		} else {
+			WKTGeo += `\n${projString}`;
+		}
 	}
 
 	return WKTGeo;
@@ -385,7 +422,6 @@ export function WKTToGeoJSON(WKT: string): G.GeoJSON {
 	function lineToCoordinates(line) {
 		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
 	}
-
 	function lineIsPolygon(line) {
 		return line.match(`^${("POLYGON")}`);
 	}
@@ -508,37 +544,48 @@ export function detectCRSFromLatLng(latLng, allowGrid = false): CRSString {
 	}
 }
 
-export function detectCRS(data: string | G.GeoJSON, allowGrid = false): CRSString {
+export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
+	const format = detectFormat(data);
+	let geoJSON = undefined;
+	if (format === "WKT") {
+		data = <string> data;
+		let detection = data.match(/(PROJCS.*)/);
+		if (detection) {
+			if (detection[1] === EPSG2393WKTString) return "EPSG:2393";
+			else if (detection[1] === EPSG3067WKTString) return "EPSG:3067";
+			else {
+				try {
+					proj4(detection[1]);
+				} catch (e) {
+					throw new LajiMapError("WKT CRS not supported", "WKTCRSNotSupported");
+				}
+			}
+			return detection[1];
+		} else {
+			geoJSON = WKTToGeoJSON(data);
+		}
+	} else if (format === "ISO 6709") {
+		data = <string> data;
+		const detection =  data.match(/EPSG:[0-9]+/) && data.match(/CRS(.*)/);
+		if (detection && proj4.defs(detection[1])) return detection[1];
+		else if (detection) throw new LajiMapError("EPSG code not supported", "EPSGCodeNotSupported");
+		else {
+			geoJSON = ISO6709ToGeoJSON(data);
+		}
+	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+		geoJSON = (typeof data === "object") ? data : parseJSON(data);
+		if (geoJSON.crs) {
+			return geoJSON.crs.properties.name;
+			const {name} = geoJSON.crs.properties;
+			if (name === EPSG2393String) return "EPSG:2393";
+			else if (name.indexOf("ETRS-TM35FIN") !== -1) return "EPSG:3067";
+			else return name;
+		}
+	}
+
 	try {
 		return detectCRSFromLatLng(data, allowGrid);
 	} catch (e) {
-		const format = detectFormat(data);
-		let geoJSON = undefined;
-		if (format === "WKT") {
-			data = <string> data;
-			let detection = data.match(/(PROJCS.*)/);
-			if (detection) {
-				if (detection[1] === EPSG2393WKTString) return "EPSG:2393";
-				else if (detection[1] === EPSG3067WKTString) return "EPSG:3067";
-			} else {
-				geoJSON = WKTToGeoJSON(data);
-			}
-		} else if (format === "ISO 6709") {
-			data = <string> data;
-			const detection = data.match(/CRS(.*)/);
-			if (detection) return <CRSString> detection[1];
-			else {
-				geoJSON = ISO6709ToGeoJSON(data);
-			}
-		} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
-			geoJSON = (typeof data === "object") ? data : parseJSON(data);
-			if (geoJSON.crs) {
-				const name = geoJSON.crs.properties.name;
-				if (name === EPSG2393String) return "EPSG:2393";
-				else if (name.indexOf("ETRS-TM35FIN") !== -1) return "EPSG:3067";
-			}
-		}
-
 		let geometrySample = geoJSON;
 		while (geometrySample) {
 			if (geometrySample.geometries) {
@@ -565,11 +612,11 @@ export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, validate: boo
 	return convert(data, "GeoJSON", "WGS84", validate);
 }
 
-export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: CRSString, validate?: boolean | "errors"): string;
-export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: CRSString, validate?: boolean | "errors"): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, validate?: boolean | "errors"): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, validate?: boolean | "errors"): string;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: CRSString, validate?: boolean | "errors"): string | G.GeoJSON { // tslint:disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: string, validate?: boolean | "errors"): string;
+export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: string, validate?: boolean | "errors"): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string | G.GeoJSON { // tslint:disable-line
 	if (input === undefined) {
 		return undefined;
 	}
@@ -616,7 +663,7 @@ export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSyste
 	}
 }
 
-export function validateGeoJSON(geoJSON, crs?: CRSString, warnings = true): {errors: Error[], geoJSON: G.GeoJSON} {
+export function validateGeoJSON(geoJSON, crs?: string, warnings = true): {errors: Error[], geoJSON: G.GeoJSON} {
 	if (!crs) {
 		crs = detectCRS(geoJSON);
 	}
@@ -778,11 +825,15 @@ export function coordinatesAreClockWise(coordinates: G.Position[]) {
 	return isClockwise;
 }
 
-export function getCRSObjectForGeoJSON(geoJSON: G.GeoJSON, crs: CRSString): {type: "name", properties: {name: string}} {
+export function getCRSObjectForGeoJSON(geoJSON: G.GeoJSON, crs: string): {type: "name", properties: {name: string}} {
 	return (!crs || crs === "WGS84") ? undefined : {
 		type: "name",
 		properties: {
-			name: crs === "EPSG:2393" ? EPSG2393String : EPSG3067String
+			name: crs === "EPSG:2393"
+				? EPSG2393String
+				: crs === "EPSG:3067"
+					? EPSG3067String
+					: crs
 		}
 	};
 }

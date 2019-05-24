@@ -1924,7 +1924,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data")
-	_setOnChangeForItem(item, format: CoordinateSystem = "GeoJSON", crs: CRSString = "WGS84") {
+	_setOnChangeForItem(item, format: CoordinateSystem = "GeoJSON", crs: string = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
 		const wrapCoordinates = (e) => {

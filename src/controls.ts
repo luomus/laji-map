@@ -1748,7 +1748,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				} else {
 					formatContainer.style.display = "none";
 				}
-				if (crs) {
+				if (crs && this.translations[crs]) {
 					crsContainer.style.display = "block";
 				} else {
 					crsContainer.style.display = "none";
@@ -1757,7 +1757,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (!hasErrors && hasWarnings) {
 					valid = convertAnyToWGS84GeoJSON(fixedGeoJSON);
 				}
-				crsValue.innerHTML = this.translations[crs] ? this.translations[crs] : crs;
+				if (this.translations[crs]) {
+					crsValue.innerHTML = this.translations[crs];
+				}
 			}
 			return {valid: !!(format && crs && allowGrid || valid), geoJSON: valid};
 		};

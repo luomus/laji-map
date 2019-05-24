@@ -715,4 +715,14 @@ export default {
 		en: "Overlays",
 		sv: "Skikt"
 	},
+	EPSGCodeNotSupported: {
+		fi: "Kyseinen EPSG-koodi ei ole tuettu",
+		en: "EPSG code isn't supported",
+		sv: "EPSG koden stöds inte"
+	},
+	WKTCRSNotSupported: {
+		fi: "Tuntematon WKT koordinaattijärjestelmä",
+		en: "Unknown WKT coordinate reference system",
+		sv: "Okänt WKT-koordinatreferenssystem"
+	}
 };

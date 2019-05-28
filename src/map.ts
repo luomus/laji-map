@@ -1357,13 +1357,13 @@ export default class LajiMap {
 	}
 
 	getDenormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {
-		if (!zoom) {
+		if (typeof zoom !== "number" || isNaN(zoom)) {
 			zoom = this.map.getZoom();
 		}
 		return this._getDefaultCRSLayers().indexOf(tileLayer || this.tileLayer) !== -1 ? zoom + 3 : zoom;
 	}
 
-	@dependsOn("map")
+	@dependsOn("map", "tileLayer")
 	setNormalizedZoom(zoom, options = {animate: false}) {
 		this.zoom = zoom;
 

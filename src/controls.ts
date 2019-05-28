@@ -1078,6 +1078,18 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					});
 					slider.on("end", () => {
 						document.removeEventListener("selectstart", disableSelect);
+
+						const opacity = +slider.get();
+						const {layers} = that._tileLayers;
+						const _layerOptions = layers[name];
+						if (!opacity && _layerOptions.visible) {
+							that.setTileLayers({
+								...that._tileLayers,
+								layers: {
+									...layers, [name]: {..._layerOptions, visible: false}
+								}
+							});
+						}
 					});
 
 					this.elems[name] = {li, slider, checkbox};

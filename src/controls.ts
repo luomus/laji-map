@@ -993,7 +993,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			initLayout() {
 				const createListItem = (name, layerOptions) => {
-					const li = document.createElement("div");
+					const li = document.createElement("li");
 					const checkbox = document.createElement("input");
 					checkbox.type = "checkbox";
 					checkbox.addEventListener("change", (e) => {
@@ -1097,36 +1097,56 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					return li;
 				};
 
-				const createList = (tileLayers, label) => {
+				const createList = (tileLayers: {[name: string]: L.TileLayer[]}, label: string): [HTMLElement, () => void]  => {
 					if (Object.keys(tileLayers).length === 0) {
 						return;
 					}
 					const list = document.createElement("fieldset");
+					const innerList = document.createElement("ul");
 					const legend = document.createElement("legend");
-					this.translateHooks.push(that.addTranslationHook(legend, capitalizeFirstLetter(label)));
+					const translationHook = that.addTranslationHook(legend, capitalizeFirstLetter(label));
+					this.translateHooks.push(translationHook);
 
 					list.appendChild(legend);
+					list.appendChild(innerList);
 					Object.keys(tileLayers).sort((a, b) => that._tileLayerOrder.indexOf(a) - that._tileLayerOrder.indexOf(b)).forEach(name => {
-						list.appendChild(createListItem(name, that._tileLayers.layers[name]));
+						innerList.appendChild(createListItem(name, that._tileLayers.layers[name]));
 					});
 					this.layers = {
 						...(this.layers || {}),
 						...tileLayers
 					};
 					this._section.appendChild(list);
-					return list;
+					return [list, translationHook];
 				};
 
 				this.elems = {};
-				this.finnishList = createList(that.getAvailableFinnishTileLayers(), "FinnishMaps");
-				this.worldList = createList(that.getAvailableWorldTileLayers(),  "WorldMaps");
+				const [finnishList, finnishTranslationHook] = createList(
+					that.getAvailableFinnishTileLayers(),
+					that._tileLayers.active === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps"
+				);
+				this.finnishList = finnishList;
+				this.finnishTranslationHook = finnishTranslationHook;
+				const [worldList, worldTranslationHook] = createList(
+					that.getAvailableWorldTileLayers(),
+					that._tileLayers.active === "world" ? "WorldMaps" : "ActivateWorldMaps"
+				);
+				this.worldList = worldList;
+				this.worldTranslationHook = worldTranslationHook;
 
 				[[this.finnishList, "finnish"], [this.worldList, "world"]].filter(([list]) => list).forEach(([list, active]) => {
 					list.addEventListener("click", ({target: {tagName}}) => {
-						if (active === that._tileLayers.active
-							|| tagName !== "FIELDSET" && tagName !== "LEGEND") {
+						if (tagName !== "FIELDSET" && tagName !== "LEGEND") {
 							return;
 						}
+						if (active === that._tileLayers.active) {
+							if (this.finnishList && active === "finnish") {
+								active = "world";
+							} else if (this.worldList && active === "world") {
+								active = "finnish";
+							}
+						}
+
 						const layerOptions = active === "finnish"
 							|| Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
 							? that._tileLayers.layers
@@ -1152,6 +1172,19 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (nonActiveList) {
 					nonActiveList.className = "nonactive-list";
 				}
+				activeList.querySelector("legend").tabIndex = 0;
+				nonActiveList.querySelector("legend").tabIndex = 0;
+
+				this.translateHooks = this.translateHooks.filter(hook => hook !== this.finnishTranslationHook && hook !== this.worldTranslationHook);
+				this.finnishTranslationHook = that.addTranslationHook(
+					this.finnishList.querySelector("legend"),
+					capitalizeFirstLetter(activeProjName === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps")
+				);
+				this.worldTranslationHook = that.addTranslationHook(
+					this.worldList.querySelector("legend"),
+					capitalizeFirstLetter(activeProjName === "world" ? "WorldMaps" : "ActivateWorldMaps")
+				);
+				this.translateHooks.push(this.finnishTranslationHook, this.worldTranslationHook);
 			},
 			updateLists() {
 				Object.keys(this.layers).forEach(name => {

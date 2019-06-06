@@ -724,5 +724,15 @@ export default {
 		fi: "Tuntematon WKT koordinaattijärjestelmä",
 		en: "Unknown WKT coordinate reference system",
 		sv: "Okänt WKT-koordinatreferenssystem"
-	}
+	},
+	activateFinnishMaps: {
+		fi: "Vaihda Suomen karttaan",
+		en: "Switch to Finnish map",
+		sv: "Byt till finska kartan"
+	},
+	activateWorldMaps: {
+		fi: "Vaihda maailman karttaan",
+		en: "Switch to world map",
+		sv: "Byt till världs kartor"
+	},
 };

@@ -410,6 +410,13 @@
 	font-size: 13px
 }
 
+.laji-map .laji-map-control-layers.leaflet-control-layers-expanded {
+	overflow: auto;
+	background: none;
+	border: none;
+	margin: 0;
+	padding: 0;
+}
 .laji-map .laji-map-control-layers input[type="checkbox"] {
     top: -4px;
     position: absolute;
@@ -419,23 +426,23 @@
 .laji-map .laji-map-control-layers fieldset {
     list-style: none;
     padding: 0px 8px;
-    margin: 4px;
+    margin: 0px;
     padding: 4px;
     min-width: 325px;
 	user-select: none;
 }
-.laji-map .laji-map-control-layers fieldset > div {
+.laji-map .laji-map-control-layers fieldset li {
     position: relative;
     margin-bottom: 4px;
 }
 .laji-map .laji-map-control-layers .noUi-horizontal .noUi-handle {
     display: none;
 }
-.laji-map .laji-map-control-layers fieldset > div span {
+.laji-map .laji-map-control-layers fieldset li span {
     padding-left: 27px;
     font-size: 11px;
 }
-.laji-map .laji-map-control-layers fieldset > div.active span {
+.laji-map .laji-map-control-layers fieldset li.active span {
 	font-weight: bold;
 }
 .laji-map .laji-map-control-layers .noUi-target {
@@ -449,49 +456,125 @@
 .laji-map .laji-map-control-layers .noUi-base {
 	background: #e4e4e4;
 }
-.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled])div:not(.active):hover .noUi-base {
+.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled])li:not(.active):hover .noUi-base {
 	background: #f1f1f1;
 }
-.laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers fieldset:not([disabled]) div:not(.active):hover .noUi-target {
+.laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-target {
 	border-color: #e2e2e2;
 }
-.laji-map .laji-map-control-layers fieldset > div:not(.active) .noUi-connect, .laji-map .laji-map-control-layers fieldset.nonactive-list .noUi-connect {
+.laji-map .laji-map-control-layers fieldset li:not(.active) .noUi-connect {
     background-color: #93c1bf;
 }
 .laji-map .laji-map-control-layers fieldset {
     border: 1px solid;
 	border-radius: 2px;
 }
+.laji-map .laji-map-control-layers ul {
+	padding-left: 0px;
+	background: white;
+}
 
 .laji-map .laji-map-control-layers fieldset legend {
     font-size: 11px;
 	font-weight: bold;
     width: auto;
-    padding: 0px 3px;
     border-bottom: none;
     margin-bottom: 0px;
 	background: white;
 }
-.laji-map .laji-map-control-layers fieldset.nonactive-list legend {
-    color: #c3c3c3;
-}
-.laji-map .laji-map-control-layers .active-list, .laji-map .laji-map-control-layers .nonactive-list {
-	border-width: 2px;
-}
-.laji-map .laji-map-control-layers .nonactive-list {
-    border-color: #c3c3c3;
-	border-style: dotted;
-}
-.laji-map .laji-map-control-layers fieldset.active-list legend {
-    color: #3FB8AF;
+.laji-map .laji-map-control-layers fieldset legend:active, .laji-map .laji-map-control-layers fieldset legend:visited,  .laji-map .laji-map-control-layers fieldset legend:focus {
+	outline: none;
 }
 .laji-map .laji-map-control-layers .active-list {
-	border-color: #3FB8AF;
+	border-width: 2px;
 }
 
-.laji-map .laji-map-control-layers .nonactive-list, .laji-map .laji-map-control-layers fieldset > div:not(.active) {
-	opacity: 0.5;
+.laji-map .laji-map-control-layers .active-list li, .laji-map .laji-map-control-layers .nonactive-list li {
+	transition: max-height 0.3s ease-out;
+	overflow: hidden;
 }
-.laji-map .laji-map-control-layers .nonactive-list:hover:not([disabled]), .laji-map .laji-map-control-layers fieldset:not([disabled]) > div:not(.active):hover {
-	opacity: 1;
+.laji-map .laji-map-control-layers .active-list li {
+	max-height: 18px;
+}
+.laji-map .laji-map-control-layers .nonactive-list li {
+	max-height: 0px;
+	margin-bottom: 0px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(1).nonactive-list ul {
+	margin-bottom: 0px;
+}
+.laji-map .laji-map-control-layers fieldset {
+	border: none;
+	margin-bottom: 0px;
+	margin-top: 5px;
+}
+
+.laji-map .laji-map-control-layers fieldset legend {
+	width: 100%;
+	border: 1px solid gray;
+	background: #f3f3f3;
+}
+.laji-map .laji-map-control-layers .active-list legend:hover, .laji-map .laji-map-control-layers .nonactive-list legend:hover {
+	background: #e3e3e3;
+}
+
+.laji-map .laji-map-control-layers ul {
+	border: 1px solid gray;
+	margin-top: -5px;
+	padding: 8px 3px;
+}
+.laji-map .laji-map-control-layers .nonactive-list ul {
+	border: none;
+	padding: 0px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(1) {
+	padding-bottom: 0px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(2) ul {
+	margin-bottom: 0px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(1) legend, .laji-map .laji-map-control-layers fieldset:nth-child(3) legend {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(2).nonactive-list {
+	padding-top: 0px;
+	margin-top: 0px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(2).nonactive-list legend {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(1).active-list {
+	margin-bottom: -1px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(1).active-list ul {
+	margin-bottom: -1px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(2).active-list ul {
+	margin-bottom: 0px;
+}
+.laji-map .laji-map-control-layers fieldset:nth-child(2).active-list {
+	margin-top: 0px;
+	padding-bottom: 0px;
+}
+.laji-map .laji-map-control-layers legend {
+	padding: 3px 4px;
+}
+.laji-map .laji-map-control-layers .active-list legend:after, .laji-map .laji-map-control-layers .nonactive-list legend:after  {
+	margin-right: 5px;
+	content: "\276F";
+	float: right;
+	margin-right: 5px;
+	transition: transform 0.3s ease-in-out;
+}
+.laji-map .laji-map-control-layers .active-list legend, .laji-map .laji-map-control-layers .nonactive-list legend {
+	cursor: pointer;
+}
+.laji-map .laji-map-control-layers .active-list legend:after {
+	transform: rotate(90deg);
+}
+.laji-map fieldset:nth-child(2).active-list ul, .laji-map fieldset:nth-child(3) ul {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
 }

@@ -512,11 +512,11 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 }
 
 export function detectFormat(data): CoordinateSystem {
-	if (typeof data === "string" && !data.match(/{.*}/) && data.indexOf("(") !== -1) {
+	if (typeof data === "string" && data.indexOf("{") === -1 && data.indexOf("(") !== -1) {
 		return "WKT";
-	} else if (typeof data === "string" && !data.match(/{.*}/) && data.indexOf("/") !== -1) {
+	} else if (typeof data === "string" && data.indexOf("{") === -1 && data.indexOf("/") !== -1) {
 		return "ISO 6709";
-	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+	} else if (typeof data === "object" || typeof data === "string" && data.indexOf("{") !== -1) {
 		if (typeof data === "string") {
 			try {
 				JSON.parse(data);
@@ -572,7 +572,7 @@ export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
 		else {
 			geoJSON = ISO6709ToGeoJSON(data);
 		}
-	} else if (typeof data === "object" || typeof data === "string" && data.match(/{.*}/)) {
+	} else if (typeof data === "object" || typeof data === "string" && data.indexOf("{") !== -1) {
 		geoJSON = (typeof data === "object") ? data : parseJSON(data);
 		if (geoJSON.crs) {
 			return geoJSON.crs.properties.name;

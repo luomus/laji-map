@@ -131,7 +131,7 @@ class App {
 				showDirection: true
 			},
 			activeIdx: 0,
-			single: true
+			editable: false
 		};
 
 		this.activeIdx = 0;

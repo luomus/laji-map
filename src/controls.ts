@@ -229,7 +229,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				name: "draw",
 				control: () => this._getDrawControl(),
 				dependencies: [
-					() => this.drawIsAllowed()
+					() => this.drawIsEditable()
 				]
 			},
 			{
@@ -247,7 +247,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 							() => (["marker", "rectangle"].some(type => {
 								return this.getDraw()[type] !== false;
 							})),
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 					},
 					{
@@ -262,7 +262,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						iconCls: "glyphicon glyphicon-floppy-open",
 						fn: () => this.openDrawUploadDialog(),
 						dependencies: [
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 					},
 					{
@@ -302,7 +302,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 							yesButton.focus();
 						},
 						dependencies: [
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 
 					},
@@ -315,7 +315,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						},
 						finishFn: (...params) => this._finishDrawRemove(),
 						dependencies: [
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 
 					},
@@ -329,7 +329,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						finishFn: (...params) => this._finishDrawReverse(),
 						dependencies: [
 							() => this.getDraw().polyline !== false,
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 					},
 					{
@@ -340,7 +340,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						onAdd: () => this.updateDrawUndoButton(),
 						disabled: this._drawHistoryPointer <= 0,
 						dependencies: [
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 					},
 					{
@@ -351,7 +351,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						onAdd: () => this.updateDrawRedoButton(),
 						disabled: this._drawHistoryPointer >= this._drawHistory.length - 1,
 						dependencies: [
-							() => this.drawIsAllowed()
+							() => this.drawIsEditable()
 						]
 					}
 				]
@@ -1934,7 +1934,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this.getFeatureTypes().forEach(featureType => {
 			const text = join("Draw", featureType);
 
-			if (this.getDraw() && this.drawIsAllowed() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
+			if (this.getDraw() && this.drawIsEditable() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
 				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
 					text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,

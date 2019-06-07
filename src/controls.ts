@@ -1097,7 +1097,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					return li;
 				};
 
-				const createList = (tileLayers: {[name: string]: L.TileLayer[]}, label: string): [HTMLElement, () => void]  => {
+				const createList = (tileLayers: {[name: string]: L.TileLayer[]}, label: string): [HTMLElement, () => void] => {
 					if (Object.keys(tileLayers).length === 0) {
 						return;
 					}
@@ -1136,7 +1136,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 				[[this.finnishList, "finnish"], [this.worldList, "world"]].filter(([list]) => list).forEach(([list, active]) => {
 					list.addEventListener("click", ({target: {tagName}}) => {
-						if (tagName !== "FIELDSET" && tagName !== "LEGEND") {
+						if (this._finnishDisabled || tagName !== "FIELDSET" && tagName !== "LEGEND") {
 							return;
 						}
 						if (active === that._tileLayers.active) {
@@ -1167,18 +1167,25 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					? lists
 					: lists.reverse();
 				if (activeList) {
-					activeList.className = "active-list";
+					L.DomUtil.addClass(activeList, "active-list");
+					L.DomUtil.removeClass(activeList, "nonactive-list");
 				}
 				if (nonActiveList) {
-					nonActiveList.className = "nonactive-list";
+					L.DomUtil.addClass(nonActiveList, "nonactive-list");
+					L.DomUtil.removeClass(nonActiveList, "active-list");
 				}
 				activeList.querySelector("legend").tabIndex = 0;
 				nonActiveList.querySelector("legend").tabIndex = 0;
 
+				console.log("update active proj");
 				this.translateHooks = this.translateHooks.filter(hook => hook !== this.finnishTranslationHook && hook !== this.worldTranslationHook);
 				this.finnishTranslationHook = that.addTranslationHook(
 					this.finnishList.querySelector("legend"),
-					capitalizeFirstLetter(activeProjName === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps")
+					capitalizeFirstLetter(activeProjName === "finnish"
+						? "FinnishMaps"
+						: this._finnishDisabled
+							? "FinnishMapDisabledOutsideFinland"
+							: "ActivateFinnishMaps")
 				);
 				this.worldTranslationHook = that.addTranslationHook(
 					this.worldList.querySelector("legend"),
@@ -1208,27 +1215,26 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (!this.finnishList) {
 					return;
 				}
-				if (that._isOutsideFinland(latLng)) {
+				if (that._isOutsideFinland(latLng) && !this._finnishDisabled) {
 					this._finnishDisabled = true;
-					this.finnishList.setAttribute("disabled", "disabled");
-					Object.keys(that.getAvailableFinnishTileLayers()).forEach(name => {
-						this.elems[name].slider.target.setAttribute("disabled", "disabled");
-					});
-					if (!this._outsideFinlandInfoSpan) {
-						this._outsideFinlandInfoSpanContainer = document.createElement("div");
-						this._outsideFinlandInfoSpan = document.createElement("span");
-						that.addTranslationHook(this._outsideFinlandInfoSpan, "OutsideFinlandLayerControlInfo");
-						this._outsideFinlandInfoSpan.className = "info";
-						this._outsideFinlandInfoSpanContainer.appendChild(this._outsideFinlandInfoSpan);
-					}
-					this.finnishList.parentElement.insertBefore(this._outsideFinlandInfoSpanContainer, this.finnishList);
-				} else if (this._finnishDisabled) {
+					L.DomUtil.addClass(this.finnishList.querySelector("legend"), "disabled");
+					this.worldList && L.DomUtil.addClass(this.worldList.querySelector("legend"), "disabled");
+					this.translateHooks = this.translateHooks.filter(h => h !== this.finnishTranslationHook);
+					this.finnishTranslationHook = that.addTranslationHook(
+						this.finnishList.querySelector("legend"),
+						"FinnishMapDisabledOutsideFinland"
+					);
+					this.translateHooks.push(this.finnishTranslationHook);
+				} else if (!that._isOutsideFinland(latLng) && this._finnishDisabled) {
 					this._finnishDisabled = false;
-					this.finnishList.removeAttribute("disabled");
-					Object.keys(that.getAvailableFinnishTileLayers()).forEach(name => {
-						this.elems[name].slider.target.removeAttribute("disabled");
-					});
-					this._outsideFinlandInfoSpanContainer.parentElement.removeChild(this._outsideFinlandInfoSpanContainer);
+					L.DomUtil.removeClass(this.finnishList.querySelector("legend"), "disabled");
+					this.worldList && L.DomUtil.removeClass(this.worldList.querySelector("legend"), "disabled");
+					this.translateHooks = this.translateHooks.filter(h => h !== this.finnishTranslationHook);
+					this.finnishTranslationHook = that.addTranslationHook(
+						this.finnishList.querySelector("legend"),
+						that.activeProjName === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps"
+					);
+					this.translateHooks.push(this.finnishTranslationHook);
 				}
 
 			}

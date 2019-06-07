@@ -514,7 +514,7 @@
 	border: 1px solid gray;
 	background: #f3f3f3;
 }
-.laji-map .laji-map-control-layers .active-list legend:hover, .laji-map .laji-map-control-layers .nonactive-list legend:hover {
+.laji-map .laji-map-control-layers .active-list legend:not(.disabled):hover, .laji-map .laji-map-control-layers .nonactive-list legend:not(.disabled):hover {
 	background: #e3e3e3;
 }
 
@@ -568,8 +568,11 @@
 	margin-right: 5px;
 	transition: transform 0.3s ease-in-out;
 }
-.laji-map .laji-map-control-layers .active-list legend, .laji-map .laji-map-control-layers .nonactive-list legend {
+.laji-map .laji-map-control-layers .active-list legend:not(.disabled), .laji-map .laji-map-control-layers .nonactive-list legend:not(.disabled) {
 	cursor: pointer;
+}
+.laji-map .laji-map-control-layers legend.disabled {
+	color: #9c9b9b;
 }
 .laji-map .laji-map-control-layers .active-list legend:after {
 	transform: rotate(90deg);

@@ -735,4 +735,9 @@ export default {
 		en: "Switch to world map",
 		sv: "Byt till världs kartor"
 	},
+	finnishMapDisabledOutsideFinland: {
+		fi: "Suomen kartta ei käytössä Suomen ulkopuolella",
+		en: "Suomen kartta ei käytössä Suomen ulkopuolella",
+		sv: "Suomen kartta ei käytössä Suomen ulkopuolella"
+	}
 };

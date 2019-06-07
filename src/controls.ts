@@ -1177,7 +1177,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				activeList.querySelector("legend").tabIndex = 0;
 				nonActiveList.querySelector("legend").tabIndex = 0;
 
-				console.log("update active proj");
 				this.translateHooks = this.translateHooks.filter(hook => hook !== this.finnishTranslationHook && hook !== this.worldTranslationHook);
 				this.finnishTranslationHook = that.addTranslationHook(
 					this.finnishList.querySelector("legend"),

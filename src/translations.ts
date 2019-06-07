@@ -731,9 +731,9 @@ export default {
 		sv: "Byt till finska kartan"
 	},
 	activateWorldMaps: {
-		fi: "Vaihda maailman karttaan",
+		fi: "Vaihda maailmankarttaan",
 		en: "Switch to world map",
-		sv: "Byt till världs kartor"
+		sv: "Byt till världskartor"
 	},
 	finnishMapDisabledOutsideFinland: {
 		fi: "Suomen kartta ei käytössä Suomen ulkopuolella",

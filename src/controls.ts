@@ -1135,8 +1135,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this.worldTranslationHook = worldTranslationHook;
 
 				[[this.finnishList, "finnish"], [this.worldList, "world"]].filter(([list]) => list).forEach(([list, active]) => {
-					list.addEventListener("click", ({target: {tagName}}) => {
-						if (this._finnishDisabled || tagName !== "FIELDSET" && tagName !== "LEGEND") {
+					list.querySelector("legend").addEventListener("click", ({target: {tagName}}) => {
+						if (this._finnishDisabled) {
 							return;
 						}
 						if (active === that._tileLayers.active) {

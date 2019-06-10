@@ -706,9 +706,9 @@ export default {
 		sv: "Finska kartor"
 	},
 	worldMaps: {
-		fi: "Maailman kartat",
+		fi: "Maailmankartat",
 		en: "World maps",
-		sv: "Världs kartor"
+		sv: "Världskartor"
 	},
 	overlays: {
 		fi: "Kerrokset",

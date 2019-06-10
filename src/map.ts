@@ -1290,7 +1290,7 @@ export default class LajiMap {
 			return _names;
 		}, {});
 
-		this.setTileLayers({...this.tileLayers, layers: {...this._tileLayers.layers, ...changes}});
+		this.setTileLayers({...this._tileLayers, layers: {...this._tileLayers.layers, ...changes}});
 
 		provide(this, "overlays");
 	}

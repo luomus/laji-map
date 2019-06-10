@@ -203,7 +203,7 @@ export default class LajiMap {
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection: boolean;
 	_tileLayersSet: boolean;
-	activeProjName: string;
+	activeProjName: TileLayersOptions["active"];
 	_tileLayerOrder = [
 		"pohjakartta",
 		"taustakartta",
@@ -1290,7 +1290,7 @@ export default class LajiMap {
 			return _names;
 		}, {});
 
-		this.setTileLayers({layers: {...this._tileLayers.layers, ...changes}});
+		this.setTileLayers({...this.tileLayers, layers: {...this._tileLayers.layers, ...changes}});
 
 		provide(this, "overlays");
 	}

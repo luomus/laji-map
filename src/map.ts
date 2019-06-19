@@ -276,7 +276,7 @@ export default class LajiMap {
 			tileLayerOpacity: "setTileLayerOpacity",
 			tileLayers: ["setTileLayers", () => this._tileLayers],
 			center: ["setCenter", () => this.map.getCenter()],
-			zoom: ["setNormalizedZoom", () => this.getNormalizedZoom()],
+			zoom: ["initZoom", () => this.getNormalizedZoom()],
 			zoomToData: ["setZoomToData", "_zoomToData"],
 			locate: ["setLocate", "locate"],
 			onPopupClose: true,
@@ -1363,6 +1363,10 @@ export default class LajiMap {
 		return this._getDefaultCRSLayers().indexOf(tileLayer || this.tileLayer) !== -1 ? zoom + 3 : zoom;
 	}
 
+	initZoom(zoom) {
+		this.setNormalizedZoom(zoom);
+	}
+
 	@dependsOn("map", "tileLayer")
 	setNormalizedZoom(zoom, options = {animate: false}) {
 		this.zoom = zoom;
@@ -1772,7 +1776,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map", "translations")
-	setData(data: Data[]) {
+	setData(data: Data[] | Data) {
 		if (!depsProvided(this, "setData", arguments)) return;
 
 		if (!this.data) {

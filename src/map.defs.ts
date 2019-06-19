@@ -148,7 +148,7 @@ export interface InternalTileLayersOptions {
 export interface Options extends MapOptions {
 	rootElem?: HTMLElement;
 	lang?: Lang;
-	data?: DataOptions[];
+	data?: DataOptions[] | DataOptions;
 	draw?: DrawOptions | boolean;
 	tileLayerName?: TileLayerName;
 	tileLayers?: TileLayersOptions;

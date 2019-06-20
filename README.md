@@ -27,8 +27,9 @@ data                                            | Data options[]            | - 
 draw                                            | Draw options              | -                                   | Options for data that can be controlled with the draw control buttons.
 controls                                        | Control options           | -                                   | An option object that defines which control should be shown.
 customControls                                  | Custom controls options[] | -                                   | An array of custom controls. See custom control options.
-tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap" or "googleSatellite".
-overlayNames                                    | String[]                  | -                                   | The default overlay layers. Possible values:  "geobiologicalProvinces", "municipalities", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "biodiversityForestZones", "ykjGrid" and "ykjGridLabels".
+tileLayerName                                   | String                    | "taustakartta"                      | The default tile layer. One of "taustakartta", "pohjakartta", "maastokartta", "openStreetMap" or "googleSatellite". Overridden by `tileLayers`
+overlayNames                                    | String[]                  | -                                   | The default overlay layers. Possible values:  "geobiologicalProvinces", "municipalities", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "biodiversityForestZones", "ykjGrid" and "ykjGridLabels". Overridden by `tileLayers`
+tileLayers                                      | TileLayers options        | -                                   | Options for the tile layers, which allows multiple active layers. Overrides `tileLayerName`.
 center                                          | LatLng                    | [65, 26]                            | The coordinates for the initial center of the map.
 zoom                                            | Int                       | 2                                   | The initial zoom level for the map.
 zoomToData                                      | FitBounds options         | false                               | Zooms the map to given data & draw data. Additional options are: {paddingInMeters: number, minZoom: number, dataIdxs: number[], draw: boolean}.
@@ -162,6 +163,15 @@ onAdd                                           | Function                 | -  
 contextMenu                                     | Boolean                  | true                                 | If true, control is added to the context menu.
 group                                           | String                   | -                                    | A pre-existing control group to add the group to. Will be displayed according to the groups rules.
 
+### Tile layer options ###
+
+Tile layer options which combine tile layers and overlays into single options object. Allows multiple layers with different opacity.
+
+Option | Type                     |  Default  | Description
+-------|--------------------------|-----------|------------------------------------
+active | "finnish" | "world"      | "finnish" | The projection to use.
+layers | Object                   | -         | Signature: {[tile layer or overlay]: boolean | {opacity: 0-1, visible: boolean}}
+
 ## Methods ##
 
 TODO.
@@ -196,13 +206,35 @@ Try to keep the code style consistent - ```yarn run lint``` should pass without 
 
 In order to use the geocoding widget, you should provide the Google API key to properties.json. See properties.json.example.
 
-### Playground query parameters ###
+The map options can be controlled with query parameters. In addition, `testMode` query param will start the map with the default options.
 
-Option | Default | Description
--------|---------|---------------------------------------------------------------------------------------------------------
-lt     | `true`  | Show example line transect.
-draw   | `true`  | Show example draw data.
-data   | `true`  | Show example data.
+## Tests ##
+
+Install protractor with: 
+
+```
+npm i -g protractor
+webdriver-manager update
+```
+
+The playground server and the Selenium server must be running before running the tests. Start the Selenium server with:
+
+```
+webdriver-manager start
+```
+
+Then run the tests with `yarn test`. For more robust testing, run `yarn run test:slow`. It runs test after 500ms delay after the map has been initialized.
+
+### Test parameters ###
+
+Parameters are given as envirnment variables, i.e. `TEST_BROWSER=chrome yarn test`
+
+Option         | Default | Description
+---------------|---------|-----------------------------------------------------------------------------------------------
+TEST_BROWSER   | -       | `chrome` or `firefox`. Tests are run for both by default.
+HEADLESS       | `true`  | Run the tests in a visible browser window if `true`.
+VERBOSE        | `false` | Logs the playground URI's used by tests so you can get debug the test cases in playground easier.
+DELAY          | -       | Makes all tests wait DELAY milliseconds ebetween the map being initialized and the test run.
 
 
 ## Known issues ##
@@ -233,4 +265,3 @@ if (layer instanceof L.Marker) {
 ```
 
 Setting the styles manually when the cluster unspiderfies has been also tried, but for some reason the event isn't triggered.
-			

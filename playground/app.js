@@ -139,7 +139,7 @@ class App {
 				showDirection: true
 			},
 			activeIdx: 0,
-			editable: false
+			//editable: false
 		};
 
 		this.activeIdx = 0;
@@ -170,7 +170,7 @@ class App {
 					clear: true,
 					reverse: true,
 					delete: true
-				}
+				},
 			},
 			polyline: {
 				opacity: 0.1,

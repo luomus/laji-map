@@ -11,7 +11,10 @@
     "build": "npm run build:lib && npm run build:dist",
     "publish-to-npm": "npm version patch && git push && npm run build && npm publish",
     "push-to-git": "git push",
-    "lint": "tslint src/*.ts"
+    "lint": "tslint src/*.ts",
+    "test": "HOST=127.0.0.1 PORT=4000 TEST_BROWSER=chrome protractor protractor.conf.js",
+    "test:debug": "HOST=127.0.0.1 PORT=4000 TEST_BROWSER=chrome HEADLESS=false node --inspect-brk node_modules/protractor/bin/protractor protractor.conf.js",
+    "test:slow": "HOST=127.0.0.1 PORT=4000 TEST_BROWSER=chrome DELAY=500 protractor protractor.conf.js"
   },
   "repository": {
     "type": "git",
@@ -35,8 +38,11 @@
     "copyfiles": "^2.0.0",
     "css-loader": "^1.0.0",
     "file-loader": "^1.1.11",
+    "jasmine-spec-reporter": "^4.2.1",
     "json-loader": "^0.5.7",
     "mini-css-extract-plugin": "^0.4.1",
+    "protractor": "^5.3.2",
+    "protractor-console-plugin": "^0.1.1",
     "rimraf": "2.5.4",
     "style-loader": "^0.18.2",
     "svg-url-loader": "^2.3.2",
@@ -48,6 +54,7 @@
     "webpack-dev-server": "^3.1.4"
   },
   "dependencies": {
+    "@types/jasmine": "^3.3.13",
     "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#17601bee91f2dae098a0a76e96714d59ec958fe6",
     "leaflet": "1.4.0",
     "leaflet-contextmenu": "1.4.0",

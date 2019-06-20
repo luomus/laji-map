@@ -42,6 +42,8 @@ export function isPolyline(layer: DataItemLayer): boolean {
 	return layer instanceof L.Polyline && ["Rectangle", "Polygon"].every(type => !(layer instanceof L[type]));
 }
 
+const DEFAULT_LAYER_NAME = TileLayerName.taustakartta;
+
 // Override the tooltip to turn when it overflows.
 const tooltipOrigPrototype = L.Draw.Tooltip.prototype;
 L.Draw.Tooltip = L.Draw.Tooltip.extend({
@@ -229,12 +231,13 @@ export default class LajiMap {
 	locateOptions: UserLocationOptions | boolean;
 	availableTileLayersWhitelist: TileLayerName[];
 	availableTileLayersBlacklist: TileLayerName[];
+	_initialized = false;
 
 	constructor(props: Options) {
 		this._constructDictionary();
 
 		const options: Options = {
-			tileLayerName: TileLayerName.taustakartta,
+			tileLayerName: DEFAULT_LAYER_NAME,
 			lang: Lang.en,
 			data: [],
 			locate: false,
@@ -249,9 +252,9 @@ export default class LajiMap {
 			availableTileLayerNamesBlacklist: [TileLayerName.pohjakartta]
 		};
 
-		this.options = {};
+		this.options = {...options, ...props};
 		this.leafletOptions = {};
-		this.setOptions({...options, ...props}, !!"init");
+		this.setOptions(this.options);
 		this._initializeMap();
 		this._initializeView();
 		this.setGeocodingProvider();
@@ -259,6 +262,7 @@ export default class LajiMap {
 		this._stopDrawReverse = this._stopDrawReverse.bind(this);
 		this._onDrawReverseHandler = this._onDrawReverseHandler.bind(this);
 		this.abortDrawing = this.abortDrawing.bind(this);
+		this._initialized = true;
 	}
 
 	getOptionKeys(): any {
@@ -277,7 +281,7 @@ export default class LajiMap {
 			tileLayers: ["setTileLayers", () => this._tileLayers],
 			center: ["setCenter", () => this.map.getCenter()],
 			zoom: ["initZoom", () => this.getNormalizedZoom()],
-			zoomToData: ["setZoomToData", "_zoomToData"],
+			zoomToData: ["zoomToData", "_zoomToData"],
 			locate: ["setLocate", "locate"],
 			onPopupClose: true,
 			markerPopupOffset: true,
@@ -296,17 +300,17 @@ export default class LajiMap {
 		};
 	}
 
-	setOptions(options: Options = {}, init = false) {
+	setOptions(options: Options = {}) {
 		Object.keys(options).forEach((option: keyof Options) => {
-			this.setOption(option, options[option], init);
+			this.setOption(option, options[option]);
 		});
 	}
 
-	setOption(option: keyof Options, value, init = false) {
+	setOption(option: keyof Options, value) {
 		const optionKeys = this.getOptionKeys();
 
 		if (!optionKeys.hasOwnProperty(option)) {
-			if (init) {
+			if (!this._initialized) {
 				this.leafletOptions[option] = value;
 			} else {
 				console.warn(`setting leaflet options works only during initialization. '${option}' isn't a LajiMap option.`);
@@ -319,7 +323,7 @@ export default class LajiMap {
 		if (optionKey === true) {
 			this[option] = value;
 		} else {
-			this[optionKey](value, init);
+			this[optionKey](value);
 		}
 	}
 
@@ -772,6 +776,25 @@ export default class LajiMap {
 	}
 
 	_initializeView() {
+		let tileLayerOptions;
+		if (this.options.tileLayers) {
+			tileLayerOptions = this.options.tileLayers;
+		} else if (this.options.tileLayerName) {
+			tileLayerOptions = {layers: {[this.options.tileLayerName]: true}};
+		} else {
+			tileLayerOptions = {layers: {[DEFAULT_LAYER_NAME]: true}};
+		}
+		tileLayerOptions = this._getInternalTileLayerOptions(tileLayerOptions);
+		const center = this.options.zoomToData
+			? this.getBoundsForZoomToDataOptions(this.options.zoomToData).getCenter()
+			: this.options.center;
+
+		if (tileLayerOptions.active === "finnish" && this._isOutsideFinland(center)) {
+			tileLayerOptions.active = "world";
+		}
+
+		this.setTileLayers(tileLayerOptions);
+
 		const setView = () => {
 			this.map.setView(
 				this.center,
@@ -779,16 +802,14 @@ export default class LajiMap {
 				{animate: false}
 			);
 		};
-		if (this._zoomToData) {
-			this.zoomToData(this._zoomToData);
+
+		if (this.options.zoomToData) {
+			this.zoomToData(this.options.zoomToData);
 		} else {
 			setView();
 		}
-		// Initializing view triggers tileLayer initialization.
-		// After tileLayer has been set, we need to zoom to data again
-		// (tileLayer init can change zoom level, and we need to fix it if data was zoomed to).
+
 		provide(this, "view");
-		this._zoomToData && this.zoomToData(this._zoomToData);
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
@@ -990,9 +1011,9 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setTileLayerByName(name: TileLayerName, init = false) {
+	setTileLayerByName(name: TileLayerName) {
 		if (!depsProvided(this, "setTileLayerByName", arguments)) return;
-		if (init && this._tileLayersSet) {
+		if (!this._initialized && this._tileLayersSet) {
 			return;
 		}
 		this.setTileLayer(this.tileLayers[name]);
@@ -1014,6 +1035,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
 
 		this.availableTileLayers = this._getListForAvailableTileLayer(names, condition, _tileLayers);
+		!isProvided(this, "availableTileLayers") && provide(this, "availableTileLayers");
 		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
 
@@ -1109,11 +1131,8 @@ export default class LajiMap {
 		}, {});
 	}
 
-	@dependsOn("map", "view")
-	setTileLayers(options: TileLayersOptions) {
-		this._tileLayersSet = true;
+	_getInternalTileLayerOptions(options: TileLayersOptions): InternalTileLayersOptions {
 		const {layers, active} = options;
-		if (!depsProvided(this, "setTileLayers", arguments)) return;
 
 		const defaultCRSLayers = this._getDefaultCRSLayers();
 		const mmlCRSLayers = this._getMMLCRSLayers();
@@ -1132,6 +1151,28 @@ export default class LajiMap {
 				return _layers;
 			}, {})
 		};
+		const prevActiveLayers = this._tileLayers && this.getActiveLayers(this._tileLayers);
+		const activeLayers = this.getActiveLayers(newOptions);
+		const oldActive = this.activeProjName;
+		newOptions.active = options.active
+			|| (Object.keys(activeLayers).length === 0 || this.finnishTileLayers[Object.keys(activeLayers)[0]]
+				? "finnish"
+				: "world");
+		return newOptions;
+	}
+
+	@dependsOn("map", "view")
+	setTileLayers(options: TileLayersOptions) {
+		this._tileLayersSet = true;
+		const {layers, active} = options;
+		if (!depsProvided(this, "setTileLayers", arguments)) return;
+
+		const newOptions = this._getInternalTileLayerOptions(options);
+
+		const defaultCRSLayers = this._getDefaultCRSLayers();
+		const mmlCRSLayers = this._getMMLCRSLayers();
+
+		const combinedLayers = {...this.availableTileLayers, ...this.availableOverlaysByNames};
 		const prevActiveLayers = this._tileLayers && this.getActiveLayers(this._tileLayers);
 		const activeLayers = this.getActiveLayers(newOptions);
 		const oldActive = this.activeProjName;
@@ -1241,12 +1282,8 @@ export default class LajiMap {
 		}
 	}
 
-	getTileLayers(): {[name: string]: L.TileLayer[]} {
-		const tileLayers = {};
-		Object.keys(this.tileLayers).forEach(tileLayerName => {
-			tileLayers[tileLayerName] = this.tileLayers[tileLayerName];
-		});
-		return tileLayers;
+	getTileLayers(): TileLayersOptions {
+		return this._tileLayers;
 	}
 
 	@dependsOn("tileLayer")
@@ -1346,6 +1383,7 @@ export default class LajiMap {
 			if (name in list === condition) overlaysByNames[name] = this.overlaysByNames[name];
 			return overlaysByNames;
 		}, {});
+		!isProvided(this, "availableOverlays") && provide(this, "availableOverlays");
 		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
 
@@ -1367,7 +1405,7 @@ export default class LajiMap {
 		this.setNormalizedZoom(zoom);
 	}
 
-	@dependsOn("map", "tileLayer")
+	@dependsOn("map", "view")
 	setNormalizedZoom(zoom, options = {animate: false}) {
 		this.zoom = zoom;
 
@@ -1379,10 +1417,10 @@ export default class LajiMap {
 		if (this.map) {
 			this.map.setZoom(this.getDenormalizedZoom(this.zoom), options);
 		}
-		provide(this, "zoom");
+		if (!isProvided(this, "zoom")) provide(this, "zoom");
 	}
 
-	@dependsOn("zoom")
+	@dependsOn("zoom", "view")
 	setCenter(center: L.LatLngExpression) {
 		this.center = center;
 
@@ -1394,7 +1432,7 @@ export default class LajiMap {
 		if (this.map) {
 			this.map.setView(center, this.getDenormalizedZoom(this.zoom), {animate: false});
 		}
-		provide(this, "center");
+		if (!isProvided(this, "center")) provide(this, "center");
 	}
 
 	destroy() {
@@ -1682,18 +1720,20 @@ export default class LajiMap {
 		return [this.getDraw(), ...this.data];
 	}
 
-	setZoomToData(options?: LajiMapFitBoundsOptions | boolean) {
-		this._zoomToData = options;
-		if (options && !this.locate) {
-			this.zoomToData(options);
-		}
-		provide(this, "_zoomToData");
-	}
-
-	@dependsOn("data", "draw", "center", "zoom")
+	@dependsOn("data", "draw", "view")
 	zoomToData(options: ZoomToDataOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
+		if (options && !isObject(options)) {
+			options = {};
+		}
+
+		const bounds = this.getBoundsForZoomToDataOptions(options);
+
+		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
+	}
+
+	getBoundsForZoomToDataOptions(options: ZoomToDataOptions | boolean = {}) {
 		if (options && !isObject(options)) {
 			options = {};
 		}
@@ -1703,11 +1743,9 @@ export default class LajiMap {
 			? [...(dataIdxs || []), ...(draw ? [this.drawIdx] : [])]
 			: undefined;
 
-		const bounds = datasToZoom
+		return datasToZoom
 			? this.getBoundsForIdxs(datasToZoom)
 			: this.getBoundsForData();
-
-		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}
 
 	getBoundsForDraw() {

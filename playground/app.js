@@ -10,11 +10,19 @@ class App {
 	constructor() {
 
 		function getJsonFromUrl() {
-			var query = location.search.substr(1);
-			var result = {};
+			const type = (value) => {
+				try {
+					return JSON.parse(value);
+				} catch (e) {
+					return value;
+				}
+			};
+
+			let query = location.search.substr(1);
+			let result = {};
 			query.split("&").forEach(function(part) {
 				var item = part.split("=");
-				result[item[0]] = decodeURIComponent(item[1]);
+				result[item[0]] = type(decodeURIComponent(item[1]));
 			});
 			return result;
 		}
@@ -136,10 +144,7 @@ class App {
 
 		this.activeIdx = 0;
 
-		const options = {
-			googleApiKey: properties.googleApiKey,
-			rootElem: document.getElementById("root"),
-			lang: "fi",
+		const demoOptions = {
 			popupOnHover: true,
 			center: {
 				"lat": 79.3499057749654,
@@ -177,26 +182,39 @@ class App {
 					showArea: true
 				}
 			},
+			lineTransect: {
+				feature: lineTransects.features[2],
+				activeIdx: 0,
+				onChange: this.onLTChange,
+				//printMode: true,
+			},
+			draw: this.drawOptions,
+			data: this.data,
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
 			//locate: {on: false, onLocationFound: () => console.log("FOUND")}
 			//clickBeforeZoomAndPan: true,
 			//viewLocked: true
 		};
 
-		if (query.lt !== "false") {
-			options.lineTransect = {
-				feature: lineTransects.features[2],
-				activeIdx: 0,
-				onChange: this.onLTChange,
-				//printMode: true,
-			}
+		let options = {
+			googleApiKey: properties.googleApiKey,
+			rootElem: document.getElementById("root"),
+			lang: "fi",
+		};
+
+		if (query.testMode) {
+			delete query.testMode
+		} else {
+			options = {
+				...options,
+				...demoOptions
+			};
 		}
-		if (query.draw !== "false") {
-			options.draw = this.drawOptions;
-		}
-		if (query.data !== "false") {
-			options.data = this.data;
-		}
+
+		options = {
+			...options,
+			...query
+		};
 
 		const map = new LajiMap(options);
 		this.map = map;

@@ -7,9 +7,11 @@ const navigateToMap = async (params = "") => {
 	await browser.get(url);
 }
 
-const initializeMap = async options => navigateToMap(options);
+function getControlButton(name) {
+	return $(`.button-${name.replace(/\./g, "_")}`)
+}
 
-class MapObject {
+class MapPageObject {
 	constructor(options) {
 		this.options = options;
 	}
@@ -24,10 +26,33 @@ class MapObject {
 	async e(path, ...params) {
 		return await browser.executeScript(`return window.map.${path}`, ...params);
 	}
+
+	getCoordinateControl() {return new CoordinateControlPageObject()};
+
+}
+class CoordinateControlPageObject {
+	$getButton() {
+		return getControlButton("drawUtils.coordinateInput");
+	}
+	$getContainer() {
+		return $(".laji-map-coordinates").element(by.xpath(".."));
+	}
+	$getCloseButton() {
+		return this.$getContainer().$(".close");
+	}
+	$getLatInput() {
+		return $("#laji-map-coordinate-input-lat");
+	}
+	$getLngInput() {
+		return $("#laji-map-coordinate-input-lng");
+	}
+	$getSubmit() {
+		return this.getContainer().$("button[type=\"submit\"]");
+	}
 }
 
 const createMap = async options => {
-	const map = new MapObject(options);
+	const map = new MapPageObject(options);
 	await map.initialize();
 	return map;
 };

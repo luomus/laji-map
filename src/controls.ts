@@ -11,7 +11,11 @@ import {
 } from "./utils";
 import {
 	ESC,
-	ONLY_MML_OVERLAY_NAMES
+	ONLY_MML_OVERLAY_NAMES,
+	EPSG2393String,
+	EPSG2393WKTString,
+	EPSG3067String,
+	EPSG3067WKTString,
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
@@ -1749,7 +1753,15 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			try {
 				format = detectFormat(value);
 				crs = detectCRS(value, allowGrid);
-				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
+				try {
+					valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
+				} catch (e) {
+				}
+				if (crs === EPSG2393String || crs === EPSG2393WKTString) {
+					crs = "EPSG:2393";
+				} else if (crs === EPSG3067String || crs === EPSG3067WKTString) {
+					crs = "EPSG:3067";
+				}
 			} catch (e) {
 				if (displayErrors && e._lajiMapError) {
 					if (e.translationKey !== "GeoDataFormatDetectionError") {

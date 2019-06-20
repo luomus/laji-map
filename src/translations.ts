@@ -440,6 +440,11 @@ export default {
 		en: "ETRS-TM35FIN",
 		sv: "ETRS-TM35FIN"
 	},
+	"WGS84": {
+		fi: "WGS84",
+		en: "WGS84",
+		sv: "WGS84"
+	},
 	splitLineByMeters: {
 		fi: "Katkaise linja metriluvulla",
 		en: "Split line transect by meters",
@@ -724,6 +729,11 @@ export default {
 		fi: "Tuntematon WKT koordinaattijärjestelmä",
 		en: "Unknown WKT coordinate reference system",
 		sv: "Okänt WKT-koordinatreferenssystem"
+	},
+	GeoJSONCRSNotSupported: {
+		fi: "Tuntematon koordinaattijärjestelmä",
+		en: "Unknown coordinate reference system",
+		sv: "Okänt koordinatreferenssystem"
 	},
 	activateFinnishMaps: {
 		fi: "Vaihda Suomen karttaan",

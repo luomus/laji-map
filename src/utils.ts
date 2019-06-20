@@ -575,11 +575,14 @@ export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
 	} else if (typeof data === "object" || typeof data === "string" && data.indexOf("{") !== -1) {
 		geoJSON = (typeof data === "object") ? data : parseJSON(data);
 		if (geoJSON.crs) {
-			return geoJSON.crs.properties.name;
-			const {name} = geoJSON.crs.properties;
-			if (name === EPSG2393String) return "EPSG:2393";
-			else if (name.indexOf("ETRS-TM35FIN") !== -1) return "EPSG:3067";
-			else return name;
+
+			const crs = geoJSON.crs.properties.name;
+			try {
+				proj4(crs)
+			} catch (e) {
+					throw new LajiMapError("GeoJSON CRS not supported", "GeoJSONCRSNotSupported");
+			}
+			return crs;
 		}
 	}
 

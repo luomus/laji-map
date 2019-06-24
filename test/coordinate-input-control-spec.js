@@ -8,7 +8,7 @@ describe("Coordinate control", () => {
 			draw: true,
 			controls: true
 		});
-		control = map.getCoordinateControl();
+		control = map.getCoordinateInputControl();
 	});
 
 	it("opens on click", async () => {
@@ -46,7 +46,7 @@ describe("Coordinate control", () => {
 			}
 		});
 
-		const getLastGeometry = () => map.e(
+		const getGeometry = () => map.e(
 			"getDraw().featureCollection.features[map.getDraw().featureCollection.features.length - 1].geometry"
 		);
 
@@ -55,7 +55,7 @@ describe("Coordinate control", () => {
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("WGS84");
 			await control.$getSubmit().click();
-			const mapCoordinates = (await getLastGeometry()).coordinates;
+			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
 			expect(mapCoordinates[1]).toBe(lat);
 		});
@@ -65,7 +65,7 @@ describe("Coordinate control", () => {
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("WGS84");
 			await control.$getSubmit().click();
-			const mapCoordinates = (await getLastGeometry()).coordinates;
+			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
 			expect(mapCoordinates[1]).toBe(lat);
 		});
@@ -76,7 +76,7 @@ describe("Coordinate control", () => {
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();
-			const geometry = await getLastGeometry();
+			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(geometry.coordinates).toEqual(converted);
 			expect(geometry.coordinateVerbatim).toBe(`${lat}:${lng}`);
@@ -93,7 +93,7 @@ describe("Coordinate control", () => {
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();
-			const geometry = await getLastGeometry();
+			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates[0].length).toBe(5);
 			expect(geometry.coordinates[0][0]).toEqual(converted[0]);
@@ -110,7 +110,7 @@ describe("Coordinate control", () => {
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
 			await control.$getSubmit().click();
-			const geometry = await getLastGeometry();
+			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(geometry.coordinates).toEqual(converted);
 			expect(geometry.coordinateVerbatim).toBe(`${lat}:${lng}`);

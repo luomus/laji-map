@@ -29,10 +29,11 @@ class MapPageObject {
 		return browser.executeScript(`return window.map.${path}`, ...params);
 	}
 
-	getCoordinateControl() {return new CoordinateControlPageObject()};
+	getCoordinateInputControl() {return new CoordinateInputControlPageObject()};
+	getCoordinateUploadControl() {return new CoordinateUploadControlPageObject()};
 }
 
-class CoordinateControlPageObject {
+class CoordinateInputControlPageObject {
 	$getButton() {
 		return getControlButton("drawUtils.coordinateInput");
 	}
@@ -54,6 +55,30 @@ class CoordinateControlPageObject {
 	}
 }
 
+class CoordinateUploadControlPageObject {
+	$getButton() {
+		return getControlButton("drawUtils.upload");
+	}
+	$getContainer() {
+		return $(".laji-map-coordinate-upload").element(by.xpath(".."));
+	}
+	$getCloseButton() {
+		return this.$getContainer().$(".close");
+	}
+	type(text) {
+		return this.$getContainer().$("textarea").sendKeys(text);
+	}
+	getCRS() {
+		return this.$getContainer().$(".crs-info span:last-child").getText();
+	}
+	getFormat() {
+		return this.$getContainer().$(".format-info span:last-child").getText();
+	}
+	$getSubmit() {
+		return this.$getContainer().$("button[type=\"submit\"]");
+	}
+}
+
 const createMap = async options => {
 	const map = new MapPageObject(options);
 	await map.initialize();
@@ -61,7 +86,7 @@ const createMap = async options => {
 };
 
 const ykjToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "EPSG:2393", "WGS84").map(c => +c.toFixed(6));
-const etrsToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "EPSG:3067", "WGS84").map(c => +c.toFixed(6));
+const etrsToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84").map(c => +c.toFixed(6));
 
 module.exports = {
 	createMap,

@@ -1,4 +1,6 @@
 const {HOST, PORT, VERBOSE, DELAY} = process.env;
+const proj4 = require("proj4");
+const utils = require("../lib/utils");
 
 const joinParams = params => Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
 const navigateToMap = async (params = "") => {
@@ -23,13 +25,13 @@ class MapPageObject {
 		}
 	}
 
-	async e(path, ...params) {
-		return await browser.executeScript(`return window.map.${path}`, ...params);
+	e(path, ...params) {
+		return browser.executeScript(`return window.map.${path}`, ...params);
 	}
 
 	getCoordinateControl() {return new CoordinateControlPageObject()};
-
 }
+
 class CoordinateControlPageObject {
 	$getButton() {
 		return getControlButton("drawUtils.coordinateInput");
@@ -40,14 +42,15 @@ class CoordinateControlPageObject {
 	$getCloseButton() {
 		return this.$getContainer().$(".close");
 	}
-	$getLatInput() {
-		return $("#laji-map-coordinate-input-lat");
+	async enterLatLng(lat, lng) {
+		await $("#laji-map-coordinate-input-lat").sendKeys(lat);
+		return $("#laji-map-coordinate-input-lng").sendKeys(lng);
 	}
-	$getLngInput() {
-		return $("#laji-map-coordinate-input-lng");
+	getCRS() {
+		return this.$getContainer().$(".crs-info span:last-child").getText();
 	}
 	$getSubmit() {
-		return this.getContainer().$("button[type=\"submit\"]");
+		return this.$getContainer().$("button[type=\"submit\"]");
 	}
 }
 
@@ -57,6 +60,11 @@ const createMap = async options => {
 	return map;
 };
 
+const ykjToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "EPSG:2393", "WGS84").map(c => +c.toFixed(6));
+const etrsToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "EPSG:3067", "WGS84").map(c => +c.toFixed(6));
+
 module.exports = {
-	createMap
+	createMap,
+	ykjToWgs84,
+	etrsToWgs84,
 }

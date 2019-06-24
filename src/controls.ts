@@ -1713,8 +1713,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const geoJSONErrorsContainer = document.createElement("ul");
 		const geoJSONWarningsContainer = document.createElement("ul");
 
-		formatContainer.className = "form-group text-success";
-		crsContainer.className = "form-group text-success";
+		formatContainer.className = "form-group text-success format-info";
+		crsContainer.className = "form-group text-success crs-info";
 		geoJSONErrorsContainer.className = "geojson-validations";
 		geoJSONWarningsContainer.className = "geojson-validations";
 

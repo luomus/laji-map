@@ -1,6 +1,6 @@
 const { createMap, ykjToWgs84, etrsToWgs84 } = require("./test-utils");
 
-describe("Coordinate control", () => {
+describe("Coordinate input control", () => {
 
 	let map, control;
 	beforeAll(async () => {

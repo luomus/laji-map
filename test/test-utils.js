@@ -29,8 +29,36 @@ class MapPageObject {
 		return browser.executeScript(`return window.map.${path}`, ...params);
 	}
 
+	$getElement() {
+		return $(".laji-map");
+	}
+
+	async clickAt(x, y) {
+		await browser.actions()
+			.mouseMove(this.$getElement(), {x, y})
+			.perform();
+		return browser.actions()
+			.click().perform();
+	}
+
+	async drag([x, y], [x2, y2]) {
+		await browser.actions()
+			.mouseMove(this.$getElement(), {x, y})
+			.perform();
+		await browser.actions()
+			.mouseDown()
+			.perform();
+		await browser.actions()
+			.mouseMove(this.$getElement(), {x: x2 - x, y: y2 - y})
+			.perform();
+		return browser.actions()
+			.mouseUp()
+			.perform();
+	}
+
 	getCoordinateInputControl() {return new CoordinateInputControlPageObject()};
 	getCoordinateUploadControl() {return new CoordinateUploadControlPageObject()};
+	getDrawControl() {return new DrawControlPageObject()};
 }
 
 class CoordinateInputControlPageObject {
@@ -79,6 +107,27 @@ class CoordinateUploadControlPageObject {
 	}
 }
 
+class DrawControlPageObject {
+	$getButton(name) {
+		return $(`.leaflet-draw-draw-${name}`);
+	}
+	$getMarkerButton() {
+		return this.$getButton("marker");
+	}
+	$getPolygonButton() {
+		return this.$getButton("polygon");
+	}
+	$getRectangleButton() {
+		return this.$getButton("rectangle");
+	}
+	$getCircleButton() {
+		return this.$getButton("circle");
+	}
+	$getPolylineButton() {
+		return this.$getButton("polyline");
+	}
+}
+
 const createMap = async options => {
 	const map = new MapPageObject(options);
 	await map.initialize();
@@ -88,8 +137,63 @@ const createMap = async options => {
 const ykjToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "EPSG:2393", "WGS84").map(c => +c.toFixed(6));
 const etrsToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84").map(c => +c.toFixed(6));
 
+class PointTraveller {
+	constructor(x = 0, y = 0) {
+		this.x = x;
+		this.y = y;
+		this.initX = x;
+		this.initY = y;
+	}
+
+	travel(xAmount, yAmount) {
+		this.x = this._x(this.x, yAmount);
+		this.y = this._y(this.y, xAmount);
+		return this.return(this.x, this.y);
+	}
+
+	return(x, y) {
+		return [x, y];
+	}
+
+	start() {
+		return this.return(this.initX, this.initY);
+	}
+
+	_x(curVal, amount) {return curVal + amount;}
+	_y(curVal, amount) {return curVal + amount;}
+}
+
+class LatLngTraveller extends PointTraveller {
+	constructor(lat, lng, options = {}) {
+		super(lng, lat, options);
+		if (options.onlyForward) {
+			this.onlyForward = true;
+		}
+	}
+
+	_y(curVal, amount) {
+		if (this.onlyForward && amount < 0) throw "Can travel only positive amounts if 'onlyForward' true";
+		return super._y(curVal, -amount);
+	}
+
+	_x(curVal, amount) {
+		if (this.onlyForward && amount < 0) throw "Can travel only positive amounts if 'onlyForward' true";
+		return super._x(curVal, amount);
+	}
+
+	northEast(north, east) {
+		return this.travel(east, north);
+	}
+
+	return() {
+		return [this.y, this.x];
+	}
+}
+
 module.exports = {
 	createMap,
 	ykjToWgs84,
 	etrsToWgs84,
-}
+	PointTraveller,
+	LatLngTraveller
+};

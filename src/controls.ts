@@ -1838,6 +1838,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	openDrawUploadDialog() {
 		const container = document.createElement("form");
+		container.className = "laji-map-coordinate-upload";
 
 		const textarea = createTextArea(10, 50);
 		textarea.className += " form-group";

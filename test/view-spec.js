@@ -1,4 +1,4 @@
-const { createMap } = require("./test-utils");
+const { createMap, LatLngTraveller } = require("./test-utils");
 
 
 // Internal logic tested because the later tests rely heavily on it.
@@ -115,18 +115,9 @@ describe("Zooms to data", () => {
 	describe("correct when data, draw and lineTransect given", () => {
 		let [north, east] = [63, 25];
 		const [minNorth, minEast] = [north, east];
-		const travelNorth = (val) => {
-			if (val < 0) throw "Travel only positive amounts in order to keep minNorth really min";
-			north = north + val;
-			return north;
-		};
-		const travelEast = (val) => {
-			if (val < 0) throw "Travel only positive amounts in order to keep minEast really min";
-			east = east + val;
-			return east;
-		};
+		const travel = new LatLngTraveller(north, east, {onlyForward: true});
 		const data = {geoData: {type: "Point", coordinates: [east, north]}};
-		const draw = {geoData: {type: "Point", coordinates: [travelEast(0.005), travelNorth(0.005)]}};
+		const draw = {geoData: {type: "Point", coordinates: travel.northEast(0.005, 0.005)}};
 		const lineTransect = {
 			feature: {
 				type: "Feature",
@@ -134,8 +125,8 @@ describe("Zooms to data", () => {
 				geometry: {
 					type: "LineString",
 					coordinates: [
-						[travelEast(0.005), travelNorth(0.005)],
-						[travelEast(0.005), travelNorth(0.005)]
+						travel.northEast(0.005, 0.005),
+						travel.northEast(0.005, 0.005)
 					]
 				}
 			}

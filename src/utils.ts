@@ -56,24 +56,33 @@ export function convertLatLng(latlng: [number, number], from: string, to: string
 		return proj4.defs(format) || format;
 	}
 
-	let validator = undefined;
-	if (from === "EPSG:2393") {
-		validator = ykjValidator;
-	} else if (from === "EPSG:3067") {
-		validator = etrsTm35FinValidator;
+	const [fromValidator, toValidator] = [from, to].map(crs => {
+		if (crs === "EPSG:2393") {
+			return ykjValidator;
+		} else if (crs === "EPSG:3067") {
+			return etrsTm35FinValidator;
+		} else if (crs === "WGS84") {
+			return wgs84Validator;
+		}
+	});
+
+	const format = (latlng, validator) => latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+
+	if (fromValidator && fromValidator[0].formatter) {
+		latlng = format(latlng, fromValidator);
 	}
-	if (validator && validator.formatter) {
-		latlng = <[number, number]> latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
-	}
-	if (validator && (validator.regexp || validator.range)) {
-		validateLatLng(latlng.map(c => `${c}`), validator, !!"throwMode");
+	if (fromValidator && (fromValidator[0].regexp || fromValidator[0].range)) {
+		validateLatLng(latlng.map(c => `${c}`), fromValidator, !!"throwMode");
 	}
 
 	const converted = proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng));
-	return (to === "WGS84") ? converted : converted.map(c => parseInt(c));
+	if (toValidator && toValidator[0].formatter) {
+		return format(converted, toValidator);
+	}
+	return converted;
 }
 
-function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) => any): any {
+export function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) => any): any {
 	function _updater(_obj) {
 		if (typeof _obj === "object" && _obj !== null) {
 			Object.keys(_obj).forEach(key => {
@@ -89,7 +98,6 @@ function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) 
 
 export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string): G.GeoJSON {
 	const convertCoordinates = coords => {
-
 		if (typeof coords[0] === "number") {
 			let validator = undefined;
 			switch (from) {
@@ -103,7 +111,7 @@ export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string): G.
 					validator = wgs84Validator;
 					break;
 			}
-			validator && validateLatLng(coords.slice(0).reverse().map(_c => `${_c}`), validator, !!"throwMode");
+			validator && validateLatLng(reverseCoordinate(coords).map(_c => `${_c}`), validator, !!"throwMode");
 			return convertLatLng(reverseCoordinate(coords), from, to);
 		} else {
 			return coords.map(convertCoordinates);
@@ -969,7 +977,9 @@ interface CoordinateValidator {
 const wgs84Check: CoordinateValidator = {
 	regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
 	range: [-180, 180],
-	formatter: c => c
+	formatter: c => {
+		return (+c).toFixed(6)
+	}
 };
 const wgs84Validator = [wgs84Check, wgs84Check];
 

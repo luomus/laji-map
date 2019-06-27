@@ -58,6 +58,7 @@ class MapPageObject {
 
 	getCoordinateInputControl() {return new CoordinateInputControlPageObject()};
 	getCoordinateUploadControl() {return new CoordinateUploadControlPageObject()};
+	getCoordinateCopyControl() {return new CoordinateCopyControlPageObject()};
 	getDrawControl() {return new DrawControlPageObject()};
 }
 
@@ -107,6 +108,39 @@ class CoordinateUploadControlPageObject {
 	}
 }
 
+class CoordinateCopyControlPageObject {
+	$getButton() {
+		return getControlButton("drawUtils.copy");
+	}
+	$getContainer() {
+		return $(".laji-map-draw-copy-table").element(by.xpath(".."));
+	}
+	$getCloseButton() {
+		return this.$getContainer().$(".close");
+	}
+	getConverted() {
+		return this.$getContainer().$("textarea").getAttribute("value");
+	}
+	GeoJSON() {
+		return this.$getContainer().element(by.cssContainingText("a", "GeoJSON")).click();
+	}
+	ISO6709() {
+		return this.$getContainer().element(by.cssContainingText("a", "ISO 6709")).click();
+	}
+	WKT() {
+		return this.$getContainer().element(by.cssContainingText("a", "WKT")).click();
+	}
+	WGS84() {
+		return this.$getContainer().element(by.cssContainingText("a", "WGS84")).click();
+	}
+	YKJ() {
+		return this.$getContainer().element(by.cssContainingText("a", "YKJ")).click();
+	}
+	ETRS() {
+		return this.$getContainer().element(by.cssContainingText("a", "ETRS-TM35FIN")).click();
+	}
+}
+
 class DrawControlPageObject {
 	$getButton(name) {
 		return $(`.leaflet-draw-draw-${name}`);
@@ -134,8 +168,8 @@ const createMap = async options => {
 	return map;
 };
 
-const ykjToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "EPSG:2393", "WGS84").map(c => +c.toFixed(6));
-const etrsToWgs84 = (lat, lng) => utils.convertLatLng([lat, lng], "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84").map(c => +c.toFixed(6));
+const ykjToWgs84 = (latLng) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");
+const etrsToWgs84 = (latLng) => utils.convertLatLng(latLng, "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84");
 
 class PointTraveller {
 	constructor(x = 0, y = 0) {

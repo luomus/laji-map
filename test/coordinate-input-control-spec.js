@@ -1,4 +1,5 @@
 const { createMap, ykjToWgs84, etrsToWgs84 } = require("./test-utils");
+const { reverseCoordinate } = require("../lib/utils");
 
 describe("Coordinate input control", () => {
 
@@ -72,47 +73,45 @@ describe("Coordinate input control", () => {
 
 		it("YKJ point", async () => {
 			const [lat, lng] = [6666666, 3333333];
-			const converted = ykjToWgs84(lat, lng);
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
-			expect(geometry.coordinates).toEqual(converted);
+			expect(reverseCoordinate(geometry.coordinates)).toEqual(ykjToWgs84([lat, lng]));
 			expect(geometry.coordinateVerbatim).toBe(`${lat}:${lng}`);
 		});
 
 		it("YKJ grid", async () => {
 			const [lat, lng] = [666666, 333333];
-			const converted = [
+			const wgs84LatLngs = [
 				[6666660, 3333330],
 				[6666660, 3333340],
 				[6666670, 3333340],
 				[6666670, 3333330],
-			].map(latLng => ykjToWgs84(...latLng));
+			].map(latLng => ykjToWgs84(latLng));
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates[0].length).toBe(5);
-			expect(geometry.coordinates[0][0]).toEqual(converted[0]);
-			expect(geometry.coordinates[0][1]).toEqual(converted[1]);
-			expect(geometry.coordinates[0][2]).toEqual(converted[2]);
-			expect(geometry.coordinates[0][3]).toEqual(converted[3]);
-			expect(geometry.coordinates[0][4]).toEqual(converted[0]);
+			expect(reverseCoordinate(geometry.coordinates[0][0])).toEqual(wgs84LatLngs[0]);
+			expect(reverseCoordinate(geometry.coordinates[0][1])).toEqual(wgs84LatLngs[1]);
+			expect(reverseCoordinate(geometry.coordinates[0][2])).toEqual(wgs84LatLngs[2]);
+			expect(reverseCoordinate(geometry.coordinates[0][3])).toEqual(wgs84LatLngs[3]);
+			expect(reverseCoordinate(geometry.coordinates[0][4])).toEqual(wgs84LatLngs[0]);
 			expect(geometry.coordinateVerbatim).toBe(`${lat}:${lng}`);
 		});
 
 		it("ETRS point", async () => {
 			const [lat, lng] = [6666666, 333333];
-			const converted = etrsToWgs84(lat, lng);
 			await control.enterLatLng(lat, lng);
 			await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
 			await control.$getSubmit().click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
-			expect(geometry.coordinates).toEqual(converted);
+			expect(reverseCoordinate(geometry.coordinates)).toEqual(etrsToWgs84([lat, lng]));
 			expect(geometry.coordinateVerbatim).toBe(`${lat}:${lng}`);
 		});
 	});

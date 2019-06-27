@@ -89,7 +89,7 @@ describe("Drawing", () => {
 
 		it("coordinates length", async () => {
 			const geometry = await getLastGeometry();
-			await geometry.coordinates.forEach(async (c) => {
+			await geometry.coordinates[0].forEach(async (c) => {
 				await expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				await expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
 			});
@@ -126,7 +126,7 @@ describe("Drawing", () => {
 
 		it("coordinates length", async () => {
 			const geometry = await getLastGeometry();
-			await geometry.coordinates.forEach(async (c) => {
+			await geometry.coordinates[0].forEach(async (c) => {
 				await expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				await expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
 			});

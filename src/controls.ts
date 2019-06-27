@@ -7,7 +7,7 @@ import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, etrsTm35FinGridStrictValidator, wgs84Validator,
 	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
-	capitalizeFirstLetter, renderLajiMapError
+	capitalizeFirstLetter, renderLajiMapError, reverseCoordinate
 } from "./utils";
 import {
 	ESC,
@@ -887,8 +887,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					const wgs84 = [lat, lng].map(c => c.toFixed(6));
 					let ykj, etrsTm35Fin;
 					try {
-						ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393").reverse();
-						etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067").reverse();
+						ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393");
+						etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067");
 					} catch (e) {
 						//
 					}
@@ -1514,13 +1514,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 			let geometry = {
 				type: "Point",
-				coordinates: (isYKJ)
+				coordinates: ((isYKJ)
 					? convert(latlng, "EPSG:2393")
 					: (isETRS)
 						? convert(latlng, "EPSG:3067")
 						: (isWGS84Coordinates)
-							? latlng.reverse()
-							: null
+							? latlng
+							: []).reverse()
 			};
 
 			const feature = {
@@ -1534,17 +1534,17 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				const latStart = +validator[0].formatter(`${latlng[0]}`);
 				const latEnd = +validator[0].formatter(`${latlng[0] + 1}`);
 
-				const lonStart = +validator[1].formatter(`${latlng[1]}`);
-				const lonEnd = +validator[1].formatter(`${latlng[1] + 1}`);
+				const lngStart = +validator[1].formatter(`${latlng[1]}`);
+				const lngEnd = +validator[1].formatter(`${latlng[1] + 1}`);
 
 				geometry.type = "Polygon";
 				geometry.coordinates = [[
-					[latStart, lonStart],
-					[latStart, lonEnd],
-					[latEnd, lonEnd],
-					[latEnd, lonStart],
-					[latStart, lonStart]
-				].map(coordinatePair => convert(coordinatePair, isYKJGrid ? "EPSG:2393" : "EPSG:3067"))];
+					[latStart, lngStart],
+					[latStart, lngEnd],
+					[latEnd, lngEnd],
+					[latEnd, lngStart],
+					[latStart, lngStart]
+				].map(coordinatePair => reverseCoordinate(convert(coordinatePair, isYKJGrid ? "EPSG:2393" : "EPSG:3067")))];
 			}
 
 			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);
@@ -1755,8 +1755,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				crs = detectCRS(value, allowGrid);
 				try {
 					valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
-				} catch (e) {
-				}
+				} catch (e) { ; }
 				if (crs === EPSG2393String || crs === EPSG2393WKTString) {
 					crs = "EPSG:2393";
 				} else if (crs === EPSG3067String || crs === EPSG3067WKTString) {

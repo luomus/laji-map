@@ -12,7 +12,8 @@ import { GoogleProvider } from "leaflet-geosearch";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
 	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate,
-	coordinatesAreClockWise, flattenMultiLineStringsAndMultiPolygons, anyToFeatureCollection
+	coordinatesAreClockWise, flattenMultiLineStringsAndMultiPolygons, anyToFeatureCollection,
+	updateImmutablyRecursivelyWith
 } from "./utils";
 import { depsProvided, dependsOn, provide, isProvided, reflect } from "./dependency-utils";
 import {
@@ -1520,6 +1521,20 @@ export default class LajiMap {
 				feature = {...feature, geometry: {...feature.geometry, coordinates: [coordinates.reverse()]}};
 			}
 		}
+
+		feature = updateImmutablyRecursivelyWith(feature, (key, obj) => {
+			if (key === "coordinates") {
+				const fixer = c => {
+					if (typeof c[0] === "number" ) {
+						return c.map(_c => +_c.toFixed(6));
+					} else {
+						return c.map(fixer);
+					}
+				};
+				obj = fixer(obj);
+			}
+			return obj;
+		});
 
 		const {lajiMapIdx, ...properties} = feature.properties; // eslint-disable-line
 		return {...feature, properties};

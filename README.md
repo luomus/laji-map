@@ -225,6 +225,8 @@ webdriver-manager start
 
 Then run the tests with `yarn test`. For more robust testing, run `yarn run test:slow`. It runs test after 500ms delay after the map has been initialized.
 
+`lib` must be built before testing (run `npm run build:lib`).
+
 ### Test parameters ###
 
 Parameters are given as envirnment variables, i.e. `TEST_BROWSER=chrome yarn test`

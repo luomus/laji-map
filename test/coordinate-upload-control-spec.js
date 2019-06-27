@@ -1,7 +1,8 @@
-
 const { createMap, ykjToWgs84, etrsToWgs84 } = require("./test-utils");
+const { reverseCoordinate } = require("../lib/utils");
+const { EPSG2393String } =  require("../lib/globals");
 
-describe("Coordinate control", () => {
+describe("Draw upload control", () => {
 
 	let map, control;
 	beforeAll(async () => {
@@ -55,41 +56,72 @@ describe("Coordinate control", () => {
 			"getDraw().featureCollection.features[0].geometry"
 		);
 
-		describe("ISO 6709", () => {
-			it("WGS84 point", async () => {
-				const [lat, lng] = [60, 25];
-				await control.type(`${lat}:${lng}/`);
-				await expect(await control.getCRS()).toBe("WGS84");
-				await expect(await control.getFormat()).toBe("ISO 6709");
-				await control.$getSubmit().click();
-				const mapCoordinates = (await getGeometry()).coordinates;
-				expect(mapCoordinates[0]).toBe(lng);
-				expect(mapCoordinates[1]).toBe(lat);
-			});
+		const asGeoJSON = (lat, lng) => JSON.stringify({type: "Point", coordinates: [lng, lat]});
+		const asISO6709 = (lat, lng) => `${lat}:${lng}/`;
+		const asWKT = (lat, lng) => `POINT(${lng} ${lat})`;
 
-			it("YKJ point", async () => {
-				const [lat, lng] = [6666666, 3333333];
-				const converted = ykjToWgs84(lat, lng);
-				await control.type(`${lat}:${lng}/`);
-				await expect(await control.getCRS()).toBe("YKJ");
-				await expect(await control.getFormat()).toBe("ISO 6709");
-				await control.$getSubmit().click();
-				const geometry = await getGeometry();
-				expect(geometry.type).toBe("Point");
-				expect(geometry.coordinates).toEqual(converted);
-			});
+		const pointTestsDescriptions = [
+			{name: "GeoJSON", latLngToFormat: asGeoJSON},
+			{name: "ISO 6709", latLngToFormat: asISO6709},
+			{name: "WKT", latLngToFormat: asWKT}
+		];
 
-			it("ETRS point", async () => {
-				const [lat, lng] = [6666666, 333333];
-				const converted = etrsToWgs84(lat, lng);
-				await control.type(`${lat}:${lng}/`);
-				await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
-				await expect(await control.getFormat()).toBe("ISO 6709");
-				await control.$getSubmit().click();
-				const geometry = await getGeometry();
-				expect(geometry.type).toBe("Point");
-				expect(geometry.coordinates).toEqual(converted);
+		for (const {name, latLngToFormat} of pointTestsDescriptions) {
+			describe(name, () => {
+				it("WGS84 point", async () => {
+					const [lat, lng] = [60, 25];
+					await control.type(latLngToFormat(lat, lng));
+					await expect(await control.getCRS()).toBe("WGS84");
+					await expect(await control.getFormat()).toBe(name);
+					await control.$getSubmit().click();
+					const mapCoordinates = (await getGeometry()).coordinates;
+					await expect(mapCoordinates[0]).toBe(lng);
+					await expect(mapCoordinates[1]).toBe(lat);
+				});
+
+				it("YKJ point", async () => {
+					const [lat, lng] = [6666666, 3333333];
+					const wgs84LatLng = ykjToWgs84([lat, lng]);
+					await control.type(latLngToFormat(lat, lng));
+					await expect(await control.getCRS()).toBe("YKJ");
+					await expect(await control.getFormat()).toBe(name);
+					await control.$getSubmit().click();
+					const geometry = await getGeometry();
+					await expect(geometry.type).toBe("Point");
+					await expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
+				});
+
+				it("ETRS point", async () => {
+					const [lat, lng] = [6666666, 333333];
+					const wgs84LatLng = etrsToWgs84([lat, lng]);
+					await control.type(latLngToFormat(lat, lng));
+					await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
+					await expect(await control.getFormat()).toBe(name);
+					await control.$getSubmit().click();
+					const geometry = await getGeometry();
+					await expect(geometry.type).toBe("Point");
+					await expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
+				});
 			});
+		}
+
+		it("GeoJSON YKJ point when CRS marked", async () => {
+			const [lat, lng] = [6666666, 3333333];
+			const wgs84LatLng = ykjToWgs84([lat, lng]);
+			const geoJSON = JSON.parse(asGeoJSON(lat, lng));
+			geoJSON.crs = {
+					type: "name",
+					properties: {
+						name: EPSG2393String
+					}
+			};
+			await control.type(JSON.stringify(geoJSON));
+			await expect(await control.getCRS()).toBe("YKJ");
+			await expect(await control.getFormat()).toBe("GeoJSON");
+			await control.$getSubmit().click();
+			const geometry = await getGeometry();
+			await expect(geometry.type).toBe("Point");
+			await expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
 		});
 	});
 });

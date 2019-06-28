@@ -1586,7 +1586,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		HTMLInput.setAttribute("readonly", "readonly");
 		HTMLInput.addEventListener("focus", HTMLInput.select);
 
-		const features = this.getDraw().featureCollection.features.map(this.formatFeatureOut);
+		const features = this.getDraw().featureCollection.features.map(f => this.formatFeatureOut(f));
 		const originalGeoJSON = {...this.getDraw().featureCollection, features};
 
 		const converterFor = (proj) => (input) => {

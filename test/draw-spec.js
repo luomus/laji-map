@@ -24,9 +24,13 @@ describe("Drawing", () => {
 	describe("point", () => {
 		afterAll(clear);
 
-		it("works", async () => {
+		const addMarker = async () => {
 			await control.$getMarkerButton().click();
 			await map.clickAt(0, 0);
+		};
+
+		it("works", async () => {
+			await addMarker();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Point");
 		});
@@ -37,17 +41,32 @@ describe("Drawing", () => {
 			await expect(`${geometry.coordinates[0]}`.split(".")[1].length).toBeLessThan(7);
 			await expect(`${geometry.coordinates[1]}`.split(".")[1].length).toBeLessThan(7);
 		});
+
+		it("coordinates are wrapped", async () => {
+			await clear();
+			await map.e("setCenter([60, 300])");
+			await addMarker();
+			const geometry = await getLastGeometry();
+			for (const c of geometry.coordinates) {
+				await expect(c).toBeLessThan(180);
+				await expect(c).toBeGreaterThan(-180);
+			}
+		});
 	});
 
 	describe("polyline", () => {
 		afterAll(clear);
 
-		it("works", async () => {
+		const addLine = async () => {
 			await control.$getPolylineButton().click();
 			await map.clickAt(0, 0);
 			await map.clickAt(10, 0);
 			await map.clickAt(20, 10);
 			await map.clickAt(20, 10);
+		};
+
+		it("works", async () => {
+			await addLine();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("LineString");
 		});
@@ -55,10 +74,23 @@ describe("Drawing", () => {
 		it("coordinates length", async () => {
 			const geometry = await getLastGeometry();
 			await expect(geometry.coordinates.length).toBe(3);
-			geometry.coordinates.forEach(async (c) => {
+			for (const c of geometry.coordinates) {
 				await expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				await expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
-			});
+			}
+		});
+
+		it("coordinates are wrapped", async () => {
+			await clear();
+			await map.e("setCenter([60, 300])");
+			await addLine();
+			const geometry = await getLastGeometry();
+			for (const coords of geometry.coordinates) {
+				for (const c of coords) {
+					await expect(c).toBeLessThan(180);
+					await expect(c).toBeGreaterThan(-180);
+				}
+			}
 		});
 	});
 
@@ -76,11 +108,15 @@ describe("Drawing", () => {
 			traveller.start()
 		];
 
-		it("works", async () => {
+		const addPolygon = async () => {
 			await control.$getPolygonButton().click();
 			for (const c of coordinates) {
 				await map.clickAt(...c);
 			}
+		};
+
+		it("works", async () => {
+			await addPolygon();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Polygon");
 			await expect(geometry.coordinates.length).toBe(1);
@@ -89,10 +125,10 @@ describe("Drawing", () => {
 
 		it("coordinates length", async () => {
 			const geometry = await getLastGeometry();
-			await geometry.coordinates[0].forEach(async (c) => {
+			for (const c of geometry.coordinates[0]) {
 				await expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				await expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
-			});
+			}
 		});
 
 		it("coordinates are clockwise", async () => {
@@ -109,15 +145,32 @@ describe("Drawing", () => {
 			const geometry = await getLastGeometry();
 			await expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
 		});
+
+		it("coordinates are wrapped", async () => {
+			await clear();
+			await map.e("setCenter([60, 300])");
+			await addPolygon();
+			const geometry = await getLastGeometry();
+			for (const coords of geometry.coordinates[0]) {
+				for (const c of coords) {
+					await expect(c).toBeLessThan(180);
+					await expect(c).toBeGreaterThan(-180);
+				}
+			}
+		});
 	});
 
 	describe("rectangle", () => {
 		afterAll(clear);
 
-		it("works", async () => {
+		const addRectangle = async () => {
 			await control.$getRectangleButton().click();
 			const traveller = new PointTraveller();
 			await map.drag(traveller.start(), traveller.travel(10, 10));
+		};
+
+		it("works", async () => {
+			await addRectangle();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Polygon");
 			await expect(geometry.coordinates.length).toBe(1);
@@ -130,6 +183,19 @@ describe("Drawing", () => {
 				await expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				await expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
 			});
+		});
+
+		it("coordinates are wrapped", async () => {
+			await clear();
+			await map.e("setCenter([60, 300])");
+			await addRectangle();
+			const geometry = await getLastGeometry();
+			for (const coords of geometry.coordinates[0]) {
+				for (const c of coords) {
+					await expect(c).toBeLessThan(180);
+					await expect(c).toBeGreaterThan(-180);
+				}
+			}
 		});
 
 		it("coordinates are clockwise", async () => {
@@ -160,9 +226,14 @@ describe("Drawing", () => {
 	describe("circle", () => {
 		afterAll(clear);
 
-		it("works", async () => {
+
+		const addCircle = async () => {
 			await control.$getCircleButton().click();
 			await map.drag([0, 0], [10, 0]);
+		};
+
+		it("works", async () => {
+			await addCircle();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Point");
 			await expect(geometry.radius).toBeGreaterThan(0);
@@ -173,6 +244,17 @@ describe("Drawing", () => {
 			const {coordinates} = await getLastGeometry();
 			await expect(`${coordinates[0]}`.split(".")[1].length).toBeLessThan(7);
 			await expect(`${coordinates[1]}`.split(".")[1].length).toBeLessThan(7);
+		});
+
+		it("coordinates are wrapped", async () => {
+			await clear();
+			await map.e("setCenter([60, 300])");
+			await addCircle();
+			const geometry = await getLastGeometry();
+			for (const c of geometry.coordinates) {
+				await expect(c).toBeLessThan(180);
+				await expect(c).toBeGreaterThan(-180);
+			}
 		});
 	});
 });

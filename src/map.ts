@@ -1508,7 +1508,7 @@ export default class LajiMap {
 		}
 	}
 
-	formatFeatureOut(feature: G.Feature, layer: DataItemLayer): G.Feature {
+	formatFeatureOut(feature: G.Feature, layer?: DataItemLayer): G.Feature {
 		if (layer && layer instanceof L.Circle) {
 			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 			(<any> feature.geometry).radius = layer.getRadius();
@@ -1522,18 +1522,18 @@ export default class LajiMap {
 			}
 		}
 
-		feature = updateImmutablyRecursivelyWith(feature, (key, obj) => {
-			if (key === "coordinates") {
-				const fixer = c => {
-					if (typeof c[0] === "number" ) {
-						return c.map(_c => +_c.toFixed(6));
-					} else {
-						return c.map(fixer);
-					}
-				};
-				obj = fixer(obj);
+		const normalizeCoordinates = c => {
+			if (typeof c[0] === "number" ) {
+				return this.wrapGeoJSONCoordinate(c).map(_c => +_c.toFixed(6));
+			} else {
+				return c.map(normalizeCoordinates);
 			}
-			return obj;
+		};
+		feature = updateImmutablyRecursivelyWith(feature, (key, value) => {
+			if (key === "coordinates") {
+				value = normalizeCoordinates(value);
+			}
+			return value;
 		});
 
 		const {lajiMapIdx, ...properties} = feature.properties; // eslint-disable-line
@@ -1989,37 +1989,25 @@ export default class LajiMap {
 	_setOnChangeForItem(item, format: CoordinateSystem = "GeoJSON", crs: string = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
-		const wrapCoordinates = (e) => {
-			(e.features ? Object.keys(e.features).map(k => e.features[k]) : [e.feature]).forEach(feature => {
-				const {type} = feature.geometry;
-				if (type === "Polygon") {
-					feature.geometry.coordinates = feature.geometry.coordinates.map(coordArr => coordArr.map(c => this.wrapGeoJSONCoordinate(c)));
-				} else if (type !== "Point") {
-					feature.geometry.coordinates = feature.geometry.coordinates.map(c => this.wrapGeoJSONCoordinate(c));
-				} else {
-					feature.geometry.coordinates = this.wrapGeoJSONCoordinate(feature.geometry.coordinates);
-				}
-			});
-		};
-
 		const onChange = item.onChange;
-		if (onChange) item.onChange = events => onChange(events.map(e => {
-			switch (e.type) {
-			case "create":
-				wrapCoordinates(e);
-				e.geoData = convert(e.feature, format, crs);
-				break;
-			case "edit":
-				wrapCoordinates(e);
-				e.geoData = Object.keys(e.features).reduce((features, idx) => {
-					features[idx] = convert(e.features[idx], format, crs);
-					return features;
-				}, {});
-				break;
-			}
-
-			return e;
-		}));
+		item.onChange = events => {
+			const _events = events.map(e => {
+				switch (e.type) {
+				case "create":
+				case "insert":
+					e.geoData = convert(e.feature, format, crs);
+					break;
+				case "edit":
+					e.geoData = Object.keys(e.features).reduce((features, idx) => {
+						features[idx] = convert(e.features[idx], format, crs);
+						return features;
+					}, {});
+					break;
+				}
+				return e;
+			});
+			onChange && onChange(_events);
+		};
 	}
 
 	clearItemData(item: Data, commit = true) {

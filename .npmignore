@@ -1,7 +1,11 @@
 src/
 playground/
+test/
 .idea/
 .npmignore
 .babelrc
 webpack*
 tsconfig*
+properties.json*
+protractor.conf.js
+tslint.json

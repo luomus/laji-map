@@ -60,6 +60,7 @@ class MapPageObject {
 	getCoordinateUploadControl() {return new CoordinateUploadControlPageObject()};
 	getCoordinateCopyControl() {return new CoordinateCopyControlPageObject()};
 	getDrawControl() {return new DrawControlPageObject()};
+	getTileLayersControl() {return new TilelayersControlPageObject()};
 }
 
 class CoordinateInputControlPageObject {
@@ -159,6 +160,21 @@ class DrawControlPageObject {
 	}
 	$getPolylineButton() {
 		return this.$getButton("polyline");
+	}
+}
+
+class TilelayersControlPageObject {
+	$getElement() {
+		return $("div.laji-map-control-layers");
+	}
+	$getButton() {
+		return $(".leaflet-control-layers-toggle");
+	}
+	$getFinnishList() {
+		return this.$getElement().$(".finnish-list");
+	}
+	$getWorldList() {
+		return this.$getElement().$(".world-list");
 	}
 }
 

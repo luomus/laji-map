@@ -1496,7 +1496,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setLang(lang: Lang) {
+	setLang(lang: Lang, shouldProvide = true) {
 		if (!depsProvided(this, "setLang", arguments)) return;
 
 		if (!this.translations || this.lang !== lang) {
@@ -1504,7 +1504,7 @@ export default class LajiMap {
 			this.translations = this.dictionary[this.lang];
 			this.onSetLangHooks.forEach(hook => hook());
 
-			provide(this, "translations");
+			shouldProvide && provide(this, "translations");
 		}
 	}
 

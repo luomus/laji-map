@@ -514,7 +514,7 @@
 	border: 1px solid gray;
 	background: #f3f3f3;
 }
-.laji-map .laji-map-control-layers .active-list legend:not(.disabled):hover, .laji-map .laji-map-control-layers .nonactive-list legend:not(.disabled):hover {
+.laji-map .laji-map-control-layers .active-list:not(.only-list) legend:not(.disabled):hover, .laji-map .laji-map-control-layers .nonactive-list legend:not(.disabled):hover {
 	background: #e3e3e3;
 }
 
@@ -561,14 +561,14 @@
 .laji-map .laji-map-control-layers legend {
 	padding: 3px 4px;
 }
-.laji-map .laji-map-control-layers .active-list legend:after, .laji-map .laji-map-control-layers .nonactive-list legend:after  {
+.laji-map .laji-map-control-layers .active-list:not(.only-list) legend:after, .laji-map .laji-map-control-layers .nonactive-list legend:after  {
 	margin-right: 5px;
 	content: "\276F";
 	float: right;
 	margin-right: 5px;
 	transition: transform 0.3s ease-in-out;
 }
-.laji-map .laji-map-control-layers .active-list legend:not(.disabled), .laji-map .laji-map-control-layers .nonactive-list legend:not(.disabled) {
+.laji-map .laji-map-control-layers .active-list:not(.only-list) legend:not(.disabled), .laji-map .laji-map-control-layers .nonactive-list legend:not(.disabled) {
 	cursor: pointer;
 }
 .laji-map .laji-map-control-layers legend.disabled {

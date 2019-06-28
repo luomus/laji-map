@@ -61,10 +61,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		};
 	}
 
-	@dependsOn("controls")
 	_setLang() {
-		if (!depsProvided(this, "_setLang", arguments)) return;
-
 		// Original strings are here: https://github.com/Leaflet/Leaflet.draw/blob/master/src/Leaflet.draw.js
 		const drawLocalizations = (<any> L).drawLocal.draw;
 
@@ -105,7 +102,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	@dependsOn("map")
 	setLang(lang) {
 		if (!depsProvided(this, "setLang", arguments)) return;
-		super.setLang(lang);
+		super.setLang(lang, !"dontProvide");
 		this._setLang();
 	}
 
@@ -1101,11 +1098,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					return li;
 				};
 
-				const createList = (tileLayers: {[name: string]: L.TileLayer[]}, label: string): [HTMLElement, () => void] => {
+				const createList = (tileLayers: {[name: string]: L.TileLayer[]}, label: string, className?: string): [HTMLElement, () => void] => {
 					if (Object.keys(tileLayers).length === 0) {
-						return;
+						return [undefined, undefined];
 					}
 					const list = document.createElement("fieldset");
+					className && L.DomUtil.addClass(list, className);
 					const innerList = document.createElement("ul");
 					const legend = document.createElement("legend");
 					const translationHook = that.addTranslationHook(legend, capitalizeFirstLetter(label));
@@ -1127,13 +1125,15 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this.elems = {};
 				const [finnishList, finnishTranslationHook] = createList(
 					that.getAvailableFinnishTileLayers(),
-					that._tileLayers.active === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps"
+					that._tileLayers.active === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps",
+					"finnish-list"
 				);
 				this.finnishList = finnishList;
 				this.finnishTranslationHook = finnishTranslationHook;
 				const [worldList, worldTranslationHook] = createList(
 					that.getAvailableWorldTileLayers(),
-					that._tileLayers.active === "world" ? "WorldMaps" : "ActivateWorldMaps"
+					that._tileLayers.active === "world" ? "WorldMaps" : "ActivateWorldMaps",
+					"world-list"
 				);
 				this.worldList = worldList;
 				this.worldTranslationHook = worldTranslationHook;
@@ -1173,28 +1173,43 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				if (activeList) {
 					L.DomUtil.addClass(activeList, "active-list");
 					L.DomUtil.removeClass(activeList, "nonactive-list");
+					activeList.querySelector("legend").tabIndex = 0;
+					if (!nonActiveList) {
+						L.DomUtil.addClass(activeList, "only-list");
+					} else {
+						L.DomUtil.removeClass(activeList, "only-list");
+					}
 				}
 				if (nonActiveList) {
 					L.DomUtil.addClass(nonActiveList, "nonactive-list");
 					L.DomUtil.removeClass(nonActiveList, "active-list");
+					nonActiveList.querySelector("legend").tabIndex = 0;
 				}
-				activeList.querySelector("legend").tabIndex = 0;
-				nonActiveList.querySelector("legend").tabIndex = 0;
 
 				this.translateHooks = this.translateHooks.filter(hook => hook !== this.finnishTranslationHook && hook !== this.worldTranslationHook);
-				this.finnishTranslationHook = that.addTranslationHook(
-					this.finnishList.querySelector("legend"),
-					capitalizeFirstLetter(activeProjName === "finnish"
-						? "FinnishMaps"
-						: this._finnishDisabled
-							? "FinnishMapDisabledOutsideFinland"
-							: "ActivateFinnishMaps")
-				);
-				this.worldTranslationHook = that.addTranslationHook(
-					this.worldList.querySelector("legend"),
-					capitalizeFirstLetter(activeProjName === "world" ? "WorldMaps" : "ActivateWorldMaps")
-				);
-				this.translateHooks.push(this.finnishTranslationHook, this.worldTranslationHook);
+				if (this.finnishList) {
+					this.finnishTranslationHook = that.addTranslationHook(
+						this.finnishList.querySelector("legend"),
+						!this.worldList
+							? "Maps"
+							: activeProjName === "finnish"
+								? "FinnishMaps"
+								: this._finnishDisabled
+									? "FinnishMapDisabledOutsideFinland"
+									: "ActivateFinnishMaps"
+					);
+				}
+				if (this.worldList) {
+					this.worldTranslationHook = that.addTranslationHook(
+						this.worldList.querySelector("legend"),
+						!this.finnishList
+							? "Maps"
+							: activeProjName === "world"
+								? "WorldMaps"
+								: "ActivateWorldMaps"
+					);
+					this.translateHooks.push(this.finnishTranslationHook, this.worldTranslationHook);
+				}
 			},
 			updateLists() {
 				Object.keys(this.layers).forEach(name => {

@@ -715,6 +715,11 @@ export default {
 		en: "World maps",
 		sv: "Världskartor"
 	},
+	maps: {
+		fi: "Kartat",
+		en: "Maps",
+		sv: "Kartor"
+	},
 	overlays: {
 		fi: "Kerrokset",
 		en: "Overlays",

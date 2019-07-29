@@ -786,9 +786,18 @@ export default class LajiMap {
 			tileLayerOptions = {layers: {[DEFAULT_LAYER_NAME]: true}};
 		}
 		tileLayerOptions = this._getInternalTileLayerOptions(tileLayerOptions);
-		const center = this.options.zoomToData
-			? this.getBoundsForZoomToDataOptions(this.options.zoomToData).getCenter()
-			: this.options.center;
+		let center, bounds;
+		if (this.options.zoomToData) {
+			bounds = this.getBoundsForZoomToDataOptions(this.options.zoomToData);
+			if (bounds.isValid()) {
+				center = bounds.getCenter()
+			} else {
+				bounds = undefined;
+			}
+		}
+		if (!center) {
+			center = this.options.center;
+		}
 
 		if (tileLayerOptions.active === "finnish" && this._isOutsideFinland(center)) {
 			tileLayerOptions.active = "world";
@@ -796,18 +805,14 @@ export default class LajiMap {
 
 		this.setTileLayers(tileLayerOptions);
 
-		const setView = () => {
+		if (bounds) {
+			this.zoomToData(this.options.zoomToData);
+		} else {
 			this.map.setView(
 				this.center,
 				this.getDenormalizedZoom(this.zoom),
 				{animate: false}
 			);
-		};
-
-		if (this.options.zoomToData) {
-			this.zoomToData(this.options.zoomToData);
-		} else {
-			setView();
 		}
 
 		provide(this, "view");
@@ -1745,6 +1750,8 @@ export default class LajiMap {
 
 		const bounds = this.getBoundsForZoomToDataOptions(options);
 
+		if (!bounds.isValid()) return;
+
 		this.fitBounds(bounds, <LajiMapFitBoundsOptions> options);
 	}
 
@@ -1771,7 +1778,7 @@ export default class LajiMap {
 		return this.getBoundsForData(idxs.map(i => this.data[i]));
 	}
 
-	getBoundsForData(datas?: {group: L.FeatureGroup}[]) {
+	getBoundsForData(datas?: {group: L.FeatureGroup}[]): L.LatLngBounds {
 		if (!datas) {
 			datas = this._getAllData();
 		}

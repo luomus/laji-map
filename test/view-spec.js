@@ -175,3 +175,20 @@ describe("Zooms to data", () => {
 	});
 });
 
+it("Falls back to center when no data and zoomToData given", async () => {
+	const data = {type: "FeatureCollection", features: []};
+	const latLng = {lat: 25, lng: 60};
+	const options = {
+		center: latLng,
+		zoomToData: true,
+		data: {type: "FeatureCollection", features: []}
+	};
+
+	const map = await createMap({
+		...options
+	});
+
+	const center = await map.e("map.getCenter()");
+	await expect(center.lat).toBe(latLng.lat);
+	await expect(center.lng).toBe(latLng.lng);
+});

@@ -44,8 +44,6 @@ exports.config = {
 	SELENIUM_PROMISE_MANAGER: false,
 	onPrepare: async () => {
 		browser.waitForAngularEnabled(false);
-		//require("babel-register");
-		//require("babel-polyfill");
 
 		var env = jasmine.getEnv();
 		env.clearReporters();

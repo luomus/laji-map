@@ -29,7 +29,7 @@ describe("Drawing", () => {
 			await map.clickAt(0, 0);
 		};
 
-		it("works", async () => {
+		it("can be drawn", async () => {
 			await addMarker();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Point");
@@ -52,6 +52,24 @@ describe("Drawing", () => {
 				await expect(c).toBeGreaterThan(-180);
 			}
 		});
+
+		it("can be set editable", async () => {
+			await clear();
+			await addMarker();
+			await map.doubleClickAt(0, 0);
+			await expect(await $(".leaflet-marker-draggable").isPresent()).toBe(true);
+		});
+
+
+		// Drag doesn't work...
+		//it("can be moved when editing", async () => {
+		//	await map.drag([0, 0], [-100, -100]);
+		//});
+
+		it("can finish editing", async () => {
+			await map.clickAt(20, 20);
+			await expect(await $(".leaflet-marker-draggable").isPresent()).toBe(false);
+		});
 	});
 
 	describe("polyline", () => {
@@ -65,10 +83,22 @@ describe("Drawing", () => {
 			await map.clickAt(20, 10);
 		};
 
-		it("works", async () => {
+		it("can be drawn", async () => {
 			await addLine();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("LineString");
+		});
+
+		it("can be set editable", async () => {
+			await map.doubleClickAt(0, 0);
+			await expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
+			await browser.sleep(1000);
+		});
+
+		it("can finish editing", async () => {
+			await map.clickAt(-30, -30);
+			await expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
+			await browser.sleep(1000);
 		});
 
 		it("coordinates length", async () => {
@@ -105,7 +135,7 @@ describe("Drawing", () => {
 			traveller.travel(0, -10),
 			traveller.travel(10, 0),
 			traveller.travel(0, 10),
-			traveller.start()
+			traveller.initial()
 		];
 
 		const addPolygon = async () => {
@@ -115,12 +145,22 @@ describe("Drawing", () => {
 			}
 		};
 
-		it("works", async () => {
+		it("can be drawn", async () => {
 			await addPolygon();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Polygon");
 			await expect(geometry.coordinates.length).toBe(1);
 			await expect(geometry.coordinates[0].length).toBe(coordinates.length);
+		});
+
+		it("can be set editable", async () => {
+			await map.doubleClickAt(0, 0);
+			await expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
+		});
+
+		it("can finish editing", async () => {
+			await map.clickAt(-30, -30);
+			await expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
 		});
 
 		it("coordinates length", async () => {
@@ -165,11 +205,10 @@ describe("Drawing", () => {
 
 		const addRectangle = async () => {
 			await control.$getRectangleButton().click();
-			const traveller = new PointTraveller();
-			await map.drag(traveller.start(), traveller.travel(10, 10));
+			await map.drag([0, 0], [10, 10]);
 		};
 
-		it("works", async () => {
+		it("can be drawn", async () => {
 			await addRectangle();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Polygon");
@@ -216,7 +255,7 @@ describe("Drawing", () => {
 				await clear();
 				await control.$getRectangleButton().click();
 				const traveller = new PointTraveller();
-				await map.drag(traveller.start(), traveller.travel(...drag));
+				await map.drag(traveller.initial(), traveller.travel(...drag));
 				const geometry = await getLastGeometry();
 				await expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
 			}
@@ -232,12 +271,22 @@ describe("Drawing", () => {
 			await map.drag([0, 0], [10, 0]);
 		};
 
-		it("works", async () => {
+		it("can be drawn", async () => {
 			await addCircle();
 			const geometry = await getLastGeometry();
 			await expect(geometry.type).toBe("Point");
 			await expect(geometry.radius).toBeGreaterThan(0);
 			await expect(geometry.coordinates.length).toBe(2);
+		});
+
+		it("can be set editable", async () => {
+			await map.doubleClickAt(0, 0);
+			await expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
+		});
+
+		it("can finish editing", async () => {
+			await map.clickAt(-10, -10);
+			await expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
 		});
 
 		it("coordinates length", async () => {
@@ -256,5 +305,6 @@ describe("Drawing", () => {
 				await expect(c).toBeGreaterThan(-180);
 			}
 		});
+
 	});
 });

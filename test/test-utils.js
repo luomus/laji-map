@@ -33,24 +33,30 @@ class MapPageObject {
 		return $(".laji-map");
 	}
 
-	async clickAt(x, y) {
-		await browser.actions()
+	mouseMove(x, y) {
+		return browser.actions()
 			.mouseMove(this.$getElement(), {x, y})
 			.perform();
+	}
+
+	async clickAt(x, y) {
+		await this.mouseMove(x, y);
 		return browser.actions()
 			.click().perform();
 	}
 
+	async doubleClickAt(x, y) {
+		await this.mouseMove(x, y);
+		return browser.actions()
+			.doubleClick().perform();
+	}
+
 	async drag([x, y], [x2, y2]) {
-		await browser.actions()
-			.mouseMove(this.$getElement(), {x, y})
-			.perform();
+		await this.mouseMove(x, y);
 		await browser.actions()
 			.mouseDown()
 			.perform();
-		await browser.actions()
-			.mouseMove(this.$getElement(), {x: x2 - x, y: y2 - y})
-			.perform();
+		await this.mouseMove(x2, y2);
 		return browser.actions()
 			.mouseUp()
 			.perform();
@@ -215,7 +221,7 @@ class PointTraveller {
 		return [x, y];
 	}
 
-	start() {
+	initial() {
 		return this.return(this.initX, this.initY);
 	}
 

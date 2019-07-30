@@ -92,13 +92,11 @@ describe("Drawing", () => {
 		it("can be set editable", async () => {
 			await map.doubleClickAt(0, 0);
 			await expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
-			await browser.sleep(1000);
 		});
 
 		it("can finish editing", async () => {
 			await map.clickAt(-30, -30);
 			await expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
-			await browser.sleep(1000);
 		});
 
 		it("coordinates length", async () => {

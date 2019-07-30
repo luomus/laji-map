@@ -54,7 +54,6 @@
     "webpack-dev-server": "^3.1.4"
   },
   "dependencies": {
-    "@types/jasmine": "^3.3.13",
     "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#17601bee91f2dae098a0a76e96714d59ec958fe6",
     "leaflet": "1.4.0",
     "leaflet-contextmenu": "1.4.0",

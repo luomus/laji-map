@@ -60,7 +60,7 @@ class MapPageObject {
 	getCoordinateUploadControl() {return new CoordinateUploadControlPageObject()};
 	getCoordinateCopyControl() {return new CoordinateCopyControlPageObject()};
 	getDrawControl() {return new DrawControlPageObject()};
-	getTileLayersControl() {return new TilelayersControlPageObject()};
+	getTileLayersControl() {return new TilelayersControlPageObject(this)};
 }
 
 class CoordinateInputControlPageObject {
@@ -164,17 +164,27 @@ class DrawControlPageObject {
 }
 
 class TilelayersControlPageObject {
-	$getElement() {
+	constructor(mapPO) {
+		this.mapPO = mapPO;
+	}
+	$getContainer() {
 		return $("div.laji-map-control-layers");
 	}
 	$getButton() {
 		return $(".leaflet-control-layers-toggle");
 	}
 	$getFinnishList() {
-		return this.$getElement().$(".finnish-list");
+		return this.$getContainer().$(".finnish-list");
 	}
 	$getWorldList() {
-		return this.$getElement().$(".world-list");
+		return this.$getContainer().$(".world-list");
+	}
+	$getOverlayList() {
+		return this.$getContainer().$(".overlay-list");
+	}
+	async $getLayerElement(name) {
+		const label = await this.mapPO.e(`translations.${utils.capitalizeFirstLetter(name)}`);
+		return this.$getContainer().element(by.cssContainingText("span", label)).element(by.xpath(".."));
 	}
 }
 

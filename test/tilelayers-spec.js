@@ -39,7 +39,7 @@ describe("Initializing", () => {
 	});
 });
 
-describe("Control", () => {
+describe("Tile layers control", () => {
 
 	let control;
 	beforeAll(async () => {
@@ -48,7 +48,7 @@ describe("Control", () => {
 
 	it("is rendered", async () => {
 		map = await createMap({controls: true});
-		await expect(await control.$getElement().isPresent()).toBe(true);
+		await expect(await control.$getContainer().isPresent()).toBe(true);
 	});
 
 	it("opens on click", async () => {
@@ -59,7 +59,7 @@ describe("Control", () => {
 	});
 
 	const tests = {
-		"works when no finnish layers": {
+		"doesn't render finnish layers when not available": {
 			options: {
 				tileLayerName: "openStreetMap",
 				availableTileLayerNamesWhitelist: ["openStreetMap"]
@@ -72,7 +72,7 @@ describe("Control", () => {
 				await expect(await control.$getFinnishList().isPresent()).toBe(false);
 			}
 		},
-		"works when no world layers": {
+		"doesn't render world layers when not available": {
 			options: {
 				tileLayerName: "taustakartta",
 				availableTileLayerNamesWhitelist: ["taustakartta"]
@@ -82,6 +82,15 @@ describe("Control", () => {
 				await expect(await control.$getFinnishList().isPresent()).toBe(true);
 				await expect(await control.$getFinnishList().$("legend").getText()).toBe(await map.e("translations.Maps"));
 				await expect(await control.$getWorldList().isPresent()).toBe(false);
+			}
+		},
+		"doesn't render overlays when not available": {
+			options: {
+				availableOverlayNameWhitelist: []
+			},
+			test: async () => {
+				await control.$getButton().click();
+				await expect(await control.$getOverlayList().isPresent()).toBe(false);
 			}
 		}
 	};
@@ -100,10 +109,26 @@ describe("Control", () => {
 		});
 
 		it(`${name} when set after initialization`, async () => {
-			map = await createMap();
+			map = await createMap({controls: true});
 			await map.e(`setOptions(${JSON.stringify(options)})`);
 			await test();
 		});
 	}
+
+	it("adds layer when added to options after control initialization", async () => {
+		map = await createMap({controls: true, availableTileLayerNamesBlacklist: ["maastokartta"]});
+		await control.$getButton().click();
+		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
+		await map.e("setOption('availableTileLayerNamesBlacklist', [])");
+		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(true);
+	});
+
+	it("removes layer when removed from options after control initialization", async () => {
+		map = await createMap({controls: true, availableTileLayerNamesBlacklist: []});
+		await control.$getButton().click();
+		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(true);
+		await map.e("setOption('availableTileLayerNamesBlacklist', ['maastokartta'])");
+		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
+	});
 });
 

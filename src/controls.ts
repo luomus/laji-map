@@ -2,7 +2,7 @@ import * as L from "leaflet";
 import * as G from "geojson";
 import { GeoSearchControl } from "leaflet-geosearch";
 import LajiMap from "./map";
-import { DrawOptions, DataItemType, LajiMapEvent } from "./map.defs";
+import { DrawOptions, DataItemType, LajiMapEvent, TileLayerOptions } from "./map.defs";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, etrsTm35FinGridStrictValidator, wgs84Validator,
@@ -976,10 +976,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				/* end of copy */
 
 				this.translateHooks = [];
-				this.initLayout();
+				this.elems = {};
 				this.updateLayout();
 
+				this._map.on("tileLayersChange", this.updateListContainers, this);
 				this._map.on("tileLayersChange", this.updateLists, this);
+				this._map.on("tileLayersChange", this.updateActiveProj, this);
 				this._map.on("projectionChange", this.updateActiveProj, this);
 
 				return container;
@@ -988,179 +990,220 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this.translateHooks.forEach(hook => {
 					that.removeTranslationHook(hook);
 				});
+				this._map.off("tileLayersChange", this.updateListContainers);
 				this._map.off("tileLayersChange", this.updateLists);
+				this._map.off("tileLayersChange", this.updateActiveProj);
 				this._map.off("projectionChange", this.updateActiveProj);
 				this._map.off("moveend", this.__checkDisabledLayers);
 			},
-			initLayout() {
-				const createListItem = (name, layerOptions) => {
-					const li = document.createElement("li");
-					const checkbox = document.createElement("input");
-					checkbox.type = "checkbox";
-					checkbox.addEventListener("change", (e) => {
-						const {layers} = that._tileLayers;
-						const _layerOptions = layers[name];
-						const _layer = {...that.tileLayers, ...that.overlaysByNames}[name];
+			createListItem(name: string, layerOptions: TileLayerOptions, available: boolean) {
+				const li = document.createElement("li");
+				const checkbox = document.createElement("input");
+				checkbox.type = "checkbox";
+				checkbox.addEventListener("change", (e) => {
+					const {layers} = that._tileLayers;
+					const _layerOptions = layers[name];
+					const _layer = {...that.tileLayers, ...that.overlaysByNames}[name];
+					that.setTileLayers({
+						...that._tileLayers,
+						active: that.finnishTileLayers[name]
+							? "finnish"
+							: that.worldTileLayers[name]
+								? "world"
+								: that._tileLayers.active,
+						layers: {
+							...layers,
+							[name]: {
+								..._layerOptions,
+								visible: !_layerOptions.visible,
+								opacity: !_layerOptions.visible && !_layerOptions.opacity
+									? (_layer.options.defaultOpacity || 1)
+									: _layerOptions.opacity
+							}
+						}
+					});
+				});
+
+				const label = document.createElement("span");
+				this.translateHooks.push(that.addTranslationHook(label, capitalizeFirstLetter(name)));
+				li.appendChild(label);
+
+				const checkboxContainer = document.createElement("div");
+				checkboxContainer.appendChild(checkbox);
+				li.appendChild(checkboxContainer);
+
+				const sliderInput = document.createElement("div");
+				li.appendChild(sliderInput);
+
+				const slider = noUiSlider.create(sliderInput, {
+					start: (that._tileLayers.layers[name] || {opacity: 0}).opacity,
+					range: {
+						min: [0],
+						max: [1]
+					},
+					step: 0.01,
+					connect: [true, false],
+					behaviour: "snap"
+				});
+				let firstUpdated = false;
+				slider.on("update", () => {
+					if (!firstUpdated) {
+						firstUpdated = true;
+						return;
+					}
+					if (that._internalTileLayersUpdate) return;
+					const opacity = +slider.get();
+					const {layers} = that._tileLayers;
+					const _layerOptions = layers[name];
+					const active = that.finnishTileLayers[name]
+						? "finnish"
+						: that.worldTileLayers[name]
+						? "world"
+						: that._tileLayers.active;
+					const prevActive = that._tileLayers.active || "finnish";
+					if (!_layerOptions.visible || active !== prevActive) {
 						that.setTileLayers({
 							...that._tileLayers,
-							active: that.finnishTileLayers[name]
-								? "finnish"
-								: that.worldTileLayers[name]
-									? "world"
-									: that._tileLayers.active,
+							active,
 							layers: {
-								...layers,
-								[name]: {
-									..._layerOptions,
-									visible: !_layerOptions.visible,
-									opacity: !_layerOptions.visible && !_layerOptions.opacity ? (_layer.options.defaultOpacity || 1) : _layerOptions.opacity
-								}
+								...layers, [name]: {..._layerOptions, visible: true, opacity}
 							}
 						});
-					});
-
-					const label = document.createElement("span");
-					this.translateHooks.push(that.addTranslationHook(label, capitalizeFirstLetter(name)));
-					li.appendChild(label);
-
-					const checkboxContainer = document.createElement("div");
-					checkboxContainer.appendChild(checkbox);
-					li.appendChild(checkboxContainer);
-
-					const sliderInput = document.createElement("div");
-					li.appendChild(sliderInput);
-
-					const slider = noUiSlider.create(sliderInput, {
-						start: that._tileLayers.layers[name].opacity,
-						range: {
-							min: [0],
-							max: [1]
-						},
-						step: 0.01,
-						connect: [true, false],
-						behaviour: "snap"
-					});
-					let firstUpdated = false;
-					slider.on("update", () => {
-						if (!firstUpdated) {
-							firstUpdated = true;
-							return;
-						}
-						if (that._internalTileLayersUpdate) return;
-						const opacity = +slider.get();
-						const {layers} = that._tileLayers;
-						const _layerOptions = layers[name];
-						const active = that.finnishTileLayers[name]
-								? "finnish"
-								: that.worldTileLayers[name]
-									? "world"
-									: that._tileLayers.active;
-						const prevActive = that._tileLayers.active || "finnish";
-						if (!_layerOptions.visible || active !== prevActive) {
-							that.setTileLayers({
-								...that._tileLayers,
-								active,
-								layers: {
-									...layers, [name]: {..._layerOptions, visible: true, opacity}
-								}
-							});
-						} else {
-							that._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
-							(that.tileLayers[name] || that.overlaysByNames[name]).setOpacity(opacity);
-						}
-					});
-
-					function disableSelect(e) {
-						e.preventDefault();
+					} else {
+						that._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
+						(that.tileLayers[name] || that.overlaysByNames[name]).setOpacity(opacity);
 					}
+				});
 
-					slider.on("start", () => {
-						document.addEventListener("selectstart", disableSelect);
-					});
-					slider.on("end", () => {
-						document.removeEventListener("selectstart", disableSelect);
+				function disableSelect(e) {
+					e.preventDefault();
+				}
 
-						const opacity = +slider.get();
-						const {layers} = that._tileLayers;
-						const _layerOptions = layers[name];
-						if (!opacity && _layerOptions.visible) {
-							that.setTileLayers({
-								...that._tileLayers,
-								layers: {
-									...layers, [name]: {..._layerOptions, visible: false}
-								}
-							});
-						}
-					});
+				slider.on("start", () => {
+					document.addEventListener("selectstart", disableSelect);
+				});
+				slider.on("end", () => {
+					document.removeEventListener("selectstart", disableSelect);
 
-					this.elems[name] = {li, slider, checkbox};
-
-					return li;
-				};
-
-				const createList = (tileLayers: {[name: string]: L.TileLayer[]}, label: string, className?: string): [HTMLElement, () => void] => {
-					if (Object.keys(tileLayers).length === 0) {
-						return [undefined, undefined];
+					const opacity = +slider.get();
+					const {layers} = that._tileLayers;
+					const _layerOptions = layers[name];
+					if (!opacity && _layerOptions.visible) {
+						that.setTileLayers({
+							...that._tileLayers,
+							layers: {
+								...layers, [name]: {..._layerOptions, visible: false}
+							}
+						});
 					}
-					const list = document.createElement("fieldset");
-					className && L.DomUtil.addClass(list, className);
-					const innerList = document.createElement("ul");
-					const legend = document.createElement("legend");
-					const translationHook = that.addTranslationHook(legend, capitalizeFirstLetter(label));
-					this.translateHooks.push(translationHook);
+				});
 
-					list.appendChild(legend);
-					list.appendChild(innerList);
-					Object.keys(tileLayers).sort((a, b) => that._tileLayerOrder.indexOf(a) - that._tileLayerOrder.indexOf(b)).forEach(name => {
-						innerList.appendChild(createListItem(name, that._tileLayers.layers[name]));
-					});
-					this.layers = {
-						...(this.layers || {}),
-						...tileLayers
-					};
-					this._section.appendChild(list);
-					return [list, translationHook];
+				this.elems[name] = {li, slider, checkbox};
+
+				if (!available) {
+					li.style.display = "none";
+				}
+
+				return li;
+			},
+			createList(
+				tileLayers: {[name: string]: L.TileLayer[]},
+				availableLayers: {[name: string]: L.TileLayer[]},
+				label: string,
+				className?: string
+			): [HTMLElement, () => void] {
+				if (Object.keys(availableLayers).length === 0) {
+					return [undefined, undefined];
+				}
+				const list = document.createElement("fieldset");
+				className && L.DomUtil.addClass(list, className);
+				const innerList = document.createElement("ul");
+				const legend = document.createElement("legend");
+				const translationHook = that.addTranslationHook(legend, capitalizeFirstLetter(label));
+				this.translateHooks.push(translationHook);
+
+				list.appendChild(legend);
+				list.appendChild(innerList);
+				Object.keys(tileLayers).sort((a, b) => that._tileLayerOrder.indexOf(a) - that._tileLayerOrder.indexOf(b)).forEach(name => {
+					innerList.appendChild(this.createListItem(name, that._tileLayers.layers[name], availableLayers[name]));
+				});
+				this.layers = {
+					...(this.layers || {}),
+					...tileLayers
 				};
-
-				this.elems = {};
-				const [finnishList, finnishTranslationHook] = createList(
-					that.getAvailableFinnishTileLayers(),
+				return [list, translationHook];
+			},
+			getFinnishList(createNew = false): [HTMLElement, () => void]  {
+				const availableLayers = that.getAvailableFinnishTileLayers();
+				if (Object.keys(availableLayers).length === 0) {
+					this.finnishList = undefined;
+					return [undefined, undefined];
+				}
+				if (this.finnishList) {
+					return [this.finnishList, this.finnishTranslationHook];
+				}
+				const [finnishList, finnishTranslationHook] = this.createList(
+					that.finnishTileLayers,
+					availableLayers,
 					that._tileLayers.active === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps",
 					"finnish-list"
 				);
 				this.finnishList = finnishList;
 				this.finnishTranslationHook = finnishTranslationHook;
-				const [worldList, worldTranslationHook] = createList(
-					that.getAvailableWorldTileLayers(),
+				if (finnishList) {
+					if (this.worldList) {
+						this._section.insertBefore(finnishList, this.worldList);
+					} else if (this.overlayList) {
+						this._section.insertBefore(finnishList, this.overlayList);
+					} else {
+						this._section.appendChild(finnishList);
+					}
+				}
+				return [this.finnishList, this.finnishTranslationHook];
+			},
+			getWorldList(): [HTMLElement, () => void]  {
+				const availableLayers = that.getAvailableWorldTileLayers();
+				if (Object.keys(availableLayers).length === 0) {
+					this.worldList = undefined;
+					return [undefined, undefined];
+				}
+				if (this.worldList) {
+					return [this.worldList, this.worldTranslationHook];
+				}
+				const [worldList, worldTranslationHook] = this.createList(
+					that.worldTileLayers,
+					availableLayers,
 					that._tileLayers.active === "world" ? "WorldMaps" : "ActivateWorldMaps",
 					"world-list"
 				);
 				this.worldList = worldList;
 				this.worldTranslationHook = worldTranslationHook;
-
-				[[this.finnishList, "finnish"], [this.worldList, "world"]].filter(([list]) => list).forEach(([list, active]) => {
-					list.querySelector("legend").addEventListener("click", ({target: {tagName}}) => {
-						if (this._finnishDisabled) {
-							return;
-						}
-						if (active === that._tileLayers.active) {
-							if (this.finnishList && active === "finnish") {
-								active = "world";
-							} else if (this.worldList && active === "world") {
-								active = "finnish";
-							}
-						}
-
-						const layerOptions = active === "finnish"
-							|| Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
-							? that._tileLayers.layers
-							: {...that._tileLayers.layers, openStreetMap: true};
-						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});
-					});
-				});
-				createList(that.getAvailableOverlaysByNames(), "Overlays");
+				if (worldList) {
+					if (this.overlayList) {
+						this._section.insertBefore(worldList, this.overlayList);
+					} else {
+						this._section.appendChild(worldList);
+					}
+				}
+				return [this.worldList, this.worldTranslationHook];
+			},
+			getOverlayList(): HTMLElement {
+				const availableLayers = that.getAvailableOverlaysByNames();
+				if (Object.keys(availableLayers).length === 0) {
+					this.overlayList = undefined;
+					return undefined;
+				}
+				if (this.overlayList) {
+					return this.overlayList;
+				}
+				const [overlayList] = this.createList(that.overlaysByNames, that.getAvailableOverlaysByNames(), "Overlays", "overlay-list");
+				this.overlayList = overlayList;
+				if (overlayList) {
+					this._section.appendChild(overlayList);
+				}
 			},
 			updateLayout() {
+				this.updateListContainers();
 				this.updateActiveProj();
 				this.updateLists();
 			},
@@ -1211,14 +1254,55 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					this.translateHooks.push(this.finnishTranslationHook, this.worldTranslationHook);
 				}
 			},
+			updateListContainers() {
+				const oldFinnish = this.finnishList;
+				const oldWorld = this.worldList;
+				const oldOverlayList = this.overlayList;
+				const [finnishList] = this.getFinnishList();
+				const [worldList] = this.getWorldList();
+				const overlayList = this.getOverlayList();
+				const lists = [
+					[oldFinnish, finnishList, "finnish"],
+					[oldWorld, worldList, "world"]
+				];
+
+				[...lists, [oldOverlayList, overlayList]].forEach(([oldList, list]) => {
+					if (oldList && !list) {
+						oldList.parentElement.removeChild(oldList);
+					}
+				});
+
+				lists.filter(([oldList, list]) => !oldList && list).forEach(([oldList, list, active]) => {
+					list.querySelector("legend").addEventListener("click", ({target: {tagName}}) => {
+						if (this._finnishDisabled) {
+							return;
+						}
+						if (active === that._tileLayers.active) {
+							if (finnishList && active === "finnish") {
+								active = "world";
+							} else if (worldList && active === "world") {
+								active = "finnish";
+							}
+						}
+
+						const layerOptions = active === "finnish"
+							|| Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
+							? that._tileLayers.layers
+							: {...that._tileLayers.layers, openStreetMap: true};
+						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});
+					});
+				});
+			},
 			updateLists() {
-				Object.keys(this.layers).forEach(name => {
+				Object.keys({...that.tileLayers, ...that.overlaysByNames}).forEach(name => {
 					const available = that._tileLayers.layers[name];
 
+					if (!this.elems[name]) return;
+
 					this.elems[name].li.style.display = available ? "block" : "none";
-					if (!available) {
-						return;
-					}
+
+					if (!available) return;
+
 					const {opacity, visible} = that._tileLayers.layers[name];
 					const {slider, checkbox, li} = this.elems[name];
 					that._internalTileLayersUpdate = true;

@@ -17,7 +17,7 @@ export function reverseCoordinate(c: [number, number]): [number, number] {
 }
 
 proj4.defs("EPSG:2393", EPSG2393String);
-proj4.defs("EPSG:3076", EPSG3067String);
+proj4.defs("EPSG:3067", EPSG3067String);
 
 // There are two sets of ETRS-GKn. Read more: http://latuviitta.org/documents/ETRS-GKn_ja_EPSG-koodit.html
 // Old ETRS-GKn

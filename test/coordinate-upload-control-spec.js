@@ -17,6 +17,20 @@ describe("Draw upload control", () => {
 		control = map.getCoordinateUploadControl();
 	});
 
+	const getGeometry = () => map.e(
+		"getDraw().featureCollection.features[0].geometry"
+	);
+
+	const asGeoJSON = (lat, lng) => JSON.stringify({type: "Point", coordinates: [lng, lat]});
+	const asISO6709 = (lat, lng) => `${lat}:${lng}/`;
+	const asWKT = (lat, lng) => `POINT(${lng} ${lat})`;
+
+	const pointTestsDescriptions = [
+		{name: "GeoJSON", latLngToFormat: asGeoJSON},
+		{name: "ISO 6709", latLngToFormat: asISO6709},
+		{name: "WKT", latLngToFormat: asWKT}
+	];
+
 	it("opens on click", async () => {
 		const $button = control.$getButton();
 		await $button.click();
@@ -51,20 +65,6 @@ describe("Draw upload control", () => {
 				await control.$getCloseButton().click();
 			}
 		});
-
-		const getGeometry = () => map.e(
-			"getDraw().featureCollection.features[0].geometry"
-		);
-
-		const asGeoJSON = (lat, lng) => JSON.stringify({type: "Point", coordinates: [lng, lat]});
-		const asISO6709 = (lat, lng) => `${lat}:${lng}/`;
-		const asWKT = (lat, lng) => `POINT(${lng} ${lat})`;
-
-		const pointTestsDescriptions = [
-			{name: "GeoJSON", latLngToFormat: asGeoJSON},
-			{name: "ISO 6709", latLngToFormat: asISO6709},
-			{name: "WKT", latLngToFormat: asWKT}
-		];
 
 		for (const {name, latLngToFormat} of pointTestsDescriptions) {
 			describe(name, () => {
@@ -123,5 +123,30 @@ describe("Draw upload control", () => {
 			await expect(geometry.type).toBe("Point");
 			await expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
 		});
+
+		it("ISO6709 point with CRS on same line", async () => {
+			const [lat, lng] = [6666666, 333333];
+			const wgs84LatLng = etrsToWgs84([lat, lng]);
+			await control.type(`${asISO6709(lat, lng)}CRSEPSG:3067`);
+			await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
+			await expect(await control.getFormat()).toBe("ISO 6709");
+			await control.$getSubmit().click();
+			const geometry = await getGeometry();
+			await expect(geometry.type).toBe("Point");
+			await expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
+		});
+
+		it("ISO6709 points with CRS on own line", async () => {
+			const [lat, lng] = [6666666, 333333];
+			const wgs84LatLng = etrsToWgs84([lat, lng]);
+			await control.type(`${asISO6709(lat, lng)}\nCRSEPSG:3067`);
+			await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
+			await expect(await control.getFormat()).toBe("ISO 6709");
+			await control.$getSubmit().click();
+			const geometry = await getGeometry();
+			await expect(geometry.type).toBe("Point");
+			await expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
+		});
 	});
+
 });

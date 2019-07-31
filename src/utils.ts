@@ -327,8 +327,7 @@ function textualFormatToGeoJSON(
 		lineToCoordinates: (line: string) => number[][],
 		lineIsPolygon: (line: string) => boolean,
 		lineIsLineString: (line: string) => boolean,
-		lineIsPoint: (line: string) => boolean,
-		crsPrefix: string): G.GeoJSON {
+		lineIsPoint: (line: string) => boolean): G.GeoJSON {
 	const _lineToCoordinates = (line, idx): number[][] => {
 		try  {
 			const coords = lineToCoordinates(line);
@@ -341,27 +340,34 @@ function textualFormatToGeoJSON(
 		}
 	};
 
+	const asFeature = (geometry) => ({type: "Feature", properties: {}, geometry})
+
 	const features: G.Feature[] = <G.Feature[]> text
 		.split("\n")
-		.map(line => line.trim())
-		.filter(line => line && !line.match(`^${crsPrefix}`))
-		.map((line, idx) => {
+		.reduce((_features, line, idx) => {
+			line = line.trim();
+			if (!line) return _features;
+
 			if (lineIsPolygon(line)) {
 				const coordinates = [_lineToCoordinates(line, idx)];
 				coordinates[0].push(coordinates[0][0]);
 				if (coordinatesAreClockWise(coordinates[0])) {
 					coordinates[0] = coordinates[0].reverse();
 				}
-				return {type: "Polygon", coordinates};
+				_features.push(asFeature({type: "Polygon", coordinates}));
+				return _features;
 			} else if (lineIsLineString(line)) {
-				return {type: "LineString", coordinates: _lineToCoordinates(line, idx)};
+				_features.push(asFeature({type: "LineString", coordinates: _lineToCoordinates(line, idx)}));
+				return _features;
 			} else if (lineIsPoint(line)) {
-				return {type: "Point", coordinates: _lineToCoordinates(line, idx)[0]};
+				_features.push(asFeature({type: "Point", coordinates: _lineToCoordinates(line, idx)[0]}));
+				return _features;
 			} else {
 				throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", idx);
 			}
-	}).map(geometry => ({type: "Feature", properties: {}, geometry}));
+	}, []);
 
+	console.log(features);
 	return {type: "FeatureCollection", features};
 }
 
@@ -382,7 +388,10 @@ export function ISO6709ToGeoJSON(ISO6709: string): G.GeoJSON {
 		return line.match(/^(\+|-)?\d+\.?\d*(\+|-|:)\d+\.?\d*\/$/);
 	}
 
-	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "CRS");
+	ISO6709 = ISO6709.replace(/CRS.*$/, "");
+	console.log(ISO6709);
+
+	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint);
 }
 
 export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
@@ -439,7 +448,9 @@ export function WKTToGeoJSON(WKT: string): G.GeoJSON {
 	function lineIsPoint(line) {
 		return line.match(`^${("POINT")}`);
 	}
-	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint, "PROJCS");
+
+	WKT = WKT.replace(/^PROJCS.*/, "");
+	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint);
 }
 
 export function latLngOrTupleToTuple(latLng) {

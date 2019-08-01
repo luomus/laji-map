@@ -455,7 +455,7 @@ export default class LajiMap {
 					document.querySelectorAll(".laji-map-scroll-prevent"),
 					elem => elem.className = elem.className.replace("left", "enter")
 				);
-				setImmediate(() => {
+				setTimeout(() => {
 					[].forEach.call(
 						document.querySelectorAll(".laji-map-scroll-prevent"),
 						elem => elem.className = elem.className.replace(" enter", "")
@@ -850,7 +850,7 @@ export default class LajiMap {
 		this.map.addEventListener({
 			 // We have to handle dblclick zoom manually, since the default event can't be cancelled.
 			"dblclick": (e: L.LeafletMouseEvent) => {
-				setImmediate(() => {
+				setTimeout(() => {
 					if (this._disableDblClickZoom) return;
 					const oldZoom = this.map.getZoom();
 					const delta = this.map.options.zoomDelta;

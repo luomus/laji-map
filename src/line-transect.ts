@@ -1112,7 +1112,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 	_stopLTDragHandler(handler) {
 		// _interceptClick is triggered after mouseup - we delay drag stopping until map click is handled.
-		setImmediate(() => {
+		setTimeout(() => {
 			this._LTDragging = false;
 			this.map.dragging.enable();
 			L.DomUtil.enableTextSelection();

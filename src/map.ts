@@ -1443,13 +1443,14 @@ export default class LajiMap {
 
 	destroy() {
 		this.cleanDOM();
-		this.map.remove();
+		this.map && this.map.remove();
 		this.map = null;
 	}
 
 	cleanDOM() {
-		if (this.rootElem) this.rootElem.removeChild(this.container);
-		if (this.blockerElem) this._dialogRoot.removeChild(this.blockerElem);
+		const safeRemove = (from, elem) => from && elem && from.contains(elem) && from.removeChild(elem);
+		safeRemove(this.rootElem, this.container);
+		safeRemove(this._dialogRoot, this.blockerElem);
 		if (this._closeDialog) this._closeDialog();
 		if (this._domCleaners) {
 			this._domCleaners.forEach(cleaner => cleaner());

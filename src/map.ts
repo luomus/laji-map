@@ -790,7 +790,7 @@ export default class LajiMap {
 		if (this.options.zoomToData) {
 			bounds = this.getBoundsForZoomToDataOptions(this.options.zoomToData);
 			if (bounds.isValid()) {
-				center = bounds.getCenter()
+				center = bounds.getCenter();
 			} else {
 				bounds = undefined;
 			}

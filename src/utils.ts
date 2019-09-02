@@ -66,7 +66,7 @@ export function convertLatLng(latlng: [number, number], from: string, to: string
 		}
 	});
 
-	const format = (latlng, validator) => latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
+	const format = (_latlng, validator) => _latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
 
 	if (fromValidator && fromValidator[0].formatter) {
 		latlng = format(latlng, fromValidator);
@@ -340,7 +340,7 @@ function textualFormatToGeoJSON(
 		}
 	};
 
-	const asFeature = (geometry) => ({type: "Feature", properties: {}, geometry})
+	const asFeature = (geometry) => ({type: "Feature", properties: {}, geometry});
 
 	const features: G.Feature[] = <G.Feature[]> text
 		.split("\n")
@@ -367,7 +367,6 @@ function textualFormatToGeoJSON(
 			}
 	}, []);
 
-	console.log(features);
 	return {type: "FeatureCollection", features};
 }
 
@@ -389,7 +388,6 @@ export function ISO6709ToGeoJSON(ISO6709: string): G.GeoJSON {
 	}
 
 	ISO6709 = ISO6709.replace(/CRS.*$/, "");
-	console.log(ISO6709);
 
 	return textualFormatToGeoJSON(ISO6709, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint);
 }
@@ -597,7 +595,7 @@ export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
 
 			const crs = geoJSON.crs.properties.name;
 			try {
-				proj4(crs)
+				proj4(crs);
 			} catch (e) {
 					throw new LajiMapError("GeoJSON CRS not supported", "GeoJSONCRSNotSupported");
 			}
@@ -989,9 +987,7 @@ interface CoordinateValidator {
 const wgs84Check: CoordinateValidator = {
 	regexp: /^-?([0-9]{1,3}|[0-9]{1,3}\.[0-9]*)$/,
 	range: [-180, 180],
-	formatter: c => {
-		return (+c).toFixed(6)
-	}
+	formatter: c => (+c).toFixed(6)
 };
 const wgs84Validator = [wgs84Check, wgs84Check];
 

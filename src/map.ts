@@ -354,6 +354,9 @@ export default class LajiMap {
 		this.mapElem = this.mapElem || document.createElement("div");
 		this.blockerElem = this.blockerElem || document.createElement("div");
 
+		if (this.map && this.map.getContainer() && !this.map.getContainer().contains(document.activeElement)) {
+			this.map.fire("blur");
+		}
 		this.container = document.createElement("div");
 		this.container.className = "laji-map";
 

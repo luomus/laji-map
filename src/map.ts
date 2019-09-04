@@ -946,6 +946,7 @@ export default class LajiMap {
 			if (this._triggerKeyEvent(ESC, e)) {
 				e.preventDefault();
 				e.stopPropagation();
+				e.stopImmediatePropagation();
 				return true;
 			}
 		}
@@ -3391,6 +3392,7 @@ export default class LajiMap {
 			if (onClose) onClose(e);
 			that._closeDialog = undefined;
 			that._openDialogs = that._openDialogs.filter(dialog => dialog !== elem);
+			return true;
 		}
 
 		this._addKeyListener(ESC, close);

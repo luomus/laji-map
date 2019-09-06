@@ -9,7 +9,7 @@
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json --declaration && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
     "build": "npm run build:lib && npm run build:dist",
-    "preversion": "npm run lint && npm test:slow && npm run build",
+    "preversion": "npm run lint && npm run test:slow && npm run build",
     "postversion": "npm publish && git push",
     "lint": "tslint src/*.ts",
     "test": "HOST=127.0.0.1 PORT=4000 TEST_BROWSER=chrome protractor protractor.conf.js",

@@ -178,8 +178,9 @@ export interface Options extends MapOptions {
 }
 
 export interface UserLocationOptions {
-	on: boolean;
-	onLocationFound: (latlng?: LatLng, accuracy?: number) => void;
-	onLocationError: (e: ErrorEvent) => void;
-	userLocation: {latlng: LatLng, accuracy: number};
+	on?: boolean;
+	onLocationFound?: (latlng?: LatLng, accuracy?: number) => void;
+	onLocationError?: (e: ErrorEvent) => void;
+	userLocation?: {latlng: LatLng, accuracy: number};
+	panOnFound?: boolean;
 }

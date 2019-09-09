@@ -226,10 +226,8 @@ export default class LajiMap {
 		"biodiversityForestZones",
 	];
 	viewLocked: boolean;
-	onLocationFound: UserLocationOptions["onLocationFound"];
-	onLocationError: UserLocationOptions["onLocationError"];
-	userLocationParam: UserLocationOptions["userLocation"];
-	locateOptions: UserLocationOptions | boolean;
+	_locateParam: UserLocationOptions | boolean;
+	locateOptions: UserLocationOptions;
 	availableTileLayersWhitelist: TileLayerName[];
 	availableTileLayersBlacklist: TileLayerName[];
 	_initialized = false;
@@ -757,7 +755,7 @@ export default class LajiMap {
 
 			this.availableOverlaysByNames = this.overlaysByNames;
 
-			if (this.locate) {
+			if (this.locateOptions && this.locateOptions.on) {
 				this._setLocateOn();
 			}
 
@@ -2421,14 +2419,21 @@ export default class LajiMap {
 			contextmenuInheritItems: false,
 			contextmenuItems
 		});
-
 	}
 
 	setLocate(locate: UserLocationOptions | boolean = false) {
-		const defaultOptions: UserLocationOptions = {on: true, onLocationFound: undefined, onLocationError: undefined, userLocation: undefined};
+		const defaultOptions: UserLocationOptions = {
+			on: true,
+			onLocationFound: undefined,
+			onLocationError: undefined,
+			userLocation: undefined,
+			panOnFound: true
+		};
 		let options = defaultOptions;
 		if (isObject(locate)) {
-			options = {...defaultOptions, ...(<any> locate)};
+			options = {...defaultOptions, ...(<UserLocationOptions> locate)};
+		} else if (typeof locate === "boolean") {
+			options = {...defaultOptions, on: !!locate};
 		} else if (Array.isArray(locate)) {
 			console.warn("laji-map warning: locate signature has changed, read the README. Options in array format will be removed in the future!");
 			options = {
@@ -2441,11 +2446,8 @@ export default class LajiMap {
 		const locateOn = locate
 			? options.on
 			: !!locate;
-		this.locateOptions = locate;
-		this.locate = locateOn;
-		this.onLocationFound = options.onLocationFound;
-		this.onLocationError = options.onLocationError;
-		this.userLocationParam = options.userLocation;
+		this.locateOptions = options;
+		this._locateParam = locate;
 		locateOn
 			? this._setLocateOn()
 			: this.userLocationMarker
@@ -2457,11 +2459,15 @@ export default class LajiMap {
 	_setLocateOn(triggerEvent = false) {
 		if (!depsProvided(this, "_setLocateOn", arguments)) return;
 
-		if (this.locate && this._located === undefined && this.userLocationParam) {
-			this._onLocationFound(<L.LocationEvent> this.userLocationParam);
+		const {on, userLocation} = this.locateOptions;
+		if (on && this._located === undefined && userLocation) {
+			this._onLocationFound(<L.LocationEvent> userLocation);
 		}
 		this.map.locate({watch: true, enableHighAccuracy: true});
-		triggerEvent && this.map.fire("locateToggle", {locate: this.locateOptions});
+		triggerEvent && this.map.fire("locateToggle", {locate: typeof this._locateParam === "boolean"
+			? true
+			: {...this.locateOptions, on: true}
+		});
 	}
 
 	@dependsOn("map")
@@ -2474,9 +2480,10 @@ export default class LajiMap {
 			this.userLocationMarker = undefined;
 			this.userLocationRadiusMarker = undefined;
 		}
-		if (this.locate && this.onLocationFound) this.onLocationFound(undefined);
+		const {on, onLocationFound} = this.locateOptions;
+		if (on && onLocationFound) onLocationFound(undefined);
 		this._located = false;
-		this.map.fire("locateToggle", {locate: (typeof this.locateOptions === "boolean" || Array.isArray(this.locateOptions))
+		this.map.fire("locateToggle", {locate: typeof this._locateParam === "boolean"
 			? false
 			: {...this.locateOptions, on: false}
 		});
@@ -2486,7 +2493,7 @@ export default class LajiMap {
 	_onLocationFound({latlng, accuracy, bounds}: L.LocationEvent) {
 		if (!depsProvided(this, "_onLocationFound", arguments)) return;
 
-		if (!this._located && bounds) this.map.fitBounds(bounds);
+		if (!this._located && bounds && this.locateOptions.panOnFound) this.map.fitBounds(bounds);
 		this._located = true;
 
 		if (this.userLocationLayer) {
@@ -2502,7 +2509,7 @@ export default class LajiMap {
 		}
 
 		this.userLocation = {latlng, accuracy};
-		if (this.onLocationFound) this.onLocationFound(latlng, accuracy);
+		if (this.locateOptions.onLocationFound) this.locateOptions.onLocationFound(latlng, accuracy);
 	}
 
 	createUserLocationLayer(latlng: L.LatLng, accuracy: number): {layerGroup: L.LayerGroup, markerLayer: L.CircleMarker, radiusLayer: L.Circle} {
@@ -2528,7 +2535,8 @@ export default class LajiMap {
 	}
 
 	_onLocationNotFound(e: L.ErrorEvent) {
-		if (this.onLocationError) this.onLocationError(e);
+		const {onLocationError} = this.locateOptions;
+		if (onLocationError) onLocationError(e);
 	}
 
 	getDrawLayerByIdx(idx: number) {

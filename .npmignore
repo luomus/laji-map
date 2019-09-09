@@ -9,3 +9,4 @@ tsconfig*
 properties.json*
 protractor.conf.js
 tslint.json
+update-changelog.sh

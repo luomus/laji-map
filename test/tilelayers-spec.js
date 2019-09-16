@@ -48,14 +48,14 @@ describe("Tile layers control", () => {
 
 	it("is rendered", async () => {
 		map = await createMap({controls: true});
-		await expect(await control.$getContainer().isPresent()).toBe(true);
+		expect(await control.$getContainer().isPresent()).toBe(true);
 	});
 
 	it("opens on click", async () => {
 		map = await createMap({controls: true});
-		await expect(await control.$getFinnishList().isDisplayed()).toBe(false);
+		expect(await control.$getFinnishList().isDisplayed()).toBe(false);
 		await control.$getButton().click();
-		await expect(await control.$getFinnishList().isDisplayed()).toBe(true);
+		expect(await control.$getFinnishList().isDisplayed()).toBe(true);
 	});
 
 	const tests = {
@@ -66,10 +66,10 @@ describe("Tile layers control", () => {
 			},
 			test: async () => {
 				await control.$getButton().click();
-				await expect(await control.$getWorldList().isPresent()).toBe(true);
-				await expect(await control.$getWorldList().$("legend").isPresent()).toBe(true);
-				await expect(await control.$getWorldList().$("legend").getText()).toBe(await map.e("translations.Maps"));
-				await expect(await control.$getFinnishList().isPresent()).toBe(false);
+				expect(await control.$getWorldList().isPresent()).toBe(true);
+				expect(await control.$getWorldList().$("legend").isPresent()).toBe(true);
+				expect(await control.$getWorldList().$("legend").getText()).toBe(await map.e("translations.Maps"));
+				expect(await control.$getFinnishList().isPresent()).toBe(false);
 			}
 		},
 		"doesn't render world layers when not available": {
@@ -79,9 +79,9 @@ describe("Tile layers control", () => {
 			},
 			test: async () => {
 				await control.$getButton().click();
-				await expect(await control.$getFinnishList().isPresent()).toBe(true);
-				await expect(await control.$getFinnishList().$("legend").getText()).toBe(await map.e("translations.Maps"));
-				await expect(await control.$getWorldList().isPresent()).toBe(false);
+				expect(await control.$getFinnishList().isPresent()).toBe(true);
+				expect(await control.$getFinnishList().$("legend").getText()).toBe(await map.e("translations.Maps"));
+				expect(await control.$getWorldList().isPresent()).toBe(false);
 			}
 		},
 		"doesn't render overlays when not available": {
@@ -90,7 +90,7 @@ describe("Tile layers control", () => {
 			},
 			test: async () => {
 				await control.$getButton().click();
-				await expect(await control.$getOverlayList().isPresent()).toBe(false);
+				expect(await control.$getOverlayList().isPresent()).toBe(false);
 			}
 		}
 	};
@@ -118,17 +118,16 @@ describe("Tile layers control", () => {
 	it("adds layer when added to options after control initialization", async () => {
 		map = await createMap({controls: true, availableTileLayerNamesBlacklist: ["maastokartta"]});
 		await control.$getButton().click();
-		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
+		expect(await (await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
 		await map.e("setOption('availableTileLayerNamesBlacklist', [])");
-		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(true);
+		await expect(await (await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(true);
 	});
 
 	it("removes layer when removed from options after control initialization", async () => {
 		map = await createMap({controls: true, availableTileLayerNamesBlacklist: []});
 		await control.$getButton().click();
-		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(true);
+		expect(await (await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(true);
 		await map.e("setOption('availableTileLayerNamesBlacklist', ['maastokartta'])");
-		await expect((await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
+		expect(await (await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
 	});
 });
-

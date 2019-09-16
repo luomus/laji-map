@@ -15,23 +15,23 @@ describe("Coordinate input control", () => {
 	it("opens on click", async () => {
 		const $button = control.$getButton();
 		await $button.click();
-		await expect((await control.$getContainer()).isPresent()).toBe(true);
+		expect(await control.$getContainer().isPresent()).toBe(true);
 	});
 
 	it("is disabled when no latlng", async () => {
 		const $submit = control.$getSubmit();
-		await expect(await $submit.isEnabled()).toBe(false);
+		expect(await $submit.isEnabled()).toBe(false);
 	});
 
 	it("is disabled with invalid latlng", async () => {
 		const $submit = control.$getSubmit();
 		await control.enterLatLng(1231231231, 123092834);
-		await expect(await $submit.isEnabled()).toBe(false);
+		expect(await $submit.isEnabled()).toBe(false);
 	});
 
 	it("closes on close button click", async () => {
 		await control.$getCloseButton().click();
-		await expect((await control.$getContainer()).isPresent()).toBe(false);
+		expect(await control.$getContainer().isPresent()).toBe(false);
 	});
 
 	describe("accepts", () => {
@@ -54,7 +54,7 @@ describe("Coordinate input control", () => {
 		it("WGS84 point", async () => {
 			const [lat, lng] = [60, 25];
 			await control.enterLatLng(lat, lng);
-			await expect(await control.getCRS()).toBe("WGS84");
+			expect(await control.getCRS()).toBe("WGS84");
 			await control.$getSubmit().click();
 			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
@@ -64,7 +64,7 @@ describe("Coordinate input control", () => {
 		it("WGS84 point with decimal", async () => {
 			const [lat, lng] = [60.5, 25.5];
 			await control.enterLatLng(lat, lng);
-			await expect(await control.getCRS()).toBe("WGS84");
+			expect(await control.getCRS()).toBe("WGS84");
 			await control.$getSubmit().click();
 			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
@@ -74,7 +74,7 @@ describe("Coordinate input control", () => {
 		it("YKJ point", async () => {
 			const [lat, lng] = [6666666, 3333333];
 			await control.enterLatLng(lat, lng);
-			await expect(await control.getCRS()).toBe("YKJ");
+			expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
@@ -91,7 +91,7 @@ describe("Coordinate input control", () => {
 				[6666670, 3333330],
 			].map(latLng => ykjToWgs84(latLng));
 			await control.enterLatLng(lat, lng);
-			await expect(await control.getCRS()).toBe("YKJ");
+			expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Polygon");
@@ -107,7 +107,7 @@ describe("Coordinate input control", () => {
 		it("ETRS point", async () => {
 			const [lat, lng] = [6666666, 333333];
 			await control.enterLatLng(lat, lng);
-			await expect(await control.getCRS()).toBe("ETRS-TM35FIN");
+			expect(await control.getCRS()).toBe("ETRS-TM35FIN");
 			await control.$getSubmit().click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");

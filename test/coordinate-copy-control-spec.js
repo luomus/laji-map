@@ -20,12 +20,12 @@ describe("Draw copy control", () => {
 	it("opens on click", async () => {
 		const $button = control.$getButton();
 		await $button.click();
-		await expect((await control.$getContainer()).isPresent()).toBe(true);
+		expect(await control.$getContainer().isPresent()).toBe(true);
 	});
 
 	it("closes on close button click", async () => {
 		await control.$getCloseButton().click();
-		await expect((await control.$getContainer()).isPresent()).toBe(false);
+		expect(await control.$getContainer().isPresent()).toBe(false);
 	});
 
 	describe("converts", () => {

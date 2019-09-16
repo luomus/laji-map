@@ -34,31 +34,32 @@ class MapPageObject {
 	}
 
 	mouseMove(x, y) {
-		return browser.actions()
-			.mouseMove(this.$getElement(), {x, y})
+		return browser.actions({bridge: true})
+			.move({origin: this.$getElement().getWebElement(), x, y})
 			.perform();
 	}
 
 	async clickAt(x, y) {
 		await this.mouseMove(x, y);
-		return browser.actions()
+		return browser.actions({bridge: true})
 			.click().perform();
 	}
 
 	async doubleClickAt(x, y) {
 		await this.mouseMove(x, y);
-		return browser.actions()
+		await browser.sleep(500);
+		return browser.actions({bridge: true})
 			.doubleClick().perform();
 	}
 
 	async drag([x, y], [x2, y2]) {
 		await this.mouseMove(x, y);
-		await browser.actions()
-			.mouseDown()
+		await browser.actions({bridge: true})
+			.press()
 			.perform();
 		await this.mouseMove(x2, y2);
-		return browser.actions()
-			.mouseUp()
+		return browser.actions({bridge: true})
+			.release()
 			.perform();
 	}
 

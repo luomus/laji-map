@@ -649,7 +649,13 @@ export default class LajiMap {
 					version: "1.1.0",
 					attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>" // tslint:disable-line
 				}),
-				ortokuva: L.tileLayer.mml("Ortokuva_3067"),
+				ortokuva: L.tileLayer("https://proxy.laji.fi/mml_wmts/maasto/wmts/1.0.0/ortokuva/default/ETRS-TM35FIN/{z}/{y}/{x}.jpg", {
+					maxZoom: 14,
+					version: "1.0.0",
+					format: "image/png",
+					transparent: false,
+					attribution : "&copy; <a href=\"http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501\"target=\"_blank\" rel=\"noopener noreferrer\">Maanmittauslaitos</a>" // tslint:disable-line
+				}),
 				laser: L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
 					maxZoom: 19,
 					minZoom: 0,

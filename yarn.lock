@@ -28,6 +28,20 @@
   version "10.9.1"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.9.1.tgz#06f002136fbcf51e730995149050bb3c45ee54e6"
 
+"@types/proj4@*":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@types/proj4/-/proj4-2.5.0.tgz#40f1ed1cb9ef66e442ab6e57eba32eadc0f0501a"
+  integrity sha512-9bR9qvg4wZE6UiIlmhodCOZ2r38SeN8T35SsmMDuIMfACxxaMvIwiwoTJnEA9f/KEhL+BQSuD+arbZucUzYu7w==
+
+"@types/proj4leaflet@*":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@types/proj4leaflet/-/proj4leaflet-1.0.5.tgz#f4b3fedd29363aa64ac9c27c1f65f8f649762c14"
+  integrity sha512-xqw5V5wk0iSjpDSN2X1tuEo6qL4QhfffaTpnHN6ISz3vnT4Z4m4aKdH1vQHlpJ6aJ0TBvcRmI8X2/Lv7t/0qOw==
+  dependencies:
+    "@types/geojson" "*"
+    "@types/leaflet" "*"
+    "@types/proj4" "*"
+
 "@webassemblyjs/ast@1.5.13":
   version "1.5.13"
   resolved "https://registry.yarnpkg.com/@webassemblyjs/ast/-/ast-1.5.13.tgz#81155a570bd5803a30ec31436bc2c9c0ede38f25"
@@ -2514,12 +2528,6 @@ leaflet-geometryutil@0.8.0:
     lodash.debounce "^4.0.8"
     nodent-runtime "^3.0.4"
 
-leaflet-mml-layers@2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/leaflet-mml-layers/-/leaflet-mml-layers-2.0.1.tgz#1161923dd5cb2f366dc1bdb484026a16994d6e27"
-  dependencies:
-    leaflet "^1.0.1"
-
 "leaflet-textpath@git+https://git@github.com/olzraiti/Leaflet.textPath.git#7fd168f22e2b1a52bdf62d473237f01caaa01e95":
   version "0.2.2"
   resolved "git+https://git@github.com/olzraiti/Leaflet.textPath.git#7fd168f22e2b1a52bdf62d473237f01caaa01e95"
@@ -2530,7 +2538,7 @@ leaflet.markercluster@1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/leaflet.markercluster/-/leaflet.markercluster-1.3.0.tgz#58eb0654e90bd3274a660390ab0bc734212b204d"
 
-leaflet@*, leaflet@1.4.0, leaflet@>=0.7.0, leaflet@^1.0.1:
+leaflet@*, leaflet@1.4.0, leaflet@>=0.7.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/leaflet/-/leaflet-1.4.0.tgz#d5f56eeb2aa32787c24011e8be4c77e362ae171b"
   integrity sha512-x9j9tGY1+PDLN9pcWTx9/y6C5nezoTMB8BLK5jTakx+H7bPlnbCHfi9Hjg+Qt36sgDz/cb9lrSpNQXmk45Tvhw==

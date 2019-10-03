@@ -1,3 +1,6 @@
+## 2.1.1
+* Add missing layer attributions
+
 ## 2.1.0
 * Add panOnFound option to locate options
 

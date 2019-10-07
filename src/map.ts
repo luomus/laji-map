@@ -803,7 +803,9 @@ export default class LajiMap {
 		}
 	}
 
+	@dependsOn("map")
 	_initializeView() {
+		if (!depsProvided(this, "_initializeView", arguments)) return;
 		let tileLayerOptions;
 		if (this.options.tileLayers) {
 			tileLayerOptions = this.options.tileLayers;

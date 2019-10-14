@@ -1306,7 +1306,7 @@ export default class LajiMap {
 
 		if (isProvided(this, "tileLayer")) {
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
-			this.map.fire("tileLayersChange", this._tileLayers);
+			this.map.fire("tileLayersChange", {tileLayers: this._tileLayers});
 			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});
 		}
 
@@ -1343,6 +1343,9 @@ export default class LajiMap {
 	}
 
 	setOverlays(overlays: L.TileLayer[] = []) {
+		if (!this._initialized && this._tileLayersSet) {
+			return;
+		}
 		const bwCompatibleOverlays = {
 			...this.overlaysByNames,
 			ykjGrid: this.tileLayers.ykjGrid,
@@ -1359,7 +1362,7 @@ export default class LajiMap {
 		}, {});
 
 		const changes = Object.keys(bwCompatibleOverlays).reduce((_names, name) => {
-			_names[name] = {visible: !!names[name], opacity: bwCompatibleOverlays[name].defaultOpacity || 1};
+			_names[name] = {visible: !!names[name], opacity: names[name] ? bwCompatibleOverlays[name].defaultOpacity || 1 : 0};
 			return _names;
 		}, {});
 

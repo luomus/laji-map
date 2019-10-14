@@ -1,3 +1,6 @@
+## 3.0.0
+* `tileLayersChange` event data isn't inline inside the event, but under `tileLayers` property
+
 ## 2.1.1
 * Add missing layer attributions
 

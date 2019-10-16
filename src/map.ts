@@ -734,7 +734,7 @@ export default class LajiMap {
 					layers: "kunta1000k_2018",
 					transparent: true,
 					format: "image/png",
-					attribution: getAttribution("Tilastokeskus", "https://www.stat.fi/org/lainsaadanto/copyright.html")
+					attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
 				}),
 				forestVegetationZones: L.tileLayer.wms(
 					"http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {

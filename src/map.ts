@@ -1327,6 +1327,10 @@ export default class LajiMap {
 		if (!depsProvided(this, "setTileLayerOpacity", arguments)) return;
 		if (val === undefined) return;
 
+		if (!this._initialized && this.options.tileLayers) {
+			return;
+		}
+
 		let initialCall = this.tileLayerOpacity === undefined;
 
 		this.tileLayerOpacity = val;
@@ -1343,7 +1347,7 @@ export default class LajiMap {
 	}
 
 	setOverlays(overlays: L.TileLayer[] = []) {
-		if (!this._initialized && this._tileLayersSet) {
+		if (!this._initialized && this.options.tileLayers) {
 			return;
 		}
 		const bwCompatibleOverlays = {

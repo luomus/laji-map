@@ -196,13 +196,13 @@ lineTransect:pointdrag                          | -
 
 ## Development ##
 
-Install the dependencies with `yarn start`.
+Install the dependencies with `npm start`.
 
-Start the development playground with `yarn start`.
+Start the development playground with `npm start`.
 
 To release a new version, run `npm run publish-to-npm`.
 
-Try to keep the code style consistent - ```yarn run lint``` should pass without errors.
+Try to keep the code style consistent - ```npm run lint``` should pass without errors.
 
 In order to use the geocoding widget, you should provide the Google API key to properties.json. See properties.json.example.
 
@@ -223,13 +223,13 @@ The playground server and the Selenium server must be running before running the
 webdriver-manager start
 ```
 
-Then run the tests with `yarn test`. For more robust testing, run `yarn run test:slow`. It runs test after 500ms delay after the map has been initialized.
+Then run the tests with `npm test`. For more robust testing, run `npm run test:slow`. It runs test after 500ms delay after the map has been initialized.
 
 `lib` must be built before testing (run `npm run build:lib`).
 
 ### Test parameters ###
 
-Parameters are given as envirnment variables, i.e. `TEST_BROWSER=chrome yarn test`
+Parameters are given as envirnment variables, i.e. `TEST_BROWSER=chrome npm test`
 
 Option         | Default | Description
 ---------------|---------|-----------------------------------------------------------------------------------------------

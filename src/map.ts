@@ -2805,6 +2805,16 @@ export default class LajiMap {
 	}
 
 	_onEdit(dataIdx, data) {
+		// Fix bug:
+		// 1. Circle in edit mode
+		// 2. Move the circle
+		// 3. Open context menu for it
+		// 4. Click outside circle to stop editing
+		// 5. If draw onChange resets draw data, contextmenu crashes
+		if (this._contextMenuLayer) {
+			(this.map.contextmenu as any).hide();
+		}
+
 		const eventData = {};
 
 		const prevFeatureCollection = {

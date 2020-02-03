@@ -1782,6 +1782,8 @@ export default class LajiMap {
 	zoomToData(options: ZoomToDataOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
 
+		if (!options) return;
+
 		if (options && !isObject(options)) {
 			options = {};
 		}

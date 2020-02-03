@@ -192,3 +192,20 @@ it("Falls back to center when no data and zoomToData given", async () => {
 	await expect(center.lat).toBe(latLng.lat);
 	await expect(center.lng).toBe(latLng.lng);
 });
+
+it("Falls back to center when no zoomToData given", async () => {
+	const data = {type: "FeatureCollection", features: []};
+	const latLng = {lat: 25, lng: 60};
+	const options = {
+		center: latLng,
+		data: {geoData: {type: "Point", coordinates: [45, 70]}}
+	};
+
+	const map = await createMap({
+		...options
+	});
+
+	const center = await map.e("map.getCenter()");
+	await expect(center.lat).toBe(latLng.lat);
+	await expect(center.lng).toBe(latLng.lng);
+});

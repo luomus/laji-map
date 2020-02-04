@@ -232,6 +232,7 @@ export default class LajiMap {
 	availableTileLayersBlacklist: TileLayerName[];
 	_initialized = false;
 	mmlProj: L.Proj.CRS;
+	_trySwapToFinnishOnInitialization = true;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -806,6 +807,8 @@ export default class LajiMap {
 	@dependsOn("map")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
+		this._viewCriticalSection = true;
+
 		let tileLayerOptions;
 		if (this.options.tileLayers) {
 			tileLayerOptions = this.options.tileLayers;
@@ -832,6 +835,7 @@ export default class LajiMap {
 			tileLayerOptions.active = "world";
 		}
 
+		this._trySwapToFinnishOnInitialization = this._isOutsideFinland(center);
 		this.setTileLayers(tileLayerOptions);
 
 		if (bounds) {
@@ -845,6 +849,8 @@ export default class LajiMap {
 		}
 
 		provide(this, "view");
+
+		this._viewCriticalSection = false;
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
@@ -1285,13 +1291,16 @@ export default class LajiMap {
 		}, 19);
 		this.map.setMaxZoom(19);
 		if (this.activeProjName !== oldActive) {
+			const viewCriticalWas = this._viewCriticalSection;
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
 			this._viewCriticalSection = true;
 			 // Redraw all layers according to new projection.
 			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true);
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
-			this._viewCriticalSection = false;
+			if (!viewCriticalWas) {
+				this._viewCriticalSection = false;
+			}
 			this.map.fire("projectionChange", newOptions.active);
 		}
 		this.map.setMaxZoom(maxZoom);
@@ -1314,7 +1323,7 @@ export default class LajiMap {
 		const _isProvided = isProvided(this, "tileLayer");
 		if (!_isProvided) {
 			provide(this, "tileLayer");
-			this._swapToWorldOutsideFinland(this.map.getCenter());
+			this._trySwapToFinnishOnInitialization && this._swapToWorldOutsideFinland(this.map.getCenter());
 		}
 	}
 

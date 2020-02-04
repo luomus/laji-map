@@ -209,3 +209,13 @@ it("Falls back to center when no zoomToData given", async () => {
 	await expect(center.lat).toBe(latLng.lat);
 	await expect(center.lng).toBe(latLng.lng);
 });
+
+it("keeps finnish tileLayer if center is outside Finland but zoomToData causes view to initialize into Finland", async () => {
+	const congo =  {
+		"lat": 79.3499057749654,
+		"lng": 21.160612106323246
+	};
+	const data = {geoData: {type: "Point", coordinates: [25, 60]}};
+	const map = await createMap({tileLayerName: "taustakartta", zoom: 4, center: congo, data, zoomToData: true});
+	await expect(await map.e("tileLayerName")).toBe("taustakartta");
+});

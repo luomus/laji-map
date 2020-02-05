@@ -204,7 +204,7 @@ export default class LajiMap {
 	_onMouseMove: (e: any) => void;
 	provider: any;
 	leafletOptions: L.MapOptions;
-	_viewCriticalSection: boolean;
+	_viewCriticalSection = 0;
 	_tileLayersSet: boolean;
 	activeProjName: TileLayersOptions["active"];
 	_tileLayerOrder = [
@@ -807,7 +807,7 @@ export default class LajiMap {
 	@dependsOn("map")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
-		this._viewCriticalSection = true;
+		this._viewCriticalSection++;
 
 		let tileLayerOptions;
 		if (this.options.tileLayers) {
@@ -850,7 +850,7 @@ export default class LajiMap {
 
 		provide(this, "view");
 
-		this._viewCriticalSection = false;
+		this._viewCriticalSection--;
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
@@ -1291,16 +1291,13 @@ export default class LajiMap {
 		}, 19);
 		this.map.setMaxZoom(19);
 		if (this.activeProjName !== oldActive) {
-			const viewCriticalWas = this._viewCriticalSection;
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
-			this._viewCriticalSection = true;
+			this._viewCriticalSection++;
 			 // Redraw all layers according to new projection.
 			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true);
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
-			if (!viewCriticalWas) {
-				this._viewCriticalSection = false;
-			}
+			this._viewCriticalSection--;
 			this.map.fire("projectionChange", newOptions.active);
 		}
 		this.map.setMaxZoom(maxZoom);

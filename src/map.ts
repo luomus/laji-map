@@ -849,6 +849,7 @@ export default class LajiMap {
 		}
 
 		provide(this, "view");
+		this._getAllData().forEach(i => i && i.group.bringToFront());
 
 		this._viewCriticalSection--;
 	}
@@ -1781,7 +1782,12 @@ export default class LajiMap {
 	}
 
 	_getAllData(): {group: L.FeatureGroup}[] {
-		return [this.getDraw(), ...this.data];
+		const data = [...this.data];
+		const draw = this.getDraw();
+		if (draw) {
+			data.push(draw);
+		}
+		return data;
 	}
 
 	@dependsOn("data", "draw", "view")
@@ -2676,6 +2682,12 @@ export default class LajiMap {
 		layer.on("add", () => {
 			typelessLayer._startCircle.addTo(this.map);
 		});
+
+		const {bringToFront} = typelessLayer.__proto__;
+		typelessLayer.__proto__.bringToFront = () => {
+			bringToFront.call(typelessLayer);
+			typelessLayer._startCircle.bringToFront();
+		};
 	}
 
 	_reversePolyline(layer) {
@@ -3548,7 +3560,6 @@ export default class LajiMap {
 			if (zoom) {
 				this.setNormalizedZoom(zoom);
 			}
-
 		});
 	}
 

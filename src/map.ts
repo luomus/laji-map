@@ -849,7 +849,7 @@ export default class LajiMap {
 		}
 
 		provide(this, "view");
-		this._getAllData().forEach(i => i && i.group.bringToFront());
+		this.reorderData();
 
 		this._viewCriticalSection--;
 	}
@@ -1905,6 +1905,7 @@ export default class LajiMap {
 		}
 		if (!Array.isArray(data)) data = [data];
 		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
+		this.reorderData();
 		provide(this, "data");
 	}
 
@@ -1980,6 +1981,7 @@ export default class LajiMap {
 		this.updateDrawData(options);
 
 		this.resetDrawUndoStack();
+		this.reorderData();
 
 		provide(this, "draw");
 	}
@@ -2296,6 +2298,10 @@ export default class LajiMap {
 			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item)).addTo(this.map);
 			item.groupContainer.addLayer(item.group);
 		}
+	}
+
+	reorderData() {
+		this._getAllData().forEach(i => i && i.group.bringToFront());
 	}
 
 	redrawDrawData() {

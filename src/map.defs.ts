@@ -11,13 +11,30 @@ export interface ZoomToDataOptions extends LajiMapFitBoundsOptions {
 	draw?: boolean;
 }
 
-export interface LajiMapEvent {
-	type: string;
-	idxs?: number[];
-	idx?: number;
-	features?: {[id: number]: G.Feature};
-	feature?: G.Feature;
+export interface LajiMapCreateEvent {
+	type: "create";
+	feature: G.Feature;
 }
+export interface LajiMapEditEvent {
+	type: "edit";
+	features: {[idx: number]: G.Feature};
+}
+export interface LajiMapDeleteEvent {
+	type: "delete";
+	idxs: number[];
+	features: G.Feature[];
+}
+export interface LajiMapInsertEvent {
+	type: "insert";
+	idx: number;
+	feature: G.Feature;
+}
+export interface LajiMapActivateEvent {
+	type: "active";
+	idx: number;
+}
+
+export type LajiMapEvent = LajiMapCreateEvent | LajiMapEditEvent | LajiMapDeleteEvent | LajiMapInsertEvent | LajiMapActivateEvent;
 
 export interface GetPopupOptions {
 	dataIdx?: number;

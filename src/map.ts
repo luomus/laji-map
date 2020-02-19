@@ -29,7 +29,7 @@ import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
-	UserLocationOptions
+	UserLocationOptions, LajiMapEditEvent
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1911,7 +1911,7 @@ export default class LajiMap {
 
 	getData = () => {
 		const data = [...this.data];
-		delete data[-1];
+		delete data[this.drawIdx];
 		return data;
 	}
 
@@ -1976,7 +1976,7 @@ export default class LajiMap {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
 		 // Using a negative idx lets us keep the original data indices.
-		if (!this.drawIdx) this.drawIdx = -1;
+		if (this.drawIdx === undefined) this.drawIdx = -1;
 
 		this.updateDrawData(options);
 
@@ -2078,7 +2078,8 @@ export default class LajiMap {
 		};
 		const event: LajiMapEvent = {
 			type: "delete",
-			idxs: Object.keys(this.idxsToIds[item.idx]).map(idx => parseInt(idx))
+			idxs: Object.keys(this.idxsToIds[item.idx]).map(idx => parseInt(idx)),
+			features: this.cloneFeatures(this.data[item.idx].featureCollection.features)
 		};
 		commit && this._triggerEvent(event, item.onChange);
 
@@ -2872,7 +2873,7 @@ export default class LajiMap {
 		const event = {
 			type: "edit",
 			features: eventData
-		};
+		} as LajiMapEditEvent;
 
 		this._triggerEvent(event, item.onChange);
 
@@ -2933,7 +2934,14 @@ export default class LajiMap {
 			}
 		}
 
-		item.featureCollection.features = features.filter((_item, i) => deleteIdxs.indexOf(i) === -1);
+		const deletedFeatures = [];
+		item.featureCollection.features = features.filter((feature, i) => {
+			const filter = deleteIdxs.indexOf(i) === -1;
+			if (!filter) {
+				deletedFeatures.push(feature);
+			}
+			return filter;
+		});
 
 		deleteIds.forEach(id => {
 			this._removeLayerFromItem(item, this._getLayerById(id));
@@ -2949,7 +2957,8 @@ export default class LajiMap {
 
 		const events: LajiMapEvent[] = [{
 			type: "delete",
-			idxs: deleteIdxs
+			idxs: deleteIdxs,
+			features: deletedFeatures
 		}];
 
 		if (changeActive) {

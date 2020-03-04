@@ -1990,7 +1990,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				};
 				const events: LajiMapEvent[] = [{
 					type: "delete",
-					idxs: Object.keys(this.idxsToIds[this.drawIdx]).map(idx => parseInt(idx))
+					idxs: Object.keys(this.idxsToIds[this.drawIdx]).map(idx => parseInt(idx)),
+					features: this.cloneFeatures(this.getDraw().featureCollection.features)
 				}];
 				this.updateDrawData(<DrawOptions> {...this.getDraw(), featureCollection: undefined, geoData: fixedGeoJSON || textarea.value});
 				this.getDraw().featureCollection.features.forEach(feature => {

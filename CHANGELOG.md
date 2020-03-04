@@ -1,3 +1,7 @@
+## 3.0.7
+* `delete` event emits `feature`
+* Data layers are ordered on map, draw on top
+
 ## 3.0.0
 * `tileLayersChange` event data isn't inline inside the event, but under `tileLayers` property
 

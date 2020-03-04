@@ -29,7 +29,7 @@ import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
-	UserLocationOptions
+	UserLocationOptions, LajiMapEditEvent
 } from "./map.defs";
 
 import translations from "./translations";
@@ -204,7 +204,7 @@ export default class LajiMap {
 	_onMouseMove: (e: any) => void;
 	provider: any;
 	leafletOptions: L.MapOptions;
-	_viewCriticalSection: boolean;
+	_viewCriticalSection = 0;
 	_tileLayersSet: boolean;
 	activeProjName: TileLayersOptions["active"];
 	_tileLayerOrder = [
@@ -232,6 +232,7 @@ export default class LajiMap {
 	availableTileLayersBlacklist: TileLayerName[];
 	_initialized = false;
 	mmlProj: L.Proj.CRS;
+	_trySwapToFinnishOnInitialization = true;
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -806,6 +807,8 @@ export default class LajiMap {
 	@dependsOn("map")
 	_initializeView() {
 		if (!depsProvided(this, "_initializeView", arguments)) return;
+		this._viewCriticalSection++;
+
 		let tileLayerOptions;
 		if (this.options.tileLayers) {
 			tileLayerOptions = this.options.tileLayers;
@@ -832,6 +835,7 @@ export default class LajiMap {
 			tileLayerOptions.active = "world";
 		}
 
+		this._trySwapToFinnishOnInitialization = this._isOutsideFinland(center);
 		this.setTileLayers(tileLayerOptions);
 
 		if (bounds) {
@@ -845,6 +849,9 @@ export default class LajiMap {
 		}
 
 		provide(this, "view");
+		this.reorderData();
+
+		this._viewCriticalSection--;
 	}
 
 	_isOutsideFinland(latLng: L.LatLngExpression) {
@@ -1286,12 +1293,12 @@ export default class LajiMap {
 		this.map.setMaxZoom(19);
 		if (this.activeProjName !== oldActive) {
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
-			this._viewCriticalSection = true;
+			this._viewCriticalSection++;
 			 // Redraw all layers according to new projection.
 			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true);
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
-			this._viewCriticalSection = false;
+			this._viewCriticalSection--;
 			this.map.fire("projectionChange", newOptions.active);
 		}
 		this.map.setMaxZoom(maxZoom);
@@ -1314,7 +1321,7 @@ export default class LajiMap {
 		const _isProvided = isProvided(this, "tileLayer");
 		if (!_isProvided) {
 			provide(this, "tileLayer");
-			this._swapToWorldOutsideFinland(this.map.getCenter());
+			this._trySwapToFinnishOnInitialization && this._swapToWorldOutsideFinland(this.map.getCenter());
 		}
 	}
 
@@ -1775,12 +1782,19 @@ export default class LajiMap {
 	}
 
 	_getAllData(): {group: L.FeatureGroup}[] {
-		return [this.getDraw(), ...this.data];
+		const data = [...this.data];
+		const draw = this.getDraw();
+		if (draw) {
+			data.push(draw);
+		}
+		return data;
 	}
 
 	@dependsOn("data", "draw", "view")
 	zoomToData(options: ZoomToDataOptions | boolean = {}) {
 		if (!depsProvided(this, "zoomToData", arguments)) return;
+
+		if (!options) return;
 
 		if (options && !isObject(options)) {
 			options = {};
@@ -1891,12 +1905,13 @@ export default class LajiMap {
 		}
 		if (!Array.isArray(data)) data = [data];
 		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
+		this.reorderData();
 		provide(this, "data");
 	}
 
 	getData = () => {
 		const data = [...this.data];
-		delete data[-1];
+		delete data[this.drawIdx];
 		return data;
 	}
 
@@ -1961,11 +1976,12 @@ export default class LajiMap {
 		if (!depsProvided(this, "setDraw", arguments)) return;
 
 		 // Using a negative idx lets us keep the original data indices.
-		if (!this.drawIdx) this.drawIdx = -1;
+		if (this.drawIdx === undefined) this.drawIdx = -1;
 
 		this.updateDrawData(options);
 
 		this.resetDrawUndoStack();
+		this.reorderData();
 
 		provide(this, "draw");
 	}
@@ -2062,7 +2078,8 @@ export default class LajiMap {
 		};
 		const event: LajiMapEvent = {
 			type: "delete",
-			idxs: Object.keys(this.idxsToIds[item.idx]).map(idx => parseInt(idx))
+			idxs: Object.keys(this.idxsToIds[item.idx]).map(idx => parseInt(idx)),
+			features: this.cloneFeatures(this.data[item.idx].featureCollection.features)
 		};
 		commit && this._triggerEvent(event, item.onChange);
 
@@ -2282,6 +2299,10 @@ export default class LajiMap {
 			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item)).addTo(this.map);
 			item.groupContainer.addLayer(item.group);
 		}
+	}
+
+	reorderData() {
+		this._getAllData().forEach(i => i && i.group.bringToFront());
 	}
 
 	redrawDrawData() {
@@ -2668,6 +2689,12 @@ export default class LajiMap {
 		layer.on("add", () => {
 			typelessLayer._startCircle.addTo(this.map);
 		});
+
+		const {bringToFront} = typelessLayer.__proto__;
+		typelessLayer.__proto__.bringToFront = () => {
+			bringToFront.call(typelessLayer);
+			typelessLayer._startCircle.bringToFront();
+		};
 	}
 
 	_reversePolyline(layer) {
@@ -2805,6 +2832,16 @@ export default class LajiMap {
 	}
 
 	_onEdit(dataIdx, data) {
+		// Fix bug:
+		// 1. Circle in edit mode
+		// 2. Move the circle
+		// 3. Open context menu for it
+		// 4. Click outside circle to stop editing
+		// 5. If draw onChange resets draw data, contextmenu crashes
+		if (this._contextMenuLayer) {
+			(this.map.contextmenu as any).hide();
+		}
+
 		const eventData = {};
 
 		const prevFeatureCollection = {
@@ -2836,7 +2873,7 @@ export default class LajiMap {
 		const event = {
 			type: "edit",
 			features: eventData
-		};
+		} as LajiMapEditEvent;
 
 		this._triggerEvent(event, item.onChange);
 
@@ -2897,7 +2934,14 @@ export default class LajiMap {
 			}
 		}
 
-		item.featureCollection.features = features.filter((_item, i) => deleteIdxs.indexOf(i) === -1);
+		const deletedFeatures = [];
+		item.featureCollection.features = features.filter((feature, i) => {
+			const filter = deleteIdxs.indexOf(i) === -1;
+			if (!filter) {
+				deletedFeatures.push(feature);
+			}
+			return filter;
+		});
 
 		deleteIds.forEach(id => {
 			this._removeLayerFromItem(item, this._getLayerById(id));
@@ -2913,7 +2957,8 @@ export default class LajiMap {
 
 		const events: LajiMapEvent[] = [{
 			type: "delete",
-			idxs: deleteIdxs
+			idxs: deleteIdxs,
+			features: deletedFeatures
 		}];
 
 		if (changeActive) {
@@ -3530,7 +3575,6 @@ export default class LajiMap {
 			if (zoom) {
 				this.setNormalizedZoom(zoom);
 			}
-
 		});
 	}
 

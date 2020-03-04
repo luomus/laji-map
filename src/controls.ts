@@ -1852,14 +1852,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			try {
 				format = detectFormat(value);
 				crs = detectCRS(value, allowGrid);
-				try {
-					valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
-				} catch (e) { ; }
 				if (crs === EPSG2393String || crs === EPSG2393WKTString) {
 					crs = "EPSG:2393";
 				} else if (crs === EPSG3067String || crs === EPSG3067WKTString) {
 					crs = "EPSG:3067";
 				}
+				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
 			} catch (e) {
 				if (displayErrors && e._lajiMapError) {
 					if (e.translationKey !== "GeoDataFormatDetectionError") {

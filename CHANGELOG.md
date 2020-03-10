@@ -1,3 +1,6 @@
+## 3.0.9
+* All resources served through https
+
 ## 3.0.7
 * `delete` event emits `feature`
 * Data layers are ordered on map, draw on top

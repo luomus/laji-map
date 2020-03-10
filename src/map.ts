@@ -608,7 +608,7 @@ export default class LajiMap {
 	_initializeMap() {
 		try {
 			if (!depsProvided(this, "_initializeMap", arguments)) return;
-			L.Icon.Default.imagePath = "http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
+			L.Icon.Default.imagePath = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/";
 
 			this.map = L.map(this.mapElem, {
 				contextmenu: true,
@@ -644,7 +644,7 @@ export default class LajiMap {
 			this.finnishTileLayers = {};
 
 			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer">&copy; ${text}</a>`;
-			const mmlAttribution = getAttribution("http://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
+			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 
 			const getMMLLayer = (name, options: L.TileLayerOptions = {format: "png"}) =>
@@ -661,7 +661,7 @@ export default class LajiMap {
 
 			this.finnishTileLayers = {
 				...this.finnishTileLayers,
-				pohjakartta: L.tileLayer.wms("http://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
+				pohjakartta: L.tileLayer.wms("https://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
 					layers: "osm_finland:Sea",
 					maxZoom: 14,
 					format: "image/png",
@@ -672,20 +672,20 @@ export default class LajiMap {
 				taustakartta: getMMLLayer("taustakartta"),
 				maastokartta: getMMLLayer("maastokartta"),
 				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
-				laser: L.tileLayer("http://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
+				laser: L.tileLayer("https://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
 					maxZoom: 19,
 					minZoom: 0,
 					tileSize: 256,
-					attribution : `${mmlAttribution}, ${getAttribution("http://www.mapant.fi", "Mapant")}`
+					attribution : `${mmlAttribution}, ${getAttribution("https://www.mapant.fi", "Mapant")}`
 				}),
-				ykjGrid: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+				ykjGrid: L.tileLayer.wms("https://maps.luomus.fi/geoserver/atlas/wms", {
 					maxZoom: 15,
 					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
 				}),
-				ykjGridLabels: L.tileLayer.wms("http://maps.luomus.fi/geoserver/atlas/wms", {
+				ykjGridLabels: L.tileLayer.wms("https://maps.luomus.fi/geoserver/atlas/wms", {
 					maxZoom: 15,
 					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
 					format: "image/png",
@@ -696,9 +696,9 @@ export default class LajiMap {
 
 			this.worldTileLayers = {
 				openStreetMap: L.tileLayer("https://proxy.laji.fi/osm/{z}/{x}/{y}.png", {
-					attribution: getAttribution("http://osm.org/copyright", "OpenStreetMap contributors")
+					attribution: getAttribution("https://osm.org/copyright", "OpenStreetMap contributors")
 				}),
-				googleSatellite: L.tileLayer("http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+				googleSatellite: L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
 					subdomains: ["mt0", "mt1", "mt2", "mt3"],
 					attribution: getAttribution("https://developers.google.com/maps/terms", "Google")
 				})
@@ -713,7 +713,7 @@ export default class LajiMap {
 
 			this.overlaysByNames = {
 				geobiologicalProvinces: L.tileLayer.wms(
-					"http://maps.luomus.fi/geoserver/ows", {
+					"https://maps.luomus.fi/geoserver/ows", {
 					maxZoom: 15,
 					layers: "INSPIRE:fi_fmnh_br_extended",
 					format: "image/png",
@@ -722,7 +722,7 @@ export default class LajiMap {
 					defaultOpacity: 0.5
 				}),
 				geobiologicalProvinceBorders: L.tileLayer.wms(
-					"http://maps.luomus.fi/geoserver/INSPIRE/wms", {
+					"https://maps.luomus.fi/geoserver/INSPIRE/wms", {
 					maxZoom: 15,
 					layers: "INSPIRE:fi_fmnh_br",
 					styles: "harmaaviiva",
@@ -738,7 +738,7 @@ export default class LajiMap {
 					attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
 				}),
 				forestVegetationZones: L.tileLayer.wms(
-					"http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,
 					layers: "Metsakasvillisuusvyohykkeet",
 					format: "image/png",
@@ -748,7 +748,7 @@ export default class LajiMap {
 					attribution: sykeAttribution
 					}),
 				mireVegetationZones: L.tileLayer.wms(
-					"http://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
+					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,
 					layers: "Suokasvillisuusvyohykkeet",
 					format: "image/png",
@@ -758,7 +758,7 @@ export default class LajiMap {
 					attribution: sykeAttribution
 				}),
 				threatenedSpeciesEvaluationZones: L.tileLayer.wms(
-					"http://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
+					"https://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
 					maxZoom: 15,
 					layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
 					format: "image/png",
@@ -767,7 +767,7 @@ export default class LajiMap {
 					attribution: sykeAttribution
 				}),
 				biodiversityForestZones: L.tileLayer.wms(
-					"http://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // tslint:disable-line
+					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // tslint:disable-line
 					maxZoom: 15,
 					layers: "8",
 					defaultOpacity: 0.5,

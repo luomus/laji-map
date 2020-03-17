@@ -29,7 +29,7 @@ import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
-	UserLocationOptions, LajiMapEditEvent
+	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1608,7 +1608,19 @@ export default class LajiMap {
 
 		let item = <Data> (options || {});
 		let {geoData, ..._item} = item;
+		let format: OnChangeCoordinateSystem = item.format || geoData ? detectFormat(geoData) : undefined;
+		const crs = item.crs || (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : "WGS84";
 		if ("geoData" in item) {
+			const detectedFormat = detectFormat(geoData);
+			format = detectedFormat;
+			if (detectedFormat === "GeoJSON") {
+				const {type} = (geoData as G.GeoJsonObject);
+				if (type === "FeatureCollection" || type === "Feature") {
+					format = "GeoJSONFeatureCollection";
+				} else {
+					format = "GeoJSONGeometryCollection";
+				}
+			}
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
 			try {
 				item = {
@@ -1617,6 +1629,7 @@ export default class LajiMap {
 						type: "FeatureCollection",
 						features: this.cloneFeatures(flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features))
 					},
+					format, crs
 				};
 			} catch (e) {
 				throw new Error(`Invalid geoJSON type in data[${dataIdx}]`);
@@ -1679,9 +1692,7 @@ export default class LajiMap {
 			this.data[dataIdx].groupContainer.clearLayers();
 		}
 
-		const format = (geoData) ? detectFormat(geoData) : undefined;
-		const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
-		this._setOnChangeForItem(item, format, crs);
+		this._setOnChangeForItem(item, item.format, item.crs);
 
 		this.data[dataIdx] = item;
 
@@ -2047,21 +2058,35 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data")
-	_setOnChangeForItem(item, format: CoordinateSystem = "GeoJSON", crs: string = "WGS84") {
+	_setOnChangeForItem(item, format: OnChangeCoordinateSystem = "GeoJSON", crs: string = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
+		const convertCoordinateSystem =
+			format === "GeoJSONFeatureCollection" || format === "GeoJSONGeometryCollection"
+			? "GeoJSON"
+			: format;
 		const onChange = item.onChange;
 		item.onChange = events => {
 			const _events = events.map(e => {
 				switch (e.type) {
 				case "create":
 				case "insert":
-					e.geoData = convert(e.feature, format, crs);
+					let converted: G.GeoJSON = convert(e.feature, convertCoordinateSystem, crs);
+					if (converted.type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
+						converted = {
+							type: "GeometryCollection",
+							geometries: converted.features.map(f => f.geometry)
+						};
+					}
+					e.geoData = converted;
 					break;
 				case "edit":
-					e.geoData = Object.keys(e.features).reduce((features, idx) => {
-						features[idx] = convert(e.features[idx], format, crs);
-						return features;
+					e.geoData = Object.keys(e.features).reduce((converted, idx) => { // tslint:disable-line
+						converted[idx] = convert(e.features[idx], convertCoordinateSystem, crs);
+						if (converted[idx].type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
+							converted[idx] = converted[idx].geometry;
+						}
+						return converted;
 					}, {});
 					break;
 				}

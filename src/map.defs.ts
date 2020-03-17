@@ -5,6 +5,7 @@ export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
 }
+import { CRSString, CoordinateSystem } from "./utils";
 
 export interface ZoomToDataOptions extends LajiMapFitBoundsOptions {
 	dataIdxs?: number[];
@@ -82,11 +83,15 @@ export interface DataOptions {
 	single?: boolean;
 }
 
+export type OnChangeCoordinateSystem = CoordinateSystem | "GeoJSONFeatureCollection" | "GeoJSONGeometryCollection";
+
 export interface Data extends DataOptions {
 	group: GeoJSON;
 	groupContainer: FeatureGroup;
 	idx: number;
 	hasCustomGetFeatureStyle: boolean;
+	format: OnChangeCoordinateSystem;
+	crs: string;
 }
 
 export interface DrawOptions extends DataOptions {

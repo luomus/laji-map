@@ -327,7 +327,7 @@ function textualFormatToGeoJSON(
 		lineToCoordinates: (line: string) => number[][],
 		lineIsPolygon: (line: string) => boolean,
 		lineIsLineString: (line: string) => boolean,
-		lineIsPoint: (line: string) => boolean): G.GeoJSON {
+		lineIsPoint: (line: string) => boolean): G.FeatureCollection {
 	const _lineToCoordinates = (line, idx): number[][] => {
 		try  {
 			const coords = lineToCoordinates(line);
@@ -370,7 +370,7 @@ function textualFormatToGeoJSON(
 	return {type: "FeatureCollection", features};
 }
 
-export function ISO6709ToGeoJSON(ISO6709: string): G.GeoJSON {
+export function ISO6709ToGeoJSON(ISO6709: string): G.FeatureCollection {
 	function lineToCoordinates(line) {
 		return line.split("/").filter(l => l).map(coordString => {
 			return coordString.match(/-?\d+\.?\d*/g).map(n => +n).reverse();
@@ -433,7 +433,7 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 	return WKTGeo;
 }
 
-export function WKTToGeoJSON(WKT: string): G.GeoJSON {
+export function WKTToGeoJSON(WKT: string): G.FeatureCollection {
 	function lineToCoordinates(line) {
 		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
 	}
@@ -633,10 +633,10 @@ export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, validate: boo
 }
 
 export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: string, validate?: boolean | "errors"): string;
-export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: string, validate?: boolean | "errors"): G.GeoJSON;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.GeoJSON;
+export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection;
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection; // tslint:disable-line
 export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string | G.GeoJSON { // tslint:disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string | G.FeatureCollection { // tslint:disable-line
 	if (input === undefined) {
 		return undefined;
 	}

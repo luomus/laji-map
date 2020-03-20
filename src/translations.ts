@@ -754,5 +754,10 @@ export default {
 		fi: "Suomen kartta ei käytössä Suomen ulkopuolella",
 		en: "Suomen kartta ei käytössä Suomen ulkopuolella",
 		sv: "Suomen kartta ei käytössä Suomen ulkopuolella"
-	}
+	},
+	unknownConversionError: {
+		fi: "Koordinaattien purku epäonnistui",
+		en: "Parsing coordinates failed",
+		sv: "Analys av koordinater misslyckades"
+	},
 };

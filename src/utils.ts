@@ -435,7 +435,7 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 
 export function WKTToGeoJSON(WKT: string): G.FeatureCollection {
 	function lineToCoordinates(line) {
-		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.split(" ").map(c => +c));
+		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.trim().split(" ").map(c => +c));
 	}
 	function lineIsPolygon(line) {
 		return line.match(`^${("POLYGON")}`);

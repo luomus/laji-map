@@ -67,21 +67,21 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 
 const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
-	_initIcon: function() {
+	_initIcon() {
 		_initIcon.call(this);
 		if (this._initStyle) {
 			this._setIconStyle(this._initStyle);
 		}
 	},
-	setStyle: function (style: L.PathOptions) {
+	setStyle(style: L.PathOptions) {
 		// Ran into a bug? See known issues section of README.
 		if ((<any> this)._icon) {
 			this._setIconStyle(style);
-		} {
+		} else {
 			this._initStyle = style;
 		}
 	},
-	_setIconStyle: function(style: L.PathOptions) {
+	_setIconStyle(style: L.PathOptions) {
 		if ((<any> this)._icon) {
 			(<any> this)._icon.firstChild.firstChild.style.fill = style.color;
 			(<any> this)._icon.firstChild.firstChild.style.opacity = style.opacity || 2;
@@ -3128,24 +3128,6 @@ export default class LajiMap {
 
 		layer.setStyle(style);
 		if ((<any> layer)._startCircle) (<any> layer)._startCircle.setStyle(this._getStartCircleStyle(layer));
-		//if (layer instanceof L.Marker) {
-		//	let _layer = <L.Marker> layer;
-
-		//	// Ran into a bug? See known issues section of README.
-		//	if ((<any> _layer)._icon) {
-		//		(<any> _layer)._icon.firstChild.firstChild.style.fill = style.color;
-		//		(<any> _layer)._icon.firstChild.firstChild.style.opacity = style.opacity || 1;
-		//	}
-		//} else {
-		//	//if (layer instanceof L.FeatureGroup) {
-		//	//	layer.setStyle(style);
-		//	//	//layer.eachLayer(l => console.log(l) || (l as any).setStyle(style));
-		//	//} else {
-		//		const _layer = <L.Path> layer;
-		//		_layer.setStyle(style);
-		//		if ((<any> layer)._startCircle) (<any> layer)._startCircle.setStyle(this._getStartCircleStyle(layer));
-		//	//}
-		//}
 	}
 
 	_featureToLayer(getFeatureStyle: (options: GetFeatureStyleOptions) => L.PathOptions, dataIdx?: number) {

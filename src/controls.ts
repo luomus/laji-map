@@ -1860,12 +1860,15 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
 			} catch (e) {
 				const addError = (msg) => {
+					if (!displayErrors) {
+						return;
+					}
 					alert = document.createElement("div");
 					alert.className = "alert alert-danger";
 					alert.innerHTML = msg;
 					_container.appendChild(alert);
 				};
-				if (displayErrors && e._lajiMapError) {
+				if (e._lajiMapError) {
 					if (e.translationKey !== "GeoDataFormatDetectionError") {
 						addError(e.stringify(this.translations));
 					}

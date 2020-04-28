@@ -1,6 +1,8 @@
 import * as G from "geojson";
 import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
 	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng, ErrorEvent } from "leaflet";
+import { ControlsOptions } from "./controls.defs";
+
 export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
@@ -192,6 +194,7 @@ export interface Options extends MapOptions {
 	bodyAsDialogRoot?: boolean;
 	clickBeforeZoomAndPan?: boolean;
 	viewLocked?: boolean;
+	controls?: boolean | ControlsOptions;
 }
 
 export interface UserLocationOptions {

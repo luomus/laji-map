@@ -29,7 +29,7 @@ import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
-	UserLocationOptions, LajiMapEditEvent
+	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem
 } from "./map.defs";
 
 import translations from "./translations";
@@ -61,8 +61,31 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 		} else if (this._container.className.indexOf(" reversed") !== -1) {
 			this._container.className = this._container.className.replace(" reversed", "");
 		}
-
 		return this;
+	}
+});
+
+const _initIcon = (L.Marker.prototype as any)._initIcon;
+L.Marker.include({
+	_initIcon() {
+		_initIcon.call(this);
+		if (this._initStyle) {
+			this._setIconStyle(this._initStyle);
+		}
+	},
+	setStyle(style: L.PathOptions) {
+		// Ran into a bug? See known issues section of README.
+		if ((<any> this)._icon) {
+			this._setIconStyle(style);
+		} else {
+			this._initStyle = style;
+		}
+	},
+	_setIconStyle(style: L.PathOptions) {
+		if ((<any> this)._icon) {
+			(<any> this)._icon.firstChild.firstChild.style.fill = style.color;
+			(<any> this)._icon.firstChild.firstChild.style.opacity = style.opacity || 2;
+		}
 	}
 });
 
@@ -100,6 +123,7 @@ declare module "leaflet" {
 	interface Marker {
 		bindContextMenu(options: ContextmenuOptions): Marker;
 		unbindContextMenu();
+		setStyle: (style: L.PathOptions) => void;
 	}
 
 	interface Map {
@@ -1608,7 +1632,19 @@ export default class LajiMap {
 
 		let item = <Data> (options || {});
 		let {geoData, ..._item} = item;
+		let format: OnChangeCoordinateSystem = item.format || geoData ? detectFormat(geoData) : undefined;
+		const crs = item.crs || (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : "WGS84";
 		if ("geoData" in item) {
+			const detectedFormat = detectFormat(geoData);
+			format = detectedFormat;
+			if (detectedFormat === "GeoJSON") {
+				const {type} = (geoData as G.GeoJsonObject);
+				if (type === "FeatureCollection" || type === "Feature") {
+					format = "GeoJSONFeatureCollection";
+				} else {
+					format = "GeoJSONGeometryCollection";
+				}
+			}
 			const geoJSON = convertAnyToWGS84GeoJSON(geoData);
 			try {
 				item = {
@@ -1617,6 +1653,7 @@ export default class LajiMap {
 						type: "FeatureCollection",
 						features: this.cloneFeatures(flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features))
 					},
+					format, crs
 				};
 			} catch (e) {
 				throw new Error(`Invalid geoJSON type in data[${dataIdx}]`);
@@ -1679,9 +1716,7 @@ export default class LajiMap {
 			this.data[dataIdx].groupContainer.clearLayers();
 		}
 
-		const format = (geoData) ? detectFormat(geoData) : undefined;
-		const crs = (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : undefined;
-		this._setOnChangeForItem(item, format, crs);
+		this._setOnChangeForItem(item, item.format, item.crs);
 
 		this.data[dataIdx] = item;
 
@@ -2047,21 +2082,35 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data")
-	_setOnChangeForItem(item, format: CoordinateSystem = "GeoJSON", crs: string = "WGS84") {
+	_setOnChangeForItem(item, format: OnChangeCoordinateSystem = "GeoJSON", crs: string = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
+		const convertCoordinateSystem =
+			format === "GeoJSONFeatureCollection" || format === "GeoJSONGeometryCollection"
+			? "GeoJSON"
+			: format;
 		const onChange = item.onChange;
 		item.onChange = events => {
 			const _events = events.map(e => {
 				switch (e.type) {
 				case "create":
 				case "insert":
-					e.geoData = convert(e.feature, format, crs);
+					let converted: G.GeoJSON = convert(e.feature, convertCoordinateSystem, crs);
+					if (converted.type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
+						converted = {
+							type: "GeometryCollection",
+							geometries: converted.features.map(f => f.geometry)
+						};
+					}
+					e.geoData = converted;
 					break;
 				case "edit":
-					e.geoData = Object.keys(e.features).reduce((features, idx) => {
-						features[idx] = convert(e.features[idx], format, crs);
-						return features;
+					e.geoData = Object.keys(e.features).reduce((converted, idx) => { // tslint:disable-line
+						converted[idx] = convert(e.features[idx], convertCoordinateSystem, crs);
+						if (converted[idx].type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
+							converted[idx] = converted[idx].geometry;
+						}
+						return converted;
 					}, {});
 					break;
 				}
@@ -3074,22 +3123,11 @@ export default class LajiMap {
 		return false;
 	}
 
-	setLayerStyle(layer: DataItemLayer, style: L.PathOptions) {
+	setLayerStyle(layer: DataItemLayer | L.FeatureGroup, style: L.PathOptions) {
 		if (!layer) return;
 
-		if (layer instanceof L.Marker) {
-			let _layer = <L.Marker> layer;
-
-			// Ran into a bug? See known issues section of README.
-			if ((<any> _layer)._icon) {
-				(<any> _layer)._icon.firstChild.firstChild.style.fill = style.color;
-				(<any> _layer)._icon.firstChild.firstChild.style.opacity = style.opacity || 1;
-			}
-		} else {
-			const _layer = <L.Path> layer;
-			_layer.setStyle(style);
-			if ((<any> layer)._startCircle) (<any> layer)._startCircle.setStyle(this._getStartCircleStyle(layer));
-		}
+		layer.setStyle(style);
+		if ((<any> layer)._startCircle) (<any> layer)._startCircle.setStyle(this._getStartCircleStyle(layer));
 	}
 
 	_featureToLayer(getFeatureStyle: (options: GetFeatureStyleOptions) => L.PathOptions, dataIdx?: number) {

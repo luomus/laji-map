@@ -1855,12 +1855,18 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
 			} catch (e) {
-				if (displayErrors && e._lajiMapError) {
+				const addError = (msg) => {
+					if (!displayErrors) {
+						return;
+					}
+					alert = document.createElement("div");
+					alert.className = "alert alert-danger";
+					alert.innerHTML = msg;
+					_container.appendChild(alert);
+				};
+				if (e._lajiMapError) {
 					if (e.translationKey !== "GeoDataFormatDetectionError") {
-						alert = document.createElement("div");
-						alert.className = "alert alert-danger";
-						alert.innerHTML = e.stringify(this.translations);
-						_container.appendChild(alert);
+						addError(e.stringify(this.translations));
 					}
 				} else if (displayErrors && e._lajiMapGeoJSONConversionError) {
 					fixedGeoJSON = e.geoJSON;
@@ -1895,6 +1901,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					if (hasErrors && geoJSONErrorsContainer.style.display === "none") {
 						geoJSONErrorsContainer.style.display = "block";
 					}
+				} else {
+					addError(this.translations.UnknownConversionError);
 				}
 			} finally {
 				if (displayFormat && format) {
@@ -1915,6 +1923,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					crsValue.innerHTML = this.translations[crs];
 				}
 			}
+
 			return {valid: !!(format && crs && allowGrid || valid), geoJSON: valid};
 		};
 

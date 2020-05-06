@@ -592,7 +592,6 @@ export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
 	} else if (typeof data === "object" || typeof data === "string" && data.indexOf("{") !== -1) {
 		geoJSON = (typeof data === "object") ? data : parseJSON(data);
 		if (geoJSON.crs) {
-
 			const crs = geoJSON.crs.properties.name;
 			try {
 				proj4(crs);

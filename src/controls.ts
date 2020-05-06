@@ -1507,11 +1507,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			};
 		}
 
-		const ykjAllowed = that.getDraw().rectangle;
-		const etrsTm35FinAllowed = that.getDraw().marker;
-		const wgs84Allowed = that.getDraw().marker;
-
-		const inputRegexp = wgs84Allowed ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
+		const inputRegexp = that.getDraw().marker ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
 
 		function inputValidate(e, value) {
 			if (!value.match(inputRegexp)) {
@@ -1556,7 +1552,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			validate,
 			elem: formatDetectorElem,
 			unmount: unmountFormatDetector
-		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowGrid: true});
+		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowGrid: that.getDraw().rectangle || that.getDraw().polygon});
 
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {

@@ -764,7 +764,7 @@ export default class LajiMap {
 				forestVegetationZones: L.tileLayer.wms(
 					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,
-					layers: "Metsakasvillisuusvyohykkeet",
+					layers: "br.Metsakasvillisuusvyohykkeet",
 					format: "image/png",
 					transparent: true,
 					version: "1.3.0",
@@ -774,7 +774,7 @@ export default class LajiMap {
 				mireVegetationZones: L.tileLayer.wms(
 					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 					maxZoom: 15,
-					layers: "Suokasvillisuusvyohykkeet",
+					layers: "br.Suokasvillisuusvyohykkeet",
 					format: "image/png",
 					transparent: true,
 					version: "1.3.0",

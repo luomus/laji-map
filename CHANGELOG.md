@@ -1,3 +1,6 @@
+## 3.0.14
+* Fix forest and mire vegetation zone layers
+
 ## 3.0.9
 * All resources served through https
 

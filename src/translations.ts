@@ -760,4 +760,9 @@ export default {
 		en: "Parsing coordinates failed",
 		sv: "Analys av koordinater misslyckades"
 	},
+	enterSnapMode: {
+		fi: "<strong>Paina control pohjaan</strong> pakottaaksesi suunnan ilmansuuntien mukaan",
+		en: "<strong>Hold control</strong> to snap the direction to compass points",
+		sv: "<strong>Håll control</strong> för att fästa riktningen till kompasspunkter"
+	}
 };

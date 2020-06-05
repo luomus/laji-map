@@ -13,7 +13,7 @@ export const EPSG2393String = "+proj=tmerc +lat_0=0 +lon_0=27 +k=1 +x_0=3500000 
 export const EPSG3067WKTString = "PROJCS[\"ETRS89 / ETRS-TM35FIN\",GEOGCS[\"ETRS89\",DATUM[\"D_ETRS_1989\",SPHEROID[\"GRS_1980\",6378137,298.257222101]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",27],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1]]";
 export const EPSG2393WKTString = "PROJCS[\"KKJ_Finland_Uniform_Coordinate_System\",GEOGCS[\"GCS_KKJ\",DATUM[\"D_KKJ\",SPHEROID[\"International_1924\",6378388,297]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",27],PARAMETER[\"scale_factor\",1],PARAMETER[\"false_easting\",3500000],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1]]";
 
-export const ESC = "ESC";
+export const ESC = "esc";
 
 export const ONLY_MML_OVERLAY_NAMES = ["ykjGrid", "ykjGridLabels"];
 

@@ -199,7 +199,7 @@ export default class LajiMap {
 	_tileLayers: InternalTileLayersOptions;
 	availableTileLayers: {[name: string]: L.TileLayer};
 	_listenedEvents: L.LeafletEventHandlerFnMap;
-	_keyListeners: {[eventName: string]: ((e: Event) => boolean | void)[]};
+	_keyListeners: {[eventName: string]: {[key: string]: ((e: Event) => boolean | void)[]}} = {};
 	_swapToWorldFlag: boolean;
 	_mouseLatLng: L.LatLng;
 	_contextMenuLayer: L.Layer;
@@ -988,24 +988,22 @@ export default class LajiMap {
 			}
 		});
 
-		document.addEventListener("keydown", e => this.keyHandler(e));
+		this._addDocumentEventListener("keydown", e => this.keyHandlerForType("keydown", e));
+		this._addDocumentEventListener("keyup", e => this.keyHandlerForType("keyup", e));
 	}
 
-	keyHandler(e) {
+	keyHandlerForType(type: string, e) {
 		e = e || window.event;
-		let isEscape = false;
-		if ("key" in e) {
-			isEscape = (e.key === "Escape" || e.key === "Esc");
-		} else {
-			isEscape = (e.keyCode === 27);
-		}
+		let key = "key" in e ? e.key : e.keyCode;
+		const isEscape = ["Escape", "Esc", 27].includes(key);
 		if (isEscape) {
-			if (this._triggerKeyEvent(ESC, e)) {
-				e.preventDefault();
-				e.stopPropagation();
-				e.stopImmediatePropagation();
-				return true;
-			}
+			key = ESC;
+		}
+		if (this._triggerKeyEvent(key.toLowerCase(), e, type)) {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			return true;
 		}
 	}
 
@@ -1015,32 +1013,28 @@ export default class LajiMap {
 		document.addEventListener(type, fn);
 	}
 
-	_addKeyListener(key: string, fn: (e?: Event) => boolean | void, prioritize?: boolean) {
-		if (!this._keyListeners) this._keyListeners = {};
-		if (!this._keyListeners[key]) this._keyListeners[key] = [];
+	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type: string = "keydown", prioritize?: boolean) {
+		if (!this._keyListeners[type]) this._keyListeners[type] = {};
+		if (!this._keyListeners[type][key]) this._keyListeners[type][key] = [];
 		if (prioritize) {
-			this._keyListeners[key] = [fn, ...this._keyListeners[key]];
+			this._keyListeners[type][key] = [fn, ...this._keyListeners[type][key]];
 		} else {
-			this._keyListeners[key].push(fn);
+			this._keyListeners[type][key].push(fn);
 		}
 	}
 
-	_removeKeyListener(key: string, fn: (e?: Event) => boolean | void) {
-		if (this._keyListeners && this._keyListeners[key]) {
-			const index = this._keyListeners[key].indexOf(fn);
-			if (index >= 0) {
-				this._keyListeners[key].splice(index, 1);
-			}
+	_removeKeyListener(key: string, fn: (e?: Event) => boolean | void, type = "keydown") {
+		const index = this._keyListeners[type]?.[key]?.indexOf(fn);
+		if (index >= 0) {
+			this._keyListeners[type][key].splice(index, 1);
 		}
 	}
 
-	_triggerKeyEvent(key: string, e: Event) {
-		if (this._keyListeners && this._keyListeners[key])  {
-			for (let fn of this._keyListeners[key]) {
-				const result = fn(e);
-				if (result !== false) {
-					return true;
-				}
+	_triggerKeyEvent(key: string, e: Event, type: string) {
+		for (let fn of this._keyListeners[type]?.[key] || []) {
+			const result = fn(e);
+			if (result !== false) {
+				return true;
 			}
 		}
 	}
@@ -1050,11 +1044,9 @@ export default class LajiMap {
 		if (!depsProvided(this, "setEventListeners", arguments)) return;
 		if (!eventListeners) return;
 
-		if (this._listenedEvents) {
-			Object.keys(this._listenedEvents).forEach(name => {
-				this.map.removeEventListener(name, this._listenedEvents[name]);
-			});
-		}
+		Object.keys(this._listenedEvents || {}).forEach(name => {
+			this.map.removeEventListener(name, this._listenedEvents[name]);
+		});
 
 		this._listenedEvents = eventListeners;
 		this.map.addEventListener(eventListeners);

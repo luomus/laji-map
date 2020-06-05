@@ -103,6 +103,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	_LTHistoryPointer: number;
 	_LTPrintMode: boolean;
 	_LTEditable: boolean;
+	_pointDragSnapMode = false;
+	_dragCorridor: L.Polygon<G.Polygon>;
 	_origLineTransect: L.FeatureGroup;
 	_pointLayerGroup: L.FeatureGroup;
 	_lineLayerGroup: L.FeatureGroup;
@@ -121,8 +123,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	leafletIdsToFlatPointIdxs: {[id: string]: number};
 	lineIdsToCorridorIds: {[id: string]: number};
 	corridorFlatIdxsToLeafletIds: {[id: string]: number};
-	_hoveredIsMarker: boolean;
-	_editCorridorHovered: boolean;
+	_hoveredType: "point" | "corridor";
 	_LTClickTimeout: number;
 	_closebyPointIdxTuple: PointIdxTuple;
 	_pointLTShiftMode: boolean;
@@ -168,6 +169,9 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		this.chooseLastSegmentToConnectAndCommit = this.chooseLastSegmentToConnectAndCommit.bind(this);
 
 		this.splitLTByMeters = this.splitLTByMeters.bind(this);
+
+		this._setPointDragStepMode = this._setPointDragStepMode.bind(this);
+		this._unsetPointDragStepMode = this._unsetPointDragStepMode.bind(this);
 
 		this._addKeyListener(ESC, () => {
 			if (this._LTEditPointIdxTuple) {
@@ -549,7 +553,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			translateHooks.push(this.addTranslationHook(question, questionTranslationKey));
 
 			const precedingIdxTuple = this._getIdxTuplePrecedingPoint(firstIdxTuple);
-			const followingIdxTuple = this._getIdxTupleFollowingPoint([lineIdx, pointIdx]);
+			const followingIdxTuple = this._getIdxTupleForLineFollowingPoint([lineIdx, pointIdx]);
 
 			const onClick = (_idxTuple) => (e) => {
 				e.preventDefault();
@@ -682,7 +686,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 			const prevHoverIdx = this._hoveredIdxTuple;
 			this._hoveredIdxTuple = [lineIdx, segmentIdx];
-			this._hoveredIsMarker = isPoint;
+			this._hoveredType = isPoint ? "point" : "corridor";
 			if (prevHoverIdx) this._updateLTStyleForLineIdx(prevHoverIdx[0]);
 			this._updateLTStyleForLineIdx(this._hoveredIdxTuple[0]);
 			this._updateLTTooltip();
@@ -692,9 +696,9 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 			const {lineIdx} = this.getIdxsFromEvent(e);
 
+			this._hoveredType = undefined;
 			this._hoveredIdxTuple = undefined;
 			this._updateLTStyleForLineIdx(lineIdx);
-			this._editCorridorHovered = false;
 			this._updateLTTooltip();
 		};
 		const pointIsMiddlePoint = (e) => {
@@ -708,7 +712,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const delayClick = (fn) => {
 			if (this._LTClickTimeout) clearTimeout(this._LTClickTimeout);
 			if (this._closebyPointIdxTuple) {
-				this._LTClickTimeout = setTimeout(fn, 500);
+				this._LTClickTimeout = <any> setTimeout(fn, 500);
 			} else {
 				fn();
 			}
@@ -918,7 +922,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const prevFeature = this._formatLTFeatureOut();
 
 		const precedingIdxTuple = this._getIdxTuplePrecedingPoint(idxTuple);
-		const followingIdxTuple = this._getIdxTupleFollowingPoint(idxTuple);
+		const followingIdxTuple = this._getIdxTupleForLineFollowingPoint(idxTuple);
 		const [precedingLineIdx, precedingSegmentIdx] = precedingIdxTuple || <PointIdxTuple> [undefined, undefined];
 		const [followingLineIdx, followingSegmentIdx] = followingIdxTuple || <PointIdxTuple> [undefined, undefined];
 
@@ -1020,7 +1024,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 				this._hoveringDragPoint = true;
 				this._LTdragPoint.setStyle(style);
 				this._setStyleForLTLayer(point);
-				this._hoveredIsMarker = true;
 				this._updateLTTooltip();
 			})
 			.on("mouseout", () => {
@@ -1052,6 +1055,9 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			}))
 			.forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 
+		this._addKeyListener("control", this._setPointDragStepMode);
+		this._addKeyListener("control", this._unsetPointDragStepMode, "keyup");
+
 		this._updateLTTooltip();
 	}
 
@@ -1066,6 +1072,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const dragPointLatLng = this._LTdragPoint.getLatLng();
 		this._LTdragPoint.remove();
 		this._LTdragPoint = undefined;
+		this._removeKeyListener("control", this._setPointDragStepMode);
+		this._removeKeyListener("control", this._unsetPointDragStepMode, "keyup");
 
 		[precedingIdxTuple, followingIdxTuple].forEach(tuple => {
 			if (tuple) {
@@ -1100,6 +1108,16 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 		this._triggerEvent(events, this._onLTChange);
 		this.map.fire("lineTransect:pointdrag");
+		this._updateLTTooltip();
+	}
+
+	_setPointDragStepMode() {
+		this._pointDragSnapMode = true;
+		this._updateLTTooltip();
+	}
+
+	_unsetPointDragStepMode() {
+		this._pointDragSnapMode = false;
 		this._updateLTTooltip();
 	}
 
@@ -1140,7 +1158,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		this._updateLTTooltip();
 
 		const mouseMovedDistance = this._dragMouseStart.distanceTo(latlng);
-		const mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
+		let mouseRotatedAngle = this._degreesFromNorth([this._dragMouseStart, latlng]);
+
 		const offsetDragPoint = L.GeometryUtil.destination(this._dragPointStart, mouseRotatedAngle, mouseMovedDistance);
 		this._dragLTHandler(offsetDragPoint);
 	}
@@ -1152,6 +1171,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const [lineIdx, pointIdx] = this._LTEditPointIdxTuple;
 		const point = this._pointLayers[lineIdx][pointIdx];
 
+		this._dragCorridor = e.target;
 		this._dragPointStart = point.getLatLng();
 		this._dragMouseStart = latlng;
 	}
@@ -1160,6 +1180,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		this._stopLTDragHandler(this._dragLTCorridorHandler);
 		this._dragPointStart = undefined;
 		this._dragMouseStart = undefined;
+		this._dragCorridor = undefined;
 	}
 
 	_dragLTCorridorHandler({latlng}: L.LeafletMouseEvent) {
@@ -1172,6 +1193,23 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	}
 
 	_dragLTHandler(latlng: L.LatLng) {
+		let snapped = false;
+		const useSnap = (idxTuple: IdxTuple): L.LatLng => {
+			if (snapped) {
+				return;
+			}
+			snapped = true;
+			const computeFromPoint = this._getLTLayerForIdxTuple(this._pointLayers, idxTuple);
+			const points = [computeFromPoint.getLatLng(), latlng];
+			const angle = this._degreesFromNorth(points);
+			const snappedAngle = Math.round(angle / 45) * 45;
+			return L.GeometryUtil.destination(
+				computeFromPoint.getLatLng(),
+				snappedAngle,
+				computeFromPoint.getLatLng().distanceTo(latlng)
+			);
+		};
+
 		const idxs = this._LTEditPointIdxTuple;
 		const [lineIdx, pointIdx] = idxs;
 
@@ -1184,6 +1222,10 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		if (precedingIdxTuple) {
 			precedingLine = this._getLTLayerForIdxTuple(this._lineLayers, precedingIdxTuple);
 			precedingCorridor = this._getLTLayerForIdxTuple(this._corridorLayers, precedingIdxTuple);
+
+			if (this._pointDragSnapMode && (!this._dragCorridor || precedingCorridor === this._dragCorridor)) {
+				latlng = useSnap(precedingIdxTuple);
+			}
 		}
 
 		const followingIdxTuple = this._getIdxTupleFollowingEditPoint();
@@ -1194,7 +1236,17 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			followingCorridor = this._getLTLayerForIdxTuple(this._corridorLayers, followingIdxTuple);
 		}
 
+		const idxTupleFollowingFollowing = followingIdxTuple && this._getIdxTupleForFollowingPoint(followingIdxTuple);
+		const followingFollowingCorridor = idxTupleFollowingFollowing && this._getLTLayerForIdxTuple(this._corridorLayers, followingIdxTuple);
+		if (this._pointDragSnapMode && (!precedingIdxTuple || this._dragCorridor === followingFollowingCorridor)) {
+			const snappedLatLng = useSnap(idxTupleFollowingFollowing);
+			if (snappedLatLng) {
+				latlng = snappedLatLng;
+			}
+		}
+
 		if (this._LTPointIdxTupleIsGroupFirstOrLast(idxs)) {
+			const pointExcluded = this._allPoints.filter(p => p !== point);
 			const closestPoint: L.CircleMarker =
 				<L.CircleMarker> L.GeometryUtil.closestLayer(this.map, this._allPoints.filter(p => p !== point), latlng).layer;
 			const closestIdxTuple = this._pointIdsToIdxTuples[L.Util.stamp(closestPoint)];
@@ -1203,7 +1255,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 				&& this._LTIdxTuplesAreFromSameGroup(idxs, closestIdxTuple)
 			) {
 				const precedingToClosest = this._getIdxTuplePrecedingPoint(closestIdxTuple);
-				const followingToClosest = this._getIdxTupleFollowingPoint(closestIdxTuple);
+				const followingToClosest = this._getIdxTupleForLineFollowingPoint(closestIdxTuple);
 				const closestPointPixelPoint = this.map.latLngToLayerPoint(closestPoint.getLatLng());
 				const latLngPixelPoint = this.map.latLngToLayerPoint(latlng);
 				if ((!precedingToClosest || !followingToClosest) && closestPointPixelPoint.distanceTo(latLngPixelPoint) <= 20) {
@@ -1273,7 +1325,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			: undefined;
 	}
 
-	_getIdxTupleFollowingPoint(idxTuple: PointIdxTuple): PointIdxTuple {
+	_getIdxTupleForLineFollowingPoint(idxTuple: PointIdxTuple): PointIdxTuple {
 		const [lineIdx, pointIdx] = idxTuple;
 		if (lineIdx === undefined || pointIdx === undefined) return undefined;
 
@@ -1294,12 +1346,40 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			}
 		}
 
-		return followingLineIdx !== undefined && followingIdx !== undefined ? [followingLineIdx, followingIdx] : undefined;
+		return followingLineIdx !== undefined && followingIdx !== undefined
+			? [followingLineIdx, followingIdx]
+			: undefined;
 	}
 
 	_getIdxTupleFollowingEditPoint(): PointIdxTuple {
 		return this._LTEditPointIdxTuple
-			? this._getIdxTupleFollowingPoint(this._LTEditPointIdxTuple)
+			? this._getIdxTupleForLineFollowingPoint(this._LTEditPointIdxTuple)
+			: undefined;
+	}
+
+	_getIdxTupleForFollowingPoint(idxTuple: PointIdxTuple): PointIdxTuple {
+		const [lineIdx, pointIdx] = idxTuple;
+		if (lineIdx === undefined || pointIdx === undefined) return undefined;
+
+		const pointLayer = this._pointLayers[lineIdx];
+		const point = pointLayer[pointIdx];
+
+		let followingLineIdx, followingIdx = undefined;
+
+		if (pointIdx < pointLayer.length - 1) {
+			followingLineIdx = lineIdx;
+			followingIdx = pointIdx + 1;
+		} else if (lineIdx + 1 <= this._lineLayers.length - 1) {
+			const followingLineLayer = this._lineLayers[lineIdx + 1];
+			const startLatLng = <L.LatLng> followingLineLayer[0].getLatLngs()[0];
+			if (startLatLng.equals(point.getLatLng())) {
+				followingLineIdx = lineIdx + 1;
+				followingIdx = 0;
+			}
+		}
+
+		return followingLineIdx !== undefined && followingIdx !== undefined
+			? [followingLineIdx, followingIdx]
 			: undefined;
 	}
 
@@ -1930,17 +2010,20 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			drag: undefined
 		};
 
-		const hoveredIdxTuple = this._hoveredIdxTuple || this._hoveringDragPoint && this._LTEditPointIdxTuple;
+		const hoveredIdxTuple = this._hoveredIdxTuple || (this._hoveringDragPoint && this._LTEditPointIdxTuple);
 		if (hoveredIdxTuple) {
 			messages.text = this._getTooltipForPointIdxTuple(this._hoveredIdxTuple ? L.Marker : L.Polygon, hoveredIdxTuple);
 		}
 
 		if (this._LTEditPointIdxTuple) {
-			if (this._hoveringDragPoint || this._editCorridorHovered || this._dragPointStart) {
+			if (this._hoveringDragPoint || this._hoveredType === "corridor" || this._dragPointStart) {
 				messages.drag = this.translations.toMovePoint;
 			}
-			if (!this._hoveringDragPoint && !this._editCorridorHovered) {
+			if (!this._hoveringDragPoint && this._hoveredType !== "corridor") {
 				messages.click = this.translations.toCommitEdit;
+			}
+			if (!this._pointDragSnapMode) {
+				messages.text = `${messages.text || ""}${messages.text ? "<br>" : ""}${this.translations.EnterSnapMode}`;
 			}
 		} else if (this._hoveredIdxTuple) {
 			messages.click = this.translations.toActivate;

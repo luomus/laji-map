@@ -1,3 +1,6 @@
+## 3.1.0
+* Add line transect compass point snap mode
+
 ## 3.0.14
 * Fix forest and mire vegetation zone layers
 

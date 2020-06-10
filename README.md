@@ -184,15 +184,16 @@ The methods that are supposed to be used as private methods, and could break Laj
 
 LajiMap provides the following events in addition to the Leaflet events.
 
-Option                                          | Data property in event
-------------------------------------------------|-----------------------
-tileLayerChange                                 | tileLayerName        
-tileLayerOpacityChange                          | tileLayerOpacity     
-tileLayerOpacityChangeEnd                       | tileLayerOpacity     
-overlaysChange                                  | overlayNames         
-lineTransect:split                              | -                    
-lineTransect:delete                             | -                    
-lineTransect:pointdrag                          | -                    
+Option                                           | Data property in event
+-------------------------------------------------|-----------------------
+tileLayersChange                                 | tileLayers        
+tileLayerChange                                  | tileLayerName        
+tileLayerOpacityChange                           | tileLayerOpacity     
+tileLayerOpacityChangeEnd                        | tileLayerOpacity     
+overlaysChange                                   | overlayNames         
+lineTransect:split                               | -                    
+lineTransect:delete                              | -                    
+lineTransect:pointdrag                           | -                    
 
 ## Development ##
 

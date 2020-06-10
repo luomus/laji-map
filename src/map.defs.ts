@@ -155,18 +155,25 @@ export interface TileLayerOptions {
 	visible: boolean;
 }
 
+export type TileLayerNames = keyof typeof TileLayerName;
+export type OverlayNames = keyof typeof OverlayName;
+export type LayerNames = TileLayerNames | OverlayNames;
+export type WorldLayerNames = Extract<TileLayerNames, "openStreetMap" | "googleSatellite">;
+export type FinnishLayerNames = Exclude<TileLayerNames, "openStreetMap" | "googleSatellite">;
+type ActiveProj = "finnish" | "world";
+
 export interface TileLayersOptions {
 	layers: {
-		[layerName: string]: TileLayerOptions | boolean
+		[layerName in LayerNames]?: TileLayerOptions | boolean
 	};
-	active?: "finnish" | "world";
+	active?: ActiveProj;
 };
 
 export interface InternalTileLayersOptions {
 	layers: {
-		[layerName: string]: TileLayerOptions
+		[layerName in LayerNames]?: TileLayerOptions
 	};
-	active?: "finnish" | "world";
+	active?: ActiveProj;
 };
 
 export interface Options extends MapOptions {

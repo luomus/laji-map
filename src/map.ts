@@ -29,7 +29,8 @@ import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
-	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem
+	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem, LayerNames, WorldLayerNames, FinnishLayerNames,
+	OverlayNames
 } from "./map.defs";
 
 import translations from "./translations";
@@ -192,9 +193,9 @@ export default class LajiMap {
 	overlaysByNames: {[name: string]: L.TileLayer};
 	availableOverlaysByNames: {[name: string]: L.TileLayer};
 	overlays: L.TileLayer[];
-	finnishTileLayers: {[name: string]: L.TileLayer};
-	worldTileLayers: {[name: string]: L.TileLayer};
-	tileLayers: {[name: string]: L.TileLayer};
+	finnishTileLayers: {[name in (FinnishLayerNames | Extract<OverlayNames, "ykjGrid" | "ykjGridLabels">)]?: L.TileLayer};
+	worldTileLayers: {[name in WorldLayerNames]?: L.TileLayer};
+	tileLayers: {[name in LayerNames]?: L.TileLayer};
 	tileLayerName: TileLayerName;
 	_tileLayers: InternalTileLayersOptions;
 	availableTileLayers: {[name: string]: L.TileLayer};
@@ -1210,9 +1211,7 @@ export default class LajiMap {
 				return _layers;
 			}, {})
 		};
-		const prevActiveLayers = this._tileLayers && this.getActiveLayers(this._tileLayers);
 		const activeLayers = this.getActiveLayers(newOptions);
-		const oldActive = this.activeProjName;
 		newOptions.active = options.active
 			|| (Object.keys(activeLayers).length === 0 || this.finnishTileLayers[Object.keys(activeLayers)[0]]
 				? "finnish"
@@ -1223,7 +1222,6 @@ export default class LajiMap {
 	@dependsOn("map", "view")
 	setTileLayers(options: TileLayersOptions) {
 		this._tileLayersSet = true;
-		const {layers, active} = options;
 		if (!depsProvided(this, "setTileLayers", arguments)) return;
 
 		const newOptions = this._getInternalTileLayerOptions(options);

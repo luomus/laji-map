@@ -304,7 +304,7 @@ export default class LajiMap {
 			availableOverlayNameBlacklist: "setAvailableOverlaysBlacklist",
 			availableOverlayNameWhitelist: "setAvailableOverlaysWhitelist",
 			tileLayerOpacity: "setTileLayerOpacity",
-			tileLayers: ["setTileLayers", () => this._tileLayers],
+			tileLayers: ["setTileLayers", () => this.getTileLayers()],
 			center: ["setCenter", () => this.map.getCenter()],
 			zoom: ["initZoom", () => this.getNormalizedZoom()],
 			zoomToData: ["zoomToData", "_zoomToData"],

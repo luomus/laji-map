@@ -170,7 +170,7 @@ Tile layer options which combine tile layers and overlays into single options ob
 Option | Type                     |  Default  | Description
 -------|--------------------------|-----------|------------------------------------
 active | "finnish" | "world"      | "finnish" | The projection to use.
-layers | Object                   | -         | Signature: {[tile layer or overlay]: boolean | {opacity: 0-1, visible: boolean}}
+layers | Object                   | -         | Signature: {[tile layer or overlay]: boolean \| {opacity: 0-1, visible: boolean}}
 
 ## Methods ##
 
@@ -259,7 +259,7 @@ if (layer instanceof L.Marker) {
     (<any> layer).options = {...layer.options, icon: {...layer.options.icon, options: {...layer.options.icon.options, color: style.color}}};
 
     // This causes an infinite loop when hovering marker
-    // (hovering calls setLayerStyle, and here a a hovering event is triggered when we create an ew icon)
+    // (hovering calls setLayerStyle, and here a a hovering event is triggered when we create a new icon)
     layer.setIcon(this._createIcon(style));
     
     ...

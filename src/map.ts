@@ -5,6 +5,7 @@ import "proj4leaflet";
 import "Leaflet.vector-markers";
 import "leaflet.markercluster";
 import "./lib/Leaflet.rrose/leaflet.rrose-src";
+import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import { GoogleProvider } from "leaflet-geosearch";
@@ -645,6 +646,9 @@ export default class LajiMap {
 				maxZoom: 19,
 				zoom: this.zoom,
 				center: this.center,
+				scrollWheelZoom: false,
+				smoothWheelZoom: true,
+				smoothSensitivity: 3,
 				...this.leafletOptions
 			});
 
@@ -3612,7 +3616,7 @@ export default class LajiMap {
 		const method = value ? "disable" : "enable";
 		this.map.dragging[method]();
 		this.map.touchZoom[method]();
-		this.map.scrollWheelZoom[method]();
+		this.map.smoothWheelZoom[method]();
 		this.map.boxZoom[method]();
 		this.map.keyboard[method]();
 		if (this.map.tap) {

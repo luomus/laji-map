@@ -1,3 +1,6 @@
+## 3.2.0
+* Add smooth scrolling
+
 ## 3.1.0
 * Add line transect compass point snap mode
 

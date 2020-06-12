@@ -1,3 +1,6 @@
+## 3.2.1
+* Fix smooth scrolling for Firefox
+
 ## 3.2.0
 * Add smooth scrolling
 

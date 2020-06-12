@@ -460,7 +460,7 @@ export default class LajiMap {
 		if (!this._preventScrolling) {
 			this._preventScrolling = () => {
 				if (this.shouldNotPreventScrolling()) return;
-				this.map.scrollWheelZoom.disable();
+				this.map.smoothWheelZoom.disable();
 				this.map.dragging.disable();
 				this._preventScroll = true;
 			};
@@ -530,7 +530,7 @@ export default class LajiMap {
 			if (!this._preventScroll && isOutside) {
 				this._preventScrolling();
 			} else if (this._preventScroll && !isOutside && !this.viewLocked) {
-				this.map.scrollWheelZoom.enable();
+				this.map.smoothWheelZoom.enable();
 				this.map.dragging.enable();
 				hidePreventElem();
 				this._preventScroll = false;
@@ -582,7 +582,7 @@ export default class LajiMap {
 			this._scrollPreventTextElemContainer = undefined;
 			(this._scrollPreventScrollListeners || []).forEach(([name, fn]) => window.removeEventListener(name, fn));
 			this._scrollPreventScrollListeners = undefined;
-			!this.viewLocked && this.map.scrollWheelZoom.enable();
+			!this.viewLocked && this.map.smoothWheelZoom.enable();
 			!this.viewLocked && this.map.dragging.enable();
 		};
 

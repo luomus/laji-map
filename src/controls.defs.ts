@@ -60,6 +60,7 @@ export interface ControlsOptions {
 	lineTransect?: boolean | LineTransectControlOptions;
 	layerOpacity?: boolean;
 	attribution?: boolean;
+	fullscreen?: boolean;
 }
 
 export interface InternalControlsOptions extends ControlsOptions {

@@ -764,5 +764,15 @@ export default {
 		fi: "<strong>Paina control pohjaan</strong> pakottaaksesi suunnan ilmansuuntien mukaan",
 		en: "<strong>Hold control</strong> to snap the direction to compass points",
 		sv: "<strong>Håll control</strong> för att fästa riktningen till kompasspunkter"
+	},
+	mapFullscreen: {
+		fi: "Avaa kartta kokoruututilassa",
+		en: "Open the map in fullscreen",
+		sv: "Öppna kartan i fullskärm"
+	},
+	mapExitFullscreen: {
+		fi: "Poistu kokoruututilasta",
+		en: "Exit fullscreen mode",
+		sv: "Avsluta helskärmsläge"
 	}
 };

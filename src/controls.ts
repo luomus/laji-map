@@ -227,6 +227,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				control: () => this._getCoordinatesControl()
 			},
 			{
+				name: "fullscreen",
+				position: "bottomright",
+				text: this.translations.MapFullscreen,
+				iconCls: "glyphicon glyphicon-resize-full",
+				fn: () => this.toggleFullscreen()
+			},
+			{
 				name: "draw",
 				control: () => this._getDrawControl(),
 				dependencies: [
@@ -675,6 +682,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			coordinates: false,
 			scale: true,
 			attribution: true,
+			fullscreen: false,
 			lineTransect: {
 				split: true,
 				splitByMeters: true,
@@ -2110,6 +2118,31 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			return container;
 		};
 		return control;
+	}
+
+	setFullscreenOn() {
+		super.setFullscreenOn();
+		this._updateFullscreenControl();
+	}
+
+	setFullscreenOff() {
+		super.setFullscreenOff();
+		this._updateFullscreenControl();
+	}
+
+	_updateFullscreenControl() {
+		const button = this._controlButtons.fullscreen;
+		if (!button) return;
+		const icon = button.children[0];
+		const _replace = ["full", "small"];
+		const replace = this._fullscreen
+			? _replace
+			: _replace.reverse()
+		const title = this._fullscreen
+			? "MapExitFullscreen"
+			: "MapFullscreen";
+		icon.className = icon.className.replace(...replace as [string, string]);
+		button.title = this.translations[title];
 	}
 
 	triggerDrawing(featureType: DataItemType) {

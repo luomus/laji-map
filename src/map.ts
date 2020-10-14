@@ -259,6 +259,14 @@ export default class LajiMap {
 	_initialized = false;
 	mmlProj: L.Proj.CRS;
 	_trySwapToFinnishOnInitialization = true;
+	_fullscreen = false;
+	_fullscreenElem: HTMLElement;
+	_beforeFullscreen: {
+		rootElem: HTMLElement;
+		bodyAsDialogRoot: boolean;
+		clickBeforeZoomAndPan: boolean;
+		bodyOverflowY: string;
+	};
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -3628,5 +3636,37 @@ export default class LajiMap {
 			this.setClickBeforeZoomAndPan(this._clickBeforeZoomAndPan);
 		}
 		provide(this, "viewLocked");
+	}
+
+	toggleFullscreen() {
+		this._fullscreen ? this.setFullscreenOff() : this.setFullscreenOn();
+	}
+
+	setFullscreenOn() {
+		this._fullscreen = true;
+		this._fullscreenElem = document.createElement("div");
+		this._fullscreenElem.className = "laji-map-fullscreen";
+		document.body.appendChild(this._fullscreenElem);
+		this._beforeFullscreen = {
+			rootElem: this.rootElem,
+			bodyAsDialogRoot: this._dialogRoot === document.body,
+			clickBeforeZoomAndPan: this._clickBeforeZoomAndPan,
+			bodyOverflowY: document.body.style.overflowY
+		};
+		this.setRootElem(this._fullscreenElem);
+		this.map.getContainer().focus();
+		this.setBodyAsDialogRoot(false);
+		this.setClickBeforeZoomAndPan(false);
+		document.body.style.overflowY = "hidden";
+	}
+
+	setFullscreenOff() {
+		this._fullscreen = false;
+		const {rootElem, bodyAsDialogRoot, clickBeforeZoomAndPan, bodyOverflowY} = this._beforeFullscreen;
+		this.setRootElem(rootElem);
+		this.setBodyAsDialogRoot(bodyAsDialogRoot);
+		this.setClickBeforeZoomAndPan(clickBeforeZoomAndPan);
+		document.body.style.overflowY = bodyOverflowY;
+		document.body.removeChild(this._fullscreenElem);
 	}
 }

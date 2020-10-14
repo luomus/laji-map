@@ -8,6 +8,7 @@ import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
+import "leaflet-measure-path";
 import { GoogleProvider } from "leaflet-geosearch";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
@@ -31,7 +32,7 @@ import {
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
 	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem, LayerNames, WorldLayerNames, FinnishLayerNames,
-	OverlayNames
+	OverlayNames, ShowMeasurementsOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1776,20 +1777,26 @@ export default class LajiMap {
 		});
 
 		item.group.on("mouseover", (e: L.LayerEvent) => {
+			const _layer = <DataItemLayer> e.layer;
 			if (item.editable || item.hasActive || item.highlightOnHover) {
-				const _layer = <DataItemLayer> e.layer;
 				const [_dataIdx, _featureIdx] = this._getIdxTupleByLayer(_layer);
 				this._idxsToHovered[_dataIdx][_featureIdx] = true;
 				this.updateLayerStyle(_layer);
 			}
+			if (isObject(item.showMeasurements) && (item.showMeasurements as ShowMeasurementsOptions).showOnHover) {
+				(_layer as any).showMeasurements?.();
+			}
 		});
 
 		item.group.on("mouseout", (e: L.LayerEvent) => {
+			const _layer = <DataItemLayer> e.layer;
 			if (item.editable || item.hasActive || item.highlightOnHover) {
-				const _layer = <DataItemLayer> e.layer;
 				const [_dataIdx, _featureIdx] = this._getIdxTupleByLayer(_layer);
 				this._idxsToHovered[_dataIdx][_featureIdx] = false;
 				this.updateLayerStyle(_layer);
+			}
+			if (isObject(item.showMeasurements) && (item.showMeasurements as ShowMeasurementsOptions).showOnHover) {
+				(_layer as any).hideMeasurements?.();
 			}
 		});
 
@@ -1899,7 +1906,14 @@ export default class LajiMap {
 		this._initializePopup(layer);
 		this._initializeTooltip(layer);
 		this._updateContextMenuForLayer(layer);
+
 		if (isPolyline(layer)) this._decoratePolyline(<L.Polyline> layer);
+
+		const item = this.data[idxTuple[0]];
+		if (item.showMeasurements
+			&& !(isObject(item.showMeasurements) && (item.showMeasurements as any).showOnHover)) {
+			layer.options.showMeasurements = true;
+		}
 	}
 
 	fitBounds(_bounds: L.LatLngBoundsExpression, options: LajiMapFitBoundsOptions = {}) {

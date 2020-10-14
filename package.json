@@ -61,6 +61,7 @@
     "leaflet-draw": "1.0.3",
     "leaflet-geometryutil": "0.8.0",
     "leaflet-geosearch": "git+https://git@github.com/olzraiti/leaflet-geosearch.git#d0fb4384742e22799074355a99094adcc2416577",
+    "leaflet-measure-path": "^1.5.0",
     "leaflet-textpath": "git+https://git@github.com/olzraiti/Leaflet.textPath.git#61b77ff750be090f748208532aa5a5137862b541",
     "leaflet.markercluster": "1.3.0",
     "leaflet.smoothwheelzoom": "git+https://git@github.com/olzraiti/Leaflet.SmoothWheelZoom.git#18344d3e9179128085bcccfecd184a03b61a3d0c",

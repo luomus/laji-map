@@ -57,6 +57,10 @@ export interface CustomPolylineOptions extends PolylineOptions {
 	showDirection?: boolean;
 }
 
+export interface ShowMeasurementsOptions {
+	showOnHover: boolean;
+}
+
 export interface DataOptions {
 	featureCollection?: any;
 	geoData?: G.GeoJSON | string;
@@ -83,6 +87,7 @@ export interface DataOptions {
 	getTooltip?(options: GetPopupOptions, callback: (content: string) => void): string;
 	getPopup?(options: GetPopupOptions, callback: (content: string) => void): string;
 	single?: boolean;
+	showMeasurements?: boolean | ShowMeasurementsOptions;
 }
 
 export type OnChangeCoordinateSystem = CoordinateSystem | "GeoJSONFeatureCollection" | "GeoJSONGeometryCollection";

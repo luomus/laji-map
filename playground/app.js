@@ -102,11 +102,13 @@ class App {
 				},
 				//activeIdx: 0,
 				//editable: true,
-				highlightOnHover: true
+				highlightOnHover: true,
+				showMeasurements: true
 			}
 		];
 
 		this.drawOptions = {
+			showMeasurements: {showOnHover: true},
 			featureCollection: {
 				type: "FeatureCollection",
 				features: [

@@ -6,7 +6,7 @@ export interface LeafletTextPathOptions {
 	below?: boolean;
 	offset?: number;
 	orientation?: number | "flip" | "perpendicular";
-	attributes?: any // SVGTextPositioningElement doesn't support font-size.
+	attributes?: any; // SVGTextPositioningElement doesn't support font-size.
 }
 
 declare module "leaflet" {

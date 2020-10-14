@@ -116,7 +116,6 @@ location                                        | Boolean                  | tru
 geocoding                                       | Boolean                  | true                                 | Shows a geocoding control. You need to provide `googleApiKey` also to the map options.
 coordinates                                     | Boolean                  | false                                | Shows a control that shows the mouse position's coordinates in various formats.
 lineTransect                                    | Line transect options    | true                                 | Shows a control for editing a line transect. Only shown if main options `lineTransect`is set.
-layerOpacity                                    | Boolean                  | true                                 | Adds a tile layer opacity range slider to the layer control.
 fullscreen                                      | Boolean                  | false                                | Shows a fullscreen control.
 
 #### Draw control options ####

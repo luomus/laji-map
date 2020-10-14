@@ -58,7 +58,6 @@ export interface ControlsOptions {
 	location?: boolean | LocationControlOptions;
 	coordinates?: boolean;
 	lineTransect?: boolean | LineTransectControlOptions;
-	layerOpacity?: boolean;
 	attribution?: boolean;
 	fullscreen?: boolean;
 }

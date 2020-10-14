@@ -693,7 +693,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				undo: true,
 				redo: true
 			},
-			layerOpacity: true
 		} as InternalControlsOptions;
 
 		if (!_controlSettings) {

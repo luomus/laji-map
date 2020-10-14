@@ -2136,7 +2136,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		const _replace = ["full", "small"];
 		const replace = this._fullscreen
 			? _replace
-			: _replace.reverse()
+			: _replace.reverse();
 		const title = this._fullscreen
 			? "MapExitFullscreen"
 			: "MapFullscreen";

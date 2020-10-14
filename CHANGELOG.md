@@ -1,3 +1,7 @@
+## 3.3.0
+* Add fullscreen control
+* Add `showMeasurements` Data option
+
 ## 3.2.1
 * Fix smooth scrolling for Firefox
 

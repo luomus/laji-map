@@ -2883,6 +2883,11 @@ export default class LajiMap {
 
 		item.group.addLayer(layer);
 
+		if (item.showMeasurements
+			&& !(isObject(item.showMeasurements) && (item.showMeasurements as any).showOnHover)) {
+			layer.showMeasurements?.();
+		}
+
 		const events: LajiMapEvent[] = [
 			{
 				type: "create",

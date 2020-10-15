@@ -108,7 +108,7 @@ class App {
 		];
 
 		this.drawOptions = {
-			showMeasurements: {showOnHover: true},
+			showMeasurements: true,
 			featureCollection: {
 				type: "FeatureCollection",
 				features: [

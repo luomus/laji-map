@@ -298,6 +298,7 @@ export default class LajiMap {
 		this._stopDrawReverse = this._stopDrawReverse.bind(this);
 		this._onDrawReverseHandler = this._onDrawReverseHandler.bind(this);
 		this.abortDrawing = this.abortDrawing.bind(this);
+		this.setFullscreenOff = this.setFullscreenOff.bind(this);
 		this._initialized = true;
 	}
 
@@ -384,7 +385,8 @@ export default class LajiMap {
 	}
 
 	setRootElem(rootElem: HTMLElement) {
-		this.cleanDOM();
+		const oldContainer = this.container;
+		const {children} = oldContainer || {};
 
 		this.mapElem = this.mapElem || document.createElement("div");
 		this.blockerElem = this.blockerElem || document.createElement("div");
@@ -397,17 +399,25 @@ export default class LajiMap {
 
 		this.blockerElem.className = "laji-map-blocker";
 
-		this.container.appendChild(this.mapElem);
+		if (children) {
+			for (let child of Array.from(children)) {
+				this.container.appendChild(child);
+			}
+		} else {
+			this.container.appendChild(this.mapElem);
+		}
 
 		const shouldSetZoomAndPan = this._clickBeforeZoomAndPan;
 		shouldSetZoomAndPan && this.setClickBeforeZoomAndPan(false);
 
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
+		if (oldContainer && oldContainer !== this.container) {
+			oldContainer.parentElement.removeChild(oldContainer);
+		}
 
 		shouldSetZoomAndPan && this.setClickBeforeZoomAndPan(true);
 
-		this._openDialogs = [];
 		this._dialogRoot && this.setBodyAsDialogRoot(this._dialogRoot === document.body);
 
 		this.map && this.map.invalidateSize();
@@ -429,6 +439,9 @@ export default class LajiMap {
 			if (this.blockerElem.className.indexOf("fixed") !== -1) {
 				this.blockerElem.className = this.blockerElem.className.replace(" fixed", "");
 			}
+			this._openDialogs?.forEach(elem => {
+				this._dialogRoot.appendChild(elem);
+			});
 		}
 		this._dialogRoot.appendChild(this.blockerElem);
 		if (value) this.blockerElem.className = `${this.blockerElem.className} fixed`;
@@ -1027,14 +1040,10 @@ export default class LajiMap {
 		document.addEventListener(type, fn);
 	}
 
-	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type: string = "keydown", prioritize?: boolean) {
+	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type: string = "keydown") {
 		if (!this._keyListeners[type]) this._keyListeners[type] = {};
 		if (!this._keyListeners[type][key]) this._keyListeners[type][key] = [];
-		if (prioritize) {
-			this._keyListeners[type][key] = [fn, ...this._keyListeners[type][key]];
-		} else {
-			this._keyListeners[type][key].push(fn);
-		}
+		this._keyListeners[type][key] = [fn, ...this._keyListeners[type][key]];
 	}
 
 	_removeKeyListener(key: string, fn: (e?: Event) => boolean | void, type = "keydown") {
@@ -1516,6 +1525,9 @@ export default class LajiMap {
 		this.cleanDOM();
 		this.map && this.map.remove();
 		this.map = null;
+		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
+			document.removeEventListener(type, this._documentEvents[type]);
+		});
 	}
 
 	cleanDOM() {
@@ -1527,10 +1539,6 @@ export default class LajiMap {
 			this._domCleaners.forEach(cleaner => cleaner());
 			this._domCleaners = [];
 		}
-
-		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
-			document.removeEventListener(type, this._documentEvents[type]);
-		});
 	}
 
 	_addDomCleaner(fn: () => void) {
@@ -3512,7 +3520,7 @@ export default class LajiMap {
 			elem: HTMLElement,
 			onClose: (e: Event) => void,
 			blocker = false,
-			container = this.container) {
+			getContainer = () => this.container) {
 
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
@@ -3526,7 +3534,7 @@ export default class LajiMap {
 		function close(e) {
 			if (e) e.preventDefault();
 			that._removeKeyListener(ESC, close);
-			container.removeChild(elem);
+			getContainer().removeChild(elem);
 			if (blocker) {
 				that.blockerElem.style.display = "";
 				that.blockerElem.removeEventListener("click", close);
@@ -3539,7 +3547,7 @@ export default class LajiMap {
 
 		this._addKeyListener(ESC, close);
 
-		container.appendChild(elem);
+		getContainer().appendChild(elem);
 
 		if (blocker) {
 			this.blockerElem.addEventListener("click", close);
@@ -3547,7 +3555,7 @@ export default class LajiMap {
 		}
 
 		this._closeDialog = close;
-		if (container === this._dialogRoot) {
+		if (getContainer() === this._dialogRoot) {
 			this._openDialogs.push(elem);
 		}
 	}
@@ -3596,7 +3604,7 @@ export default class LajiMap {
 			if (onClose) onClose(e);
 		}
 
-		this.showClosableElement(_container, close, !!"showBlocker", this._dialogRoot);
+		this.showClosableElement(_container, close, !!"showBlocker", () => this._dialogRoot);
 	}
 
 	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) {
@@ -3672,6 +3680,7 @@ export default class LajiMap {
 		this.setBodyAsDialogRoot(false);
 		this.setClickBeforeZoomAndPan(false);
 		document.body.style.overflowY = "hidden";
+		this._addKeyListener(ESC, this.setFullscreenOff);
 	}
 
 	setFullscreenOff() {
@@ -3682,5 +3691,6 @@ export default class LajiMap {
 		this.setClickBeforeZoomAndPan(clickBeforeZoomAndPan);
 		document.body.style.overflowY = bodyOverflowY;
 		document.body.removeChild(this._fullscreenElem);
+		this._removeKeyListener(ESC, this.setFullscreenOff);
 	}
 }

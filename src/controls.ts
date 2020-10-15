@@ -495,7 +495,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this.buttonActions[name][text] = buttonWrapper;
 			}
 
-			that._addKeyListener(ESC, stop, undefined, !!"high priority");
+			that._addKeyListener(ESC, stop, undefined);
 			if (eventName) that.map.on(eventName, stop);
 
 			const parentBtn = that._controlButtons[name];

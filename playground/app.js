@@ -166,6 +166,7 @@ class App {
 			controls: {
 				location: true,
 				coordinates: true,
+				fullscreen: true,
 				draw: {
 					copy: true,
 					upload: true,

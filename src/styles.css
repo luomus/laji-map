@@ -589,3 +589,7 @@
 	height: 100vh;
 	z-index: 9999;
 }
+
+.laji-map .leaflet-measure-path-measurement {
+	font-size: 12px;
+}

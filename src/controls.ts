@@ -1581,13 +1581,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			};
 			input.oninput = (e) => {
 				const target = <HTMLInputElement> e.target;
-				if (!inputValidate(e, target.value)) {
+				const value = target.value.replace(",", ".").trim();
+				if (!inputValidate(e, value)) {
 					target.value = prevVal;
 				}
-				target.value = target.value.replace(",", ".");
-				prevVal = target.value;
+				target.value = value;
+				prevVal = value;
 
-				inputValues[i] = target.value;
+				inputValues[i] = value;
 
 				const {valid, geoJSON} = validate(`${inputValues[0]}:${inputValues[1]}/`);
 				if (valid) {

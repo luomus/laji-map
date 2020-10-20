@@ -130,4 +130,20 @@ describe("Tile layers control", () => {
 		await map.e("setOption('availableTileLayerNamesBlacklist', ['maastokartta'])");
 		expect(await (await control.$getLayerElement("maastokartta")).isDisplayed()).toBe(false);
 	});
+
+	it("Sets openStreetMap as active when changing to world projection and there are no visible world layers", async () => {
+		map = await createMap({controls: true, tileLayerName: "taustakartta"});
+		await control.$getButton().click();
+		await control.$getWorldList().click();
+		const layerOptions = await map.e("getTileLayers()");
+		expect(layerOptions.layers.openStreetMap.visible).toBe(true);
+	});
+
+	it("Sets taustakartta as active when changing to finnish projection and there are no visible finnish layers", async () => {
+		map = await createMap({controls: true, tileLayerName: "openStreetMap"});
+		await control.$getButton().click();
+		await control.$getFinnishList().click();
+		const layerOptions = await map.e("getTileLayers()");
+		expect(layerOptions.layers.taustakartta.visible).toBe(true);
+	});
 });

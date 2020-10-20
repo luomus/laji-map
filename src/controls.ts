@@ -1292,10 +1292,20 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 							}
 						}
 
-						const layerOptions = active === "finnish"
-							|| Object.keys(that.worldTileLayers).some(name => that._tileLayers.layers[name].visible)
-							? that._tileLayers.layers
-							: {...that._tileLayers.layers, openStreetMap: true};
+						const worldLayers = that.getAvailableWorldTileLayers();
+						const finnishLayers = that.getAvailableFinnishTileLayers();
+
+						const checkLayer = name => !that._tileLayers.layers[name].visible;
+
+						const ensureHasLayersIfProjChanged = (_active, layers) =>
+							active === _active
+							&& Object.keys(layers).every(checkLayer)
+							&& {...that._tileLayers.layers, [that._tileLayerOrder.find(l => layers[l])]: true};
+
+						const layerOptions =
+							ensureHasLayersIfProjChanged("world", worldLayers)
+							|| ensureHasLayersIfProjChanged("finnish", finnishLayers)
+							|| that._tileLayers.layers;
 						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});
 					});
 				});

@@ -16,7 +16,10 @@ declare module "leaflet" {
 	interface Circle extends HasShowMeasurements {
 	}
 
-	interface LayerOptions {
-		showMeasurements?: LeafletShowMeasurementsOptions | boolean;
+	interface PathOptions {
+		showMeasurements?: LeafletShowMeasurementsOptions | true;
+	}
+	interface MarkerOptions {
+		showMeasurements?: LeafletShowMeasurementsOptions | true;
 	}
 }

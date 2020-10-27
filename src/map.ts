@@ -391,9 +391,12 @@ export default class LajiMap {
 		this.mapElem = this.mapElem || document.createElement("div");
 		this.blockerElem = this.blockerElem || document.createElement("div");
 
-		if (this.map && this.map.getContainer() && !this.map.getContainer().contains(document.activeElement)) {
-			this.map.fire("blur");
+		const oldActive = document.activeElement;
+		const isFocused = this.map?.getContainer() && this.map.getContainer().contains(document.activeElement);
+		if (!isFocused) {
+			this.map?.fire("blur");
 		}
+
 		this.container = document.createElement("div");
 		this.container.className = "laji-map";
 
@@ -421,6 +424,9 @@ export default class LajiMap {
 		this._dialogRoot && this.setBodyAsDialogRoot(this._dialogRoot === document.body);
 
 		this.map && this.map.invalidateSize();
+		if (isFocused && oldActive && document.activeElement !== oldActive) {
+			(oldActive as HTMLElement).focus?.();
+		}
 
 		provide(this, "rootElem");
 	}

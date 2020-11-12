@@ -1,6 +1,6 @@
-const { createMap, ykjToWgs84, etrsToWgs84 } = require("./test-utils");
-const { reverseCoordinate } = require("../lib/utils");
-const { EPSG2393String } =  require("../lib/globals");
+import { createMap, ykjToWgs84, etrsToWgs84 } from "./test-utils";
+import { reverseCoordinate } from "../src/utils";
+import { EPSG2393String } from "../src/globals";
 
 describe("Draw upload control", () => {
 

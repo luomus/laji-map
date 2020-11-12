@@ -1,8 +1,9 @@
-const { createMap, LatLngTraveller } = require("./test-utils");
+import { createMap, LatLngTraveller } from "./test-utils";
 
 
 // Internal logic tested because the later tests rely heavily on it.
 describe("Internal logic of zoom level normalization", () => {
+	let map;
 	it("uses the real zoom level for Finnish layer", async () => {
 		map = await createMap({tileLayerName: "taustakartta", zoom: 0});
 		await expect(await map.e("map.getZoom()")).toBe(0);
@@ -62,8 +63,8 @@ describe("Initializing", () => {
 
 	it("with location outside Finland using Finnish tilelayer, zoom stays the same after swapping to world map view", async () => {
 		const congo =  {
-			"lat": 79.3499057749654,
-			"lng": 21.160612106323246
+			lat: 79.3499057749654,
+			lng: 21.160612106323246
 		};
 		const map = await createMap({tileLayerName: "taustakartta", zoom: 4, center: congo});
 		await expect(await map.e("getNormalizedZoom()")).toBe(4);
@@ -91,7 +92,7 @@ describe("Zooms to data", () => {
 			data: {geoData: {type: "Point", coordinates: [lng, lat]}}
 		});
 
-		const center = await map.e("map.getCenter()");
+		const center = await map.e("map.getCenter()") as any;
 		zoom = await map.e("getNormalizedZoom()");
 		await expect(center.lat).toBeCloseTo(lat);
 		await expect(center.lng).toBeCloseTo(lng);
@@ -104,7 +105,7 @@ describe("Zooms to data", () => {
 			data: {geoData: {type: "Point", coordinates: [lng, lat]}}
 		});
 
-		const center = await map.e("map.getCenter()");
+		const center = await map.e("map.getCenter()") as any;
 		await expect(center.lat).toBeCloseTo(lat);
 		await expect(center.lng).toBeCloseTo(lng);
 
@@ -144,8 +145,7 @@ describe("Zooms to data", () => {
 				...options
 			});
 
-
-			const bounds = await map.e("map.getBounds()");
+			const bounds = await map.e("map.getBounds()") as any;
 			await expect(bounds._northEast.lat).toBeGreaterThan(minNorth);
 			await expect(bounds._southWest.lat).toBeLessThan(minNorth);
 			await expect(bounds._northEast.lat).toBeGreaterThan(north);
@@ -162,7 +162,7 @@ describe("Zooms to data", () => {
 				...options
 			});
 
-			const bounds = await map.e("map.getBounds()");
+			const bounds = await map.e("map.getBounds()") as any;
 			await expect(bounds._northEast.lat).toBeGreaterThan(minNorth);
 			await expect(bounds._southWest.lat).toBeLessThan(minNorth);
 			await expect(bounds._northEast.lat).toBeGreaterThan(north);
@@ -188,7 +188,7 @@ it("Falls back to center when no data and zoomToData given", async () => {
 		...options
 	});
 
-	const center = await map.e("map.getCenter()");
+	const center = await map.e("map.getCenter()") as any;
 	await expect(center.lat).toBe(latLng.lat);
 	await expect(center.lng).toBe(latLng.lng);
 });
@@ -205,15 +205,15 @@ it("Falls back to center when no zoomToData given", async () => {
 		...options
 	});
 
-	const center = await map.e("map.getCenter()");
+	const center = await map.e("map.getCenter()") as any;
 	await expect(center.lat).toBe(latLng.lat);
 	await expect(center.lng).toBe(latLng.lng);
 });
 
 it("keeps finnish tileLayer if center is outside Finland but zoomToData causes view to initialize into Finland", async () => {
 	const congo =  {
-		"lat": 79.3499057749654,
-		"lng": 21.160612106323246
+		lat: 79.3499057749654,
+		lng: 21.160612106323246
 	};
 	const data = {geoData: {type: "Point", coordinates: [25, 60]}};
 	const map = await createMap({tileLayerName: "taustakartta", zoom: 4, center: congo, data, zoomToData: true});

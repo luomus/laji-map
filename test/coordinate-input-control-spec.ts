@@ -1,5 +1,5 @@
-const { createMap, ykjToWgs84, etrsToWgs84 } = require("./test-utils");
-const { reverseCoordinate } = require("../lib/utils");
+import { createMap, ykjToWgs84, etrsToWgs84 } from "./test-utils";
+import { reverseCoordinate } from "../src/utils";
 
 describe("Coordinate input control", () => {
 

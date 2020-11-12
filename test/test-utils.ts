@@ -1,10 +1,12 @@
 const {HOST, PORT, VERBOSE, DELAY} = process.env;
-const proj4 = require("proj4");
-const utils = require("../lib/utils");
+import { browser, $, by } from "protractor";
+import * as proj4 from "proj4";
+import * as utils from "../src/utils";
+import { Options } from "../src/map.defs";
 
 const joinParams = params => Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
-const navigateToMap = async (params = "") => {
-	const url =`http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`
+const navigateToMap = async (params = {}) => {
+	const url = `http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`
 	VERBOSE && console.log(url);
 	await browser.get(url);
 }
@@ -13,8 +15,10 @@ function getControlButton(name) {
 	return $(`.button-${name.replace(/\./g, "_")}`)
 }
 
-class MapPageObject {
-	constructor(options) {
+export class MapPageObject {
+	options: Options;
+
+	constructor(options = {}) {
 		this.options = options;
 	}
 
@@ -34,33 +38,43 @@ class MapPageObject {
 	}
 
 	mouseMove(x, y) {
-		return browser.actions({bridge: true})
-			.move({origin: this.$getElement().getWebElement(), x, y})
+		return browser.actions()
+			.mouseMove(this.$getElement().getWebElement(), {x, y})
 			.perform();
 	}
 
 	async clickAt(x, y) {
 		await this.mouseMove(x, y);
-		return browser.actions({bridge: true})
+		return browser.actions()
 			.click().perform();
 	}
 
 	async doubleClickAt(x, y) {
 		await this.mouseMove(x, y);
 		await browser.sleep(500);
-		return browser.actions({bridge: true})
+		return browser.actions()
 			.doubleClick().perform();
 	}
 
 	async drag([x, y], [x2, y2]) {
 		await this.mouseMove(x, y);
-		await browser.actions({bridge: true})
-			.press()
+		await browser.actions()
+			.mouseDown()
 			.perform();
 		await this.mouseMove(x2, y2);
-		return browser.actions({bridge: true})
-			.release()
+		return browser.actions()
+			.mouseUp()
 			.perform();
+	}
+
+	async drawMarker(x = 0, y = 0) {
+		await this.getDrawControl().$getMarkerButton().click();
+		await this.clickAt(0, 0);
+	}
+
+	async drawRectangle() {
+		await this.getDrawControl().$getRectangleButton().click();
+		await this.drag([0, 0], [10, 10]);
 	}
 
 	getCoordinateInputControl() {return new CoordinateInputControlPageObject()};
@@ -171,6 +185,8 @@ class DrawControlPageObject {
 }
 
 class TilelayersControlPageObject {
+	mapPO: MapPageObject;
+
 	constructor(mapPO) {
 		this.mapPO = mapPO;
 	}
@@ -190,21 +206,26 @@ class TilelayersControlPageObject {
 		return this.$getContainer().$(".overlay-list");
 	}
 	async $getLayerElement(name) {
-		const label = await this.mapPO.e(`translations.${utils.capitalizeFirstLetter(name)}`);
+		const label = await this.mapPO.e(`translations.${utils.capitalizeFirstLetter(name)}`) as string;
 		return this.$getContainer().element(by.cssContainingText("span", label)).element(by.xpath(".."));
 	}
 }
 
-const createMap = async options => {
+export const createMap = async (options?) => {
 	const map = new MapPageObject(options);
 	await map.initialize();
 	return map;
 };
 
-const ykjToWgs84 = (latLng) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");
-const etrsToWgs84 = (latLng) => utils.convertLatLng(latLng, "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84");
+export const ykjToWgs84 = (latLng) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");
+export const etrsToWgs84 = (latLng) => utils.convertLatLng(latLng, "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84");
 
-class PointTraveller {
+export class PointTraveller {
+	x: number;
+	y: number;
+	initX: number;
+	initY: number;
+
 	constructor(x = 0, y = 0) {
 		this.x = x;
 		this.y = y;
@@ -230,9 +251,16 @@ class PointTraveller {
 	_y(curVal, amount) {return curVal + amount;}
 }
 
-class LatLngTraveller extends PointTraveller {
-	constructor(lat, lng, options = {}) {
-		super(lng, lat, options);
+interface LatLngTravellerOptions {
+		onlyForward?: boolean;
+}
+
+export class LatLngTraveller extends PointTraveller {
+	options: LatLngTravellerOptions;
+	onlyForward: boolean;
+
+	constructor(lat, lng, options: LatLngTravellerOptions = {}) {
+		super(lng, lat);
 		if (options.onlyForward) {
 			this.onlyForward = true;
 		}
@@ -256,11 +284,3 @@ class LatLngTraveller extends PointTraveller {
 		return [this.y, this.x];
 	}
 }
-
-module.exports = {
-	createMap,
-	ykjToWgs84,
-	etrsToWgs84,
-	PointTraveller,
-	LatLngTraveller
-};

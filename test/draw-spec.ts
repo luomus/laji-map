@@ -1,5 +1,6 @@
-const { createMap, PointTraveller } = require("./test-utils");
-const utils = require("../lib/utils");
+import { createMap, PointTraveller } from "./test-utils";
+import * as utils from "../src/utils";
+import { $, $$ } from "protractor";
 
 describe("Drawing", () => {
 
@@ -20,17 +21,11 @@ describe("Drawing", () => {
 
 	const clear = () => map.e("clearDrawData()");
 
-
 	describe("point", () => {
 		afterAll(clear);
 
-		const addMarker = async () => {
-			await control.$getMarkerButton().click();
-			await map.clickAt(0, 0);
-		};
-
 		it("can be drawn", async () => {
-			await addMarker();
+			await map.drawMarker();
 			const geometry = await getLastGeometry();
 			expect(geometry.type).toBe("Point");
 		});
@@ -45,7 +40,7 @@ describe("Drawing", () => {
 		it("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
-			await addMarker();
+			await map.drawMarker();
 			const geometry = await getLastGeometry();
 			for (const c of geometry.coordinates) {
 				expect(c).toBeLessThan(180);
@@ -55,16 +50,15 @@ describe("Drawing", () => {
 
 		it("can be set editable", async () => {
 			await clear();
-			await addMarker();
+			await map.drawMarker();
 			await map.doubleClickAt(0, 0);
 			expect(await $(".leaflet-marker-draggable").isPresent()).toBe(true);
 		});
 
-
 		// Drag doesn't work...
-		//it("can be moved when editing", async () => {
-		//	await map.drag([0, 0], [-100, -100]);
-		//});
+		// it("can be moved when editing", async () => {
+		// 	await map.drag([0, 0], [-100, -100]);
+		// });
 
 		it("can finish editing", async () => {
 			await map.clickAt(20, 20);
@@ -201,13 +195,8 @@ describe("Drawing", () => {
 	describe("rectangle", () => {
 		afterAll(clear);
 
-		const addRectangle = async () => {
-			await control.$getRectangleButton().click();
-			await map.drag([0, 0], [10, 10]);
-		};
-
 		it("can be drawn", async () => {
-			await addRectangle();
+			await map.drawRectangle();
 			const geometry = await getLastGeometry();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates.length).toBe(1);
@@ -225,7 +214,7 @@ describe("Drawing", () => {
 		it("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
-			await addRectangle();
+			await map.drawRectangle();
 			const geometry = await getLastGeometry();
 			for (const coords of geometry.coordinates[0]) {
 				for (const c of coords) {
@@ -248,21 +237,20 @@ describe("Drawing", () => {
 				[-10, 10],
 				[10, -10],
 				[-10, -10]
-			];
+			] as [number, number][];
 			for (const drag of drags) {
 				await clear();
 				await control.$getRectangleButton().click();
 				const traveller = new PointTraveller();
 				await map.drag(traveller.initial(), traveller.travel(...drag));
-				const geometry = await getLastGeometry();
-				expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
+				const lastGeometry = await getLastGeometry();
+				expect(utils.coordinatesAreClockWise(lastGeometry.coordinates)).toBe(true);
 			}
 		});
 	});
 
 	describe("circle", () => {
 		afterAll(clear);
-
 
 		const addCircle = async () => {
 			await control.$getCircleButton().click();

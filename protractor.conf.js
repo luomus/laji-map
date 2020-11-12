@@ -39,10 +39,14 @@ if (process.env.HEADLESS && process.env.HEADLESS !== "true") multiCapabilities.f
 
 exports.config = {
 	seleniumAddress: "http://localhost:4444/wd/hub",
-	specs: ["test/*-spec.js"],
+	specs: ["test/*-spec.ts"],
 	multiCapabilities,
 	SELENIUM_PROMISE_MANAGER: false,
 	onPrepare: async () => {
+		require('ts-node').register({
+			project: require('path').join(__dirname, './tsconfig.json')
+		});
+
 		browser.waitForAngularEnabled(false);
 
 		var env = jasmine.getEnv();
@@ -53,7 +57,7 @@ exports.config = {
 		}));
 
 		// Set manually since Firefox cli size options don't work.
-		await browser.driver.manage().window().setRect({width, height});
+		//await browser.driver.manage().window().setRect({width, height});
 	},
 	plugins: [{
 		package: "protractor-console-plugin",

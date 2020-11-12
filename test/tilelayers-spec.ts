@@ -1,5 +1,5 @@
-const { createMap } = require("./test-utils");
-const translations = require("../lib/translations");
+import { createMap } from "./test-utils";
+import translations from "../src/translations";
 
 let map;
 describe("Initializing", () => {
@@ -8,7 +8,7 @@ describe("Initializing", () => {
 			tileLayerName: "ortokuva",
 			tileLayers: {
 				layers: {
-					"maastokartta": true
+					maastokartta: true
 				}
 			}
 		});
@@ -26,8 +26,8 @@ describe("Initializing", () => {
 
 	it("with finnish tilelayer and view outside Finland swaps to world map", async () => {
 		const congo =  {
-			"lat": 79.3499057749654,
-			"lng": 21.160612106323246
+			lat: 79.3499057749654,
+			lng: 21.160612106323246
 		};
 
 		map = await createMap({

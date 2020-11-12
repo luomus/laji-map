@@ -1,4 +1,4 @@
-const { createMap, ykjToWgs84, etrsToWgs84 } = require("./test-utils");
+import { createMap, ykjToWgs84, etrsToWgs84 } from "./test-utils";
 
 describe("Draw copy control", () => {
 
@@ -7,7 +7,7 @@ describe("Draw copy control", () => {
 	let map, control;
 	beforeAll(async () => {
 		map = await createMap({
-			draw: {geoData: {type: "Point", coordinates: [lng,lat]}},
+			draw: {geoData: {type: "Point", coordinates: [lng, lat]}},
 			controls: {
 				draw: {
 					copy: true

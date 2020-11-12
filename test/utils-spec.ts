@@ -1,4 +1,4 @@
-const utils = require("../lib/utils");
+import * as utils from "../src/utils";
 
 describe("convertLatLlng()", () => {
 	it("convert ykj to wgs84 correct", () => {

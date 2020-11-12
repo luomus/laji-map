@@ -2293,7 +2293,11 @@ export default class LajiMap {
 			let color =  NORMAL_COLOR;
 			let opacity = 0.5;
 			if (data.getClusterStyle) {
-				const featureStyle = data.getClusterStyle(childCount);
+				const featureStyle = data.getClusterStyle(
+					childCount,
+					cluster.getAllChildMarkers().map(marker => marker.feature.properties.lajiMapIdx),
+					cluster
+				);
 				if (featureStyle.color) color = featureStyle.color;
 				if (featureStyle.opacity) opacity = featureStyle.opacity;
 			}

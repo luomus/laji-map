@@ -1,6 +1,7 @@
 import * as G from "geojson";
 import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
-	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng, ErrorEvent } from "leaflet";
+	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng,
+	ErrorEvent, MarkerCluster } from "leaflet";
 import { ControlsOptions } from "./controls.defs";
 
 export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
@@ -68,7 +69,7 @@ export interface DataOptions {
 	activeIdx?: number;
 	editable?: boolean;
 	hasActive?: boolean;
-	getClusterStyle?: (childCount: number) => PathOptions;
+	getClusterStyle?: (childCount: number, featureIdxs: number[], cluster: MarkerCluster) => PathOptions;
 	tooltipOptions?: any;
 	on?: {[type: string]: (
 		e: LeafletEvent,

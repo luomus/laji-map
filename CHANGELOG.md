@@ -1,3 +1,6 @@
+## 3.4.0
+* Add `featureIdxs` and `cluster` to getClusterStyle
+
 ## 3.3.0
 * Add fullscreen control
 * Add `showMeasurements` Data option

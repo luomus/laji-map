@@ -1,8 +1,8 @@
 const {HOST, PORT, VERBOSE, DELAY} = process.env;
 import { browser, $, by } from "protractor";
 import * as proj4 from "proj4";
-import * as utils from "../src/utils";
-import { Options } from "../src/map.defs";
+import * as utils from "laji-map/lib/utils";
+import { Options } from "laji-map/lib/map.defs";
 
 const joinParams = params => Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
 const navigateToMap = async (params = {}) => {

@@ -3,6 +3,7 @@ npm-debug.log
 .DS_Store
 /lib
 /dist
+/test-export
 .idea
 *.swp
 .vim*

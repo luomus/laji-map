@@ -5,10 +5,12 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
+    "prepare": "self-import",
     "start": "webpack-dev-server --content-base playground playground/app.js --inline --port 4000 --host 0.0.0.0",
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
-    "build": "npm run build:lib && npm run build:dist",
+    "build:tests": "rimraf test-export && NODE_ENV=production tsc -p tsconfig.test.json",
+    "build": "npm run build:lib && npm run build:dist && npm run build:tests",
     "preversion": "npm run lint && npm run test:slow && npm run build",
     "version": "./update-changelog.sh",
     "postversion": "npm publish && git push",
@@ -30,13 +32,8 @@
   "author": "Olli Raitio <olli.raitio@helsinki.fi>",
   "license": "MIT",
   "devDependencies": {
-    "@types/geojson": "*",
     "@types/jasmine": "^3.6.1",
     "@types/jasminewd2": "^2.0.8",
-    "@types/leaflet": "*",
-    "@types/leaflet-draw": "*",
-    "@types/leaflet.markercluster": "*",
-    "@types/proj4leaflet": "*",
     "awesome-typescript-loader": "^5.2.0",
     "copyfiles": "^2.0.0",
     "css-loader": "^1.0.0",
@@ -47,6 +44,7 @@
     "protractor": "^7.0.0",
     "protractor-console-plugin": "^0.1.1",
     "rimraf": "2.5.4",
+    "self-import": "^1.0.1",
     "style-loader": "^0.18.2",
     "svg-url-loader": "^2.3.2",
     "ts-lint": "^4.5.1",
@@ -58,6 +56,12 @@
     "webpack-dev-server": "^3.1.4"
   },
   "dependencies": {
+    "@types/geojson": "*",
+    "@types/leaflet": "*",
+    "@types/leaflet-draw": "*",
+    "@types/leaflet.markercluster": "*",
+    "@types/node": "^8.10.52",
+    "@types/proj4leaflet": "*",
     "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#17601bee91f2dae098a0a76e96714d59ec958fe6",
     "leaflet": "1.7.1",
     "leaflet-contextmenu": "1.4.0",
@@ -71,14 +75,6 @@
     "nouislider": "13.1.0",
     "proj4": "2.3.16",
     "proj4leaflet": "1.0.2"
-  },
-  "optionalDependencies": {
-    "@types/geojson": "*",
-    "@types/leaflet": "*",
-    "@types/leaflet-draw": "*",
-    "@types/leaflet.markercluster": "*",
-    "@types/node": "^8.10.52",
-    "@types/proj4leaflet": "*"
   },
   "resolutions": {
     "leaflet": "1.7.0",

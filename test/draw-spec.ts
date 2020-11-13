@@ -1,5 +1,5 @@
 import { createMap, PointTraveller } from "./test-utils";
-import * as utils from "../src/utils";
+import * as utils from "laji-map/lib/utils";
 import { $, $$ } from "protractor";
 
 describe("Drawing", () => {

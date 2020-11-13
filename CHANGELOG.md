@@ -1,3 +1,6 @@
+## 3.5.0
+* Export tests to npm package
+
 ## 3.4.0
 * Add `featureIdxs` and `cluster` to getClusterStyle
 

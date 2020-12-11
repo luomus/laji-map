@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://bitbucket.org/luomus/laji-map.js"
+    "url": "https://github.com/luomus/laji-map.git"
   },
   "keywords": [
     "leaflet",

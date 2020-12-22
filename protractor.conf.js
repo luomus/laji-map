@@ -38,7 +38,6 @@ if (process.env.HEADLESS && process.env.HEADLESS !== "true") multiCapabilities.f
 });
 
 exports.config = {
-	seleniumAddress: "http://localhost:4444/wd/hub",
 	specs: ["test/*-spec.ts"],
 	multiCapabilities,
 	SELENIUM_PROMISE_MANAGER: false,

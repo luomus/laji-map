@@ -212,22 +212,15 @@ The map options can be controlled with query parameters. In addition, `testMode`
 
 ## Tests ##
 
-Install protractor with: 
+You need to update the webdriver before testing: 
 
 ```
-npm i -g protractor
 webdriver-manager update
 ```
 
-The playground server and the Selenium server must be running before running the tests. Start the Selenium server with:
+The playground server must be running before running the tests.
 
-```
-webdriver-manager start
-```
-
-Then run the tests with `npm test`. For more robust testing, run `npm run test:slow`. It runs test after 500ms delay after the map has been initialized.
-
-`lib` must be built before testing (run `npm run build:lib`).
+Run the tests with `npm test`. For more robust testing, run `npm run test:slow`. It runs test after 500ms delay after the map has been initialized.
 
 ### Test parameters ###
 

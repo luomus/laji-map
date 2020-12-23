@@ -39,6 +39,7 @@ export class MapPageObject {
 
 	mouseMove(x, y) {
 		return browser.actions()
+			.mouseMove(this.$getElement().getWebElement(), {x: x + 1, y})
 			.mouseMove(this.$getElement().getWebElement(), {x, y})
 			.perform();
 	}

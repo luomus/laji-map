@@ -1,6 +1,6 @@
 import { createMap, PointTraveller } from "./test-utils";
 import * as utils from "laji-map/lib/utils";
-import { $, $$ } from "protractor";
+import { $, $$, browser } from "protractor";
 
 describe("Drawing", () => {
 
@@ -51,7 +51,7 @@ describe("Drawing", () => {
 		it("can be set editable", async () => {
 			await clear();
 			await map.drawMarker();
-			await map.doubleClickAt(0, 0);
+			await map.doubleClickAt(0, -10);
 			expect(await $(".leaflet-marker-draggable").isPresent()).toBe(true);
 		});
 
@@ -72,8 +72,11 @@ describe("Drawing", () => {
 		const addLine = async () => {
 			await control.$getPolylineButton().click();
 			await map.clickAt(0, 0);
+			await browser.sleep(200);
 			await map.clickAt(10, 0);
+			await browser.sleep(200);
 			await map.clickAt(20, 10);
+			await browser.sleep(200);
 			await map.clickAt(20, 10);
 		};
 
@@ -124,15 +127,16 @@ describe("Drawing", () => {
 		// Clockwise
 		const coordinates = [
 			traveller.travel(0, 0),
-			traveller.travel(0, -10),
-			traveller.travel(10, 0),
-			traveller.travel(0, 10),
+			traveller.travel(0, -30),
+			traveller.travel(30, 0),
+			traveller.travel(0, 30),
 			traveller.initial()
 		];
 
 		const addPolygon = async () => {
 			await control.$getPolygonButton().click();
 			for (const c of coordinates) {
+				await browser.sleep(200);
 				await map.clickAt(...c);
 			}
 		};
@@ -172,6 +176,7 @@ describe("Drawing", () => {
 			await clear();
 			await control.$getPolygonButton().click();
 			for (const c of coordinates.slice(0).reverse()) {
+				await browser.sleep(200);
 				await map.clickAt(...c);
 			}
 			const geometry = await getLastGeometry();

@@ -2,8 +2,8 @@
 
 const [width, height] = [800, 1000];
 const common = {
-	shardTestFiles: true,
-	maxInstances: 4
+	shardTestFiles: parseInt(process.env.THREADS) !== 1,
+	maxInstances: process.env.THREADS ? parseInt(process.env.THREADS) :  4
 };
 const chrome = {
 	...common,
@@ -24,11 +24,11 @@ const firefox = {
 	}
 };
 
-let multiCapabilities = [chrome, firefox]
-if (process.env.TEST_BROWSER === "chrome") {
-	multiCapabilities = [chrome];
-} else if (process.env.TEST_BROWSER === "firefox") {
+let multiCapabilities = [chrome];
+if (process.env.TEST_BROWSER === "firefox") {
 	multiCapabilities = [firefox];
+} else if (process.env.TEST_BROWSER === "multi") {
+	multiCapabilities = [chrome, firefox];
 }
 if (process.env.HEADLESS && process.env.HEADLESS !== "true") multiCapabilities.forEach(capabilities => {
 	const options = [capabilities["chromeOptions"], capabilities["firefoxOptions"], capabilities["moz:firefoxOptions"]];
@@ -40,6 +40,7 @@ if (process.env.HEADLESS && process.env.HEADLESS !== "true") multiCapabilities.f
 exports.config = {
 	specs: ["test/*-spec.ts"],
 	multiCapabilities,
+	maxSessions: 4,
 	SELENIUM_PROMISE_MANAGER: false,
 	onPrepare: async () => {
 		require('ts-node').register({
@@ -48,18 +49,11 @@ exports.config = {
 
 		browser.waitForAngularEnabled(false);
 
-		var env = jasmine.getEnv();
-		env.clearReporters();
-		var SpecReporter = require("jasmine-spec-reporter").SpecReporter;
-		env.addReporter(new SpecReporter({
-			displayStacktrace: true
-		}));
-
 		// Set manually since Firefox cli size options don't work.
-		//await browser.driver.manage().window().setRect({width, height});
+		await browser.driver.manage().window().setSize(width, height);
 	},
-	plugins: [{
+	plugins: multiCapabilities.length === 1 && multiCapabilities[0] === chrome && [{
 		package: "protractor-console-plugin",
-		exclude: ["Failed to load resource"]
+		exclude: [/Uncaught \(in promise\)/]
 	}]
 };

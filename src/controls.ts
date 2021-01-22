@@ -7,7 +7,7 @@ import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
 	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, etrsTm35FinGridStrictValidator, wgs84Validator,
 	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
-	capitalizeFirstLetter, renderLajiMapError, reverseCoordinate
+	capitalizeFirstLetter, renderLajiMapError, reverseCoordinate, latLngGridToGeoJSON
 } from "./utils";
 import {
 	ESC,
@@ -1616,50 +1616,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		container.addEventListener("submit", e => {
 			e.preventDefault();
 
-			const latlngStr = [latInput.value, lngInput.value];
-			const latlng = latlngStr.map(parseFloat);
-
-			const isWGS84Coordinates = validateLatLng(latlngStr, wgs84Validator);
-			const isETRS = validateLatLng(latlngStr, etrsTm35FinValidator);
-			const isYKJ = validateLatLng(latlngStr, ykjValidator);
-			const isYKJGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, ykjGridStrictValidator);
-			const isETRSGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, etrsTm35FinGridStrictValidator);
-
-			let geometry = {
-				type: "Point",
-				coordinates: ((isYKJ)
-					? convert(latlng, "EPSG:2393")
-					: (isETRS)
-						? convert(latlng, "EPSG:3067")
-						: (isWGS84Coordinates)
-							? latlng
-							: []).reverse()
-			};
-
-			const feature = {
-				type: "Feature",
-				geometry,
-				properties: {}
-			};
-
-			if (isYKJGrid || isETRSGrid) {
-				const validator = isYKJGrid ? ykjGridStrictValidator : etrsTm35FinGridStrictValidator;
-				const latStart = +validator[0].formatter(`${latlng[0]}`);
-				const latEnd = +validator[0].formatter(`${latlng[0] + 1}`);
-
-				const lngStart = +validator[1].formatter(`${latlng[1]}`);
-				const lngEnd = +validator[1].formatter(`${latlng[1] + 1}`);
-
-				geometry.type = "Polygon";
-				geometry.coordinates = [[
-					[latStart, lngStart],
-					[latStart, lngEnd],
-					[latEnd, lngEnd],
-					[latEnd, lngStart],
-					[latStart, lngStart]
-				].map(coordinatePair => reverseCoordinate(convert(coordinatePair, isYKJGrid ? "EPSG:2393" : "EPSG:3067")))];
-			}
-
+			const feature = latLngGridToGeoJSON([latInput.value, lngInput.value]);
 			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);
 			const isMarker = layer instanceof L.Marker;
 

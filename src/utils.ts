@@ -1192,3 +1192,55 @@ export const geoJSONAsFeatureCollection = (geoJSON: G.GeoJSON): G.FeatureCollect
 	type: "FeatureCollection",
 	features: flattenMultiLineStringsAndMultiPolygons(anyToFeatureCollection(geoJSON).features)
 });
+
+export function latLngGridToGeoJSON(latlngStr: [string, string]): G.Feature<G.Point | G.Polygon> {
+	function convert(coords, crs: CRSString = "EPSG:2393") {
+		return convertLatLng(coords, crs, "WGS84");
+	}
+
+	const latlng = latlngStr.map(parseFloat);
+
+	const isWGS84Coordinates = validateLatLng(latlngStr, wgs84Validator);
+	const isETRS = validateLatLng(latlngStr, etrsTm35FinValidator);
+	const isYKJ = validateLatLng(latlngStr, ykjValidator);
+	const isYKJGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, ykjGridStrictValidator);
+	const isETRSGrid = latlngStr[0].length === latlngStr[1].length && validateLatLng(latlngStr, etrsTm35FinGridStrictValidator);
+
+	let geometry: G.Point | G.Polygon = {
+		type: "Point",
+		coordinates: ((isYKJ)
+			? convert(latlng, "EPSG:2393")
+			: (isETRS)
+				? convert(latlng, "EPSG:3067")
+				: (isWGS84Coordinates)
+					? latlng
+					: []).reverse()
+	};
+
+	if (isYKJGrid || isETRSGrid) {
+		const validator = isYKJGrid ? ykjGridStrictValidator : etrsTm35FinGridStrictValidator;
+		const latStart = +validator[0].formatter(`${latlng[0]}`);
+		const latEnd = +validator[0].formatter(`${latlng[0] + 1}`);
+
+		const lngStart = +validator[1].formatter(`${latlng[1]}`);
+		const lngEnd = +validator[1].formatter(`${latlng[1] + 1}`);
+
+		geometry = {
+			type: "Polygon",
+			coordinates: [[
+				[latStart, lngStart],
+				[latStart, lngEnd],
+				[latEnd, lngEnd],
+				[latEnd, lngStart],
+				[latStart, lngStart]
+			].map(coordinatePair => reverseCoordinate(convert(coordinatePair, isYKJGrid ? "EPSG:2393" : "EPSG:3067")))]
+		};
+	}
+
+	return {
+		type: "Feature",
+		geometry,
+		properties: {}
+	};
+
+}

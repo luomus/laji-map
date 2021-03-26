@@ -28,6 +28,7 @@
 * Data layers are ordered on map, draw on top
 
 ## 3.0.0
+** BREAKING CHANGES **
 * `tileLayersChange` event data isn't inline inside the event, but under `tileLayers` property
 
 ## 2.1.1

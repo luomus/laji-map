@@ -197,18 +197,26 @@ class TilelayersControlPageObject {
 	$getButton() {
 		return $(".leaflet-control-layers-toggle");
 	}
+	showList() {
+		return browser.actions().mouseMove(this.$getButton()).perform();
+	}
 	$getFinnishList() {
 		return this.$getContainer().$(".finnish-list");
 	}
 	$getWorldList() {
 		return this.$getContainer().$(".world-list");
 	}
+	selectFinnishList() {
+		return this.$getFinnishList().$("legend").click();
+	}
+	selectWorldList() {
+		return this.$getWorldList().$("legend").click();
+	}
 	$getOverlayList() {
 		return this.$getContainer().$(".overlay-list");
 	}
-	async $getLayerElement(name) {
-		const label = await this.mapPO.e(`translations.${utils.capitalizeFirstLetter(name)}`) as string;
-		return this.$getContainer().element(by.cssContainingText("span", label)).element(by.xpath(".."));
+	$getLayerElement(name) {
+		return this.$getContainer().$(`#${name}`);
 	}
 }
 
@@ -219,7 +227,10 @@ export const createMap = async (options?) => {
 };
 
 export const ykjToWgs84 = (latLng) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");
-export const etrsToWgs84 = (latLng) => utils.convertLatLng(latLng, "+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84");
+export const etrsToWgs84 = (latLng) => utils.convertLatLng(
+	latLng,
+	"+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84"
+);
 
 export class PointTraveller {
 	x: number;

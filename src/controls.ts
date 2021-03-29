@@ -1005,6 +1005,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			createListItem(name: string, layerOptions: TileLayerOptions, available: boolean) {
 				const li = document.createElement("li");
+				li.id = name;
 				const checkbox = document.createElement("input");
 				checkbox.type = "checkbox";
 				checkbox.addEventListener("change", (e) => {

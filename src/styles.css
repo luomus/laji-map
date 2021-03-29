@@ -540,6 +540,8 @@
 .laji-map .laji-map-control-layers fieldset:nth-child(2).nonactive-list {
 	padding-top: 0px;
 	margin-top: 0px;
+	padding-bottom: 0px;
+	margin-bottom: 0px;
 }
 .laji-map .laji-map-control-layers fieldset:nth-child(2).nonactive-list legend {
 	border-bottom-left-radius: 2px;
@@ -555,7 +557,7 @@
 	margin-bottom: 0px;
 }
 .laji-map .laji-map-control-layers fieldset:nth-child(2).active-list {
-	margin-top: 0px;
+	margin-top: -5px;
 	padding-bottom: 0px;
 }
 .laji-map .laji-map-control-layers legend {

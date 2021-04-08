@@ -345,11 +345,6 @@ export default {
 		en: "Finnish Uniform Grid legends",
 		sv: "EKS rutnät beskrivningar"
 	},
-	pohjakartta: {
-		fi: "Suomen pohjakartta",
-		en: "Base map of Finland",
-		sv: "Finlands baskarta"
-	},
 	interval: {
 		fi: "Väli",
 		en: "Interval",

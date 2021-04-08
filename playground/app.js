@@ -147,6 +147,7 @@ class App {
 		this.activeIdx = 0;
 
 		const demoOptions = {
+			availableTileLayerNamesBlacklist: [],
 			popupOnHover: true,
 			center: {
 				"lat": 79.3499057749654,

@@ -235,7 +235,6 @@ export default class LajiMap {
 	_tileLayersSet: boolean;
 	activeProjName: TileLayersOptions["active"];
 	_tileLayerOrder = [
-		"pohjakartta",
 		"taustakartta",
 		"maastokartta",
 		"laser",
@@ -284,8 +283,7 @@ export default class LajiMap {
 			draw: false,
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
-			viewLocked: false,
-			availableTileLayerNamesBlacklist: [TileLayerName.pohjakartta]
+			viewLocked: false
 		};
 
 		this.options = {...options, ...props};
@@ -718,14 +716,6 @@ export default class LajiMap {
 
 			this.finnishTileLayers = {
 				...this.finnishTileLayers,
-				pohjakartta: L.tileLayer.wms("https://avaa.tdata.fi/geoserver/osm_finland/gwc/service/wms?", {
-					layers: "osm_finland:Sea",
-					maxZoom: 14,
-					format: "image/png",
-					transparent: false,
-					version: "1.1.0",
-					attribution : mmlAttribution
-				}),
 				taustakartta: getMMLLayer("taustakartta"),
 				maastokartta: getMMLLayer("maastokartta"),
 				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
@@ -1092,7 +1082,6 @@ export default class LajiMap {
 		return [
 			this.tileLayers.maastokartta,
 			this.tileLayers.taustakartta,
-			this.tileLayers.pohjakartta,
 			this.tileLayers.ortokuva,
 			this.tileLayers.laser
 		];

@@ -137,7 +137,6 @@ export enum Lang {
 export enum TileLayerName {
 	maastokartta = "maastokartta",
 	taustakartta = "taustakartta",
-	pohjakartta = "pohjakartta",
 	ortokuva = "ortokuva",
 	laser = "laser",
 	openStreetMap = "openStreetMap",

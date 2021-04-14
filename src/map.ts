@@ -3364,7 +3364,7 @@ export default class LajiMap {
 	_getDefaultDataClusterStyle = (item) => () => {
 		let color = item.editable ? EDITABLE_DATA_LAYER_COLOR : DATA_LAYER_COLOR;
 		if (item.getFeatureStyle) {
-			const style = item.getFeatureStyle();
+			const style = item.getFeatureStyle({});
 			if (style.color) color = style.color;
 		}
 		return {color, opacity: 1};

@@ -85,8 +85,8 @@ export interface DataOptions {
 	onChange?(events: LajiMapEvent[]): void;
 	getFeatureStyle?(options: GetFeatureStyleOptions): PathOptions;
 	getDraftStyle?(dataIdx?: number): PathOptions;
-	getTooltip?(options: GetPopupOptions, callback: (content: string) => void): string;
-	getPopup?(options: GetPopupOptions, callback: (content: string) => void): string;
+	getTooltip?(options: GetPopupOptions, callback: (content: string | HTMLElement) => void): string;
+	getPopup?(options: GetPopupOptions, callback: (content: string | HTMLElement) => void): string;
 	single?: boolean;
 	showMeasurements?: boolean | ShowMeasurementsOptions;
 }

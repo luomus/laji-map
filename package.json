@@ -15,7 +15,7 @@
     "version": "./update-changelog.sh",
     "postversion": "npm publish && git push",
     "lint": "tslint src/*.ts",
-    "test": "HOST=127.0.0.1 PORT=4000 TEST_BROWSER=chrome protractor protractor.conf.js",
+    "test": "HOST=127.0.0.1 PORT=4000 protractor protractor.conf.js",
     "test:debug": "HEADLESS=false HOST=127.0.0.1 PORT=4000 node --inspect-brk node_modules/protractor/bin/protractor protractor.conf.js",
     "test:slow": "DELAY=500 HOST=127.0.0.1 PORT=4000 protractor protractor.conf.js",
     "test:multi": "TEST_BROWSER=multi HOST=127.0.0.1 PORT=4000 protractor protractor.conf.js",

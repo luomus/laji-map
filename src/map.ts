@@ -188,7 +188,7 @@ export default class LajiMap {
 	_disableDblClickZoom: boolean;
 	dictionary: {[lang: string]: any};
 	_domCleaners: (() => void)[];
-	_documentEvents: {[eventName: string]: EventListener};
+	_documentEvents: {[eventName: string]: EventListener[]} = {};
 	zoom: number;
 	center: L.LatLngExpression;
 	tileLayer: L.TileLayer;
@@ -1031,9 +1031,19 @@ export default class LajiMap {
 	}
 
 	_addDocumentEventListener(type: string, fn: EventListener) {
-		if (!this._documentEvents) this._documentEvents = {};
-		this._documentEvents[type] = fn;
+		if (!this._documentEvents[type]) {
+			this._documentEvents[type] = [];
+		}
+		this._documentEvents[type].push(fn);
 		document.addEventListener(type, fn);
+	}
+
+	_removeDocumentEventListener(type: string, fn: EventListener) {
+		if (!this._documentEvents[type]) {
+			return;
+		}
+		this._documentEvents[type] = this._documentEvents[type].filter(_fn => _fn !== fn);
+		document.removeEventListener(type, fn);
 	}
 
 	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type: string = "keydown") {
@@ -1520,9 +1530,7 @@ export default class LajiMap {
 		this.cleanDOM();
 		this.map && this.map.remove();
 		this.map = null;
-		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
-			document.removeEventListener(type, this._documentEvents[type]);
-		});
+		Object.keys(this._documentEvents).forEach(type => this._documentEvents[type].forEach(fn => document.removeEventListener(type, fn)));
 	}
 
 	cleanDOM() {

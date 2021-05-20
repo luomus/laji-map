@@ -1005,11 +1005,11 @@ export default class LajiMap {
 			}
 		});
 
-		this._addDocumentEventListener("click", (e: MouseEvent) => {
+		this._addDocumentEventListener("click",  (e: MouseEvent) => {
 			if (e.target !== this.rootElem && !this.rootElem.contains(<Element> e.target)) {
 				this._interceptClick();
 			}
-		});
+		}, true); // useCapture flag to make sure that this runs before other targets beneath in the DOM tree.
 
 		this._addDocumentEventListener("keydown", e => this.keyHandlerForType("keydown", e));
 		this._addDocumentEventListener("keyup", e => this.keyHandlerForType("keyup", e));
@@ -1030,12 +1030,12 @@ export default class LajiMap {
 		}
 	}
 
-	_addDocumentEventListener(type: string, fn: EventListener) {
+	_addDocumentEventListener(type: string, fn: EventListener, useCapture?: boolean) {
 		if (!this._documentEvents[type]) {
 			this._documentEvents[type] = [];
 		}
 		this._documentEvents[type].push(fn);
-		document.addEventListener(type, fn);
+		document.addEventListener(type, fn, useCapture);
 	}
 
 	_removeDocumentEventListener(type: string, fn: EventListener) {

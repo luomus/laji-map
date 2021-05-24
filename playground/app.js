@@ -4,8 +4,12 @@ import * as utils from "../src/utils";
 
 import "../src/styles";
 
-import properties from "../properties.json";
-
+let properties;
+try {
+	properties = require("../properties.json");
+} catch (e) {
+	console.warn("LajiMap warning: properties.json not found, google services won't work");
+}
 class App {
 	constructor() {
 
@@ -200,7 +204,7 @@ class App {
 		};
 
 		let options = {
-			googleApiKey: properties.googleApiKey,
+			googleApiKey: (properties || {}).googleApiKey,
 			rootElem: document.getElementById("root"),
 			lang: "fi",
 		};

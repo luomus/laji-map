@@ -153,7 +153,8 @@ export enum OverlayName {
 	biodiversityForestZones = "biodiversityForestZones",
 	ykjGrid = "ykjGrid",
 	ykjGridLabels = "ykjGridLabels",
-	kiinteistojaotus = "kiinteistojaotus"
+	kiinteistojaotus = "kiinteistojaotus",
+	kiinteistotunnukset = "kiinteistotunnukset"
 }
 
 export interface TileLayerOptions {

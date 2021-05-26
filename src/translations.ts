@@ -775,4 +775,9 @@ export default {
 		en: "Property boundaries",
 		sv: "Fastighetsgränser"
 	},
+	kiinteistotunnukset: {
+		fi: "Kiinteistötunnukset",
+		en: "Property ID",
+		sv: "Fastighetskoder"
+	},
 };

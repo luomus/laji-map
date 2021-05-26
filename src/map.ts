@@ -247,6 +247,7 @@ export default class LajiMap {
 		"geobiologicalProvinceBorders",
 		"municipalities",
 		"kiinteistojaotus",
+		"kiinteistotunnukset",
 		"forestVegetationZones",
 		"mireVegetationZones",
 		"threatenedSpeciesEvaluationZones",
@@ -824,6 +825,7 @@ export default class LajiMap {
 					attribution: sykeAttribution
 				}),
 				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
+				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};
@@ -1088,6 +1090,7 @@ export default class LajiMap {
 			this.tileLayers.taustakartta,
 			this.tileLayers.ortokuva,
 			this.tileLayers.kiinteistojaotus,
+			this.tileLayers.kiinteistotunnukset,
 			this.tileLayers.laser
 		];
 	}

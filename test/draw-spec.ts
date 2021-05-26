@@ -1,4 +1,4 @@
-import { createMap, PointTraveller } from "./test-utils";
+import { createMap, PointTraveller, SAFE_CLICK_WAIT } from "./test-utils";
 import * as utils from "laji-map/lib/utils";
 import { $, $$, browser } from "protractor";
 
@@ -72,11 +72,11 @@ describe("Drawing", () => {
 		const addLine = async () => {
 			await control.$getPolylineButton().click();
 			await map.clickAt(0, 0);
-			await browser.sleep(200);
+			await browser.sleep(SAFE_CLICK_WAIT);
 			await map.clickAt(10, 0);
-			await browser.sleep(200);
+			await browser.sleep(SAFE_CLICK_WAIT);
 			await map.clickAt(20, 10);
-			await browser.sleep(200);
+			await browser.sleep(SAFE_CLICK_WAIT);
 			await map.clickAt(20, 10);
 		};
 
@@ -136,7 +136,7 @@ describe("Drawing", () => {
 		const addPolygon = async () => {
 			await control.$getPolygonButton().click();
 			for (const c of coordinates) {
-				await browser.sleep(200);
+				await browser.sleep(SAFE_CLICK_WAIT);
 				await map.clickAt(...c);
 			}
 		};
@@ -176,7 +176,7 @@ describe("Drawing", () => {
 			await clear();
 			await control.$getPolygonButton().click();
 			for (const c of coordinates.slice(0).reverse()) {
-				await browser.sleep(200);
+				await browser.sleep(SAFE_CLICK_WAIT);
 				await map.clickAt(...c);
 			}
 			const geometry = await getLastGeometry();

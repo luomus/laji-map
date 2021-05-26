@@ -6,13 +6,13 @@ import { Options } from "laji-map/lib/map.defs";
 
 const joinParams = params => Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
 const navigateToMap = async (params = {}) => {
-	const url = `http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`
+	const url = `http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`;
 	VERBOSE && console.log(url);
 	await browser.get(url);
-}
+};
 
 function getControlButton(name) {
-	return $(`.button-${name.replace(/\./g, "_")}`)
+	return $(`.button-${name.replace(/\./g, "_")}`);
 }
 
 export class MapPageObject {
@@ -68,7 +68,7 @@ export class MapPageObject {
 			.perform();
 	}
 
-	async drawMarker(x = 0, y = 0) {
+	async drawMarker() {
 		await this.getDrawControl().$getMarkerButton().click();
 		await this.clickAt(0, 0);
 	}
@@ -78,11 +78,11 @@ export class MapPageObject {
 		await this.drag([0, 0], [10, 10]);
 	}
 
-	getCoordinateInputControl() {return new CoordinateInputControlPageObject()};
-	getCoordinateUploadControl() {return new CoordinateUploadControlPageObject()};
-	getCoordinateCopyControl() {return new CoordinateCopyControlPageObject()};
-	getDrawControl() {return new DrawControlPageObject()};
-	getTileLayersControl() {return new TilelayersControlPageObject(this)};
+	getCoordinateInputControl() { return new CoordinateInputControlPageObject(); }
+	getCoordinateUploadControl() { return new CoordinateUploadControlPageObject(); }
+	getCoordinateCopyControl() { return new CoordinateCopyControlPageObject(); }
+	getDrawControl() { return new DrawControlPageObject(); }
+	getTileLayersControl() { return new TilelayersControlPageObject(this); }
 }
 
 class CoordinateInputControlPageObject {
@@ -259,8 +259,8 @@ export class PointTraveller {
 		return this.return(this.initX, this.initY);
 	}
 
-	_x(curVal, amount) {return curVal + amount;}
-	_y(curVal, amount) {return curVal + amount;}
+	_x(curVal, amount) { return curVal + amount; }
+	_y(curVal, amount) { return curVal + amount; }
 }
 
 interface LatLngTravellerOptions {
@@ -296,3 +296,5 @@ export class LatLngTraveller extends PointTraveller {
 		return [this.y, this.x];
 	}
 }
+
+export const SAFE_CLICK_WAIT = 300;

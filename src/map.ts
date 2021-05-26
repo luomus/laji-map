@@ -188,7 +188,7 @@ export default class LajiMap {
 	_disableDblClickZoom: boolean;
 	dictionary: {[lang: string]: any};
 	_domCleaners: (() => void)[];
-	_documentEvents: {[eventName: string]: EventListener};
+	_documentEvents: {[eventName: string]: EventListener[]} = {};
 	zoom: number;
 	center: L.LatLngExpression;
 	tileLayer: L.TileLayer;
@@ -1011,11 +1011,11 @@ export default class LajiMap {
 			}
 		});
 
-		this._addDocumentEventListener("click", (e: MouseEvent) => {
+		this._addDocumentEventListener("click",  (e: MouseEvent) => {
 			if (e.target !== this.rootElem && !this.rootElem.contains(<Element> e.target)) {
 				this._interceptClick();
 			}
-		});
+		}, true); // useCapture flag to make sure that this runs before other targets beneath in the DOM tree.
 
 		this._addDocumentEventListener("keydown", e => this.keyHandlerForType("keydown", e));
 		this._addDocumentEventListener("keyup", e => this.keyHandlerForType("keyup", e));
@@ -1036,10 +1036,20 @@ export default class LajiMap {
 		}
 	}
 
-	_addDocumentEventListener(type: string, fn: EventListener) {
-		if (!this._documentEvents) this._documentEvents = {};
-		this._documentEvents[type] = fn;
-		document.addEventListener(type, fn);
+	_addDocumentEventListener(type: string, fn: EventListener, useCapture?: boolean) {
+		if (!this._documentEvents[type]) {
+			this._documentEvents[type] = [];
+		}
+		this._documentEvents[type].push(fn);
+		document.addEventListener(type, fn, useCapture);
+	}
+
+	_removeDocumentEventListener(type: string, fn: EventListener) {
+		if (!this._documentEvents[type]) {
+			return;
+		}
+		this._documentEvents[type] = this._documentEvents[type].filter(_fn => _fn !== fn);
+		document.removeEventListener(type, fn);
 	}
 
 	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type: string = "keydown") {
@@ -1528,9 +1538,7 @@ export default class LajiMap {
 		this.cleanDOM();
 		this.map && this.map.remove();
 		this.map = null;
-		if (this._documentEvents) Object.keys(this._documentEvents).forEach(type => {
-			document.removeEventListener(type, this._documentEvents[type]);
-		});
+		Object.keys(this._documentEvents).forEach(type => this._documentEvents[type].forEach(fn => document.removeEventListener(type, fn)));
 	}
 
 	cleanDOM() {

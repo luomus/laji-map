@@ -769,5 +769,15 @@ export default {
 		fi: "Poistu kokoruututilasta",
 		en: "Exit fullscreen mode",
 		sv: "Avsluta helskärmsläge"
-	}
+	},
+	kiinteistojaotus: {
+		fi: "Kiinteistöjaot",
+		en: "Property boundaries",
+		sv: "Fastighetsgränser"
+	},
+	kiinteistotunnukset: {
+		fi: "Kiinteistötunnukset",
+		en: "Property ID",
+		sv: "Fastighetskoder"
+	},
 };

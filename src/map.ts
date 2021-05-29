@@ -246,10 +246,12 @@ export default class LajiMap {
 		"geobiologicalProvinces",
 		"geobiologicalProvinceBorders",
 		"municipalities",
+		"kiinteistojaotus",
+		"kiinteistotunnukset",
 		"forestVegetationZones",
 		"mireVegetationZones",
 		"threatenedSpeciesEvaluationZones",
-		"biodiversityForestZones",
+		"biodiversityForestZones"
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -702,8 +704,8 @@ export default class LajiMap {
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 
-			const getMMLLayer = (name, options: L.TileLayerOptions = {format: "png"}) =>
-				L.tileLayer(`https://proxy.laji.fi/mml_wmts/maasto/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
+			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions = {format: "png"}) =>
+				L.tileLayer(`https://proxy.laji.fi/mml_wmts/${layerService}/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
 				...options,
 				style: "default",
 				minZoom: 0,
@@ -714,11 +716,13 @@ export default class LajiMap {
 				attribution : mmlAttribution
 			});
 
+			const getMaastoLayer = getMMLLayer("maasto");
+
 			this.finnishTileLayers = {
 				...this.finnishTileLayers,
-				taustakartta: getMMLLayer("taustakartta"),
-				maastokartta: getMMLLayer("maastokartta"),
-				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
+				taustakartta: getMaastoLayer("taustakartta"),
+				maastokartta: getMaastoLayer("maastokartta"),
+				ortokuva: getMaastoLayer("ortokuva", {format: "jpg", maxZoom: 14}),
 				laser: L.tileLayer("https://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
 					maxZoom: 19,
 					minZoom: 0,
@@ -819,7 +823,9 @@ export default class LajiMap {
 					layers: "8",
 					defaultOpacity: 0.5,
 					attribution: sykeAttribution
-				})
+				}),
+				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
+				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};
@@ -1093,6 +1099,8 @@ export default class LajiMap {
 			this.tileLayers.maastokartta,
 			this.tileLayers.taustakartta,
 			this.tileLayers.ortokuva,
+			this.tileLayers.kiinteistojaotus,
+			this.tileLayers.kiinteistotunnukset,
 			this.tileLayers.laser
 		];
 	}

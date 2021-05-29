@@ -152,7 +152,9 @@ export enum OverlayName {
 	threatenedSpeciesEvaluationZones = "threatenedSpeciesEvaluationZones",
 	biodiversityForestZones = "biodiversityForestZones",
 	ykjGrid = "ykjGrid",
-	ykjGridLabels = "ykjGridLabels"
+	ykjGridLabels = "ykjGridLabels",
+	kiinteistojaotus = "kiinteistojaotus",
+	kiinteistotunnukset = "kiinteistotunnukset"
 }
 
 export interface TileLayerOptions {

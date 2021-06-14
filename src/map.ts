@@ -146,13 +146,13 @@ export default class LajiMap {
 	blockerElem: HTMLElement;
 	rootElem: HTMLElement;
 	translations: any;
-	data: Data[];
+	data: Data[] = [];
 	map: L.Map;
 	_onDrawReverse: (layer: DataItemLayer) => void;
 	_onDrawRemove: (layer: DataItemLayer) => void;
-	idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
-	idsToIdxs: {[dataIdx: number]: {[id: number]: number}};
-	idsToIdxTuples: {[id: number]: IdxTuple};
+	idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}} = [];
+	idsToIdxs: {[dataIdx: number]: {[id: number]: number}} = [];
+	idsToIdxTuples: {[id: number]: IdxTuple} = {};
 	editIdxTuple: IdxTuple;
 	drawing: boolean;
 	_drawHistoryPointer: number;
@@ -175,8 +175,8 @@ export default class LajiMap {
 	draw: Draw;
 	drawIdx: number;
 	_draftDrawLayer: DataItemLayer;
-	_idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}};
-	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}};
+	_idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}} = {};
+	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}} = {};
 	locate: [(event: L.LocationEvent) => void, (error: L.ErrorEvent) => void] | boolean;
 	_located: boolean;
 	popupOnHover: boolean;
@@ -187,7 +187,7 @@ export default class LajiMap {
 	_zoomToData: LajiMapFitBoundsOptions | boolean;
 	_disableDblClickZoom: boolean;
 	dictionary: {[lang: string]: any};
-	_domCleaners: (() => void)[];
+	_domCleaners: (() => void)[] = [];
 	_documentEvents: {[eventName: string]: EventListener[]} = {};
 	zoom: number;
 	center: L.LatLngExpression;
@@ -696,8 +696,6 @@ export default class LajiMap {
 			this.mmlProj.distance =  L.CRS.Earth.distance;
 			(<any> this.mmlProj).R = 6378137;
 
-			this.finnishTileLayers = {};
-
 			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer">&copy; ${text}</a>`;
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
@@ -715,7 +713,6 @@ export default class LajiMap {
 			});
 
 			this.finnishTileLayers = {
-				...this.finnishTileLayers,
 				taustakartta: getMMLLayer("taustakartta"),
 				maastokartta: getMMLLayer("maastokartta"),
 				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
@@ -834,12 +831,6 @@ export default class LajiMap {
 			}
 
 			this._initializeMapEvents();
-
-			this.idxsToIds = [];
-			this.idsToIdxs = [];
-			this.idsToIdxTuples = {};
-			this._idxsToHovered = {};
-			this._idxsToContextMenuOpen = {};
 
 			provide(this, "map");
 		} catch (e) {
@@ -1538,20 +1529,15 @@ export default class LajiMap {
 		safeRemove(this.rootElem, this.container);
 		safeRemove(this._dialogRoot, this.blockerElem);
 		if (this._closeDialog) this._closeDialog();
-		if (this._domCleaners) {
-			this._domCleaners.forEach(cleaner => cleaner());
-			this._domCleaners = [];
-		}
+		this._domCleaners.forEach(cleaner => cleaner());
+		this._domCleaners = [];
 	}
 
 	_addDomCleaner(fn: () => void) {
-		if (!this._domCleaners) this._domCleaners = [];
-
 		this._domCleaners.push(fn);
 	}
 
 	_removeDomCleaner(fn: () => void) {
-		if (!this._domCleaners) return;
 		this._domCleaners = this._domCleaners.filter(_fn => _fn !== fn);
 	}
 
@@ -1953,17 +1939,13 @@ export default class LajiMap {
 	setData(data: Data[] | Data) {
 		if (!depsProvided(this, "setData", arguments)) return;
 
-		if (!this.data) {
-			this.data = [];
-		} else {
-			this.data.forEach((item, idx) => {
-				(idx !== this.drawIdx && item) && item.groupContainer.clearLayers();
-			});
-			const draw = this.getDraw();
-			this.data = [];
-			if (draw) {
-				this.data[this.drawIdx] = draw;
-			}
+		this.data.forEach((item, idx) => {
+			(idx !== this.drawIdx && item) && item.groupContainer.clearLayers();
+		});
+		const draw = this.getDraw();
+		this.data = [];
+		if (draw) {
+			this.data[this.drawIdx] = draw;
 		}
 		if (!Array.isArray(data)) data = [data];
 		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));

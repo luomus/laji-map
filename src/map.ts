@@ -985,6 +985,9 @@ export default class LajiMap {
 				this.map.fire("mousemove", {latlng: this._mouseLatLng});
 			},
 			"moveend": () => {
+				if (!this.map) {
+					return;
+				}
 				if (this._viewCriticalSection) {
 					return;
 				}

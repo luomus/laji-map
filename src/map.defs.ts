@@ -147,6 +147,8 @@ export enum OverlayName {
 	geobiologicalProvinces = "geobiologicalProvinces",
 	geobiologicalProvinceBorders = "geobiologicalProvinceBorders",
 	municipalities = "municipalities",
+	counties = "counties",
+	ely = "ely",
 	forestVegetationZones = "forestVegetationZones",
 	mireVegetationZones = "mireVegetationZones",
 	threatenedSpeciesEvaluationZones = "threatenedSpeciesEvaluationZones",

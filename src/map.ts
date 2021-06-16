@@ -246,6 +246,8 @@ export default class LajiMap {
 		"geobiologicalProvinces",
 		"geobiologicalProvinceBorders",
 		"municipalities",
+		"counties",
+		"ely",
 		"forestVegetationZones",
 		"mireVegetationZones",
 		"threatenedSpeciesEvaluationZones",
@@ -776,7 +778,21 @@ export default class LajiMap {
 				}),
 				municipalities: L.tileLayer.wms(
 				"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
-					layers: "kunta1000k_2018",
+					layers: "kunta1000k",
+					transparent: true,
+					format: "image/png",
+					attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+				}),
+				counties: L.tileLayer.wms(
+				"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+					layers: "maakunta1000k",
+					transparent: true,
+					format: "image/png",
+					attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+				}),
+				ely: L.tileLayer.wms(
+				"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+					layers: "ely1000k",
 					transparent: true,
 					format: "image/png",
 					attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")

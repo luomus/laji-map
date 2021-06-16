@@ -769,5 +769,15 @@ export default {
 		fi: "Poistu kokoruututilasta",
 		en: "Exit fullscreen mode",
 		sv: "Avsluta helskärmsläge"
+	},
+	counties: {
+		fi: "Maakunnat",
+		en: "Counties",
+		sv: "Landskapar"
+	},
+	ely: {
+		fi: "ELY-alueet",
+		en: "ELY-areas",
+		sv: "ELY-områden"
 	}
 };

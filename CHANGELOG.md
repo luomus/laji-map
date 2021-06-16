@@ -1,3 +1,7 @@
+## 3.6.0
+* Municipalities layer is always up to date
+* Added county (maakunnat) & ELY area layers
+
 ## 3.5.0
 * Export tests to npm package
 

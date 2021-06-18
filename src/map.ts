@@ -2431,7 +2431,7 @@ export default class LajiMap {
 			const {markerPopupOffset = 40, featurePopupOffset = 5} = that;
 			const offset = (layer instanceof L.Marker) ? (-markerPopupOffset  || 0) : (-featurePopupOffset || 0);
 
-			that.popup = new (<any> L).Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
+			that.popup = new (<any> L).Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false, y_bound: 80 - offset })
 				.setContent(content)
 				.setLatLng(latlng)
 				.openOn(that.map);

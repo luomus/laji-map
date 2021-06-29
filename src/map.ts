@@ -718,7 +718,7 @@ export default class LajiMap {
 				taustakartta: getMMLLayer("taustakartta"),
 				maastokartta: getMMLLayer("maastokartta"),
 				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
-				laser: L.tileLayer("https://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
+				laser: L.tileLayer("https://proxy.laji.fi/mapant/wmts.php?z={z}&x={x}&y={y}", {
 					maxZoom: 19,
 					minZoom: 0,
 					tileSize: 256,

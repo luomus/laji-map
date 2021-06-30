@@ -1,6 +1,6 @@
 import * as L from "leaflet";
 import * as G from "geojson";
-import { GeoSearchControl } from "leaflet-geosearch";
+import { SearchControl } from "leaflet-geosearch";
 import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent, TileLayerOptions } from "./map.defs";
 import {
@@ -2066,10 +2066,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		provide(this, "contextMenu");
 	}
 
+	@dependsOn("geocodingProvider")
 	getGoogleGeocodingControl() {
-		const control = new GeoSearchControl({
+		if (!depsProvided(this, "getGoogleGeocodingControl", arguments)) return;
+		const control = new (SearchControl as any)({
 			provider: this.provider,
-			showmarker: false,
+			showMarker: false,
 			autoClose: true,
 			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,
 			notFoundMessage: this.translations.GeocodingSearchFail
@@ -2078,9 +2080,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		control.__proto__.onAdd = function(map) {
 			const container = onAdd.call(this, map);
 			L.DomEvent.disableClickPropagation(container);
-			const {resetButton} =  control.elements;
+			const {resetButton} = this;
 			resetButton.parentElement.removeChild(resetButton);
-			control.searchElement.elements.input.addEventListener("blur", () => {
+			control.searchElement.input.addEventListener("blur", () => {
 				setTimeout(() => control.closeResults(), 300);
 			});
 			return container;

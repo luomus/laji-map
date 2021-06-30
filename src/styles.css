@@ -595,3 +595,19 @@
 .laji-map .leaflet-measure-path-measurement {
 	font-size: 12px;
 }
+
+.laji-map .leaflet-control-geosearch a.leaflet-bar-part:before {
+	top: 18px;
+	left: 15px;
+	width: 8px;
+}
+.laji-map .leaflet-control-geosearch a.leaflet-bar-part:after {
+	top: 8px;
+	left: 8px;
+	width: 10px;
+	height: 10px;
+}
+.laji-map .leaflet-control-geosearch form {
+	height: 30px;
+	left: 35px;
+}

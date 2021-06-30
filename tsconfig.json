@@ -2,7 +2,9 @@
 	"compilerOptions": {
 		"outDir": "./tmp",
 		"target": "es5",
-		"module": "commonjs",
+		"module": "es6",
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
 		"moduleResolution": "node",
 		"experimentalDecorators": true,
 		"allowJs": true,
@@ -14,5 +16,5 @@
 	},
 	"include": [
 		"./src/**/*"
-  ]
+	]
 }

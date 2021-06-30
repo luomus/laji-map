@@ -18,7 +18,7 @@ module.exports = {
 		rules: [
 			{
 				test: /\.(j|t)s$/,
-				loader: "awesome-typescript-loader?module=es6",
+				loader: "ts-loader",
 				include: [
 					path.join(__dirname, "src"),
 					path.join(__dirname, "playground")

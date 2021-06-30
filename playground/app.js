@@ -1,8 +1,9 @@
 import LajiMap from "../src/index";
-import lineTransects from "./data.json";
 import * as utils from "../src/utils";
 
 import "../src/styles";
+
+const lineTransects = require( "./data.json");
 
 let properties;
 try {

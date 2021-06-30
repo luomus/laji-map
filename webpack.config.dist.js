@@ -1,5 +1,4 @@
 var path = require("path");
-var webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
@@ -22,7 +21,7 @@ module.exports = {
 		rules: [
 			{
 				test: /\.(t|j)s$/,
-				loader: "awesome-typescript-loader?module=es6",
+				loader: "ts-loader",
 				include: [
 					path.join(__dirname, "src")
 				]
@@ -60,15 +59,15 @@ module.exports = {
 		splitChunks: {
 			cacheGroups: {
 				styles: {
-					name: 'styles',
+					name: "styles",
 					test: /\.css$/,
-					chunks: 'all',
+					chunks: "all",
 					enforce: true
 				}
 			}
 		}
 	},
 	resolve: {
-			extensions: ['.ts', '.js']
+		extensions: [".ts", ".js"]
 	}
 };

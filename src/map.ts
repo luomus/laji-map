@@ -229,7 +229,7 @@ export default class LajiMap {
 	_tooltip: L.Draw.Tooltip;
 	_tooltipTranslationHook: () =>  void;
 	_onMouseMove: (e: any) => void;
-	provider: any;
+	provider: GoogleProvider;
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection = 0;
 	_tileLayersSet: boolean;

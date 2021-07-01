@@ -211,7 +211,7 @@ class App {
 		};
 
 		if (query.testMode) {
-			delete query.testMode
+			delete query.testMode;
 		} else {
 			options = {
 				...options,

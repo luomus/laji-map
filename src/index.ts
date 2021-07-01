@@ -1,4 +1,4 @@
-/* tslint:disable */
+/* eslint-disable */
 import * as LM from "./map.defs";
 import * as C from "./controls.defs";
 import * as LT from "./line-transect.defs";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
 	Contains some local changes for typescript to work!
 	~ Olli

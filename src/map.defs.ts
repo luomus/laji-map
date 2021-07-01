@@ -8,7 +8,7 @@ export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
 }
-import { CRSString, CoordinateSystem } from "./utils";
+import { CoordinateSystem } from "./utils";
 
 export interface ZoomToDataOptions extends LajiMapFitBoundsOptions {
 	dataIdxs?: number[];
@@ -174,14 +174,14 @@ export interface TileLayersOptions {
 		[layerName in LayerNames]?: TileLayerOptions | boolean
 	};
 	active?: ActiveProj;
-};
+}
 
 export interface InternalTileLayersOptions {
 	layers: {
 		[layerName in LayerNames]?: TileLayerOptions
 	};
 	active?: ActiveProj;
-};
+}
 
 export interface Options extends MapOptions {
 	rootElem?: HTMLElement;

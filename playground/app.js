@@ -1,13 +1,12 @@
-import LajiMap from "../src/index";
-import * as utils from "../src/utils";
+import LajiMap from "../src/index.ts";
+import * as utils from "../src/utils.ts";
 
-import "../src/styles";
-
-const lineTransects = require( "./data.json");
+import "../src/styles.ts";
+import lineTransects from "./data.json";
 
 let properties;
 try {
-	properties = require("../properties.json");
+	properties = import("../properties.json");
 } catch (e) {
 	console.warn("LajiMap warning: properties.json not found, google services won't work");
 }

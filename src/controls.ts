@@ -5,13 +5,11 @@ import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent, TileLayerOptions } from "./map.defs";
 import {
 	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
-	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, etrsTm35FinGridStrictValidator, wgs84Validator,
-	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
-	capitalizeFirstLetter, renderLajiMapError, reverseCoordinate, latLngGridToGeoJSON
+	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, stringifyLajiMapError, createTextInput, createTextArea,
+	isObject, capitalizeFirstLetter, renderLajiMapError, latLngGridToGeoJSON
 } from "./utils";
 import {
 	ESC,
-	ONLY_MML_OVERLAY_NAMES,
 	EPSG2393String,
 	EPSG2393WKTString,
 	EPSG3067String,
@@ -29,23 +27,7 @@ function getSubControlName(name, subName) {
 }
 
 type Constructor<LM> = new(...args: any[]) => LM;
-export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithControls extends Base { // tslint:disable-line
-
-	controls: L.Control[];
-	_customControls: CustomControl[];
-	layerControl: L.Control.Layers;
-	controlItems: ControlOptions[];
-	_controlItemsByName: {[controlName: string]: ControlOptions};
-	activeControl: L.Control;
-	controlSettings: InternalControlsOptions;
-	drawControl: L.Control.Draw;
-	_locateOn: boolean;
-	_controlButtons: {[controlName: string]: HTMLElement};
-	_opacitySetBySlide: boolean;
-	_slider: any;
-	_contextMenuItems: {[buttonName: string]: HTMLElement};
-	_internalTileLayersUpdate: boolean;
-
+export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithControls extends Base {
 	getOptionKeys() {
 		return {
 			...super.getOptionKeys(),
@@ -54,7 +36,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			customControls: ["setCustomControls", () => {
 				return this._customControls === undefined
 					? this._customControls
-					: this._customControls.map(({_custom, ...rest}) => {
+					: this._customControls.map(({_custom, ...rest}) => { // eslint-disable-line @typescript-eslint/no-unused-vars
 						return {...rest};
 					});
 			}]
@@ -277,7 +259,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "clear",
 						text: this.translations.ClearMap,
 						iconCls: "glyphicon glyphicon-trash",
-						fn: (...params) => {
+						fn: () => {
 							const container = document.createElement("div");
 							const translateHooks = [];
 
@@ -318,10 +300,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "delete",
 						text: this.translations.DeleteFeature,
 						iconCls: "glyphicon glyphicon-remove-sign",
-						fn: (...params) => {
+						fn: () => {
 							this._startDrawRemove();
 						},
-						finishFn: (...params) => this._finishDrawRemove(),
+						finishFn: () => this._finishDrawRemove(),
 						dependencies: [
 							() => this.drawIsEditable()
 						]
@@ -331,10 +313,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "reverse",
 						iconCls: "glyphicon glyphicon-sort",
 						text: this.translations.ReverseFeature,
-						fn: (...params) => {
+						fn: () => {
 							this._startDrawReverse();
 						},
-						finishFn: (...params) => this._finishDrawReverse(),
+						finishFn: () => this._finishDrawReverse(),
 						dependencies: [
 							() => this.getDraw().polyline !== false,
 							() => this.drawIsEditable()
@@ -587,7 +569,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					return;
 				}
 
-				const Control = L.Control.extend({ // tslint:disable-line
+				const Control = L.Control.extend({
 					options: position ? {position} : undefined,
 					onAdd,
 					_createActionHandler,
@@ -604,7 +586,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		function removeHref(className) {
 			const elems = document.getElementsByClassName(className);
-			for (let i = 0; i < elems.length; i++) {  // tslint:disable-line
+			for (let i = 0; i < elems.length; i++) {
 				const elem = elems[i];
 				elem.removeAttribute("href");
 			}
@@ -651,7 +633,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	setControlsWarn(controlSettings) {
-		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'"); // tslint:disable-line
+		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'"); // eslint-disable-line max-len
 		this.setControls(controlSettings);
 	}
 
@@ -717,7 +699,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 			});
 			if ("coordinateInput" in subControlSettings) {
-				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput"); // tslint:disable-line
+				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput");
 			}
 
 			for (let setting in subControlSettings) {
@@ -854,7 +836,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	_getCoordinatesControl(): L.Control {
 		const that = this;
-		const CoordinateControl = L.Control.extend({ // tslint:disable-line
+		const CoordinateControl = L.Control.extend({
 			options: {
 				position: "bottomleft"
 			},
@@ -1008,7 +990,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				li.id = name;
 				const checkbox = document.createElement("input");
 				checkbox.type = "checkbox";
-				checkbox.addEventListener("change", (e) => {
+				checkbox.addEventListener("change", () => {
 					const {layers} = that._tileLayers;
 					const _layerOptions = layers[name];
 					const _layer = {...that.tileLayers, ...that.overlaysByNames}[name];
@@ -1066,8 +1048,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					const active = that.finnishTileLayers[name]
 						? "finnish"
 						: that.worldTileLayers[name]
-						? "world"
-						: that._tileLayers.active;
+							? "world"
+							: that._tileLayers.active;
 					const prevActive = that._tileLayers.active || "finnish";
 					if (!_layerOptions.visible || active !== prevActive) {
 						that.setTileLayers({
@@ -1141,7 +1123,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				};
 				return [list, translationHook];
 			},
-			getFinnishList(createNew = false): [HTMLElement, () => void]  {
+			getFinnishList(): [HTMLElement, () => void]  {
 				const availableLayers = that.getAvailableFinnishTileLayers();
 				if (Object.keys(availableLayers).length === 0) {
 					this.finnishList = undefined;
@@ -1280,8 +1262,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					}
 				});
 
-				lists.filter(([oldList, list]) => !oldList && list).forEach(([oldList, list, active]) => {
-					list.querySelector("legend").addEventListener("click", ({target: {tagName}}) => {
+				lists.filter(([oldList, list]) => !oldList && list).forEach(([, list, active]) => {
+					list.querySelector("legend").addEventListener("click", () => {
 						if (this._finnishDisabled) {
 							return;
 						}
@@ -1365,7 +1347,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	getZoomControl(): L.Control.Zoom {
 		const that = this;
-		const ZoomControl = L.Control.Zoom.extend({ // tslint:disable-line
+		const ZoomControl = L.Control.Zoom.extend({
 			onZoomClick() {
 				that.map.fire("controlClick", {name: "zoom"});
 			},
@@ -1556,9 +1538,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			let help = `${that.translations.Enter} ${that.translations.yKJRectangle}`;
 			const rectangleAllowed = that.getDraw().rectangle || that.getDraw().polygon;
 			const {or} = that.translations;
-			help += (rectangleAllowed && !that.getDraw().marker ? ` ${or} ` : `, `) + that.translations.ETRSRectangle;
+			help += (rectangleAllowed && !that.getDraw().marker ? ` ${or} ` : ", ") + that.translations.ETRSRectangle;
 			if (that.getDraw().marker) {
-				help += ` ${or} ${rectangleAllowed ? that.translations.wGS84PointCoordinates : that.translations.WGS84Coordinates}`; // tslint:disable-line
+				help += ` ${or} ${rectangleAllowed ? that.translations.wGS84PointCoordinates : that.translations.WGS84Coordinates}`;
 			}
 			help += ".";
 			return help;
@@ -1570,7 +1552,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			validate,
 			elem: formatDetectorElem,
 			unmount: unmountFormatDetector
-		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowGrid: that.getDraw().rectangle || that.getDraw().polygon});
+		} = this.createFormatDetectorElem({
+			displayFormat: false,
+			displayErrors: false,
+			allowGrid: that.getDraw().rectangle || that.getDraw().polygon
+		});
 
 		const inputValues = ["", ""];
 		[latInput, lngInput].forEach((input, i) => {
@@ -1601,7 +1587,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 				inputValues[i] = value;
 
-				const {valid, geoJSON} = validate(`${inputValues[0]}:${inputValues[1]}/`);
+				const {valid} = validate(`${inputValues[0]}:${inputValues[1]}/`);
 				if (valid) {
 					submitButton.removeAttribute("disabled");
 				} else {
@@ -1609,10 +1595,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 			};
 		});
-
-		function convert(coords, crs: CRSString = "EPSG:2393") {
-			return convertLatLng(coords, crs, "WGS84");
-		}
 
 		container.addEventListener("submit", e => {
 			e.preventDefault();
@@ -1813,7 +1795,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			[geoJSONWarningsContainer, geoJSONErrorsContainer].forEach(container => {
 				container.style.display = "none";
 				while (container.firstChild) {
-						container.removeChild(container.firstChild);
+					container.removeChild(container.firstChild);
 				}
 			});
 
@@ -1847,7 +1829,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				} else if (displayErrors && e._lajiMapGeoJSONConversionError) {
 					fixedGeoJSON = e.geoJSON;
 					e.errors.forEach(_e => {
-						const {translationKey, fixable, path} = _e;
+						const {fixable} = _e;
 						const target = fixable ? geoJSONWarningsContainer : geoJSONErrorsContainer;
 						const firstWarning = fixable && !hasWarnings;
 						if (fixable) {
@@ -2025,7 +2007,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this.getFeatureTypes().forEach(featureType => {
 			const text = join("Draw", featureType);
 
-			if (this.getDraw() && this.drawIsEditable() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
+			if (this.getDraw()
+				&& this.drawIsEditable()
+				&& this.getDraw()[featureType] !== false
+				&& this.controlSettings.draw[featureType] !== false) {
 				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
 					text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
@@ -2047,7 +2032,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({
 						...control,
 						callback: () =>
-						(<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
+							(<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
 					});
 					groupAdded = true;
 				}
@@ -2127,4 +2112,4 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	shouldNotPreventScrolling(): boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
 	}
-} return LajiMapWithControls; } // tslint:disable-line
+} return LajiMapWithControls; }

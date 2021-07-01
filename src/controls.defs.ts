@@ -1,4 +1,3 @@
-import * as G from "geojson";
 import {Control} from "leaflet";
 
 export interface ControlOptions {

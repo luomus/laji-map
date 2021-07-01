@@ -43,8 +43,10 @@ exports.config = {
 	maxSessions: 4,
 	SELENIUM_PROMISE_MANAGER: false,
 	onPrepare: async () => {
-		require('ts-node').register({
-			project: require('path').join(__dirname, './tsconfig.json')
+		const path = await import("path");
+		const tsNode = await import("ts-node");
+		tsNode.register({
+			project: path.join(path.resolve(),  "./tsconfig.json")
 		});
 
 		browser.waitForAngularEnabled(false);

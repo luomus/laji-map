@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"outDir": "./tmp",
 		"target": "es6",
-		"module": "commonjs",
+		"module": "es6",
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"moduleResolution": "node",

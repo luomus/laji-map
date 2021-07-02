@@ -46,7 +46,7 @@ exports.config = {
 		const path = await import("path");
 		const tsNode = await import("ts-node");
 		tsNode.register({
-			project: path.join(path.resolve(),  "./tsconfig.json")
+			project: path.join(path.resolve(),  "./tsconfig.test-run.json")
 		});
 
 		browser.waitForAngularEnabled(false);

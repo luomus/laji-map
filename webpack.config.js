@@ -1,9 +1,9 @@
-//var path = require("path");
-//var webpack = require("webpack");
-import path from "path";
-import webpack from "webpack";
+var path = require("path");
+var webpack = require("webpack");
+//import path from "path";
+//import webpack from "webpack";
 
-export default {
+module.exports = {
 	mode: "development",
 	devtool: "eval",
 	entry: [

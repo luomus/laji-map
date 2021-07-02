@@ -199,7 +199,7 @@ class App {
 			draw: this.drawOptions,
 			data: this.data,
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
-			locate: {on: false, onLocationFound: () => console.log("FOUND")},
+			locate: {on: false, onLocationFound: () => console.info("FOUND")},
 			//clickBeforeZoomAndPan: true,
 		};
 

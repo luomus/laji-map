@@ -1,5 +1,5 @@
 import { createMap, PointTraveller, SAFE_CLICK_WAIT } from "./test-utils";
-import * as utils from "../src/utils";
+import * as utils from "laji-map/lib/utils";
 import { $, $$, browser } from "protractor";
 
 describe("Drawing", () => {

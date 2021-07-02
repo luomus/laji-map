@@ -379,7 +379,6 @@ export default class LajiMap {
 		this.abortDrawing = this.abortDrawing.bind(this);
 		this.setFullscreenOff = this.setFullscreenOff.bind(this);
 		this._initialized = true;
-		console.log("main constructed");
 	}
 
 	getOptionKeys(): any {
@@ -928,7 +927,6 @@ export default class LajiMap {
 
 			this._initializeMapEvents();
 
-			console.log("provide map");
 			provide(this, "map");
 		} catch (e) {
 			if (e._lajiMapError) {
@@ -3694,7 +3692,6 @@ export default class LajiMap {
 	}
 
 	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) { // eslint-disable-line @typescript-eslint/no-unused-vars
-		console.log("map set linetransect geom");
 		console.warn("line transect mixin not included!");
 	}
 

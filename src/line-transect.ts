@@ -13,7 +13,7 @@ import { isPolyline } from "./map";
 import LajiMap from "./map";
 import {
 	LineTransectEvent,
-	LineTransectFeature, LineTransectGeometry, LineTransectHistoryEntry, LineTransectIdx, LineTransectOptions,
+	LineTransectFeature, LineTransectGeometry, LineTransectIdx, LineTransectOptions,
 	PointIdxTuple,
 	SegmentIdxTuple, SegmentLayer, SegmentLayers, TooltipMessages
 } from "./line-transect.defs";
@@ -82,8 +82,6 @@ type Constructor<LM> = new(...args: any[]) => LM;
 export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithLineTransect extends Base {
 	constructor(...props: any[]) {
 		super(...props);
-		console.log("constructed");
-		console.log(this._allPoints);
 		this._startLTDragHandler = this._startLTDragHandler.bind(this);
 		this._stopLTDragHandler = this._stopLTDragHandler.bind(this);
 		this._dragLTHandler = this._dragLTHandler.bind(this);
@@ -176,7 +174,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 		this._LTEditable = this._LTPrintMode ? false : editable;
 
-		console.log("SET LINE TRANS");
 		this.setLineTransectGeometry(feature.geometry);
 		if (this._LTEditable) {
 			if (this._origLineTransect) {
@@ -207,7 +204,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	}
 
 	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) {
-		console.log("SET LINETRANST GEOM");
 		if (events) {
 			if (this._LTHistoryPointer < this._LTHistory.length - 1) {
 				this._LTHistory = this._LTHistory.splice(0).splice(0, this._LTHistoryPointer + 1);
@@ -382,15 +378,10 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		this._allSegments = flattenMatrix(lineLayers);
 		this._allCorridors = flattenMatrix(corridorLayers);
 		this._allPoints = flattenMatrix(pointLayers);
-		console.log("!!", this._allPoints);
-		setTimeout(() => {
-			console.log("!!", this._allPoints);
-		}, 0);
 
 		this._lineLayerGroup = L.featureGroup(this._allSegments).addTo(this.map);
 		this._corridorLayerGroup = L.featureGroup(this._allCorridors).addTo(this.map);
 		this._pointLayerGroup = L.featureGroup(this._allPoints).addTo(this.map);
-		console.log(this._allPoints);
 
 		this._LTGroups = this._lineLayers.map((_, lineIdx) => {
 			return L.featureGroup([
@@ -731,7 +722,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			) {
 				return;
 			}
-			console.log(this._allPoints);
 			const closestPoint: L.CircleMarker =
 				<L.CircleMarker> L.GeometryUtil.closestLayer(this.map, this._allPoints, latlng).layer;
 			const {idxTuple} = this.getIdxsFromLayer(closestPoint);
@@ -1194,7 +1184,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		}
 
 		if (this._LTPointIdxTupleIsGroupFirstOrLast(idxs)) {
-			console.log("?", this._allPoints);
 			const closestPoint: L.CircleMarker =
 				<L.CircleMarker> L.GeometryUtil.closestLayer(this.map, this._allPoints.filter(p => p !== point), latlng).layer;
 			const closestIdxTuple = this._pointIdsToIdxTuples[L.Util.stamp(closestPoint)];

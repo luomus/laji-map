@@ -17,10 +17,7 @@ import {
 } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import * as noUiSlider from "nouislider";
-import {
-	ControlOptions, ControlsOptions, CustomControl, DrawControlOptions,
-	InternalControlsOptions
-} from "./controls.defs";
+import { ControlsOptions, CustomControl, DrawControlOptions, InternalControlsOptions } from "./controls.defs";
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;

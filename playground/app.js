@@ -10,6 +10,7 @@ try {
 } catch (e) {
 	console.warn("LajiMap warning: properties.json not found, google services won't work");
 }
+
 class App {
 	constructor() {
 

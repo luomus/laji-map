@@ -5,11 +5,6 @@ import "../src/styles.ts";
 import lineTransects from "./data.json";
 
 let properties;
-try {
-	properties = import("../properties.json");
-} catch (e) {
-	console.warn("LajiMap warning: properties.json not found, google services won't work");
-}
 
 class App {
 	constructor() {
@@ -290,9 +285,15 @@ class App {
 	}
 }
 
-const app = new App();
-if (process.env.NODE_ENV !== "production") {
-	window.map = app.map;
-	window.lajiMapUtils = utils;
-}
-
+(async () => {
+	try {
+		properties = await import("../properties.json");
+	} catch (e) {
+		console.warn("LajiMap warning: properties.json not found, google services won't work");
+	}
+	const app = new App();
+	if (process.env.NODE_ENV !== "production") {
+		window.map = app.map;
+		window.lajiMapUtils = utils;
+	}
+})();

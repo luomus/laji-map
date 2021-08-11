@@ -60,5 +60,4 @@ export default function _SearchControl(...options: any[]) {
 		return container;
 	};
 	return control;
-
 }

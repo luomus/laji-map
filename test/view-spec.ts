@@ -1,6 +1,5 @@
 import { createMap, LatLngTraveller } from "./test-utils";
 
-
 // Internal logic tested because the later tests rely heavily on it.
 describe("Internal logic of zoom level normalization", () => {
 	let map;
@@ -18,12 +17,12 @@ describe("Internal logic of zoom level normalization", () => {
 
 	it("getNormalizedZoom() returns updated zoom after changing zoom", async () => {
 		map = await createMap({tileLayerName: "taustakartta", zoom: 0});
-		await map.e("setNormalizedZoom(2)")
+		await map.e("setNormalizedZoom(2)");
 		await expect(await map.e("getNormalizedZoom()")).toBe(2);
 	});
 	it("getNormalizedZoom() returns updated zoom after changing projection", async () => {
 		map = await createMap({tileLayerName: "taustakartta", zoom: 0});
-		await map.e("setTileLayerByName(\"openStreetMap\")")
+		await map.e("setTileLayerByName(\"openStreetMap\")");
 		await expect(await map.e("getNormalizedZoom()")).toBe(0);
 	});
 });
@@ -146,9 +145,9 @@ describe("Zooms to data", () => {
 			});
 
 			const bounds = await map.e("map.getBounds()") as any;
-			await expect(bounds._northEast.lat).toBeGreaterThan(minNorth);
+			await expect(bounds._northEast.lat).toBeGreaterThan(minNorth - 0.01); // 0.01 for Firefox inaccuracy
 			await expect(bounds._southWest.lat).toBeLessThan(minNorth);
-			await expect(bounds._northEast.lat).toBeGreaterThan(north);
+			await expect(bounds._northEast.lat).toBeGreaterThan(north - 0.01); // 0.01 for Firefox inaccuracy
 			await expect(bounds._southWest.lat).toBeLessThan(north);
 			await expect(bounds._northEast.lng).toBeGreaterThan(minEast);
 			await expect(bounds._southWest.lng).toBeLessThan(minEast);
@@ -163,9 +162,9 @@ describe("Zooms to data", () => {
 			});
 
 			const bounds = await map.e("map.getBounds()") as any;
-			await expect(bounds._northEast.lat).toBeGreaterThan(minNorth);
+			await expect(bounds._northEast.lat).toBeGreaterThan(minNorth - 0.01); // 0.01 for Firefox inaccuracy
 			await expect(bounds._southWest.lat).toBeLessThan(minNorth);
-			await expect(bounds._northEast.lat).toBeGreaterThan(north);
+			await expect(bounds._northEast.lat).toBeGreaterThan(north - 0.01); // 0.01 for Firefox inaccuracy
 			await expect(bounds._southWest.lat).toBeLessThan(north);
 			await expect(bounds._northEast.lng).toBeGreaterThan(minEast);
 			await expect(bounds._southWest.lng).toBeLessThan(minEast);
@@ -176,7 +175,6 @@ describe("Zooms to data", () => {
 });
 
 it("Falls back to center when no data and zoomToData given", async () => {
-	const data = {type: "FeatureCollection", features: []};
 	const latLng = {lat: 25, lng: 60};
 	const options = {
 		center: latLng,
@@ -194,7 +192,6 @@ it("Falls back to center when no data and zoomToData given", async () => {
 });
 
 it("Falls back to center when no zoomToData given", async () => {
-	const data = {type: "FeatureCollection", features: []};
 	const latLng = {lat: 25, lng: 60};
 	const options = {
 		center: latLng,

@@ -9,7 +9,9 @@ import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import "leaflet-measure-path";
+import { Provider } from "leaflet-geosearch/lib/providers/provider";
 import { GoogleProvider } from "leaflet-geosearch";
+import MMLProvider from "./mml-provider";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
 	combineColors, circleToPolygon, LajiMapError,
@@ -230,7 +232,7 @@ export default class LajiMap {
 	_tooltip: L.Draw.Tooltip;
 	_tooltipTranslationHook: () =>  void;
 	_onMouseMove: (e: any) => void;
-	provider: GoogleProvider;
+	providers: ["Google" | "MML", Provider<any, any>][];
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection = 0;
 	_tileLayersSet: boolean;
@@ -3704,16 +3706,22 @@ export default class LajiMap {
 	@dependsOn("translations", "googleApiKey")
 	setGeocodingProvider() {
 		if (!depsProvided(this, "setGeocodingProvider", arguments)) return;
-		this.provider = new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}});
+		this.providers = [
+			["MML", new MMLProvider({params: {language: this.lang, region: "fi"}})],
+			["Google", new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}})]
+		];
 		provide(this, "geocodingProvider");
 	}
 
-	geocode(query: string, additional?: any, zoom?: number) {
-		if (!this.provider) {
+	geocode(query: string, additional?: any, zoom?: number, provider: "mml" | "google" = "google") {
+		if (!this.providers) {
 			console.warn("googleApiKey not provided for geocode");
 			return;
 		}
-		this.provider.search({query, ...(additional || {})}).then((results = []) => {
+		const [, _provider] = provider === "mml"
+			? this.providers[0]
+			: this.providers[1];
+		_provider.search({query, ...(additional || {})}).then((results = []) => {
 			if (!this.map || !results.length) return;
 			const [first] = results;
 			const {x, y} = first;

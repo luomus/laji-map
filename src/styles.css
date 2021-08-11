@@ -611,3 +611,10 @@
 	height: 30px;
 	left: 35px;
 }
+
+.laji-map .laji-map-geosearch-provider-toggle-container {
+	position: absolute;
+	top: -20px;
+	right: 9px;
+	z-index: -1;
+}

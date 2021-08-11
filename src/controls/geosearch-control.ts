@@ -1,5 +1,6 @@
 import * as L from "leaflet";
 import { SearchControl } from "leaflet-geosearch";
+import { Provider } from "leaflet-geosearch/lib/providers";
 
 /**
  * Monkey-patched leaflet-geosearch control that handles switching the provider.
@@ -21,7 +22,7 @@ export default function _SearchControl(...options: any[]) {
 
 		const buttonsContainer = document.createElement("div");
 		buttonsContainer.className = "laji-map-geosearch-provider-toggle-container btn-group";
-		const {providers: providerModels}: {providers: [string, any][]} = this.options;
+		const {providers: providerModels}: {providers: [string, Provider][]} = this.options;
 		const buttons = providerModels.map(([label, provider], idx) => {
 			const b = document.createElement("button");
 			b.innerHTML = label;

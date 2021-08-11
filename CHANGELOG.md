@@ -1,3 +1,6 @@
+## 
+* Add MML provider for geocoding
+
 ## 3.6.0
 * Municipalities layer is always up to date
 * Added county (maakunnat) & ELY area layers

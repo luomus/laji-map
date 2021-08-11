@@ -1,4 +1,4 @@
-## 
+## 3.7.0
 * Add MML provider for geocoding
 
 ## 3.6.0

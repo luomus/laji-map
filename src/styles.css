@@ -420,8 +420,8 @@
 .laji-map .laji-map-control-layers input[type="checkbox"] {
     top: -4px;
     position: absolute;
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
 }
 .laji-map .laji-map-control-layers fieldset {
     list-style: none;

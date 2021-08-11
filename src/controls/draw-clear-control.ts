@@ -5,7 +5,7 @@ export default (lajiMap: LajiMap) => {
 	const translateHooks = [];
 
 	const yesButton = document.createElement("button");
-	yesButton.className = "btn btn-block btn-primary";
+	yesButton.className = "btn btn-block btn-danger";
 	translateHooks.push(lajiMap.addTranslationHook(yesButton, "Yes"));
 	yesButton.addEventListener("click", e => {
 		lajiMap.clearDrawData();
@@ -13,7 +13,7 @@ export default (lajiMap: LajiMap) => {
 	});
 
 	const noButton = document.createElement("button");
-	noButton.className = "btn btn-block btn-primary";
+	noButton.className = "btn btn-block btn-default";
 	translateHooks.push(lajiMap.addTranslationHook(noButton, "No"));
 	noButton.addEventListener("click", e => lajiMap._closeDialog(e));
 

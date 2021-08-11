@@ -31,4 +31,4 @@ export default (lajiMap: LajiMap) => {
 	});
 
 	yesButton.focus();
-}
+};

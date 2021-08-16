@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import { SearchControl } from "leaflet-geosearch";
+import SearchControl from "leaflet-geosearch/lib/SearchControl";
 import { Provider } from "leaflet-geosearch/lib/providers";
 
 /**

@@ -2,7 +2,7 @@ import LajiMap from "../src/index.ts";
 import * as utils from "../src/utils.ts";
 
 import "../src/styles.ts";
-import lineTransects from "./data.json";
+import * as lineTransects from "./data.json";
 
 let properties;
 

@@ -59,5 +59,9 @@ export default function _SearchControl(...options: any[]) {
 
 		return container;
 	};
+	// https://github.com/smeijer/leaflet-geosearch/issues/288
+	control.__proto__.onSubmit = function({data}) {
+		this.showResult(data);
+	};
 	return control;
 }

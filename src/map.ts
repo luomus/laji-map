@@ -3707,8 +3707,8 @@ export default class LajiMap {
 	setGeocodingProvider() {
 		if (!depsProvided(this, "setGeocodingProvider", arguments)) return;
 		this.providers = [
-			["MML", new MMLProvider({params: {language: this.lang, region: "fi"}})],
-			["Google", new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}})]
+			["Google", new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}})],
+			["MML", new MMLProvider({params: {language: this.lang, region: "fi"}})]
 		];
 		provide(this, "geocodingProvider");
 	}

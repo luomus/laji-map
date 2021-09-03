@@ -805,16 +805,16 @@ export default class LajiMap {
 					tileSize: 256,
 					attribution : `${mmlAttribution}, ${getAttribution("https://www.mapant.fi", "Mapant")}`
 				}),
-				ykjGrid: L.tileLayer.wms("https://maps.luomus.fi/geoserver/atlas/wms", {
+				ykjGrid: L.tileLayer.wms("https://fmnh-ws-prod3.it.helsinki.fi/geoserver/ows", {
 					maxZoom: 15,
-					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
+					layers: "ykj:YKJlines100,ykj:YKJlines1000,ykj:YKJlines10000,ykj:YKJlines100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
 				}),
-				ykjGridLabels: L.tileLayer.wms("https://maps.luomus.fi/geoserver/atlas/wms", {
+				ykjGridLabels: L.tileLayer.wms("https://fmnh-ws-prod3.it.helsinki.fi/geoserver/ows", {
 					maxZoom: 15,
-					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
+					layers: "ykj:YKJlabels100,ykj:YKJlabels1000,ykj:YKJlabels10000,ykj:YKJlabels100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",

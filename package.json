@@ -56,8 +56,8 @@
     "ts-node": "^9.0.0",
     "typescript": "^4.3.4",
     "webpack": "^5.41.1",
-    "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^3.11.2"
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.2.1"
   },
   "dependencies": {
     "@types/geojson": "*",

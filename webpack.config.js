@@ -11,14 +11,13 @@ module.exports = {
 		publicPath: "/build/",
 		filename: "main.js"
 	},
-	plugins: [
-		new webpack.HotModuleReplacementPlugin()
-	],
 	devServer: {
-		contentBase: path.join(path.resolve(), "playground"),
+		static: {
+			directory: path.join(path.resolve(), "playground"),
+		},
 		host: "0.0.0.0",
 		port: 4000,
-		inline: true
+		hot: true
 	},
 	module: {
 		rules: [

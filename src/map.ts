@@ -182,6 +182,7 @@ export default class LajiMap {
 	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}} = {};
 	locate: [(event: L.LocationEvent) => void, (error: L.ErrorEvent) => void] | boolean;
 	_located: boolean;
+	locatingOn: boolean
 	popupOnHover: boolean;
 	popupCounter: number;
 	onPopupClose: () => void;
@@ -2675,6 +2676,7 @@ export default class LajiMap {
 	_setLocateOn(triggerEvent = false) {
 		if (!depsProvided(this, "_setLocateOn", arguments)) return;
 
+		this.locatingOn = true;
 		const {on, userLocation} = this.locateOptions;
 		if (on && this._located === undefined && userLocation) {
 			this._onLocationFound(<L.LocationEvent> userLocation);
@@ -2689,6 +2691,8 @@ export default class LajiMap {
 	@dependsOn("map")
 	_setLocateOff() {
 		if (!depsProvided(this, "_setLocateOff", arguments)) return;
+
+		this.locatingOn = false;
 		this.map.stopLocate();
 		if (this.userLocationLayer) {
 			this.userLocationLayer.remove();
@@ -2708,6 +2712,10 @@ export default class LajiMap {
 	@dependsOn("map")
 	_onLocationFound({latlng, accuracy, bounds}: L.LocationEvent) {
 		if (!depsProvided(this, "_onLocationFound", arguments)) return;
+
+		if (!this.locatingOn) {
+			return;
+		}
 
 		if (!this._located && bounds && this.locateOptions.panOnFound) this.map.fitBounds(bounds);
 		this._located = true;

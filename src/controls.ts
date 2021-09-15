@@ -2,7 +2,7 @@ import * as L from "leaflet";
 import * as G from "geojson";
 import SearchControl from "./controls/geosearch-control";
 import LajiMap from "./map";
-import { DrawOptions, DataItemType, LajiMapEvent } from "./map.defs";
+import { DrawOptions, DataItemType, LajiMapEvent, TileLayersOptions } from "./map.defs";
 import { detectFormat, detectCRS, convertAnyToWGS84GeoJSON, isObject, renderLajiMapError } from "./utils";
 import { ESC, EPSG2393String, EPSG2393WKTString, EPSG3067String, EPSG3067WKTString, } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
@@ -105,8 +105,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._locateOn ? this._setLocateOff() : this._setLocateOn(!!"triggerEvent");
 	}
 
-	_setLocateOn(...params) {
-		super._setLocateOn(...params);
+	_setLocateOn(triggerEvent = false) {
+		super._setLocateOn(triggerEvent);
 		this._updateUserLocate(true);
 	}
 
@@ -115,12 +115,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._updateUserLocate(false);
 	}
 
-	_onLocationFound(e) {
+	_onLocationFound(e: L.LocationEvent) {
 		super._onLocationFound(e);
 		this._updateUserLocate(this._locateOn);
 	}
 
-	setTileLayers(options) {
+	setTileLayers(options: TileLayersOptions) {
 		const provided = isProvided(this, "tileLayer");
 		super.setTileLayers(options);
 		if (!provided && isProvided(this, "tileLayer")) {
@@ -130,7 +130,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	@reflect()
 	@dependsOn("controls")
-	_updateUserLocate(value) {
+	_updateUserLocate(value: boolean) {
 		if (!depsProvided(this, "_updateUserLocate", arguments)) return;
 		this._locateOn = value !== undefined ? value : this._locateOn;
 		const button = this._controlButtons.location;

@@ -1,15 +1,11 @@
-import LajiMap from "../src/index";
-import lineTransects from "./data.json";
-import * as utils from "../src/utils";
+import LajiMap from "../src/index.ts";
+import * as utils from "../src/utils.ts";
 
-import "../src/styles";
+import "../src/styles.ts";
+import * as lineTransects from "./data.json";
 
 let properties;
-try {
-	properties = require("../properties.json");
-} catch (e) {
-	console.warn("LajiMap warning: properties.json not found, google services won't work");
-}
+
 class App {
 	constructor() {
 
@@ -199,7 +195,7 @@ class App {
 			draw: this.drawOptions,
 			data: this.data,
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
-			locate: {on: false, onLocationFound: () => console.log("FOUND")},
+			locate: {on: false, onLocationFound: () => console.info("FOUND")},
 			//clickBeforeZoomAndPan: true,
 		};
 
@@ -210,7 +206,7 @@ class App {
 		};
 
 		if (query.testMode) {
-			delete query.testMode
+			delete query.testMode;
 		} else {
 			options = {
 				...options,
@@ -289,9 +285,15 @@ class App {
 	}
 }
 
-const app = new App();
-if (process.env.NODE_ENV !== "production") {
-	window.map = app.map;
-	window.lajiMapUtils = utils;
-}
-
+(async () => {
+	try {
+		properties = await import("../properties.json");
+	} catch (e) {
+		console.warn("LajiMap warning: properties.json not found, google services won't work");
+	}
+	const app = new App();
+	if (process.env.NODE_ENV !== "production") {
+		window.map = app.map;
+		window.lajiMapUtils = utils;
+	}
+})();

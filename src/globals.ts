@@ -1,4 +1,4 @@
-/* tslint:disable */
+/* eslint-disable */
 export const INCOMPLETE_COLOR = "#f604fA";
 export const NORMAL_COLOR = "#257ECA";
 export const ACTIVE_COLOR = "#06840A";

@@ -1,17 +1,16 @@
 var path = require("path");
-var webpack = require("webpack");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
 	mode: "production",
 	entry: {
-		"laji-map": path.join(__dirname, "src", "index"),
-		"laji-map-no-line-transect": path.join(__dirname, "src", "index-no-line-transect"),
-		"utils": path.join(__dirname, "src", "utils"),
-		styles: path.join(__dirname, "src", "styles")
+		"laji-map": path.join(path.resolve(), "src", "index"),
+		"laji-map-no-line-transect": path.join(path.resolve(), "src", "index-no-line-transect"),
+		"utils": path.join(path.resolve(), "src", "utils"),
+		styles: path.join(path.resolve(), "src", "styles")
 	},
 	output: {
-		path: path.join(__dirname, "dist"),
+		path: path.join(path.resolve(), "dist"),
 		filename: "[name].js",
 		libraryTarget: "umd"
 	},
@@ -22,29 +21,27 @@ module.exports = {
 		rules: [
 			{
 				test: /\.(t|j)s$/,
-				loader: "awesome-typescript-loader?module=es6",
+				loader: "ts-loader",
 				include: [
-					path.join(__dirname, "src")
+					path.join(path.resolve(), "src")
 				]
-			},
-			{
-				test: /\.json$/,
-				loader: "json-loader"
 			},
 			{
 				test: /\.css$/,
 				use: [
 					MiniCssExtractPlugin.loader,
-					"css-loader"
+					{
+						loader: "css-loader"
+					}
 				]
 			},
 			{
 				test: /\.png$/,
-				loader: "url-loader?limit=100000"
+				type: "asset/inline"
 			},
 			{
 				test: /\.jpg$/,
-				loader: "file-loader?name=images/[name].[ext]"
+				type: "asset/resource"
 			},
 			{
 				test: /\.svg/,
@@ -60,15 +57,15 @@ module.exports = {
 		splitChunks: {
 			cacheGroups: {
 				styles: {
-					name: 'styles',
+					name: "styles",
 					test: /\.css$/,
-					chunks: 'all',
+					chunks: "all",
 					enforce: true
 				}
 			}
 		}
 	},
 	resolve: {
-			extensions: ['.ts', '.js']
+		extensions: [".ts", ".js"]
 	}
 };

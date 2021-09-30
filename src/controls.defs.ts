@@ -1,5 +1,5 @@
+import { Control } from "leaflet";
 import * as G from "geojson";
-import {Control} from "leaflet";
 
 export interface ControlOptions {
 	name?: string;
@@ -73,4 +73,14 @@ export interface Options {
 export interface CustomControl extends Control {
 	_custom: boolean;
 	group: string;
+}
+
+interface FormatDetector {
+	elem: HTMLElement;
+	validate: (value?: string) => {valid: boolean, geoJSON: G.GeoJSON};
+	unmount: () => void;
+}
+
+export interface WithControls {
+	createFormatDetectorElem: (options?: {displayFormat?: boolean, displayErrors?: boolean, allowGrid?: boolean}) => FormatDetector
 }

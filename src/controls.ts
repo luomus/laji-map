@@ -1,51 +1,25 @@
 import * as L from "leaflet";
 import * as G from "geojson";
-import { GeoSearchControl } from "leaflet-geosearch";
+import SearchControl from "./controls/geosearch-control";
 import LajiMap from "./map";
-import { DrawOptions, DataItemType, LajiMapEvent, TileLayerOptions } from "./map.defs";
-import {
-	convertGeoJSON, convertLatLng, standardizeGeoJSON, geoJSONToISO6709, geoJSONToWKT, getCRSObjectForGeoJSON,
-	detectFormat, detectCRS, convertAnyToWGS84GeoJSON, validateLatLng, ykjGridStrictValidator, etrsTm35FinGridStrictValidator, wgs84Validator,
-	ykjValidator, etrsTm35FinValidator, stringifyLajiMapError, createTextInput, createTextArea, isObject, CRSString,
-	capitalizeFirstLetter, renderLajiMapError, reverseCoordinate, latLngGridToGeoJSON
-} from "./utils";
-import {
-	ESC,
-	ONLY_MML_OVERLAY_NAMES,
-	EPSG2393String,
-	EPSG2393WKTString,
-	EPSG3067String,
-	EPSG3067WKTString,
-} from "./globals";
+import { DrawOptions, DataItemType, LajiMapEvent, TileLayersOptions } from "./map.defs";
+import { detectFormat, detectCRS, convertAnyToWGS84GeoJSON, isObject, renderLajiMapError } from "./utils";
+import { ESC, EPSG2393String, EPSG2393WKTString, EPSG3067String, EPSG3067WKTString, } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
-import * as noUiSlider from "nouislider";
-import {
-	ControlOptions, ControlsOptions, CustomControl, DrawControlOptions,
-	InternalControlsOptions
-} from "./controls.defs";
+import { ControlsOptions, CustomControl, DrawControlOptions, InternalControlsOptions, WithControls } from "./controls.defs";
+import LayerControl from "./controls/layer-control";
+import CoordinatesControl from "./controls/coordinates-control";
+import coordinateInputControl from "./controls/coordinate-input-control";
+import drawCopyControl from "./controls/draw-copy-control";
+import drawUploadControl from "./controls/draw-upload-control";
+import drawClearControl from "./controls/draw-clear-control";
 
 function getSubControlName(name, subName) {
 	return (name !== undefined) ? `${name}.${subName}` : subName;
 }
 
 type Constructor<LM> = new(...args: any[]) => LM;
-export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithControls extends Base { // tslint:disable-line
-
-	controls: L.Control[];
-	_customControls: CustomControl[];
-	layerControl: L.Control.Layers;
-	controlItems: ControlOptions[];
-	_controlItemsByName: {[controlName: string]: ControlOptions};
-	activeControl: L.Control;
-	controlSettings: InternalControlsOptions;
-	drawControl: L.Control.Draw;
-	_locateOn: boolean;
-	_controlButtons: {[controlName: string]: HTMLElement};
-	_opacitySetBySlide: boolean;
-	_slider: any;
-	_contextMenuItems: {[buttonName: string]: HTMLElement};
-	_internalTileLayersUpdate: boolean;
-
+export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithControls extends Base implements WithControls {  // eslint-disable-line max-len
 	getOptionKeys() {
 		return {
 			...super.getOptionKeys(),
@@ -54,7 +28,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			customControls: ["setCustomControls", () => {
 				return this._customControls === undefined
 					? this._customControls
-					: this._customControls.map(({_custom, ...rest}) => {
+					: this._customControls.map(({_custom, ...rest}) => { // eslint-disable-line @typescript-eslint/no-unused-vars
 						return {...rest};
 					});
 			}]
@@ -131,8 +105,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._locateOn ? this._setLocateOff() : this._setLocateOn(!!"triggerEvent");
 	}
 
-	_setLocateOn(...params) {
-		super._setLocateOn(...params);
+	_setLocateOn(triggerEvent = false) {
+		super._setLocateOn(triggerEvent);
 		this._updateUserLocate(true);
 	}
 
@@ -141,12 +115,12 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._updateUserLocate(false);
 	}
 
-	_onLocationFound(e) {
+	_onLocationFound(e: L.LocationEvent) {
 		super._onLocationFound(e);
 		this._updateUserLocate(this._locateOn);
 	}
 
-	setTileLayers(options) {
+	setTileLayers(options: TileLayersOptions) {
 		const provided = isProvided(this, "tileLayer");
 		super.setTileLayers(options);
 		if (!provided && isProvided(this, "tileLayer")) {
@@ -156,7 +130,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	@reflect()
 	@dependsOn("controls")
-	_updateUserLocate(value) {
+	_updateUserLocate(value: boolean) {
 		if (!depsProvided(this, "_updateUserLocate", arguments)) return;
 		this._locateOn = value !== undefined ? value : this._locateOn;
 		const button = this._controlButtons.location;
@@ -193,7 +167,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this.controlItems = [
 			{
 				name: "layer",
-				control: () => this._getLayerControl()
+				control: () => this._tileLayers && new LayerControl(this, {position: "topleft"})
 			},
 			{
 				name: "location",
@@ -224,7 +198,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			{
 				name: "coordinates",
-				control: () => this._getCoordinatesControl()
+				control: () => new CoordinatesControl(this)
 			},
 			{
 				name: "fullscreen",
@@ -277,38 +251,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "clear",
 						text: this.translations.ClearMap,
 						iconCls: "glyphicon glyphicon-trash",
-						fn: (...params) => {
-							const container = document.createElement("div");
-							const translateHooks = [];
-
-							const yesButton = document.createElement("button");
-							yesButton.className = "btn btn-block btn-primary";
-							translateHooks.push(this.addTranslationHook(yesButton, "Yes"));
-							yesButton.addEventListener("click", e => {
-								this.clearDrawData();
-								this._closeDialog(e);
-							});
-
-							const noButton = document.createElement("button");
-							noButton.className = "btn btn-block btn-primary";
-							translateHooks.push(this.addTranslationHook(noButton, "No"));
-							noButton.addEventListener("click", e => this._closeDialog(e));
-
-							const question = document.createElement("h5");
-							translateHooks.push(this.addTranslationHook(question, "ConfirmDrawClear"));
-
-							container.appendChild(question);
-							container.appendChild(yesButton);
-							container.appendChild(noButton);
-
-							this._showDialog(container, () => {
-								translateHooks.forEach(hook => {
-									that.removeTranslationHook(hook);
-								});
-							});
-
-							yesButton.focus();
-						},
+						fn: () => drawClearControl(this),
 						dependencies: [
 							() => this.drawIsEditable()
 						]
@@ -318,10 +261,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "delete",
 						text: this.translations.DeleteFeature,
 						iconCls: "glyphicon glyphicon-remove-sign",
-						fn: (...params) => {
+						fn: () => {
 							this._startDrawRemove();
 						},
-						finishFn: (...params) => this._finishDrawRemove(),
+						finishFn: () => this._finishDrawRemove(),
 						dependencies: [
 							() => this.drawIsEditable()
 						]
@@ -331,10 +274,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 						name: "reverse",
 						iconCls: "glyphicon glyphicon-sort",
 						text: this.translations.ReverseFeature,
-						fn: (...params) => {
+						fn: () => {
 							this._startDrawReverse();
 						},
-						finishFn: (...params) => this._finishDrawReverse(),
+						finishFn: () => this._finishDrawReverse(),
 						dependencies: [
 							() => this.getDraw().polyline !== false,
 							() => this.drawIsEditable()
@@ -587,7 +530,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					return;
 				}
 
-				const Control = L.Control.extend({ // tslint:disable-line
+				const Control = L.Control.extend({
 					options: position ? {position} : undefined,
 					onAdd,
 					_createActionHandler,
@@ -604,7 +547,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		function removeHref(className) {
 			const elems = document.getElementsByClassName(className);
-			for (let i = 0; i < elems.length; i++) {  // tslint:disable-line
+			for (let i = 0; i < elems.length; i++) {
 				const elem = elems[i];
 				elem.removeAttribute("href");
 			}
@@ -651,7 +594,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	setControlsWarn(controlSettings) {
-		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'"); // tslint:disable-line
+		console.warn("laji-map warning: 'controlSettings' option is deprecated and will be removed in the future. 'controlSettings' option has been renamed 'controls'"); // eslint-disable-line max-len
 		this.setControls(controlSettings);
 	}
 
@@ -717,7 +660,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 			});
 			if ("coordinateInput" in subControlSettings) {
-				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput"); // tslint:disable-line
+				console.error("laji-map error: controls.coordinateInput is deprecated and is removed. Please use controls.draw.coordinateInput");
 			}
 
 			for (let setting in subControlSettings) {
@@ -852,520 +795,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		return this.drawControl;
 	}
 
-	_getCoordinatesControl(): L.Control {
-		const that = this;
-		const CoordinateControl = L.Control.extend({ // tslint:disable-line
-			options: {
-				position: "bottomleft"
-			},
-
-			onAdd() {
-				const container = L.DomUtil.create(
-					"div",
-					"leaflet-bar leaflet-control laji-map-control laji-map-coordinates-control"
-				);
-
-				const table = L.DomUtil.create("table", undefined, container);
-				let visible = false;
-				container.style.display = "none";
-
-				const coordinateTypes: any[] = [
-					{name: "WGS84"},
-					{name: "YKJ"},
-					{name: "ETRS-TM35FIN"}
-				];
-
-				coordinateTypes.forEach(coordinateType => {
-					const row = L.DomUtil.create("tr", undefined, table);
-					coordinateType.nameCell = L.DomUtil.create("td", undefined, row);
-					coordinateType.coordsCell = L.DomUtil.create("td", undefined, row);
-				});
-
-				that.map.on("mousemove", ({latlng}: L.LeafletMouseEvent) => {
-					if (!visible) {
-						container.style.display = "block";
-						visible = true;
-					}
-
-					const [lng, lat] = that.wrapGeoJSONCoordinate([latlng.lng, latlng.lat]);
-					const wgs84 = [lat, lng].map(c => c.toFixed(6));
-					let ykj, etrsTm35Fin;
-					try {
-						ykj = convertLatLng([lat, lng], "WGS84", "EPSG:2393");
-						etrsTm35Fin = convertLatLng([lat, lng], "WGS84", "EPSG:3067");
-					} catch (e) {
-						//
-					}
-
-					coordinateTypes.forEach(({name, nameCell, coordsCell}) => {
-						let coords = wgs84;
-						if (name === "YKJ") coords = ykj;
-						else if (name === "ETRS-TM35FIN") coords = etrsTm35Fin;
-						nameCell.innerHTML = `<strong>${name}:</strong>`;
-						let coordsFormatted = undefined;
-						if (coords) switch (name) {
-						case "WGS84":
-							coordsFormatted = coords.join(", ");
-							break;
-						case "YKJ":
-							coordsFormatted = coords.join(":");
-							break;
-						case "ETRS-TM35FIN":
-							coordsFormatted = `N=${coords[0]} E=${coords[1]}`;
-						}
-						coordsCell.innerHTML = coordsFormatted || "";
-						coordsCell.className = "monospace";
-					});
-				}).on("mouseout", () => {
-					container.style.display = "none";
-					visible = false;
-				});
-
-				return container;
-			}
-		});
-
-		return new CoordinateControl();
-	}
-
-	_getLayerControl(): L.Control {
-		if (!this._tileLayers) {
-			return;
-		}
-		const that = this;
-		const LayerControl = L.Control.extend({
-			options: L.Control.Layers.prototype.options,
-			initialize(options) {
-				L.Util.setOptions(this, options);
-			},
-			onAdd(map) {
-				this._map = map;
-				this.__checkDisabledLayers = () => this._checkDisabledLayers();
-				map.on("moveend", this.__checkDisabledLayers);
-
-				/* Code below copied from L.Control.Layers._initLayout() with some modifications */
-				const className = "laji-map-control-layers leaflet-control-layers",
-					container = this._container = L.DomUtil.create("div", className),
-					collapsed = this.options.collapsed;
-
-				const section = this._section = L.DomUtil.create("section", className + "-list");
-
-				// makes this work on IE touch devices by stopping it from firing a mouseout event when the touch is released
-				container.setAttribute("aria-haspopup", "true");
-
-				L.DomEvent.disableClickPropagation(container);
-				L.DomEvent.disableScrollPropagation(container);
-
-				if (collapsed) {
-					this._map.on("click", L.Control.Layers.prototype.collapse.bind(this), this);
-
-					if (!L.Browser.android) {
-						L.DomEvent.on(container, {
-							mouseenter: L.Control.Layers.prototype.expand.bind(this),
-							mouseleave: L.Control.Layers.prototype.collapse.bind(this)
-						}, this);
-					}
-				}
-
-				const link = this._layersLink = <HTMLAnchorElement> L.DomUtil.create("a", className + "-toggle", container);
-				link.href = "#";
-				link.title = "Layers";
-
-				if (L.Browser.touch) {
-					L.DomEvent.on(link, "click", L.DomEvent.stop);
-					L.DomEvent.on(link, "click", L.Control.Layers.prototype.expand, this);
-				} else {
-					L.DomEvent.on(link, "focus", L.Control.Layers.prototype.expand, this);
-				}
-
-				container.appendChild(section);
-
-				/* end of copy */
-
-				this.translateHooks = [];
-				this.elems = {};
-				this.updateLayout();
-
-				this._map.on("tileLayersChange", this.updateListContainers, this);
-				this._map.on("tileLayersChange", this.updateLists, this);
-				this._map.on("tileLayersChange", this.updateActiveProj, this);
-				this._map.on("projectionChange", this.updateActiveProj, this);
-
-				return container;
-			},
-			onRemove() {
-				this.translateHooks.forEach(hook => {
-					that.removeTranslationHook(hook);
-				});
-				this._map.off("tileLayersChange", this.updateListContainers);
-				this._map.off("tileLayersChange", this.updateLists);
-				this._map.off("tileLayersChange", this.updateActiveProj);
-				this._map.off("projectionChange", this.updateActiveProj);
-				this._map.off("moveend", this.__checkDisabledLayers);
-			},
-			createListItem(name: string, layerOptions: TileLayerOptions, available: boolean) {
-				const li = document.createElement("li");
-				li.id = name;
-				const checkbox = document.createElement("input");
-				checkbox.type = "checkbox";
-				checkbox.addEventListener("change", (e) => {
-					const {layers} = that._tileLayers;
-					const _layerOptions = layers[name];
-					const _layer = {...that.tileLayers, ...that.overlaysByNames}[name];
-					that.setTileLayers({
-						...that._tileLayers,
-						active: that.finnishTileLayers[name]
-							? "finnish"
-							: that.worldTileLayers[name]
-								? "world"
-								: that._tileLayers.active,
-						layers: {
-							...layers,
-							[name]: {
-								..._layerOptions,
-								visible: !_layerOptions.visible,
-								opacity: !_layerOptions.visible && !_layerOptions.opacity
-									? (_layer.options.defaultOpacity || 1)
-									: _layerOptions.opacity
-							}
-						}
-					});
-				});
-
-				const label = document.createElement("span");
-				this.translateHooks.push(that.addTranslationHook(label, capitalizeFirstLetter(name)));
-				li.appendChild(label);
-
-				const checkboxContainer = document.createElement("div");
-				checkboxContainer.appendChild(checkbox);
-				li.appendChild(checkboxContainer);
-
-				const sliderInput = document.createElement("div");
-				li.appendChild(sliderInput);
-
-				const slider = noUiSlider.create(sliderInput, {
-					start: (that._tileLayers.layers[name] || {opacity: 0}).opacity,
-					range: {
-						min: [0],
-						max: [1]
-					},
-					step: 0.01,
-					connect: [true, false],
-					behaviour: "snap"
-				});
-				let firstUpdated = false;
-				slider.on("update", () => {
-					if (!firstUpdated) {
-						firstUpdated = true;
-						return;
-					}
-					if (that._internalTileLayersUpdate) return;
-					const opacity = +slider.get();
-					const {layers} = that._tileLayers;
-					const _layerOptions = layers[name];
-					const active = that.finnishTileLayers[name]
-						? "finnish"
-						: that.worldTileLayers[name]
-						? "world"
-						: that._tileLayers.active;
-					const prevActive = that._tileLayers.active || "finnish";
-					if (!_layerOptions.visible || active !== prevActive) {
-						that.setTileLayers({
-							...that._tileLayers,
-							active,
-							layers: {
-								...layers, [name]: {..._layerOptions, visible: true, opacity}
-							}
-						});
-					} else {
-						that._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
-						(that.tileLayers[name] || that.overlaysByNames[name]).setOpacity(opacity);
-					}
-				});
-
-				function disableSelect(e) {
-					e.preventDefault();
-				}
-
-				slider.on("start", () => {
-					document.addEventListener("selectstart", disableSelect);
-				});
-				slider.on("end", () => {
-					document.removeEventListener("selectstart", disableSelect);
-
-					const opacity = +slider.get();
-					const {layers} = that._tileLayers;
-					const _layerOptions = layers[name];
-					if (!opacity && _layerOptions.visible) {
-						that.setTileLayers({
-							...that._tileLayers,
-							layers: {
-								...layers, [name]: {..._layerOptions, visible: false}
-							}
-						});
-					}
-				});
-
-				this.elems[name] = {li, slider, checkbox};
-
-				if (!available) {
-					li.style.display = "none";
-				}
-
-				return li;
-			},
-			createList(
-				tileLayers: {[name: string]: L.TileLayer[]},
-				availableLayers: {[name: string]: L.TileLayer[]},
-				label: string,
-				className?: string
-			): [HTMLElement, () => void] {
-				if (Object.keys(availableLayers).length === 0) {
-					return [undefined, undefined];
-				}
-				const list = document.createElement("fieldset");
-				className && L.DomUtil.addClass(list, className);
-				const innerList = document.createElement("ul");
-				const legend = document.createElement("legend");
-				const translationHook = that.addTranslationHook(legend, capitalizeFirstLetter(label));
-				this.translateHooks.push(translationHook);
-
-				list.appendChild(legend);
-				list.appendChild(innerList);
-				Object.keys(tileLayers).sort((a, b) => that._tileLayerOrder.indexOf(a) - that._tileLayerOrder.indexOf(b)).forEach(name => {
-					innerList.appendChild(this.createListItem(name, that._tileLayers.layers[name], availableLayers[name]));
-				});
-				this.layers = {
-					...(this.layers || {}),
-					...tileLayers
-				};
-				return [list, translationHook];
-			},
-			getFinnishList(createNew = false): [HTMLElement, () => void]  {
-				const availableLayers = that.getAvailableFinnishTileLayers();
-				if (Object.keys(availableLayers).length === 0) {
-					this.finnishList = undefined;
-					return [undefined, undefined];
-				}
-				if (this.finnishList) {
-					return [this.finnishList, this.finnishTranslationHook];
-				}
-				const [finnishList, finnishTranslationHook] = this.createList(
-					that.finnishTileLayers,
-					availableLayers,
-					that._tileLayers.active === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps",
-					"finnish-list"
-				);
-				this.finnishList = finnishList;
-				this.finnishTranslationHook = finnishTranslationHook;
-				if (finnishList) {
-					if (this.worldList) {
-						this._section.insertBefore(finnishList, this.worldList);
-					} else if (this.overlayList) {
-						this._section.insertBefore(finnishList, this.overlayList);
-					} else {
-						this._section.appendChild(finnishList);
-					}
-				}
-				return [this.finnishList, this.finnishTranslationHook];
-			},
-			getWorldList(): [HTMLElement, () => void]  {
-				const availableLayers = that.getAvailableWorldTileLayers();
-				if (Object.keys(availableLayers).length === 0) {
-					this.worldList = undefined;
-					return [undefined, undefined];
-				}
-				if (this.worldList) {
-					return [this.worldList, this.worldTranslationHook];
-				}
-				const [worldList, worldTranslationHook] = this.createList(
-					that.worldTileLayers,
-					availableLayers,
-					that._tileLayers.active === "world" ? "WorldMaps" : "ActivateWorldMaps",
-					"world-list"
-				);
-				this.worldList = worldList;
-				this.worldTranslationHook = worldTranslationHook;
-				if (worldList) {
-					if (this.overlayList) {
-						this._section.insertBefore(worldList, this.overlayList);
-					} else {
-						this._section.appendChild(worldList);
-					}
-				}
-				return [this.worldList, this.worldTranslationHook];
-			},
-			getOverlayList(): HTMLElement {
-				const availableLayers = that.getAvailableOverlaysByNames();
-				if (Object.keys(availableLayers).length === 0) {
-					this.overlayList = undefined;
-					return undefined;
-				}
-				if (this.overlayList) {
-					return this.overlayList;
-				}
-				const [overlayList] = this.createList(that.overlaysByNames, that.getAvailableOverlaysByNames(), "Overlays", "overlay-list");
-				this.overlayList = overlayList;
-				if (overlayList) {
-					this._section.appendChild(overlayList);
-				}
-			},
-			updateLayout() {
-				this.updateListContainers();
-				this.updateActiveProj();
-				this.updateLists();
-			},
-			updateActiveProj() {
-				const {activeProjName} = that;
-				const lists = [this.finnishList, this.worldList];
-				const [activeList, nonActiveList] = activeProjName === "finnish"
-					? lists
-					: lists.reverse();
-				if (activeList) {
-					L.DomUtil.addClass(activeList, "active-list");
-					L.DomUtil.removeClass(activeList, "nonactive-list");
-					activeList.querySelector("legend").tabIndex = 0;
-					if (!nonActiveList) {
-						L.DomUtil.addClass(activeList, "only-list");
-					} else {
-						L.DomUtil.removeClass(activeList, "only-list");
-					}
-				}
-				if (nonActiveList) {
-					L.DomUtil.addClass(nonActiveList, "nonactive-list");
-					L.DomUtil.removeClass(nonActiveList, "active-list");
-					nonActiveList.querySelector("legend").tabIndex = 0;
-				}
-
-				this.translateHooks = this.translateHooks.filter(hook => hook !== this.finnishTranslationHook && hook !== this.worldTranslationHook);
-				if (this.finnishList) {
-					this.finnishTranslationHook = that.addTranslationHook(
-						this.finnishList.querySelector("legend"),
-						!this.worldList
-							? "Maps"
-							: activeProjName === "finnish"
-								? "FinnishMaps"
-								: this._finnishDisabled
-									? "FinnishMapDisabledOutsideFinland"
-									: "ActivateFinnishMaps"
-					);
-				}
-				if (this.worldList) {
-					this.worldTranslationHook = that.addTranslationHook(
-						this.worldList.querySelector("legend"),
-						!this.finnishList
-							? "Maps"
-							: activeProjName === "world"
-								? "WorldMaps"
-								: "ActivateWorldMaps"
-					);
-					this.translateHooks.push(this.finnishTranslationHook, this.worldTranslationHook);
-				}
-			},
-			updateListContainers() {
-				const oldFinnish = this.finnishList;
-				const oldWorld = this.worldList;
-				const oldOverlayList = this.overlayList;
-				const [finnishList] = this.getFinnishList();
-				const [worldList] = this.getWorldList();
-				const overlayList = this.getOverlayList();
-				const lists = [
-					[oldFinnish, finnishList, "finnish"],
-					[oldWorld, worldList, "world"]
-				];
-
-				[...lists, [oldOverlayList, overlayList]].forEach(([oldList, list]) => {
-					if (oldList && !list) {
-						oldList.parentElement.removeChild(oldList);
-					}
-				});
-
-				lists.filter(([oldList, list]) => !oldList && list).forEach(([oldList, list, active]) => {
-					list.querySelector("legend").addEventListener("click", ({target: {tagName}}) => {
-						if (this._finnishDisabled) {
-							return;
-						}
-						if (active === that._tileLayers.active) {
-							if (finnishList && active === "finnish") {
-								active = "world";
-							} else if (worldList && active === "world") {
-								active = "finnish";
-							}
-						}
-
-						const worldLayers = that.getAvailableWorldTileLayers();
-						const finnishLayers = that.getAvailableFinnishTileLayers();
-
-						const checkLayer = name => !that._tileLayers.layers[name].visible;
-
-						const ensureHasLayersIfProjChanged = (_active, layers) =>
-							active === _active
-							&& Object.keys(layers).every(checkLayer)
-							&& {...that._tileLayers.layers, [that._tileLayerOrder.find(l => layers[l])]: true};
-
-						const layerOptions =
-							ensureHasLayersIfProjChanged("world", worldLayers)
-							|| ensureHasLayersIfProjChanged("finnish", finnishLayers)
-							|| that._tileLayers.layers;
-						that.setTileLayers({...that._tileLayers, active, layers: layerOptions});
-					});
-				});
-			},
-			updateLists() {
-				Object.keys({...that.tileLayers, ...that.overlaysByNames}).forEach(name => {
-					const available = that._tileLayers.layers[name];
-
-					if (!this.elems[name]) return;
-
-					this.elems[name].li.style.display = available ? "block" : "none";
-
-					if (!available) return;
-
-					const {opacity, visible} = that._tileLayers.layers[name];
-					const {slider, checkbox, li} = this.elems[name];
-					that._internalTileLayersUpdate = true;
-					li.className = visible ? "active" : "";
-					slider.set(opacity);
-					that._internalTileLayersUpdate = false;
-					checkbox.checked = visible;
-				});
-			},
-			_checkDisabledLayers() {
-				const latLng = this._map.getCenter();
-				if (!this.finnishList) {
-					return;
-				}
-				if (that._isOutsideFinland(latLng) && !this._finnishDisabled) {
-					this._finnishDisabled = true;
-					L.DomUtil.addClass(this.finnishList.querySelector("legend"), "disabled");
-					this.worldList && L.DomUtil.addClass(this.worldList.querySelector("legend"), "disabled");
-					this.translateHooks = this.translateHooks.filter(h => h !== this.finnishTranslationHook);
-					this.finnishTranslationHook = that.addTranslationHook(
-						this.finnishList.querySelector("legend"),
-						"FinnishMapDisabledOutsideFinland"
-					);
-					this.translateHooks.push(this.finnishTranslationHook);
-				} else if (!that._isOutsideFinland(latLng) && this._finnishDisabled) {
-					this._finnishDisabled = false;
-					L.DomUtil.removeClass(this.finnishList.querySelector("legend"), "disabled");
-					this.worldList && L.DomUtil.removeClass(this.worldList.querySelector("legend"), "disabled");
-					this.translateHooks = this.translateHooks.filter(h => h !== this.finnishTranslationHook);
-					this.finnishTranslationHook = that.addTranslationHook(
-						this.finnishList.querySelector("legend"),
-						that.activeProjName === "finnish" ? "FinnishMaps" : "ActivateFinnishMaps"
-					);
-					this.translateHooks.push(this.finnishTranslationHook);
-				}
-
-			}
-		});
-
-		return new LayerControl({position: "topleft"});
-	}
-
 	getZoomControl(): L.Control.Zoom {
 		const that = this;
-		const ZoomControl = L.Control.Zoom.extend({ // tslint:disable-line
+		const ZoomControl = L.Control.Zoom.extend({
 			onZoomClick() {
 				that.map.fire("controlClick", {name: "zoom"});
 			},
@@ -1488,288 +920,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	openCoordinatesInputDialog() {
-		const that = this;
-		const translateHooks = [];
-
-		function createCoordinateInput(id, translationKey) {
-			const input = createTextInput();
-			input.id = `laji-map-${id}`;
-
-			const label = document.createElement("label");
-			label.setAttribute("for", input.id);
-			translateHooks.push(that.addTranslationHook(label, translationKey));
-
-			const row = document.createElement("div");
-			row.className = "form-group row";
-
-			const col = document.createElement("div");
-			col.className = "col-xs-12";
-
-			[label, input].forEach(elem => col.appendChild(elem));
-			row.appendChild(col);
-
-			return row;
-		}
-
-		function formatter(input) {
-			return e => {
-				let charCode = (typeof e.which === "undefined") ? e.keyCode : e.which;
-
-				if (charCode >= 48 && charCode <= 57) { // Is a number
-					// The input cursor isn't necessary at the EOL, but this validation works regardless.
-					inputValidate(e, input.value + String.fromCharCode(charCode));
-				} else if (charCode === 58) { // is colon
-					lngInput.focus();
-					lngInput.select();
-				}
-			};
-		}
-
-		const inputRegexp = that.getDraw().marker ? /^(-?[0-9]+(\.|,)?[0-9]*|-?)$/ : /^[0-9]*$/;
-
-		function inputValidate(e, value) {
-			if (!value.match(inputRegexp)) {
-				e && e.preventDefault && e.preventDefault();
-				return false;
-			}
-			return true;
-		}
-
-		const container = document.createElement("form");
-		container.className = "laji-map-coordinates";
-
-		const latLabelInput = createCoordinateInput("coordinate-input-lat", "Latitude");
-		const lngLabelInput = createCoordinateInput("coordinate-input-lng", "Longitude");
-		const latInput = latLabelInput.getElementsByTagName("input")[0];
-		const lngInput = lngLabelInput.getElementsByTagName("input")[0];
-
-		const submitButton = document.createElement("button");
-		submitButton.setAttribute("type", "submit");
-		submitButton.className = "btn btn-block btn-primary";
-		translateHooks.push(this.addTranslationHook(submitButton, "Add"));
-		submitButton.setAttribute("disabled", "disabled");
-
-		let helpSpan = document.createElement("span");
-		helpSpan.className = "help-block";
-
-		function getHelpTxt() {
-			let help = `${that.translations.Enter} ${that.translations.yKJRectangle}`;
-			const rectangleAllowed = that.getDraw().rectangle || that.getDraw().polygon;
-			const {or} = that.translations;
-			help += (rectangleAllowed && !that.getDraw().marker ? ` ${or} ` : `, `) + that.translations.ETRSRectangle;
-			if (that.getDraw().marker) {
-				help += ` ${or} ${rectangleAllowed ? that.translations.wGS84PointCoordinates : that.translations.WGS84Coordinates}`; // tslint:disable-line
-			}
-			help += ".";
-			return help;
-		}
-
-		translateHooks.push(this.addTranslationHook(helpSpan, getHelpTxt));
-
-		const {
-			validate,
-			elem: formatDetectorElem,
-			unmount: unmountFormatDetector
-		} = this.createFormatDetectorElem({displayFormat: false, displayErrors: false, allowGrid: that.getDraw().rectangle || that.getDraw().polygon});
-
-		const inputValues = ["", ""];
-		[latInput, lngInput].forEach((input, i) => {
-			let prevVal = "";
-			input.addEventListener("keypress", formatter(input));
-			input.onpaste = (e) => {
-				const matches = (e.clipboardData || (<any> window).clipboardData).getData("text")
-					.match(/-?[0-9]+((\.|,)?[0-9]+)/g) || ["", ""];
-				const [latMatch, lngMatch] = document.activeElement === lngInput
-					? matches.reverse()
-					: matches;
-				if ([latMatch, lngMatch].every(match => typeof match === "string" && match.length > 0)) {
-					[[latInput, latMatch], [lngInput, lngMatch]].forEach(([_input, match]: [HTMLInputElement, string]) => {
-						_input.value = match;
-						_input.oninput(<any> {target: _input});
-					});
-					submitButton.focus();
-				}
-			};
-			input.oninput = (e) => {
-				const target = <HTMLInputElement> e.target;
-				const value = target.value.replace(",", ".").trim();
-				if (!inputValidate(e, value)) {
-					target.value = prevVal;
-				}
-				target.value = value;
-				prevVal = value;
-
-				inputValues[i] = value;
-
-				const {valid, geoJSON} = validate(`${inputValues[0]}:${inputValues[1]}/`);
-				if (valid) {
-					submitButton.removeAttribute("disabled");
-				} else {
-					submitButton.setAttribute("disabled", "disabled");
-				}
-			};
-		});
-
-		function convert(coords, crs: CRSString = "EPSG:2393") {
-			return convertLatLng(coords, crs, "WGS84");
-		}
-
-		container.addEventListener("submit", e => {
-			e.preventDefault();
-
-			const feature = latLngGridToGeoJSON([latInput.value, lngInput.value]);
-			const layer = this._featureToLayer(this.getDraw().getFeatureStyle)(feature);
-			const isMarker = layer instanceof L.Marker;
-
-			this._onAdd(this.drawIdx, layer, latInput.value + ":" + lngInput.value);
-			const center = (isMarker) ? layer.getLatLng() : layer.getBounds().getCenter();
-			this.map.setView(center, this.map.getZoom(), {animate: false});
-			if (isMarker) {
-				if (this.getDraw().cluster) (<L.MarkerClusterGroup> this.getDraw().groupContainer).zoomToShowLayer(layer);
-				else this.setNormalizedZoom(9);
-			} else {
-				this.map.fitBounds(layer.getBounds());
-			}
-			this._closeDialog(e);
-		});
-
-		container.appendChild(helpSpan);
-		container.appendChild(latLabelInput);
-		container.appendChild(lngLabelInput);
-		container.appendChild(formatDetectorElem);
-		container.appendChild(submitButton);
-
-		this._showDialog(container, () => {
-			translateHooks.forEach(hook => {
-				that.removeTranslationHook(hook);
-			});
-			unmountFormatDetector();
-		});
-
-		latInput.focus();
+		return coordinateInputControl(this);
 	}
 
 	openDrawCopyDialog() {
-		const table = document.createElement("table");
-		table.className = "laji-map-draw-copy-table";
-
-		const HTMLInput = createTextArea(10, 50);
-		HTMLInput.setAttribute("readonly", "readonly");
-		HTMLInput.addEventListener("focus", HTMLInput.select);
-
-		const features = this.getDraw().featureCollection.features.map(f => this.formatFeatureOut(f));
-		const originalGeoJSON = {...this.getDraw().featureCollection, features};
-
-		const converterFor = (proj) => (input) => {
-			const reprojected = convertGeoJSON(input, "WGS84", proj);
-			(<any> reprojected).crs = getCRSObjectForGeoJSON(reprojected, proj);
-			return reprojected;
-		};
-
-		const TOP = "TOP";
-		const LEFT = "LEFT";
-
-		const pipeline = [
-			{ // GeoJSON -> GeoJSON with coordinates converted
-				commands: {
-					"WGS84": standardizeGeoJSON,
-					"YKJ": input => converterFor("EPSG:2393")(standardizeGeoJSON(input)),
-					"ETRS-TM35FIN": input => converterFor("EPSG:3067")(standardizeGeoJSON(input))
-				},
-				position: TOP
-			},
-			{ // GeoJSON -> String
-				commands: {
-					"GeoJSON": input => JSON.stringify(input, undefined, 2),
-					"ISO 6709": geoJSONToISO6709,
-					"WKT": geoJSONToWKT
-				},
-				position: LEFT
-			}
-		];
-
-		let activeCommands = pipeline.map(({commands}) => Object.keys(commands)[0]);
-
-		const leftTabs = [];
-		const topTabs = [];
-
-		pipeline.forEach(({commands, position}, idx) => {
-			let activeTab = undefined;
-
-			function setActiveTab(tab, label) {
-				if (activeTab) {
-					activeTab.className = "";
-				}
-				activeTab = tab;
-				activeTab.className = "active";
-				activeCommands[idx] = label;
-			}
-
-			const tabs = document.createElement("ul");
-			const tabContainer = (position === LEFT) ? (() => {
-				const _tabContainer = document.createElement("div");
-				_tabContainer.className = "tabs-left";
-				_tabContainer.appendChild(tabs);
-				return _tabContainer;
-			})() : tabs;
-			tabs.className = "nav nav-tabs";
-
-			Object.keys(commands).map((label, _idx) => {
-				const tab = document.createElement("li");
-				const text = document.createElement("a");
-
-				if (_idx === 0) {
-					setActiveTab(tab, label);
-				}
-
-				text.innerHTML = label;
-				tab.appendChild(text);
-
-				tab.addEventListener("click", () => {
-					const {scrollTop, scrollLeft} = HTMLInput;
-					setActiveTab(tab, label);
-					updateOutput();
-					HTMLInput.scrollTop = scrollTop;
-					HTMLInput.scrollLeft = scrollLeft;
-				});
-
-				return tab;
-			}).forEach(tab => tabs.appendChild(tab));
-
-			let tabsArr = topTabs;
-			if (position === LEFT) tabsArr = leftTabs;
-			tabsArr.push(tabContainer);
-		});
-
-		function updateOutput() {
-			HTMLInput.value = pipeline.reduce((_output, {commands}, idx) =>
-				commands[activeCommands[idx]](_output), originalGeoJSON
-			);
-			HTMLInput.focus();
-			HTMLInput.select();
-		}
-
-		const rows = [
-			[undefined, topTabs],
-			[leftTabs, HTMLInput]
-		];
-
-		const tBody = document.createElement("tbody");
-		rows.forEach(row => {
-			const tr = document.createElement("tr");
-			row.forEach(items => (Array.isArray(items) ? items : [items])
-				.forEach(elem => {
-					const td = document.createElement("td");
-					td.appendChild(elem || document.createElement("div"));
-					tr.appendChild(td);
-				}));
-			tBody.appendChild(tr);
-		});
-
-		table.appendChild(tBody);
-
-		this._showDialog(table);
-		updateOutput();
+		return drawCopyControl(this);
 	}
 
 	createFormatDetectorElem(options: {displayFormat?: boolean, displayErrors?: boolean, allowGrid?: boolean} = {}):
@@ -1813,7 +968,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			[geoJSONWarningsContainer, geoJSONErrorsContainer].forEach(container => {
 				container.style.display = "none";
 				while (container.firstChild) {
-						container.removeChild(container.firstChild);
+					container.removeChild(container.firstChild);
 				}
 			});
 
@@ -1847,7 +1002,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				} else if (displayErrors && e._lajiMapGeoJSONConversionError) {
 					fixedGeoJSON = e.geoJSON;
 					e.errors.forEach(_e => {
-						const {translationKey, fixable, path} = _e;
+						const {fixable} = _e;
 						const target = fixable ? geoJSONWarningsContainer : geoJSONErrorsContainer;
 						const firstWarning = fixable && !hasWarnings;
 						if (fixable) {
@@ -1914,95 +1069,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	openDrawUploadDialog() {
-		const container = document.createElement("form");
-		container.className = "laji-map-coordinate-upload";
-
-		const textarea = createTextArea(10, 50);
-		textarea.className += " form-group";
-
-		const button = document.createElement("button");
-		button.setAttribute("type", "submit");
-		button.className = "btn btn-block btn-primary";
-
-		let translationsHooks = [];
-		translationsHooks.push(this.addTranslationHook(button, "UploadDrawnFeatures"));
-		button.setAttribute("disabled", "disabled");
-
-		const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} = this.createFormatDetectorElem();
-
-		let fixedGeoJSON = undefined;
-
-		textarea.oninput = (e) => {
-			const {value} = <HTMLInputElement> e.target;
-			const {valid, geoJSON} = validate(value);
-			fixedGeoJSON = geoJSON;
-			if (valid) {
-				button.removeAttribute("disabled");
-				if (alert) {
-					container.removeChild(alert);
-					alert = undefined;
-				}
-			} else {
-				button.setAttribute("disabled", "disabled");
-			}
-			if (container.className.indexOf(" has-error") !== -1) {
-				container.className = container.className.replace(" has-error", "");
-			}
-		};
-
-		let alert = undefined;
-		let alertTranslationHook = undefined;
-
-		const updateAlert = (error) => {
-			if (alert) container.removeChild(alert);
-			alert = document.createElement("div");
-			alert.className = "alert alert-danger";
-			if (alertTranslationHook) this.removeTranslationHook(alertTranslationHook);
-			alertTranslationHook = this.addTranslationHook(alert, () => stringifyLajiMapError(error, this.translations));
-			container.appendChild(alert);
-		};
-
-		const convertText = (e) => {
-			e.preventDefault();
-			try {
-				const prevFeatureCollection = {
-					type: "FeatureCollection",
-					features: this.cloneFeatures(this.getDraw().featureCollection.features)
-				};
-				const events: LajiMapEvent[] = [{
-					type: "delete",
-					idxs: Object.keys(this.idxsToIds[this.drawIdx]).map(idx => parseInt(idx)),
-					features: this.cloneFeatures(this.getDraw().featureCollection.features)
-				}];
-				this.updateDrawData(<DrawOptions> {...this.getDraw(), featureCollection: undefined, geoData: fixedGeoJSON || textarea.value});
-				this.getDraw().featureCollection.features.forEach(feature => {
-					events.push({type: "create", feature});
-				});
-				this._triggerEvent(events, this.getDraw().onChange);
-				this._updateDrawUndoStack(events, prevFeatureCollection);
-				this._closeDialog(e);
-			} catch (e) {
-				if (e.stringify) updateAlert(e);
-				throw e;
-			}
-			const bounds = this.getDraw().group.getBounds();
-			if (Object.keys(bounds).length) this.map.fitBounds(bounds);
-		};
-
-		button.addEventListener("click", convertText);
-
-		container.appendChild(textarea);
-		container.appendChild(formatDetectorElem);
-		container.appendChild(button);
-
-		this._showDialog(container, () => {
-			translationsHooks.forEach(hook => this.removeTranslationHook(hook));
-			if (alertTranslationHook) this.removeTranslationHook(alertTranslationHook);
-			unmountFormatDetector();
-		});
-
-		textarea.focus();
-		textarea.select();
+		return drawUploadControl(this);
 	}
 
 	_joinTranslations(...words) {
@@ -2025,7 +1092,10 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this.getFeatureTypes().forEach(featureType => {
 			const text = join("Draw", featureType);
 
-			if (this.getDraw() && this.drawIsEditable() && this.getDraw()[featureType] !== false && this.controlSettings.draw[featureType] !== false) {
+			if (this.getDraw()
+				&& this.drawIsEditable()
+				&& this.getDraw()[featureType] !== false
+				&& this.controlSettings.draw[featureType] !== false) {
 				this._contextMenuItems[`draw.${featureType}`] = this.map.contextmenu.addItem({
 					text,
 					iconCls: "context-menu-draw context-menu-draw-" + featureType,
@@ -2047,7 +1117,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					this._contextMenuItems[controlName] = this.map.contextmenu.addItem({
 						...control,
 						callback: () =>
-						(<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
+							(<HTMLButtonElement> this.container.querySelector(`.button-${controlName.replace(".", "_")}`)).click()
 					});
 					groupAdded = true;
 				}
@@ -2066,25 +1136,16 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		provide(this, "contextMenu");
 	}
 
+	@dependsOn("geocodingProvider")
 	getGoogleGeocodingControl() {
-		const control = new GeoSearchControl({
-			provider: this.provider,
-			showmarker: false,
+		if (!depsProvided(this, "getGoogleGeocodingControl", arguments)) return;
+		const control = new (SearchControl as any)({
+			providers: this.providers,
+			showMarker: false,
 			autoClose: true,
-			searchLabel: `${this.translations.GeocodingSearchLabel}... (${this.translations.Google})`,
+			searchLabel: `${this.translations.GeocodingSearchLabel}...`,
 			notFoundMessage: this.translations.GeocodingSearchFail
 		});
-		const {onAdd} = control.__proto__;
-		control.__proto__.onAdd = function(map) {
-			const container = onAdd.call(this, map);
-			L.DomEvent.disableClickPropagation(container);
-			const {resetButton} =  control.elements;
-			resetButton.parentElement.removeChild(resetButton);
-			control.searchElement.elements.input.addEventListener("blur", () => {
-				setTimeout(() => control.closeResults(), 300);
-			});
-			return container;
-		};
 		return control;
 	}
 
@@ -2125,4 +1186,4 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	shouldNotPreventScrolling(): boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
 	}
-} return LajiMapWithControls; } // tslint:disable-line
+} return LajiMapWithControls; }

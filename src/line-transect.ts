@@ -13,7 +13,7 @@ import { isPolyline } from "./map";
 import LajiMap from "./map";
 import {
 	LineTransectEvent,
-	LineTransectFeature, LineTransectGeometry, LineTransectHistoryEntry, LineTransectIdx, LineTransectOptions,
+	LineTransectFeature, LineTransectGeometry, LineTransectIdx, LineTransectOptions,
 	PointIdxTuple,
 	SegmentIdxTuple, SegmentLayer, SegmentLayers, TooltipMessages
 } from "./line-transect.defs";
@@ -29,14 +29,14 @@ const editLineStyle: L.PathOptions = {...lineStyle, color: "#f00"};
 const defaultLineStyle: L.PathOptions = {...lineStyle, weight: 1, fillColor: "#99b"};
 
 const corridorStyle: L.PathOptions = {...lineStyle, fillOpacity: 0.6, weight: 0, fillColor: lineStyle.color};
-const oddCorridorStyle: L.PathOptions = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)}; // tslint:disable-line
+const oddCorridorStyle: L.PathOptions = {...corridorStyle, weight: 2, fillColor: combineColors(lineStyle.color, "#000000", ODD_AMOUNT)};
 const activeCorridorStyle: L.PathOptions = {...corridorStyle, fillColor: activeLineStyle.color};
 const editCorridorStyle: L.PathOptions = {...corridorStyle, fillColor: editLineStyle.color, fillOpacity: 0.5};
 const hoverCorridorStyle: L.PathOptions = {...corridorStyle, fillColor: hoverLineStyle.color};
 
 const pointStyle: L.CircleMarkerOptions = {weight: 0, radius: 3, fillColor: "#154EAA", fillOpacity: 1};
-const oddPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)}; // tslint:disable-line
-const activePointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: combineColors(activeLineStyle.color, "#000000", 40)}; // tslint:disable-line
+const oddPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: combineColors(pointStyle.fillColor, "#000000", ODD_AMOUNT)};
+const activePointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: combineColors(activeLineStyle.color, "#000000", 40)};
 const editPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: editLineStyle.color};
 const hoverPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: hoverLineStyle.color};
 const editablePointStyle: L.CircleMarkerOptions = {...pointStyle, radius: 5, fillColor: "#f00", fillOpacity: 0.7};
@@ -44,7 +44,7 @@ const overlappingPointStyle: L.CircleMarkerOptions = {...pointStyle, radius: 5, 
 const firstOverlappingPointStyle: L.CircleMarkerOptions = {...overlappingPointStyle, fillColor: "#f00"};
 const seamPointStyle: L.CircleMarkerOptions = {...pointStyle, radius: 7};
 const closebyEditPointStyle: L.CircleMarkerOptions = {...editPointStyle, radius: 9};
-const closebyPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity}; // tslint:disable-line
+const closebyPointStyle: L.CircleMarkerOptions = {...pointStyle, fillColor: editablePointStyle.fillColor, radius: 9, fillOpacity: editablePointStyle.fillOpacity}; // eslint-disable-line max-len
 const hintPointStyle: L.CircleMarkerOptions = {...closebyPointStyle, radius: 7};
 
 const LT_WIDTH_METERS = 25;
@@ -79,69 +79,7 @@ function idxTupleToIdxTupleStr(idxTuple: IdxTuple): string {
 
 type Constructor<LM> = new(...args: any[]) => LM;
 
-export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithLineTransect extends Base { // tslint:disable-line
-	_hoveredIdxTuple: SegmentIdxTuple;
-	LTFeature: LineTransectFeature;
-	_LTEditPointIdxTuple: PointIdxTuple;
-	_splitIdxTuple: PointIdxTuple;
-	_splitPoint: L.LatLng;
-	_lineLayers: L.Polyline<G.LineString>[][];
-	_pointLayers: L.CircleMarker[][];
-	_pointIdsToIdxTuples: {[id: number]: PointIdxTuple};
-	_corridorLayers: L.Polygon<G.Polygon>[][];
-	_allSegments: L.Polyline<G.LineString>[];
-	_allCorridors: L.Polygon<G.Polygon>[];
-	_allPoints: L.CircleMarker[];
-	_lineSplitFn: (idxTuple: SegmentIdxTuple, splitPoint: L.LatLng) => void;
-	_selectLTMode: "segment" | "line";
-	_LTActiveIdx: number;
-	_onLTChange: LineTransectOptions["onChange"];
-	_LTDragging: boolean;
-	_getLTFeatureStyle: LineTransectOptions["getFeatureStyle"];
-	_getLTTooltip: LineTransectOptions["getTooltip"];
-	_LTHistory: LineTransectHistoryEntry[];
-	_LTHistoryPointer: number;
-	_LTPrintMode: boolean;
-	_LTEditable: boolean;
-	_pointDragSnapMode = false;
-	_dragCorridor: L.Polygon<G.Polygon>;
-	_origLineTransect: L.FeatureGroup;
-	_pointLayerGroup: L.FeatureGroup;
-	_lineLayerGroup: L.FeatureGroup;
-	_corridorLayerGroup: L.FeatureGroup;
-	_overlappingNonadjacentPointIdxTuples: {[idxTupleString: string]: PointIdxTuple};
-	_overlappingAdjacentPointIdxTuples: {[idxTupleString: string]: PointIdxTuple};
-	_lineIdxsTupleStringsToLineGroupIdxs: {[idxTupleString: string]: number};
-	_groupIdxsToLineIdxs: {[groupIdx: number]: number[]};
-	_LTStartText: L.Polyline;
-	_LTGroups: L.FeatureGroup[];
-	_tooltipIdx: number;
-	_overlappingPointDialogSegmentIdxTuple: SegmentIdxTuple;
-	leafletIdsToCorridorLineIdxs: {[id: string]: number};
-	leafletIdsToCorridorSegmentIdxs: {[id: string]: number};
-	leafletIdsToFlatCorridorSegmentIdxs: {[id: string]: number};
-	leafletIdsToFlatPointIdxs: {[id: string]: number};
-	lineIdsToCorridorIds: {[id: string]: number};
-	corridorFlatIdxsToLeafletIds: {[id: string]: number};
-	_hoveredType: "point" | "corridor";
-	_LTClickTimeout: number;
-	_closebyPointIdxTuple: PointIdxTuple;
-	_pointLTShiftMode: boolean;
-	_onSelectLT: (idxTuple: SegmentIdxTuple) => void;
-	_firstLTSegmentToRemoveIdx: SegmentIdxTuple;
-	_LTPointExpander: L.CircleMarker;
-	_LTdragPoint: L.CircleMarker;
-	_LTContextMenuLayer: SegmentLayer;
-	_featureBeforePointDrag: LineTransectFeature;
-	_LTPointLatLngBeforeDrag: L.LatLng;
-	_hoveringDragPoint: boolean;
-	_dragPointStart: L.LatLng;
-	_dragMouseStart: L.LatLng;
-	_cutLine: L.Polygon;
-	_lineCutIdx: SegmentIdxTuple;
-	_ltTooltip: L.Draw.Tooltip;
-	messages: TooltipMessages;
-
+export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>(Base: LM) { class LajiMapWithLineTransect extends Base {
 	constructor(...props: any[]) {
 		super(...props);
 		this._startLTDragHandler = this._startLTDragHandler.bind(this);
@@ -499,7 +437,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	}
 
 	_getTooltipForPointIdxTuple = (type, idxTuple: PointIdxTuple) => {
-		const [lineIdx, pointIdx] = idxTuple;
+		const [lineIdx] = idxTuple;
 		const getTooltipForLineIdx = _lineIdx => {
 			const [prevDistance, distance] = getLineTransectStartEndDistancesForIdx(this._formatLTFeatureOut(), _lineIdx, 10);
 			return `<b>${prevDistance}-${distance}m</b>`;
@@ -1050,8 +988,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		].filter(i => i)
 			.map(_idxTuple => [this._lineLayers, this._corridorLayers].map(layers => {
 				return layers === this._lineLayers
-				? this._getLTLayerForIdxTuple(<L.Polyline<G.LineString>[][]> layers, _idxTuple)
-				: this._getLTLayerForIdxTuple(<L.Polygon[][]> layers, _idxTuple);
+					? this._getLTLayerForIdxTuple(<L.Polyline<G.LineString>[][]> layers, _idxTuple)
+					: this._getLTLayerForIdxTuple(<L.Polygon[][]> layers, _idxTuple);
 			}))
 			.forEach(layerPair => layerPair.forEach(layer => this._setStyleForLTLayer(layer)));
 
@@ -1246,7 +1184,6 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		}
 
 		if (this._LTPointIdxTupleIsGroupFirstOrLast(idxs)) {
-			const pointExcluded = this._allPoints.filter(p => p !== point);
 			const closestPoint: L.CircleMarker =
 				<L.CircleMarker> L.GeometryUtil.closestLayer(this.map, this._allPoints.filter(p => p !== point), latlng).layer;
 			const closestIdxTuple = this._pointIdsToIdxTuples[L.Util.stamp(closestPoint)];
@@ -1413,7 +1350,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		return {type: "active", idx: this._LTActiveIdx};
 	}
 
-	_getStyleForLTIdxTupleAndType(idxTuple: IdxTuple, type: Function): L.PathOptions {
+	_getStyleForLTIdxTupleAndType(idxTuple: IdxTuple, type: Function): L.PathOptions { // eslint-disable-line @typescript-eslint/ban-types
 		const [lineIdx, segmentIdx] = idxTuple;
 
 		const isPoint = type === L.CircleMarker;
@@ -1744,8 +1681,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 	}
 
 	_LTIdxTuplesAreFromSameGroup(idxTuple: IdxTuple, idxTuple2: IdxTuple): boolean {
-		const [lineIdx, segmentIdx] = idxTuple;
-		const [lineIdx2, segmentIdx2] = idxTuple2;
+		const [lineIdx] = idxTuple;
+		const [lineIdx2] = idxTuple2;
 		return this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx] === this._lineIdxsTupleStringsToLineGroupIdxs[lineIdx2];
 	}
 
@@ -1953,7 +1890,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const container = document.createElement("form");
 
 		const feature = this._formatLTFeatureOut();
-		const [start, length] = getLineTransectStartEndDistancesForIdx(feature, 99999); // eslint-disable-line no-unused-vars
+		const [, length] = getLineTransectStartEndDistancesForIdx(feature, 99999);
 
 		const help = document.createElement("span");
 		help.className = "help-block";
@@ -2118,4 +2055,4 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 
 		this._allPoints[0].bringToFront();
 	}
-} return LajiMapWithLineTransect; } // tslint:disable-line
+} return LajiMapWithLineTransect; }

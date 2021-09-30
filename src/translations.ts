@@ -1,4 +1,4 @@
-/* tslint:disable */
+/* eslint-disable */
 export default {
 	draw: {
 		fi: "Piirrä",
@@ -770,6 +770,16 @@ export default {
 		en: "Exit fullscreen mode",
 		sv: "Avsluta helskärmsläge"
 	},
+	counties: {
+		fi: "Maakunnat",
+		en: "Counties",
+		sv: "Landskapar"
+	},
+	ely: {
+		fi: "ELY-alueet",
+		en: "ELY-areas",
+		sv: "ELY-områden"
+	},
 	kiinteistojaotus: {
 		fi: "Kiinteistöjaot",
 		en: "Property boundaries",
@@ -779,5 +789,5 @@ export default {
 		fi: "Kiinteistötunnukset",
 		en: "Property ID",
 		sv: "Fastighetskoder"
-	},
+	}
 };

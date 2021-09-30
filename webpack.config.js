@@ -5,40 +5,50 @@ module.exports = {
 	mode: "development",
 	devtool: "eval",
 	entry: [
-		path.join(__dirname, "playground", "app"),
+		path.join(path.resolve(), "playground", "app"),
 	],
 	output: {
 		publicPath: "/build/",
 		filename: "main.js"
 	},
-	plugins: [
-		new webpack.HotModuleReplacementPlugin()
-	],
+	devServer: {
+		static: {
+			directory: path.join(path.resolve(), "playground"),
+		},
+		host: "0.0.0.0",
+		port: 4000,
+		hot: true
+	},
 	module: {
 		rules: [
 			{
 				test: /\.(j|t)s$/,
-				loader: "awesome-typescript-loader?module=es6",
+				use: [{
+					loader: "ts-loader"
+				}],
 				include: [
-					path.join(__dirname, "src"),
-					path.join(__dirname, "playground")
+					path.join(path.resolve(), "src"),
+					path.join(path.resolve(), "playground")
 				]
 			},
 			{
 				test: /\.css$/,
-				loader: "style-loader!css-loader"
+				use: [
+					{
+						loader: "style-loader"
+					},
+					{
+						loader: "css-loader"
+					}
+				]
 			},
 			{
 				test: /\.png$/,
-				loader: "url-loader?limit=100000"
+				type: "asset/inline"
 			},
 			{
-				test: /\.jpg$/,
-				loader: "file-loader"
-			},
-			{
-				test: /\.svg/,
-				loader: "svg-url-loader"
+				test: /\.(jpg|svg)$/,
+				type: "asset/resource"
 			}
 		],
 		noParse: [
@@ -46,6 +56,6 @@ module.exports = {
 		]
 	},
 	resolve: {
-		extensions: ['.ts', '.js', '.json']
+		extensions: [".ts", ".js"]
 	}
 };

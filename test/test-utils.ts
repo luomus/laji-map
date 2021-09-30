@@ -1,6 +1,5 @@
 const {HOST, PORT, VERBOSE, DELAY} = process.env;
 import { browser, $, by } from "protractor";
-import * as proj4 from "proj4";
 import * as utils from "laji-map/lib/utils";
 import { Options } from "laji-map/lib/map.defs";
 
@@ -90,7 +89,7 @@ class CoordinateInputControlPageObject {
 		return getControlButton("drawUtils.coordinateInput");
 	}
 	$getContainer() {
-		return $(".laji-map-coordinates").element(by.xpath(".."));
+		return $(".laji-map-coordinates").element(by.xpath("..")); // eslint-disable-line protractor/no-by-xpath
 	}
 	$getCloseButton() {
 		return this.$getContainer().$(".close");
@@ -112,7 +111,7 @@ class CoordinateUploadControlPageObject {
 		return getControlButton("drawUtils.upload");
 	}
 	$getContainer() {
-		return $(".laji-map-coordinate-upload").element(by.xpath(".."));
+		return $(".laji-map-coordinate-upload").element(by.xpath("..")); // eslint-disable-line protractor/no-by-xpath
 	}
 	$getCloseButton() {
 		return this.$getContainer().$(".close");
@@ -136,7 +135,7 @@ class CoordinateCopyControlPageObject {
 		return getControlButton("drawUtils.copy");
 	}
 	$getContainer() {
-		return $(".laji-map-draw-copy-table").element(by.xpath(".."));
+		return $(".laji-map-draw-copy-table").element(by.xpath("..")); // eslint-disable-line protractor/no-by-xpath
 	}
 	$getCloseButton() {
 		return this.$getContainer().$(".close");

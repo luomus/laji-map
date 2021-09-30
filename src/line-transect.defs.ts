@@ -9,7 +9,7 @@ export interface Options {
 export interface GetLineTransectFeatureStyleOptions {
 	lineIdx: number;
 	segmentIdx: number;
-	type: Function;
+	type: Function; // eslint-disable-line @typescript-eslint/ban-types
 	style: PathOptions;
 }
 

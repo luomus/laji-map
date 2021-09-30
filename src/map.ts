@@ -9,10 +9,12 @@ import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import "leaflet-measure-path";
+import { Provider } from "leaflet-geosearch/lib/providers/provider";
 import { GoogleProvider } from "leaflet-geosearch";
+import MMLProvider from "./mml-provider";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
-	combineColors, circleToPolygon, CoordinateSystem, CRSString, LajiMapError, reverseCoordinate,
+	combineColors, circleToPolygon, LajiMapError,
 	coordinatesAreClockWise, flattenMultiLineStringsAndMultiPolygons, anyToFeatureCollection,
 	updateImmutablyRecursivelyWith
 } from "./utils";
@@ -24,19 +26,20 @@ import {
 	USER_LOCATION_COLOR,
 	ESC,
 	FINLAND_BOUNDS,
-	ONLY_MML_OVERLAY_NAMES,
 	EPSG3067String
 } from "./globals";
 import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
-	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, TileLayerOptions, InternalTileLayersOptions,
+	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, InternalTileLayersOptions,
 	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem, LayerNames, WorldLayerNames, FinnishLayerNames,
 	OverlayNames, ShowMeasurementsOptions
 } from "./map.defs";
 
 import translations from "./translations";
-import {LineTransectEvent, LineTransectGeometry} from "./line-transect.defs";
+import { CustomControl, ControlOptions, InternalControlsOptions } from "./controls.defs";
+import { LineTransectEvent, LineTransectGeometry, SegmentIdxTuple, LineTransectFeature, PointIdxTuple,
+	LineTransectOptions, LineTransectHistoryEntry, SegmentLayer, TooltipMessages } from "./line-transect.defs";
 
 function capitalizeFirstLetter(s: string) {
 	return s.charAt(0).toUpperCase() + s.slice(1);
@@ -108,7 +111,7 @@ interface ContextmenuOptions {
 export class ContextmenuItem {
 }
 
-interface Contextmenu {
+interface Contextmenu { // eslint-disable-line @typescript-eslint/no-unused-vars
 	addItem(options: ContextmenuItemOptions | "-"): HTMLElement;
 	removeAllItems(): void;
 	setDisabled(elem: HTMLElement | number, disabled: boolean): this;
@@ -133,7 +136,7 @@ declare module "leaflet" {
 		contextmenu: Contextmenu;
 	}
 
-	namespace Contextmenu {
+	namespace Contextmenu { // eslint-disable-line @typescript-eslint/no-namespace
 		interface Options extends ContextmenuOptions {}
 		interface ItemOptions extends ContextmenuItemOptions {}
 	}
@@ -146,13 +149,13 @@ export default class LajiMap {
 	blockerElem: HTMLElement;
 	rootElem: HTMLElement;
 	translations: any;
-	data: Data[];
+	data: Data[] = [];
 	map: L.Map;
 	_onDrawReverse: (layer: DataItemLayer) => void;
 	_onDrawRemove: (layer: DataItemLayer) => void;
-	idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}};
-	idsToIdxs: {[dataIdx: number]: {[id: number]: number}};
-	idsToIdxTuples: {[id: number]: IdxTuple};
+	idxsToIds: {[dataIdx: number]: {[featureIdx: number]: number}} = [];
+	idsToIdxs: {[dataIdx: number]: {[id: number]: number}} = [];
+	idsToIdxTuples: {[id: number]: IdxTuple} = {};
 	editIdxTuple: IdxTuple;
 	drawing: boolean;
 	_drawHistoryPointer: number;
@@ -175,10 +178,11 @@ export default class LajiMap {
 	draw: Draw;
 	drawIdx: number;
 	_draftDrawLayer: DataItemLayer;
-	_idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}};
-	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}};
+	_idxsToHovered: {[dataIdx: number]: {[featureIdx: number]: boolean}} = {};
+	_idxsToContextMenuOpen: {[dataIdx: number]: {[id: number]: boolean}} = {};
 	locate: [(event: L.LocationEvent) => void, (error: L.ErrorEvent) => void] | boolean;
 	_located: boolean;
+	locatingOn: boolean
 	popupOnHover: boolean;
 	popupCounter: number;
 	onPopupClose: () => void;
@@ -187,7 +191,7 @@ export default class LajiMap {
 	_zoomToData: LajiMapFitBoundsOptions | boolean;
 	_disableDblClickZoom: boolean;
 	dictionary: {[lang: string]: any};
-	_domCleaners: (() => void)[];
+	_domCleaners: (() => void)[] = [];
 	_documentEvents: {[eventName: string]: EventListener[]} = {};
 	zoom: number;
 	center: L.LatLngExpression;
@@ -229,7 +233,7 @@ export default class LajiMap {
 	_tooltip: L.Draw.Tooltip;
 	_tooltipTranslationHook: () =>  void;
 	_onMouseMove: (e: any) => void;
-	provider: any;
+	providers: ["Google" | "MML", Provider<any, any>][];
 	leafletOptions: L.MapOptions;
 	_viewCriticalSection = 0;
 	_tileLayersSet: boolean;
@@ -246,6 +250,8 @@ export default class LajiMap {
 		"geobiologicalProvinces",
 		"geobiologicalProvinceBorders",
 		"municipalities",
+		"counties",
+		"ely",
 		"kiinteistojaotus",
 		"kiinteistotunnukset",
 		"forestVegetationZones",
@@ -269,6 +275,84 @@ export default class LajiMap {
 		clickBeforeZoomAndPan: boolean;
 		bodyOverflowY: string;
 	};
+
+	controls: L.Control[];
+	_customControls: CustomControl[];
+	layerControl: L.Control.Layers;
+	controlItems: ControlOptions[];
+	_controlItemsByName: {[controlName: string]: ControlOptions};
+	activeControl: L.Control;
+	controlSettings: InternalControlsOptions;
+	drawControl: L.Control.Draw;
+	_locateOn: boolean;
+	_controlButtons: {[controlName: string]: HTMLElement};
+	_opacitySetBySlide: boolean;
+	_slider: any;
+	_contextMenuItems: {[buttonName: string]: HTMLElement};
+	_internalTileLayersUpdate: boolean;
+
+
+	_allPoints: L.CircleMarker[];
+	_hoveredIdxTuple: SegmentIdxTuple;
+	LTFeature: LineTransectFeature;
+	_splitIdxTuple: PointIdxTuple;
+	_splitPoint: L.LatLng;
+	_lineLayers: L.Polyline<G.LineString>[][];
+	_pointLayers: L.CircleMarker[][];
+	_pointIdsToIdxTuples: {[id: number]: PointIdxTuple};
+	_corridorLayers: L.Polygon<G.Polygon>[][];
+	_allSegments: L.Polyline<G.LineString>[];
+	_allCorridors: L.Polygon<G.Polygon>[];
+	_lineSplitFn: (idxTuple: SegmentIdxTuple, splitPoint: L.LatLng) => void;
+	_selectLTMode: "segment" | "line";
+	_LTActiveIdx: number;
+	_onLTChange: LineTransectOptions["onChange"];
+	_LTDragging: boolean;
+	_getLTFeatureStyle: LineTransectOptions["getFeatureStyle"];
+	_getLTTooltip: LineTransectOptions["getTooltip"];
+	_LTHistory: LineTransectHistoryEntry[];
+	_LTHistoryPointer: number;
+	_LTPrintMode: boolean;
+	_LTEditable: boolean;
+	_pointDragSnapMode = false;
+	_dragCorridor: L.Polygon<G.Polygon>;
+	_origLineTransect: L.FeatureGroup;
+	_pointLayerGroup: L.FeatureGroup;
+	_lineLayerGroup: L.FeatureGroup;
+	_corridorLayerGroup: L.FeatureGroup;
+	_overlappingNonadjacentPointIdxTuples: {[idxTupleString: string]: PointIdxTuple};
+	_overlappingAdjacentPointIdxTuples: {[idxTupleString: string]: PointIdxTuple};
+	_lineIdxsTupleStringsToLineGroupIdxs: {[idxTupleString: string]: number};
+	_groupIdxsToLineIdxs: {[groupIdx: number]: number[]};
+	_LTStartText: L.Polyline;
+	_LTGroups: L.FeatureGroup[];
+	_tooltipIdx: number;
+	_overlappingPointDialogSegmentIdxTuple: SegmentIdxTuple;
+	leafletIdsToCorridorLineIdxs: {[id: string]: number};
+	leafletIdsToCorridorSegmentIdxs: {[id: string]: number};
+	leafletIdsToFlatCorridorSegmentIdxs: {[id: string]: number};
+	leafletIdsToFlatPointIdxs: {[id: string]: number};
+	lineIdsToCorridorIds: {[id: string]: number};
+	corridorFlatIdxsToLeafletIds: {[id: string]: number};
+	_hoveredType: "point" | "corridor";
+	_LTClickTimeout: number;
+	_closebyPointIdxTuple: PointIdxTuple;
+	_pointLTShiftMode: boolean;
+	_onSelectLT: (idxTuple: SegmentIdxTuple) => void;
+	_firstLTSegmentToRemoveIdx: SegmentIdxTuple;
+	_LTPointExpander: L.CircleMarker;
+	_LTdragPoint: L.CircleMarker;
+	_LTContextMenuLayer: SegmentLayer;
+	_featureBeforePointDrag: LineTransectFeature;
+	_LTPointLatLngBeforeDrag: L.LatLng;
+	_hoveringDragPoint: boolean;
+	_dragPointStart: L.LatLng;
+	_dragMouseStart: L.LatLng;
+	_cutLine: L.Polygon;
+	_lineCutIdx: SegmentIdxTuple;
+	_ltTooltip: L.Draw.Tooltip;
+	messages: TooltipMessages;
+
 
 	constructor(props: Options) {
 		this._constructDictionary();
@@ -698,12 +782,11 @@ export default class LajiMap {
 			this.mmlProj.distance =  L.CRS.Earth.distance;
 			(<any> this.mmlProj).R = 6378137;
 
-			this.finnishTileLayers = {};
-
 			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer">&copy; ${text}</a>`;
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 
+<<<<<<< HEAD
 			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions = {format: "png"}) =>
 				L.tileLayer(`https://proxy.laji.fi/mml_wmts/${layerService}/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
 				...options,
@@ -715,30 +798,50 @@ export default class LajiMap {
 				transparent: false,
 				attribution : mmlAttribution
 			});
+=======
+			const getMMLLayer = (name, options: L.TileLayerOptions = {format: "png"}) =>
+				L.tileLayer(`https://proxy.laji.fi/mml_wmts/maasto/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
+					...options,
+					style: "default",
+					minZoom: 0,
+					maxZoom: 15,
+					version: "1.0.0",
+					format: `image/${options.format}`,
+					transparent: false,
+					attribution : mmlAttribution
+				});
+>>>>>>> master
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
 			this.finnishTileLayers = {
+<<<<<<< HEAD
 				...this.finnishTileLayers,
 				taustakartta: getMaastoLayer("taustakartta"),
 				maastokartta: getMaastoLayer("maastokartta"),
 				ortokuva: getMaastoLayer("ortokuva", {format: "jpg", maxZoom: 14}),
 				laser: L.tileLayer("https://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
+=======
+				taustakartta: getMMLLayer("taustakartta"),
+				maastokartta: getMMLLayer("maastokartta"),
+				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
+				laser: L.tileLayer("https://proxy.laji.fi/mapant/wmts.php?z={z}&x={x}&y={y}", {
+>>>>>>> master
 					maxZoom: 19,
 					minZoom: 0,
 					tileSize: 256,
 					attribution : `${mmlAttribution}, ${getAttribution("https://www.mapant.fi", "Mapant")}`
 				}),
-				ykjGrid: L.tileLayer.wms("https://maps.luomus.fi/geoserver/atlas/wms", {
+				ykjGrid: L.tileLayer.wms("https://fmnh-ws-prod3.it.helsinki.fi/geoserver/ows", {
 					maxZoom: 15,
-					layers: "atlas:YKJ_ETRS_LINE100,atlas:YKJ_ETRS_LINE1000,atlas:YKJ_ETRS_LINE10000,atlas:YKJ_ETRS_LINE100000",
+					layers: "ykj:YKJlines100,ykj:YKJlines1000,ykj:YKJlines10000,ykj:YKJlines100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
 				}),
-				ykjGridLabels: L.tileLayer.wms("https://maps.luomus.fi/geoserver/atlas/wms", {
+				ykjGridLabels: L.tileLayer.wms("https://fmnh-ws-prod3.it.helsinki.fi/geoserver/ows", {
 					maxZoom: 15,
-					layers: "atlas:YKJ_ETRS_LABEL1000,atlas:YKJ_ETRS_LABEL10000,atlas:YKJ_ETRS_LABEL100000",
+					layers: "ykj:YKJlabels100,ykj:YKJlabels1000,ykj:YKJlabels10000,ykj:YKJlabels100000",
 					format: "image/png",
 					transparent: true,
 					version: "1.1.0",
@@ -765,59 +868,74 @@ export default class LajiMap {
 			this.overlaysByNames = {
 				geobiologicalProvinces: L.tileLayer.wms(
 					"https://maps.luomus.fi/geoserver/ows", {
-					maxZoom: 15,
-					layers: "INSPIRE:fi_fmnh_br_extended",
-					format: "image/png",
-					transparent: true,
-					version: "1.3.0",
-					defaultOpacity: 0.5
-				}),
+						maxZoom: 15,
+						layers: "INSPIRE:fi_fmnh_br_extended",
+						format: "image/png",
+						transparent: true,
+						version: "1.3.0",
+						defaultOpacity: 0.5
+					}),
 				geobiologicalProvinceBorders: L.tileLayer.wms(
 					"https://maps.luomus.fi/geoserver/INSPIRE/wms", {
-					maxZoom: 15,
-					layers: "INSPIRE:fi_fmnh_br",
-					styles: "harmaaviiva",
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
-				}),
+						maxZoom: 15,
+						layers: "INSPIRE:fi_fmnh_br",
+						styles: "harmaaviiva",
+						format: "image/png",
+						transparent: true,
+						version: "1.1.0",
+					}),
 				municipalities: L.tileLayer.wms(
-				"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
-					layers: "kunta1000k_2018",
-					transparent: true,
-					format: "image/png",
-					attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
-				}),
+					"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+						layers: "kunta1000k",
+						transparent: true,
+						format: "image/png",
+						attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+					}),
+				counties: L.tileLayer.wms(
+					"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+						layers: "maakunta1000k",
+						transparent: true,
+						format: "image/png",
+						attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+					}),
+				ely: L.tileLayer.wms(
+					"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+						layers: "ely1000k",
+						transparent: true,
+						format: "image/png",
+						attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+					}),
 				forestVegetationZones: L.tileLayer.wms(
 					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-					maxZoom: 15,
-					layers: "br.Metsakasvillisuusvyohykkeet",
-					format: "image/png",
-					transparent: true,
-					version: "1.3.0",
-					defaultOpacity: 0.5,
-					attribution: sykeAttribution
+						maxZoom: 15,
+						layers: "br.Metsakasvillisuusvyohykkeet",
+						format: "image/png",
+						transparent: true,
+						version: "1.3.0",
+						defaultOpacity: 0.5,
+						attribution: sykeAttribution
 					}),
 				mireVegetationZones: L.tileLayer.wms(
 					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-					maxZoom: 15,
-					layers: "br.Suokasvillisuusvyohykkeet",
-					format: "image/png",
-					transparent: true,
-					version: "1.3.0",
-					defaultOpacity: 0.5,
-					attribution: sykeAttribution
-				}),
+						maxZoom: 15,
+						layers: "br.Suokasvillisuusvyohykkeet",
+						format: "image/png",
+						transparent: true,
+						version: "1.3.0",
+						defaultOpacity: 0.5,
+						attribution: sykeAttribution
+					}),
 				threatenedSpeciesEvaluationZones: L.tileLayer.wms(
 					"https://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
-					maxZoom: 15,
-					layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
-					attribution: sykeAttribution
-				}),
+						maxZoom: 15,
+						layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
+						format: "image/png",
+						transparent: true,
+						version: "1.1.0",
+						attribution: sykeAttribution
+					}),
 				biodiversityForestZones: L.tileLayer.wms(
+<<<<<<< HEAD
 					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // tslint:disable-line
 					maxZoom: 15,
 					layers: "8",
@@ -826,6 +944,14 @@ export default class LajiMap {
 				}),
 				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
+=======
+					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", {
+						maxZoom: 15,
+						layers: "8",
+						defaultOpacity: 0.5,
+						attribution: sykeAttribution
+					})
+>>>>>>> master
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};
@@ -840,12 +966,6 @@ export default class LajiMap {
 			}
 
 			this._initializeMapEvents();
-
-			this.idxsToIds = [];
-			this.idsToIdxs = [];
-			this.idsToIdxTuples = {};
-			this._idxsToHovered = {};
-			this._idxsToContextMenuOpen = {};
 
 			provide(this, "map");
 		} catch (e) {
@@ -1000,6 +1120,9 @@ export default class LajiMap {
 				this.map.fire("mousemove", {latlng: this._mouseLatLng});
 			},
 			"moveend": () => {
+				if (!this.map) {
+					return;
+				}
 				if (this._viewCriticalSection) {
 					return;
 				}
@@ -1052,7 +1175,7 @@ export default class LajiMap {
 		document.removeEventListener(type, fn);
 	}
 
-	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type: string = "keydown") {
+	_addKeyListener(key: string, fn: (e?: Event) => boolean | void,  type = "keydown") {
 		if (!this._keyListeners[type]) this._keyListeners[type] = {};
 		if (!this._keyListeners[type][key]) this._keyListeners[type][key] = [];
 		this._keyListeners[type][key] = [fn, ...this._keyListeners[type][key]];
@@ -1200,7 +1323,6 @@ export default class LajiMap {
 					return true;
 				}
 				const layerOptions = layers[name];
-				const isWorldMapLayer = layerOptions.visible && this.worldTileLayers[name];
 				if (!layerOptions.visible) {
 					return;
 				}
@@ -1219,7 +1341,7 @@ export default class LajiMap {
 					this.overlaysByNames[name]
 					|| active === "finnish" && this.finnishTileLayers[name]
 					|| active === "world" && this.worldTileLayers[name]
-			)) {
+				)) {
 				_layers[name] = layers[name];
 			}
 			return _layers;
@@ -1227,11 +1349,6 @@ export default class LajiMap {
 	}
 
 	_getInternalTileLayerOptions(options: TileLayersOptions): InternalTileLayersOptions {
-		const {layers, active} = options;
-
-		const defaultCRSLayers = this._getDefaultCRSLayers();
-		const mmlCRSLayers = this._getMMLCRSLayers();
-
 		const combinedLayers = {...this.availableTileLayers, ...this.availableOverlaysByNames};
 		const newOptions = {
 			...options,
@@ -1241,7 +1358,7 @@ export default class LajiMap {
 					? {opacity: layerOptions ? (combinedLayers[name].options.defaultOpacity || 1) : 0, visible: !!layerOptions}
 					: {
 						opacity: layerOptions.opacity,
-						visible: layerOptions.hasOwnProperty("visible") ? layerOptions.visible : !!layerOptions.opacity
+						visible: layerOptions.hasOwnProperty("visible")  ? layerOptions.visible : !!layerOptions.opacity
 					};
 				return _layers;
 			}, {})
@@ -1290,7 +1407,7 @@ export default class LajiMap {
 			&& this.activeProjName !== "finnish"
 			&& (!layer
 				|| (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1))
-			) {
+		) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
@@ -1312,7 +1429,7 @@ export default class LajiMap {
 				|| activeLayer.visible !== prevActiveLayer.visible
 				|| activeLayer.opacity !== prevActiveLayer.opacity
 				|| (oldActive && oldActive !== newOptions.active && this.overlaysByNames[name])) {
-			changed[name] = true;
+				changed[name] = true;
 			}
 			return changed;
 		}, {});
@@ -1546,20 +1663,15 @@ export default class LajiMap {
 		safeRemove(this.rootElem, this.container);
 		safeRemove(this._dialogRoot, this.blockerElem);
 		if (this._closeDialog) this._closeDialog();
-		if (this._domCleaners) {
-			this._domCleaners.forEach(cleaner => cleaner());
-			this._domCleaners = [];
-		}
+		this._domCleaners.forEach(cleaner => cleaner());
+		this._domCleaners = [];
 	}
 
 	_addDomCleaner(fn: () => void) {
-		if (!this._domCleaners) this._domCleaners = [];
-
 		this._domCleaners.push(fn);
 	}
 
 	_removeDomCleaner(fn: () => void) {
-		if (!this._domCleaners) return;
 		this._domCleaners = this._domCleaners.filter(_fn => _fn !== fn);
 	}
 
@@ -1572,7 +1684,9 @@ export default class LajiMap {
 		for (let word in translations) {
 			for (let lang in translations[word]) {
 				const translation = translations[word][lang];
-				if (!dictionaries.hasOwnProperty(lang)) dictionaries[lang] = {};
+				if (!dictionaries.hasOwnProperty(lang)) {
+					dictionaries[lang] = {};
+				}
 				dictionaries[lang][decapitalizeFirstLetter(word)] = decapitalizeFirstLetter(translation);
 				dictionaries[lang][capitalizeFirstLetter(word)] = capitalizeFirstLetter(translation);
 			}
@@ -1685,9 +1799,10 @@ export default class LajiMap {
 		// Flatten features which have a geometry collection a geometry to features of the featureCollection
 		} else if (
 			item.featureCollection && item.featureCollection.features.some(feature =>
-			feature.geometry && feature.geometry.type === "GeometryCollection")
+				feature.geometry && feature.geometry.type === "GeometryCollection"
+			)
 		) {
-			const {geometry, ..._featureCollection} = item.featureCollection; // eslint-disable-line no-unused-vars
+			const {geometry, ..._featureCollection} = item.featureCollection; // eslint-disable-line @typescript-eslint/no-unused-vars
 			item = {
 				...item,
 				featureCollection: {
@@ -1961,17 +2076,13 @@ export default class LajiMap {
 	setData(data: Data[] | Data) {
 		if (!depsProvided(this, "setData", arguments)) return;
 
-		if (!this.data) {
-			this.data = [];
-		} else {
-			this.data.forEach((item, idx) => {
-				(idx !== this.drawIdx && item) && item.groupContainer.clearLayers();
-			});
-			const draw = this.getDraw();
-			this.data = [];
-			if (draw) {
-				this.data[this.drawIdx] = draw;
-			}
+		this.data.forEach((item, idx) => {
+			(idx !== this.drawIdx && item) && item.groupContainer.clearLayers();
+		});
+		const draw = this.getDraw();
+		this.data = [];
+		if (draw) {
+			this.data[this.drawIdx] = draw;
 		}
 		if (!Array.isArray(data)) data = [data];
 		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
@@ -2117,20 +2228,21 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data")
-	_setOnChangeForItem(item, format: OnChangeCoordinateSystem = "GeoJSON", crs: string = "WGS84") {
+	_setOnChangeForItem(item, format: OnChangeCoordinateSystem = "GeoJSON", crs = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
 		const convertCoordinateSystem =
 			format === "GeoJSONFeatureCollection" || format === "GeoJSONGeometryCollection"
-			? "GeoJSON"
-			: format;
+				? "GeoJSON"
+				: format;
 		const onChange = item.onChange;
+		let converted: G.GeoJSON;
 		item.onChange = events => {
 			const _events = events.map(e => {
 				switch (e.type) {
 				case "create":
 				case "insert":
-					let converted: G.GeoJSON = convert(e.feature, convertCoordinateSystem, crs);
+					converted = convert(e.feature, convertCoordinateSystem, crs);
 					if (converted.type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
 						converted = {
 							type: "GeometryCollection",
@@ -2140,12 +2252,12 @@ export default class LajiMap {
 					e.geoData = converted;
 					break;
 				case "edit":
-					e.geoData = Object.keys(e.features).reduce((converted, idx) => { // tslint:disable-line
-						converted[idx] = convert(e.features[idx], convertCoordinateSystem, crs);
-						if (converted[idx].type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
-							converted[idx] = converted[idx].geometry;
+					e.geoData = Object.keys(e.features).reduce((_converted, idx) => {
+						_converted[idx] = convert(e.features[idx], convertCoordinateSystem, crs);
+						if (_converted[idx].type === "FeatureCollection" && format === "GeoJSONGeometryCollection") {
+							_converted[idx] = _converted[idx].geometry;
 						}
-						return converted;
+						return _converted;
 					}, {});
 					break;
 				}
@@ -2431,14 +2543,14 @@ export default class LajiMap {
 		let latlng = undefined;
 
 		function openPopup(content) {
-			const [_, featureIdx] = that._getIdxTupleByLayer(layer);
+			const [, featureIdx] = that._getIdxTupleByLayer(layer);
 			if (!latlng) return;
 			if (that.editIdxTuple && that.editIdxTuple[0] === dataIdx && that.editIdxTuple[1] ===  featureIdx) return;
 
 			const {markerPopupOffset = 40, featurePopupOffset = 5} = that;
 			const offset = (layer instanceof L.Marker) ? (-markerPopupOffset  || 0) : (-featurePopupOffset || 0);
 
-			that.popup = new (<any> L).Rrose({ offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false })
+			that.popup = new (<any> L).Rrose({offset: new L.Point(0, offset), closeButton: !that.popupOnHover, autoPan: false, y_bound: 80 - offset})
 				.setContent(content)
 				.setLatLng(latlng)
 				.openOn(that.map);
@@ -2451,7 +2563,7 @@ export default class LajiMap {
 		}
 
 		function getContentAndOpenPopup(_latlng) {
-			const [_, featureIdx] = that._getIdxTupleByLayer(layer);
+			const [, featureIdx] = that._getIdxTupleByLayer(layer);
 			if (!that.popupCounter) that.popupCounter = 0;
 			that.popupCounter++;
 
@@ -2603,6 +2715,7 @@ export default class LajiMap {
 	_setLocateOn(triggerEvent = false) {
 		if (!depsProvided(this, "_setLocateOn", arguments)) return;
 
+		this.locatingOn = true;
 		const {on, userLocation} = this.locateOptions;
 		if (on && this._located === undefined && userLocation) {
 			this._onLocationFound(<L.LocationEvent> userLocation);
@@ -2617,6 +2730,8 @@ export default class LajiMap {
 	@dependsOn("map")
 	_setLocateOff() {
 		if (!depsProvided(this, "_setLocateOff", arguments)) return;
+
+		this.locatingOn = false;
 		this.map.stopLocate();
 		if (this.userLocationLayer) {
 			this.userLocationLayer.remove();
@@ -2636,6 +2751,10 @@ export default class LajiMap {
 	@dependsOn("map")
 	_onLocationFound({latlng, accuracy, bounds}: L.LocationEvent) {
 		if (!depsProvided(this, "_onLocationFound", arguments)) return;
+
+		if (!this.locatingOn) {
+			return;
+		}
 
 		if (!this._located && bounds && this.locateOptions.panOnFound) this.map.fitBounds(bounds);
 		this._located = true;
@@ -2718,7 +2837,6 @@ export default class LajiMap {
 		if (!isPolyline(layer)) return;
 
 		const idxTuple =  this._getIdxTupleByLayer(layer);
-		const [dataIdx, featureIdx] = idxTuple;
 
 		const {showStart, showDirection = true}: CustomPolylineOptions = this._fillStyleWithGlobals(idxTuple);
 
@@ -2871,11 +2989,6 @@ export default class LajiMap {
 		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
 
 		const prevActiveIdx = this.data[dataIdx].activeIdx;
-
-		const prevFeatureCollection = {
-			type: "FeatureCollection",
-			features: this.cloneFeatures(this.data[dataIdx].featureCollection.features)
-		};
 
 		let item = this.data[dataIdx];
 		const {single, featureCollection: {features}} = item;
@@ -3128,7 +3241,7 @@ export default class LajiMap {
 		(<any> layer).editing.enable();
 		if (!(<any> this.map)._editTooltip) {
 			 // For some reason editing circle radius fails without this
-			(<any> this.map)._editTooltip = {updateContent: () => { ; }};
+			(<any> this.map)._editTooltip = {updateContent: () => { /* empty */ }};
 		}
 		editLayer.closePopup();
 		this.updateLayerStyle(editLayer);
@@ -3338,8 +3451,8 @@ export default class LajiMap {
 				if (style[prop]) {
 					let finalColor = undefined;
 					if (
-						this._idxsToContextMenuOpen[dataIdx][featureIdx] || (
-						hovered && (this._onDrawRemove || (this._onDrawReverse && isLine)))
+						this._idxsToContextMenuOpen[dataIdx][featureIdx]
+						|| hovered && (this._onDrawRemove || (this._onDrawReverse && isLine))
 					) {
 						finalColor = "#ff0000";
 					} else {
@@ -3375,7 +3488,7 @@ export default class LajiMap {
 			EDITABLE_DATA_LAYER_COLOR :
 			DATA_LAYER_COLOR;
 		return {color, fillColor: color, opacity: 1, fillOpacity: 0.7};
-	}; };
+	}; }
 
 	_getDefaultDataClusterStyle = (item) => () => {
 		let color = item.editable ? EDITABLE_DATA_LAYER_COLOR : DATA_LAYER_COLOR;
@@ -3403,9 +3516,9 @@ export default class LajiMap {
 	}
 
 	addTranslationHook(
-			elemOrFn: HTMLElement | (() => void),
-			translationKey?: string | (() => string),
-			attr = "innerHTML"): () => void {
+		elemOrFn: HTMLElement | (() => void),
+		translationKey?: string | (() => string),
+		attr = "innerHTML"): () => void {
 		const that = this;
 
 		function translate() {
@@ -3527,8 +3640,8 @@ export default class LajiMap {
 		alert.className = "laji-map-popup alert alert-danger";
 		const lajiMapError = ((<any> e)._lajiMapError) ? <LajiMapError> e : undefined;
 		const message = () => `${translations.errorHTML} ` + lajiMapError
-				? stringifyLajiMapError(lajiMapError, this.translations)
-				: e.message;
+			? stringifyLajiMapError(lajiMapError, this.translations)
+			: e.message;
 		const translationHook = this.addTranslationHook(alert, message);
 
 		this.showClosableElement(alert, () => {
@@ -3537,10 +3650,10 @@ export default class LajiMap {
 	}
 
 	showClosableElement(
-			elem: HTMLElement,
-			onClose: (e: Event) => void,
-			blocker = false,
-			getContainer = () => this.container) {
+		elem: HTMLElement,
+		onClose: (e: Event) => void,
+		blocker = false,
+		getContainer = () => this.container) {
 
 		const closeButton = document.createElement("button");
 		closeButton.setAttribute("type", "button");
@@ -3627,7 +3740,7 @@ export default class LajiMap {
 		this.showClosableElement(_container, close, !!"showBlocker", () => this._dialogRoot);
 	}
 
-	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) {
+	setLineTransectGeometry(geometry: LineTransectGeometry, events?: LineTransectEvent[]) { // eslint-disable-line @typescript-eslint/no-unused-vars
 		console.warn("line transect mixin not included!");
 	}
 
@@ -3640,16 +3753,22 @@ export default class LajiMap {
 	@dependsOn("translations", "googleApiKey")
 	setGeocodingProvider() {
 		if (!depsProvided(this, "setGeocodingProvider", arguments)) return;
-		this.provider = new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}});
+		this.providers = [
+			["Google", new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}})],
+			["MML", new MMLProvider({params: {language: this.lang, region: "fi"}})]
+		];
 		provide(this, "geocodingProvider");
 	}
 
-	geocode(query: string, additional?: any, zoom?: number) {
-		if (!this.provider) {
+	geocode(query: string, additional?: any, zoom?: number, provider: "mml" | "google" = "google") {
+		if (!this.providers) {
 			console.warn("googleApiKey not provided for geocode");
 			return;
 		}
-		this.provider.search({query, ...(additional || {})}).then((results = []) => {
+		const [, _provider] = provider === "mml"
+			? this.providers[0]
+			: this.providers[1];
+		_provider.search({query, ...(additional || {})}).then((results = []) => {
 			if (!this.map || !results.length) return;
 			const [first] = results;
 			const {x, y} = first;

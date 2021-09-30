@@ -1,4 +1,4 @@
-import * as  proj4 from "proj4";
+import * as proj4 from "proj4";
 import {
 	EPSG2393String,
 	EPSG3067String,
@@ -101,15 +101,15 @@ export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string): G.
 		if (typeof coords[0] === "number") {
 			let validator = undefined;
 			switch (from) {
-				case "EPSG:2393":
-					validator = ykjValidator;
-					break;
-				case "EPSG:3067":
-					validator = etrsValidator;
-					break;
-				case "WGS84":
-					validator = wgs84Validator;
-					break;
+			case "EPSG:2393":
+				validator = ykjValidator;
+				break;
+			case "EPSG:3067":
+				validator = etrsValidator;
+				break;
+			case "WGS84":
+				validator = wgs84Validator;
+				break;
 			}
 			validator && validateLatLng(reverseCoordinate(coords).map(_c => `${_c}`), validator, !!"throwMode");
 			return reverseCoordinate(convertLatLng(reverseCoordinate(coords), from, to));
@@ -137,32 +137,32 @@ export function circleToPolygon(center, radius, numberOfSegments) {
 	}
 
 	function offset(c1, distance, bearing) {
-		var lat1 = toRadians(c1[1]); // tslint:disable-line
-		var lon1 = toRadians(c1[0]); // tslint:disable-line
+		var lat1 = toRadians(c1[1]); // eslint-disable-line
+		var lon1 = toRadians(c1[0]); // eslint-disable-line
 		 // distance divided by 6378137 (radius of the earth) wgs84
-		var dByR = distance / 6378137;// tslint:disable-line
-		var lat = Math.asin( // tslint:disable-line
+		var dByR = distance / 6378137;// eslint-disable-line
+		var lat = Math.asin( // eslint-disable-line
 			Math.sin(lat1) * Math.cos(dByR) +
 			Math.cos(lat1) * Math.sin(dByR) * Math.cos(bearing));
-		var lon = lon1 + Math.atan2( // tslint:disable-line
+		var lon = lon1 + Math.atan2( // eslint-disable-line
 			Math.sin(bearing) * Math.sin(dByR) * Math.cos(lat1),
 			Math.cos(dByR) - Math.sin(lat1) * Math.sin(lat));
 		return [toDegrees(lon), toDegrees(lat)];
 	}
-	var n = numberOfSegments ? numberOfSegments : 32; // tslint:disable-line
-	var flatCoordinates = []; // tslint:disable-line
-	var coordinates = []; // tslint:disable-line
-	for (var i = 0; i < n; ++i) { // tslint:disable-line
-		flatCoordinates.push.apply(flatCoordinates, offset(center, radius, 2 * Math.PI * i / n));
+	var n = numberOfSegments ? numberOfSegments : 32; // eslint-disable-line
+	var flatCoordinates = []; // eslint-disable-line
+	var coordinates = []; // eslint-disable-line
+	for (var i = 0; i < n; ++i) { // eslint-disable-line
+		flatCoordinates.push.apply(flatCoordinates, offset(center, radius, 2 * Math.PI * i / n)); // eslint-disable-line
 	}
 	flatCoordinates.push(flatCoordinates[0], flatCoordinates[1]);
 
-	for (var i = 0, j = 0; j < flatCoordinates.length; j += 2) { // tslint:disable-line
+	for (var i = 0, j = 0; j < flatCoordinates.length; j += 2) { // eslint-disable-line
 		coordinates[i++] = flatCoordinates.slice(j, j + 2);
 	}
 
 	return {
-		type: 'Polygon', // tslint:disable-line
+		type: 'Polygon', // eslint-disable-line
 		coordinates: [coordinates.reverse()]
 	};
 }
@@ -170,7 +170,7 @@ export function circleToPolygon(center, radius, numberOfSegments) {
 export function standardizeGeoJSON(geoJSON: G.GeoJSON): G.GeoJSON {
 
 	function standardizeGeometry(geom) {
-		let {coordinateVerbatim, radius, ...standardized} = geom;
+		let {radius, ...standardized} = geom;
 		if (radius !== undefined) {
 			standardized = circleToPolygon(standardized.coordinates, radius, 8);
 		}
@@ -184,13 +184,13 @@ export function standardizeGeoJSON(geoJSON: G.GeoJSON): G.GeoJSON {
 }
 
 export function geoJSONToTextualFormatWith(
-		geoJSON: G.GeoJSON,
-		name: string,
-		latLngCoordConverter: (latlng: number[]) => string,
-		coordinateJoiner: (latlng: number[]) => string,
-		coordinateStrToPoint: (coordinate: string) => string,
-		coordinateStrToLine: (coordinate: string) => string,
-		coordinateStrToPolygon: (coordinate: string) => string): string {
+	geoJSON: G.GeoJSON,
+	name: string,
+	latLngCoordConverter: (latlng: number[]) => string,
+	coordinateJoiner: (latlng: number[]) => string,
+	coordinateStrToPoint: (coordinate: string) => string,
+	coordinateStrToLine: (coordinate: string) => string,
+	coordinateStrToPolygon: (coordinate: string) => string): string {
 	function geoJSONCoordToTextual(coords) {
 		return latLngCoordConverter(reverseCoordinate(coords));
 	}
@@ -207,17 +207,17 @@ export function geoJSONToTextualFormatWith(
 	function geometryConverterFn(geometry) {
 		switch (geometry.type) {
 		case "GeometryCollection":
-				return geometry.geometries.reduce((collStr, _geom) => `${collStr}${geometryConverterFn(_geom)}\n`, "");
+			return geometry.geometries.reduce((collStr, _geom) => `${collStr}${geometryConverterFn(_geom)}\n`, "");
 		case "Point":
-				return coordinateStrToPoint(geoJSONCoordToTextual(geometry.coordinates));
+			return coordinateStrToPoint(geoJSONCoordToTextual(geometry.coordinates));
 		case "LineString":
-				return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
+			return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
 		case "Polygon": {
 			if (geometry.coordinates.length > 1) throw new Error(`${name} doesn't support polygons with interior rings.`);
 			return coordinateStrToPolygon(geoJSONCoordsToTextualArea(geometry.coordinates[0]));
 		}
 		default:
-				throw new Error(`Unknown geometry type ${geometry.type} for ${name} conversion`);
+			throw new Error(`Unknown geometry type ${geometry.type} for ${name} conversion`);
 		}
 	}
 
@@ -323,11 +323,11 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 }
 
 function textualFormatToGeoJSON(
-		text: string,
-		lineToCoordinates: (line: string) => number[][],
-		lineIsPolygon: (line: string) => boolean,
-		lineIsLineString: (line: string) => boolean,
-		lineIsPoint: (line: string) => boolean): G.FeatureCollection {
+	text: string,
+	lineToCoordinates: (line: string) => number[][],
+	lineIsPolygon: (line: string) => boolean,
+	lineIsLineString: (line: string) => boolean,
+	lineIsPoint: (line: string) => boolean): G.FeatureCollection {
 	const _lineToCoordinates = (line, idx): number[][] => {
 		try  {
 			const coords = lineToCoordinates(line);
@@ -365,7 +365,7 @@ function textualFormatToGeoJSON(
 			} else {
 				throw new LajiMapError(`Couldn't detect geo data line format. Line: ${idx + 1}`, "LineGeoDataFormatError", idx);
 			}
-	}, []);
+		}, []);
 
 	return {type: "FeatureCollection", features};
 }
@@ -435,7 +435,7 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 
 export function WKTToGeoJSON(WKT: string): G.FeatureCollection {
 	function lineToCoordinates(line) {
-		return line.match(/.+\({1,2}([^\(\)]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.trim().split(" ").map(c => +c));
+		return line.match(/.+\({1,2}([^()]*)\){1,2}/)[1].split(",").map(spacedPair => spacedPair.trim().split(" ").map(c => +c));
 	}
 	function lineIsPolygon(line) {
 		return line.match(`^${("POLYGON")}`);
@@ -465,7 +465,7 @@ export function latLngTuplesEqual(first, second) {
 // Copy pasted from leaflet/src/geo/crs/CRS.Earth.js for headless usage.
 // distance between two geographical points using spherical law of cosines approximation
 function distance(latlng1, latlng2) {
-	var rad = Math.PI / 180, // tslint:disable-line
+	var rad = Math.PI / 180, // eslint-disable-line
 		lat1 = latlng1.lat * rad,
 		lat2 = latlng2.lat * rad,
 		sinDLat = Math.sin((latlng2.lat - latlng1.lat) * rad / 2),
@@ -596,7 +596,7 @@ export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
 			try {
 				proj4(crs);
 			} catch (e) {
-					throw new LajiMapError("GeoJSON CRS not supported", "GeoJSONCRSNotSupported");
+				throw new LajiMapError("GeoJSON CRS not supported", "GeoJSONCRSNotSupported");
 			}
 			return crs;
 		}
@@ -633,9 +633,9 @@ export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, validate: boo
 
 export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: string, validate?: boolean | "errors"): string;
 export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection; // tslint:disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection; // eslint-disable-line
 export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string | G.FeatureCollection { // tslint:disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string | G.FeatureCollection { // eslint-disable-line
 	if (input === undefined) {
 		return undefined;
 	}
@@ -707,15 +707,15 @@ export function validateGeoJSON(geoJSON, crs?: string, warnings = true): {errors
 		try {
 			let validator = undefined;
 			switch (crs) {
-				case "EPSG:2393":
-					validator = ykjValidator;
-					break;
-				case "EPSG:3067":
-					validator = etrsValidator;
-					break;
-				case "WGS84":
-					validator = wgs84Validator;
-					break;
+			case "EPSG:2393":
+				validator = ykjValidator;
+				break;
+			case "EPSG:3067":
+				validator = etrsValidator;
+				break;
+			case "WGS84":
+				validator = wgs84Validator;
+				break;
 			}
 			validator && validateLatLng(c.slice(0).reverse().map(_c => `${_c}`), validator, !!"throwMode");
 		} catch (e) {
@@ -736,8 +736,8 @@ export function validateGeoJSON(geoJSON, crs?: string, warnings = true): {errors
 			addGeoJSONError(
 				_path,
 				!isHole
-				? "PolygonHoleCoordinatesShouldBeClockWise"
-				: "PolygonCoordinatesShouldBeAntiClockWise",
+					? "PolygonHoleCoordinatesShouldBeClockWise"
+					: "PolygonCoordinatesShouldBeAntiClockWise",
 				!!"fixable"
 			);
 			return ring.reverse();
@@ -747,85 +747,85 @@ export function validateGeoJSON(geoJSON, crs?: string, warnings = true): {errors
 
 	const validator = (_geoJSON: G.GeoJSON, _path: string): G.GeoJSON => {
 		switch (_geoJSON.type) {
-			case "FeatureCollection":
-				_geoJSON = <G.FeatureCollection> _geoJSON;
-				if (!_geoJSON.features) {
-					addGeoJSONError(_path, "NoFeatures");
-					return _geoJSON;
-				}
-				return <G.FeatureCollection> {
-					..._geoJSON,
-					features: _geoJSON.features.map((g, i)  => validator(g, `${_path}/features/${i}`))
-				};
-			case "GeometryCollection":
-				_geoJSON = <G.GeometryCollection> _geoJSON;
-				if (!_geoJSON.geometries) {
-					addGeoJSONError(_path,  "NoGeometries");
-					return _geoJSON;
-				}
-				return <G.GeometryCollection> {
-					..._geoJSON,
-					geometries: _geoJSON.geometries.map((g, i) => validator(g,  `${_path}/geometries/${i}`))
-				};
-			case "Feature":
-				_geoJSON = <G.Feature> _geoJSON;
-				if (!_geoJSON.geometry) {
-					addGeoJSONError(_path, "NoGeometry");
-					return _geoJSON;
-				}
-				return <G.Feature> {
-					..._geoJSON,
-					feature: validator(_geoJSON.geometry, `${_path}/geometry`)
-				};
-			case "Point":
-				_geoJSON = <G.Point> _geoJSON;
-				if (!_geoJSON.coordinates) {
-					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
-				} else {
-					validateCoordinate(_geoJSON.coordinates, `${_path}/coordinates`);
-				}
+		case "FeatureCollection":
+			_geoJSON = <G.FeatureCollection> _geoJSON;
+			if (!_geoJSON.features) {
+				addGeoJSONError(_path, "NoFeatures");
 				return _geoJSON;
-			case "LineString":
-				_geoJSON = <G.LineString> _geoJSON;
-				if (!_geoJSON.coordinates) {
-					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
-					return _geoJSON;
-				}
-				_geoJSON.coordinates.forEach((c, i) => {
-					validateCoordinate(c, `${_path}/coordinates/${i}`);
+			}
+			return <G.FeatureCollection> {
+				..._geoJSON,
+				features: _geoJSON.features.map((g, i)  => validator(g, `${_path}/features/${i}`))
+			};
+		case "GeometryCollection":
+			_geoJSON = <G.GeometryCollection> _geoJSON;
+			if (!_geoJSON.geometries) {
+				addGeoJSONError(_path,  "NoGeometries");
+				return _geoJSON;
+			}
+			return <G.GeometryCollection> {
+				..._geoJSON,
+				geometries: _geoJSON.geometries.map((g, i) => validator(g,  `${_path}/geometries/${i}`))
+			};
+		case "Feature":
+			_geoJSON = <G.Feature> _geoJSON;
+			if (!_geoJSON.geometry) {
+				addGeoJSONError(_path, "NoGeometry");
+				return _geoJSON;
+			}
+			return <G.Feature> {
+				..._geoJSON,
+				feature: validator(_geoJSON.geometry, `${_path}/geometry`)
+			};
+		case "Point":
+			_geoJSON = <G.Point> _geoJSON;
+			if (!_geoJSON.coordinates) {
+				addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+			} else {
+				validateCoordinate(_geoJSON.coordinates, `${_path}/coordinates`);
+			}
+			return _geoJSON;
+		case "LineString":
+			_geoJSON = <G.LineString> _geoJSON;
+			if (!_geoJSON.coordinates) {
+				addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+				return _geoJSON;
+			}
+			_geoJSON.coordinates.forEach((c, i) => {
+				validateCoordinate(c, `${_path}/coordinates/${i}`);
+			});
+			return _geoJSON;
+		case "MultiLineString":
+			_geoJSON = <G.MultiLineString> _geoJSON;
+			if (!_geoJSON.coordinates) {
+				addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
+				return _geoJSON;
+			}
+			_geoJSON.coordinates.forEach((line, i) => {
+				line.forEach((c, j) => {
+					validateCoordinate(c, `${_path}/coordinates${i}/${j}`);
 				});
+			});
+			return _geoJSON;
+		case "Polygon":
+			_geoJSON = <G.Polygon> _geoJSON;
+			if (!_geoJSON.coordinates) {
+				addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
 				return _geoJSON;
-			case "MultiLineString":
-				_geoJSON = <G.MultiLineString> _geoJSON;
-				if (!_geoJSON.coordinates) {
-					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
-					return _geoJSON;
-				}
-				_geoJSON.coordinates.forEach((line, i) => {
-					line.forEach((c, j) => {
-						validateCoordinate(c, `${_path}/coordinates${i}/${j}`);
-					});
-				});
+			}
+			_geoJSON.coordinates = _geoJSON.coordinates.map((ring, i) => validateRing(ring, !!i, `${_path}/coordinates/${i}`));
+			return _geoJSON;
+		case "MultiPolygon":
+			_geoJSON = <G.MultiPolygon> _geoJSON;
+			if (!_geoJSON.coordinates) {
+				addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
 				return _geoJSON;
-			case "Polygon":
-				_geoJSON = <G.Polygon> _geoJSON;
-				if (!_geoJSON.coordinates) {
-					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
-					return _geoJSON;
-				}
-				_geoJSON.coordinates = _geoJSON.coordinates.map((ring, i) => validateRing(ring, !!i, `${_path}/coordinates/${i}`));
-				return _geoJSON;
-			case "MultiPolygon":
+			}
+			_geoJSON.coordinates.forEach((coordinates, i) => {
 				_geoJSON = <G.MultiPolygon> _geoJSON;
-				if (!_geoJSON.coordinates) {
-					addGeoJSONError(`${_path}/coordinates`, "NoCoordinates");
-					return _geoJSON;
-				}
-				_geoJSON.coordinates.forEach((coordinates, i) => {
-					_geoJSON = <G.MultiPolygon> _geoJSON;
-					geoJSON.coordinates[i] = _geoJSON.coordinates[i].map((ring, j) => validateRing(ring, !!i, `${_path}/coordinates/${i}/${j}`));
-				});
-				return _geoJSON;
+				geoJSON.coordinates[i] = _geoJSON.coordinates[i].map((ring, j) => validateRing(ring, !!i, `${_path}/coordinates/${i}/${j}`));
+			});
+			return _geoJSON;
 		}
 	};
 
@@ -840,7 +840,7 @@ export function coordinatesAreClockWise(coordinates: G.Position[]) {
 	}).filter(c => c)
 		.reduce((_sum, edge) =>
 			(_sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
-			0);
+		0);
 	const isClockwise = sum >= 0;
 	return isClockwise;
 }
@@ -909,7 +909,7 @@ function renderGeoJSONError(e, translations) {
 }
 
 export class LajiMapGeoJSONError extends LajiMapError {
-	public translationKey: string;
+	public translationKey: string = undefined;
 	public path: string;
 	public fixable: boolean;
 
@@ -1047,7 +1047,7 @@ export function validateLatLng(latlng: string[], latLngValidator: CoordinateVali
 	});
 }
 
-export function roundMeters(meters: number, accuracy: number = 1): number {
+export function roundMeters(meters: number, accuracy = 1): number {
 	return accuracy ?  Math.round(Math.round(meters) / accuracy) * accuracy : meters;
 }
 
@@ -1058,7 +1058,7 @@ export function createTextInput(): HTMLInputElement {
 	return input;
 }
 
-export function createTextArea(rows: number = 10, cols: number = 10): HTMLTextAreaElement {
+export function createTextArea(rows = 10, cols = 10): HTMLTextAreaElement {
 	const input = document.createElement("textarea");
 	input.setAttribute("rows", `${rows}`);
 	input.setAttribute("cols", `${cols}`);
@@ -1085,7 +1085,7 @@ export function combineColors(...colors: any[]): string {
 
 	colors = colors.map(color => {
 		if (color.length === 4) {
-			const [hash, r, g, b] = color.split("");
+			const [, r, g, b] = color.split("");
 			color = `#${r}${r}${g}${g}${b}${b}`;
 		}
 		return color;
@@ -1149,44 +1149,44 @@ export function anyToFeatureCollection(_geoJSON: G.GeoJSON): G.FeatureCollection
 		return {type: "FeatureCollection", features: []};
 	}
 	switch (_geoJSON.type) {
-		case "FeatureCollection":
-			return _geoJSON;
-		case "Feature":
-			return {type: "FeatureCollection", features: [_geoJSON]};
-		case "Point":
-		case "Polygon":
-		case "LineString":
-			return {type: "FeatureCollection", features: [{type: "Feature", properties: {}, geometry: _geoJSON}]};
-		case "GeometryCollection":
-			return {
-				type: "FeatureCollection",
-				features:  _geoJSON.geometries.map(geometry => <G.Feature> ({type: "Feature", properties: {}, geometry}))
-			};
-		default:
-			throw new Error("Invalid geoJSON type");
+	case "FeatureCollection":
+		return _geoJSON;
+	case "Feature":
+		return {type: "FeatureCollection", features: [_geoJSON]};
+	case "Point":
+	case "Polygon":
+	case "LineString":
+		return {type: "FeatureCollection", features: [{type: "Feature", properties: {}, geometry: _geoJSON}]};
+	case "GeometryCollection":
+		return {
+			type: "FeatureCollection",
+			features:  _geoJSON.geometries.map(geometry => <G.Feature> ({type: "Feature", properties: {}, geometry}))
+		};
+	default:
+		throw new Error("Invalid geoJSON type");
 	}
-};
+}
 
 export function flattenMultiLineStringsAndMultiPolygons(features: G.Feature[]): G.Feature[] {
 	const flattened = [];
 	features.forEach(f => {
 		switch (f.geometry.type) {
-			case "MultiLineString":
-				(<G.MultiLineString> f.geometry).coordinates.forEach(line => {
-					flattened.push({type: "Feature", geometry: {type: "LineString", coordinates: line}, properties: f.properties});
-				});
-				break;
-			case "MultiPolygon":
-				(<G.MultiPolygon> f.geometry).coordinates.forEach(polygon => {
-					flattened.push({type: "Feature", geometry: {type: "Polygon", coordinates: polygon}, properties: f.properties});
-				});
-				break;
-			default:
-				flattened.push(f);
+		case "MultiLineString":
+			(<G.MultiLineString> f.geometry).coordinates.forEach(line => {
+				flattened.push({type: "Feature", geometry: {type: "LineString", coordinates: line}, properties: f.properties});
+			});
+			break;
+		case "MultiPolygon":
+			(<G.MultiPolygon> f.geometry).coordinates.forEach(polygon => {
+				flattened.push({type: "Feature", geometry: {type: "Polygon", coordinates: polygon}, properties: f.properties});
+			});
+			break;
+		default:
+			flattened.push(f);
 		}
 	});
 	return flattened;
-};
+}
 
 export const geoJSONAsFeatureCollection = (geoJSON: G.GeoJSON): G.FeatureCollection => ({
 	type: "FeatureCollection",

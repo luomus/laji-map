@@ -1,11 +1,10 @@
 {
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
-		"outDir": "./test-export",
-		"declaration": true,
 		"module": "commonjs"
 	},
 	"include": [
+		"./src/**/*",
 		"./test/**/*"
 	]
 }

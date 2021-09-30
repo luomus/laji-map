@@ -1,3 +1,6 @@
+## 3.8.0
+* Add kiinteistojaotus & kiinteistotunnukset layers (blacklisted by default)
+
 ## 3.7.0
 * Add MML provider for geocoding
 

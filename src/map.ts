@@ -786,7 +786,6 @@ export default class LajiMap {
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 
-<<<<<<< HEAD
 			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions = {format: "png"}) =>
 				L.tileLayer(`https://proxy.laji.fi/mml_wmts/${layerService}/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
 				...options,
@@ -798,35 +797,14 @@ export default class LajiMap {
 				transparent: false,
 				attribution : mmlAttribution
 			});
-=======
-			const getMMLLayer = (name, options: L.TileLayerOptions = {format: "png"}) =>
-				L.tileLayer(`https://proxy.laji.fi/mml_wmts/maasto/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
-					...options,
-					style: "default",
-					minZoom: 0,
-					maxZoom: 15,
-					version: "1.0.0",
-					format: `image/${options.format}`,
-					transparent: false,
-					attribution : mmlAttribution
-				});
->>>>>>> master
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
 			this.finnishTileLayers = {
-<<<<<<< HEAD
-				...this.finnishTileLayers,
 				taustakartta: getMaastoLayer("taustakartta"),
 				maastokartta: getMaastoLayer("maastokartta"),
 				ortokuva: getMaastoLayer("ortokuva", {format: "jpg", maxZoom: 14}),
 				laser: L.tileLayer("https://wmts.mapant.fi/wmts.php?z={z}&x={x}&y={y}", {
-=======
-				taustakartta: getMMLLayer("taustakartta"),
-				maastokartta: getMMLLayer("maastokartta"),
-				ortokuva: getMMLLayer("ortokuva", {format: "jpg", maxZoom: 14}),
-				laser: L.tileLayer("https://proxy.laji.fi/mapant/wmts.php?z={z}&x={x}&y={y}", {
->>>>>>> master
 					maxZoom: 19,
 					minZoom: 0,
 					tileSize: 256,
@@ -935,23 +913,14 @@ export default class LajiMap {
 						attribution: sykeAttribution
 					}),
 				biodiversityForestZones: L.tileLayer.wms(
-<<<<<<< HEAD
-					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // tslint:disable-line
-					maxZoom: 15,
-					layers: "8",
-					defaultOpacity: 0.5,
-					attribution: sykeAttribution
-				}),
-				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
-				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
-=======
-					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", {
+					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // eslint-disable-line max-len
 						maxZoom: 15,
 						layers: "8",
 						defaultOpacity: 0.5,
 						attribution: sykeAttribution
-					})
->>>>>>> master
+					}),
+				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
+				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

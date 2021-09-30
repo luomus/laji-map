@@ -264,6 +264,8 @@ export default class LajiMap {
 	locateOptions: UserLocationOptions;
 	availableTileLayersWhitelist: TileLayerName[];
 	availableTileLayersBlacklist: TileLayerName[];
+	availableOverlaysBlacklist: OverlayName[];
+	availableOverlaysWhitelist: OverlayName[];
 	_initialized = false;
 	mmlProj: L.Proj.CRS;
 	_trySwapToFinnishOnInitialization = true;
@@ -369,7 +371,8 @@ export default class LajiMap {
 			draw: false,
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
-			viewLocked: false
+			viewLocked: false,
+			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset]
 		};
 
 		this.options = {...options, ...props};
@@ -788,15 +791,15 @@ export default class LajiMap {
 
 			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions = {format: "png"}) =>
 				L.tileLayer(`https://proxy.laji.fi/mml_wmts/${layerService}/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
-				...options,
-				style: "default",
-				minZoom: 0,
-				maxZoom: 15,
-				version: "1.0.0",
-				format: `image/${options.format}`,
-				transparent: false,
-				attribution : mmlAttribution
-			});
+					...options,
+					style: "default",
+					minZoom: 0,
+					maxZoom: 15,
+					version: "1.0.0",
+					format: `image/${options.format}`,
+					transparent: false,
+					attribution : mmlAttribution
+				});
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
@@ -1206,13 +1209,14 @@ export default class LajiMap {
 		this.setTileLayer(this.tileLayers[name]);
 	}
 
-	_getListForAvailableTileLayer(names: TileLayerName[], condition, _tileLayers?: {[name: string]: L.TileLayer}) {
+	getListForAvailableLayers(names: LayerNames[], condition, _tileLayers?: {[name: string]: L.TileLayer}) {
 		const list = names.reduce((_list, name) => {
 			_list[name] = true;
 			return _list;
 		}, {});
-		return Object.keys(_tileLayers || this.tileLayers).reduce((tileLayers, name) => {
-			if (name in list === condition) tileLayers[name] = this.tileLayers[name];
+		const layers = _tileLayers || this.tileLayers;
+		return Object.keys(layers).reduce((tileLayers, name) => {
+			if (name in list === condition) tileLayers[name] = layers[name];
 			return tileLayers;
 		}, {});
 	}
@@ -1221,7 +1225,7 @@ export default class LajiMap {
 	setAvailableTileLayers(names: TileLayerName[], condition: boolean, _tileLayers?: {[name: string]: L.TileLayer}) {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
 
-		this.availableTileLayers = this._getListForAvailableTileLayer(names, condition, _tileLayers);
+		this.availableTileLayers = this.getListForAvailableLayers(names, condition, _tileLayers);
 		!isProvided(this, "availableTileLayers") && provide(this, "availableTileLayers");
 		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
@@ -1236,7 +1240,7 @@ export default class LajiMap {
 			names = this.getDefaultTileLayerBlacklist();
 		}
 		this.availableTileLayersBlacklist = names;
-		const layers = this._getListForAvailableTileLayer(this.availableTileLayersWhitelist || this.getDefaultTileLayerWhitelist(), true);
+		const layers = this.getListForAvailableLayers(this.availableTileLayersWhitelist || this.getDefaultTileLayerWhitelist(), true);
 		this.setAvailableTileLayers(names, false, layers);
 	}
 
@@ -1247,7 +1251,7 @@ export default class LajiMap {
 			names = this.getDefaultTileLayerWhitelist();
 		}
 		this.availableTileLayersWhitelist = names;
-		const layers = this._getListForAvailableTileLayer(this.availableTileLayersBlacklist || this.getDefaultTileLayerBlacklist(), false);
+		const layers = this.getListForAvailableLayers(this.availableTileLayersBlacklist || this.getDefaultTileLayerBlacklist(), false);
 		this.setAvailableTileLayers(names, true, layers);
 	}
 
@@ -1541,11 +1545,22 @@ export default class LajiMap {
 		this.setOverlays(overlayNames.map(name => this.overlaysByNames[name] || this.tileLayers[name]));
 	}
 
+	getDefaultOverlaysBlacklist(): OverlayName[] { return []; }
+	getDefaultOverlaysWhitelist(): OverlayName[] { return <OverlayName[]> Object.keys(this.overlaysByNames); }
+
+	@dependsOn("map")
 	setAvailableOverlaysBlacklist(overlayNames: OverlayName[]) {
+		if (!depsProvided(this, "setAvailableOverlaysBlacklist", arguments)) return;
 		if (!overlayNames) {
-			overlayNames = [];
+			overlayNames = this.getDefaultOverlaysBlacklist();
 		}
-		this.setAvailableOverlays(overlayNames, false);
+		this.availableOverlaysBlacklist = overlayNames;
+		const layers = this.getListForAvailableLayers(
+			this.availableOverlaysWhitelist || this.getDefaultOverlaysWhitelist(),
+			true,
+			this.overlaysByNames
+		);
+		this.setAvailableOverlays(overlayNames, false, layers);
 	}
 
 	@dependsOn("map")
@@ -1558,16 +1573,11 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableOverlays(overlayNames: OverlayName[] = [], condition) {
+	setAvailableOverlays(overlayNames: OverlayName[] = [], condition, _tileLayers?: {[name: string]: L.TileLayer}) {
 		if (!depsProvided(this, "setAvailableOverlays", arguments)) return;
-		const list = overlayNames.reduce((_list, name) => {
-			_list[name] = true;
-			return _list;
-		}, {});
-		this.availableOverlaysByNames = Object.keys(this.overlaysByNames).reduce((overlaysByNames, name) => {
-			if (name in list === condition) overlaysByNames[name] = this.overlaysByNames[name];
-			return overlaysByNames;
-		}, {});
+		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
+
+		this.availableOverlaysByNames = this.getListForAvailableLayers(overlayNames, condition, _tileLayers);
 		!isProvided(this, "availableOverlays") && provide(this, "availableOverlays");
 		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}

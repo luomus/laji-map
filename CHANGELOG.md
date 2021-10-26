@@ -1,3 +1,7 @@
+## 3.9.0
+* Add AFE grid layers
+* Add `lajiGeoServerAddress` option
+
 ## 3.8.0
 * Add kiinteistojaotus & kiinteistotunnukset layers (blacklisted by default)
 

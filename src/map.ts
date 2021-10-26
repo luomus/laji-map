@@ -259,7 +259,9 @@ export default class LajiMap {
 		"forestVegetationZones",
 		"mireVegetationZones",
 		"threatenedSpeciesEvaluationZones",
-		"biodiversityForestZones"
+		"biodiversityForestZones",
+		"currentProtectedAreas",
+		"plannedProtectedAreas",
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -910,6 +912,12 @@ export default class LajiMap {
 					}),
 				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
+				currentProtectedAreas: getLajiLayer({
+					layers: "ProtectedAreas:currentProtectedAreas",
+				}),
+				plannedProtectedAreas: getLajiLayer({
+					layers: "ProtectedAreas:plannedProtectedAreas",
+				})
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

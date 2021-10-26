@@ -158,7 +158,9 @@ export enum OverlayName {
 	ykjGrid = "ykjGrid",
 	ykjGridLabels = "ykjGridLabels",
 	kiinteistojaotus = "kiinteistojaotus",
-	kiinteistotunnukset = "kiinteistotunnukset"
+	kiinteistotunnukset = "kiinteistotunnukset",
+	currentProtectedAreas = "currentProtectedAreas",
+	plannedProtectedAreas = "plannedProtectedAreas",
 }
 
 export interface TileLayerOptions {

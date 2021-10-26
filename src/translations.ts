@@ -789,5 +789,15 @@ export default {
 		fi: "Kiinteistötunnukset",
 		en: "Property ID",
 		sv: "Fastighetskoder"
-	}
+	},
+	afeGrid: {
+		fi: "AFE-ruudukko",
+		en: "AFE grid",
+		sv: "AFE rutnät"
+	},
+	cgrsGrid: {
+		fi: "AFE-ruudukko",
+		en: "AFE grid",
+		sv: "AFE rutnät"
+	},
 };

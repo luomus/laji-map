@@ -55,6 +55,7 @@ bodyAsDialogRoot                                | Boolean                   | tr
 clickBeforeZoomAndPan                           | Boolean                   | false                                       | Block wheel and touchstart events before map is clicked/touched.
 viewLocked                                      | Boolean                   | false                                       | Prevent all view interaction (panning, zooming).
 googleApikey                                    | String                    | -                                           | Needed for geocoding control.
+lajiGeoServerAddress                            | String                    | "https://geoserver.laji.fi"                 | Override the laji.fi geoserver address
 
 ### Data options ###
 

@@ -245,8 +245,10 @@ export default class LajiMap {
 		"ortokuva",
 		"ykjGrid",
 		"ykjGridLabels",
+		"afeGrid",
 		"openStreetMap",
 		"googleSatellite",
+		"cgrsGrid",
 		"geobiologicalProvinces",
 		"geobiologicalProvinceBorders",
 		"municipalities",
@@ -277,6 +279,7 @@ export default class LajiMap {
 		clickBeforeZoomAndPan: boolean;
 		bodyOverflowY: string;
 	};
+	lajiGeoServerAddress = "https://geoserver.laji.fi/geoserver";
 
 	controls: L.Control[];
 	_customControls: CustomControl[];
@@ -420,7 +423,8 @@ export default class LajiMap {
 			bodyAsDialogRoot: ["setBodyAsDialogRoot", () => this._dialogRoot === document.body],
 			clickBeforeZoomAndPan: ["setClickBeforeZoomAndPan", "_clickBeforeZoomAndPan"],
 			googleApiKey: "setGoogleApiKey",
-			viewLocked: "setViewLocked"
+			viewLocked: "setViewLocked",
+			lajiGeoServerAddress: true
 		};
 	}
 
@@ -803,6 +807,20 @@ export default class LajiMap {
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
+			const getLajiLayer = (options: L.WMSOptions) => L.tileLayer.wms(`${this.lajiGeoServerAddress}/ows`, {
+				maxZoom: 15,
+				format: "image/png",
+				transparent: true,
+				...options
+			});
+
+			const getTilastokeskusLayer = (layer: string) => L.tileLayer.wms("https://geo.stat.fi/geoserver/tilastointialueet/wms", {
+				layers: layer,
+				transparent: true,
+				format: "image/png",
+				attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+			});
+
 			this.finnishTileLayers = {
 				taustakartta: getMaastoLayer("taustakartta"),
 				maastokartta: getMaastoLayer("maastokartta"),
@@ -813,19 +831,14 @@ export default class LajiMap {
 					tileSize: 256,
 					attribution : `${mmlAttribution}, ${getAttribution("https://www.mapant.fi", "Mapant")}`
 				}),
-				ykjGrid: L.tileLayer.wms("https://fmnh-ws-prod3.it.helsinki.fi/geoserver/ows", {
-					maxZoom: 15,
-					layers: "ykj:YKJlines100,ykj:YKJlines1000,ykj:YKJlines10000,ykj:YKJlines100000",
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
+				ykjGrid: getLajiLayer({
+					layers: "LajiMapData:YKJlines100,LajiMapData:YKJlines1000,LajiMapData:YKJlines10000,LajiMapData:YKJlines100000",
 				}),
-				ykjGridLabels: L.tileLayer.wms("https://fmnh-ws-prod3.it.helsinki.fi/geoserver/ows", {
-					maxZoom: 15,
-					layers: "ykj:YKJlabels100,ykj:YKJlabels1000,ykj:YKJlabels10000,ykj:YKJlabels100000",
-					format: "image/png",
-					transparent: true,
-					version: "1.1.0",
+				ykjGridLabels: getLajiLayer({
+					layers: "LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000",
+				}),
+				afeGrid: getLajiLayer({
+					layers: "LajiMapData:afe_grid"
 				})
 			};
 
@@ -836,6 +849,9 @@ export default class LajiMap {
 				googleSatellite: L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
 					subdomains: ["mt0", "mt1", "mt2", "mt3"],
 					attribution: getAttribution("https://developers.google.com/maps/terms", "Google")
+				}),
+				cgrsGrid: getLajiLayer({
+					layers: "LajiMapData:cgrs_grid"
 				})
 			};
 
@@ -847,45 +863,19 @@ export default class LajiMap {
 			this.availableTileLayers = this.tileLayers;
 
 			this.overlaysByNames = {
-				geobiologicalProvinces: L.tileLayer.wms(
-					"https://maps.luomus.fi/geoserver/ows", {
-						maxZoom: 15,
-						layers: "INSPIRE:fi_fmnh_br_extended",
-						format: "image/png",
-						transparent: true,
-						version: "1.3.0",
-						defaultOpacity: 0.5
-					}),
-				geobiologicalProvinceBorders: L.tileLayer.wms(
-					"https://maps.luomus.fi/geoserver/INSPIRE/wms", {
-						maxZoom: 15,
-						layers: "INSPIRE:fi_fmnh_br",
-						styles: "harmaaviiva",
-						format: "image/png",
-						transparent: true,
-						version: "1.1.0",
-					}),
-				municipalities: L.tileLayer.wms(
-					"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
-						layers: "kunta1000k",
-						transparent: true,
-						format: "image/png",
-						attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
-					}),
-				counties: L.tileLayer.wms(
-					"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
-						layers: "maakunta1000k",
-						transparent: true,
-						format: "image/png",
-						attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
-					}),
-				ely: L.tileLayer.wms(
-					"https://geo.stat.fi/geoserver/tilastointialueet/wms", {
-						layers: "ely1000k",
-						transparent: true,
-						format: "image/png",
-						attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
-					}),
+				geobiologicalProvinces: getLajiLayer({
+					maxZoom: 15,
+					layers: "LajiMapData:biogeographical_provinces",
+					version: "1.3.0",
+					defaultOpacity: 0.5
+				}),
+				geobiologicalProvinceBorders: getLajiLayer({
+					layers: "LajiMapData:biogeographical_provinces_borders",
+					version: "1.1.0",
+				}),
+				municipalities: getTilastokeskusLayer("kunta1000k"),
+				counties: getTilastokeskusLayer( "maakunta1000k"),
+				ely: getTilastokeskusLayer( "ely1000k"),
 				forestVegetationZones: L.tileLayer.wms(
 					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
 						maxZoom: 15,
@@ -906,15 +896,11 @@ export default class LajiMap {
 						defaultOpacity: 0.5,
 						attribution: sykeAttribution
 					}),
-				threatenedSpeciesEvaluationZones: L.tileLayer.wms(
-					"https://maps.luomus.fi/geoserver/Vyohykejaot/wms", {
-						maxZoom: 15,
-						layers: "Vyohykejaot:Metsakasvillisuusvyohykkeet_Uhanalaisarviointi",
-						format: "image/png",
-						transparent: true,
-						version: "1.1.0",
-						attribution: sykeAttribution
-					}),
+				threatenedSpeciesEvaluationZones: getLajiLayer({
+					layers: "LajiMapData:threatened_species_evaluation_zones",
+					version: "1.1.0",
+					attribution: sykeAttribution
+				}),
 				biodiversityForestZones: L.tileLayer.wms(
 					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // eslint-disable-line max-len
 						maxZoom: 15,
@@ -1186,6 +1172,7 @@ export default class LajiMap {
 		return [
 			this.tileLayers.openStreetMap,
 			this.tileLayers.googleSatellite,
+			this.tileLayers.cgrsGrid
 		];
 	}
 
@@ -1196,7 +1183,8 @@ export default class LajiMap {
 			this.tileLayers.ortokuva,
 			this.tileLayers.kiinteistojaotus,
 			this.tileLayers.kiinteistotunnukset,
-			this.tileLayers.laser
+			this.tileLayers.laser,
+			this.tileLayers.afeGrid,
 		];
 	}
 

@@ -140,7 +140,9 @@ export enum TileLayerName {
 	ortokuva = "ortokuva",
 	laser = "laser",
 	openStreetMap = "openStreetMap",
-	googleSatellite = "googleSatellite"
+	googleSatellite = "googleSatellite",
+	afeGrid = "afeGrid",
+	cgrsGrid = "cgrsGrid",
 }
 
 export enum OverlayName {
@@ -167,8 +169,8 @@ export interface TileLayerOptions {
 export type TileLayerNames = keyof typeof TileLayerName;
 export type OverlayNames = keyof typeof OverlayName;
 export type LayerNames = TileLayerNames | OverlayNames;
-export type WorldLayerNames = Extract<TileLayerNames, "openStreetMap" | "googleSatellite">;
-export type FinnishLayerNames = Exclude<TileLayerNames, "openStreetMap" | "googleSatellite">;
+export type WorldLayerNames = Extract<TileLayerNames, "openStreetMap" | "googleSatellite" | "cgrsGrid">;
+export type FinnishLayerNames = Exclude<TileLayerNames, "openStreetMap" | "googleSatellite" | "cgrsGrid">;
 type ActiveProj = "finnish" | "world";
 
 export interface TileLayersOptions {
@@ -216,6 +218,7 @@ export interface Options extends MapOptions {
 	clickBeforeZoomAndPan?: boolean;
 	viewLocked?: boolean;
 	controls?: boolean | ControlsOptions;
+	lajiGeoServerAddress?: string;
 }
 
 export interface UserLocationOptions {

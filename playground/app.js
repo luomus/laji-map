@@ -147,6 +147,7 @@ class App {
 		this.activeIdx = 0;
 
 		const demoOptions = {
+			availableOverlayNameBlacklist: [],
 			availableTileLayerNamesBlacklist: [],
 			popupOnHover: true,
 			center: {

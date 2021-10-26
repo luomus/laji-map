@@ -1181,8 +1181,6 @@ export default class LajiMap {
 			this.tileLayers.maastokartta,
 			this.tileLayers.taustakartta,
 			this.tileLayers.ortokuva,
-			this.tileLayers.kiinteistojaotus,
-			this.tileLayers.kiinteistotunnukset,
 			this.tileLayers.laser,
 			this.tileLayers.afeGrid,
 		];

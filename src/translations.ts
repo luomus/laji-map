@@ -800,14 +800,4 @@ export default {
 		en: "AFE grid",
 		sv: "AFE rutnät"
 	},
-	currentProtectedAreas: {
-		fi: "Suojelualueet",
-		en: "Protected areas",
-		sv: "Skyddade områden"
-	},
-	plannedProtectedAreas: {
-		fi: "Suojelualuesuunnitelmat",
-		en: "Protected area reservations",
-		sv: "Reservationer för skyddade områden"
-	},
 };

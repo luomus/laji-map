@@ -261,7 +261,6 @@ export default class LajiMap {
 		"threatenedSpeciesEvaluationZones",
 		"biodiversityForestZones",
 		"currentProtectedAreas",
-		"plannedProtectedAreas",
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -915,9 +914,6 @@ export default class LajiMap {
 				currentProtectedAreas: getLajiLayer({
 					layers: "ProtectedAreas:currentProtectedAreas",
 				}),
-				plannedProtectedAreas: getLajiLayer({
-					layers: "ProtectedAreas:plannedProtectedAreas",
-				})
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

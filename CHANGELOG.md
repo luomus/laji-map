@@ -1,3 +1,6 @@
+## 3.10.0
+* Add currentProtectedAreas layer
+
 ## 3.9.0
 * Add AFE grid layers
 * Add `lajiGeoServerAddress` option

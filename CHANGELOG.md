@@ -1,3 +1,7 @@
+## 3.11.0
+* Add plannedProtectedAreas layer
+* Add plannedProtectedAreasRegional layer
+
 ## 3.10.0
 * Add currentProtectedAreas layer
 

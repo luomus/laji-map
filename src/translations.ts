@@ -810,4 +810,9 @@ export default {
 		en: "Protected area reservations",
 		sv: "Reservationer för skyddade områden"
 	},
+	plannedProtectedAreasRegional: {
+		fi: "Maakuntakaavan suojelualuekohteet",
+		en: "Protected areas in Regional Plans",
+		se: "Skyddade områden i landskapsplanen"
+	}
 };

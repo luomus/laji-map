@@ -1412,7 +1412,7 @@ export default class LajiMap {
 		Object.keys(changedLayers).forEach(name => {
 			const _layer = combinedLayers[name];
 			const {opacity, visible} = this._tileLayers.layers[name];
-			prevOptions && (!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.setOpacity(0);
+			prevOptions && (!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.remove();
 			// Overlays must be reapplied if projection changed.
 			oldActive && oldActive !== newOptions.active && this.overlaysByNames[name] && this.map.removeLayer(_layer);
 			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);

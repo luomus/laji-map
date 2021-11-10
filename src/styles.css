@@ -482,9 +482,11 @@
     margin-bottom: 0px;
 	background: white;
 }
-.laji-map .laji-map-control-layers fieldset legend:active, .laji-map .laji-map-control-layers fieldset legend:visited,  .laji-map .laji-map-control-layers fieldset legend:focus {
-	outline: none;
+/** Fixes Leaflet buggy focus styles (https://github.com/Leaflet/Leaflet/issues/6986) **/
+.laji-map .leaflet-container:focus, .laji-map .leaflet-container :focus {
+	outline: revert !important;
 }
+
 .laji-map .laji-map-control-layers .active-list {
 	border-width: 2px;
 }

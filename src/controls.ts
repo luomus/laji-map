@@ -545,8 +545,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		// Hrefs cause map to scroll to top when a control is clicked. This is fixed below.
 
-		function removeHref(className) {
-			const elems = document.getElementsByClassName(className);
+		function removeHref(selector: string) {
+			const elems = document.querySelectorAll(selector);
 			for (let i = 0; i < elems.length; i++) {
 				const elem = elems[i];
 				elem.removeAttribute("href");
@@ -554,13 +554,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		}
 
 		["in", "out"].forEach(zoomType => {
-			removeHref(`leaflet-control-zoom-${zoomType}`);
+			removeHref(`.leaflet-control-zoom-${zoomType}`);
 		});
 		this.getFeatureTypes().forEach(featureType => {
-			removeHref(`leaflet-draw-draw-${featureType}`);
+			removeHref(`.leaflet-draw-draw-${featureType}`);
 		});
-		removeHref("leaflet-control-layers-toggle");
-		removeHref("leaflet-contextmenu-item");
+		removeHref(".leaflet-control-layers-toggle");
+		removeHref(".leaflet-contextmenu-item");
+		removeHref(".leaflet-control-geosearch a");
 
 		provide(this, "controls");
 	}

@@ -95,6 +95,14 @@ L.Marker.include({
 	}
 });
 
+// Remove tabindex from markers https://github.com/Leaflet/Leaflet/issues/3472#issuecomment-103058457
+L.Marker.addInitHook(function () {
+	this.options.keyboard = false;
+});
+L.MarkerCluster.addInitHook(function () {
+	this.options.keyboard = false;
+});
+
 interface ContextmenuItemOptions {
 	text: string;
 	iconCls: string;
@@ -792,7 +800,7 @@ export default class LajiMap {
 			this.mmlProj.distance =  L.CRS.Earth.distance;
 			(<any> this.mmlProj).R = 6378137;
 
-			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer">&copy; ${text}</a>`;
+			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer" tabindex="-1">&copy; ${text}</a>`;
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 
@@ -2362,7 +2370,7 @@ export default class LajiMap {
 
 	_createIcon(options: L.PathOptions = {}): L.Icon {
 		const markerColor = options.color || NORMAL_COLOR;
-		const opacity = options.opacity || 1;
+		const opacity = options.opacity ?? 1;
 		return new L.VectorMarkers.Icon({
 			prefix: "glyphicon",
 			icon: "record",
@@ -3533,6 +3541,7 @@ export default class LajiMap {
 			shapeOptions?: any;
 			allowIntersection?: boolean;
 			icon?: any;
+			keyboard?: boolean
 		}
 		let additionalOptions: AdditionalOptions = {};
 

@@ -270,7 +270,6 @@ export default class LajiMap {
 		"biodiversityForestZones",
 		"currentProtectedAreas",
 		"plannedProtectedAreas",
-		"plannedProtectedAreasRegional"
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -926,9 +925,6 @@ export default class LajiMap {
 				}),
 				plannedProtectedAreas: getLajiLayer({
 					layers: "ProtectedAreas:plannedProtectedAreas",
-				}),
-				plannedProtectedAreasRegional: getLajiLayer({
-					layers: "ProtectedAreas:ProtectedAreasRegionalPlans",
 				})
 			};
 

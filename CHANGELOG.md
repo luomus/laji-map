@@ -1,3 +1,8 @@
+## 3.12.0
+* Remove plannedProtectedAreasRegional layer
+* Add help link to layer control
+* Update on accessibility: tabbing stops on map container but skips everything else
+
 ## 3.11.0
 * Add plannedProtectedAreas layer
 * Add plannedProtectedAreasRegional layer

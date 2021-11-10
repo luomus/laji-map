@@ -801,13 +801,13 @@ export default {
 		sv: "AFE rutnät"
 	},
 	currentProtectedAreas: {
-		fi: "Suojelualueet",
-		en: "Protected areas",
-		sv: "Skyddade områden"
+		fi: "Suojellut alueet (SYKE)",
+		en: "Protected areas (SYKE)",
+		sv: "Skyddade områden (SYKE)"
 	},
 	plannedProtectedAreas: {
-		fi: "Suojelualuesuunnitelmat",
-		en: "Protected area reservations",
-		sv: "Reservationer för skyddade områden"
+		fi: "Muut suojelukohteet",
+		en: "Other protected areas",
+		sv: "Andra skyddade områden"
 	},
 };

@@ -585,6 +585,18 @@
 	border-bottom-left-radius: 2px;
 	border-bottom-right-radius: 2px;
 }
+
+.laji-map .laji-map-control-layers .layer-help {
+	margin-top: -10px;
+}
+.laji-map .laji-map-control-layers .layer-help a, .laji-map .laji-map-control-layers .glyphicon {
+	color: #0078A8;
+}
+.laji-map .laji-map-control-layers .glyphicon {
+	margin-left: 3px;
+	margin-right: 7px;
+}
+
 .laji-map-fullscreen {
 	position: fixed;
 	top: 0;

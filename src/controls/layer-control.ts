@@ -286,6 +286,7 @@ const LayerControl = L.Control.extend({
 		this.updateListContainers();
 		this.updateActiveProj();
 		this.updateLists();
+		this.updateHelp();
 	},
 	updateActiveProj() {
 		const {activeProjName} = this.lajiMap;
@@ -428,7 +429,31 @@ const LayerControl = L.Control.extend({
 			);
 			this.translateHooks.push(this.finnishTranslationHook);
 		}
-
+	},
+	updateHelp() {
+		const list = document.createElement("fieldset");
+		list.className = "layer-help";
+		const legend = document.createElement("legend");
+		const link = document.createElement("a");
+		link.target = "_blank";
+		link.rel = "noopener norefererrer";
+		const glyph = document.createElement("span");
+		glyph.className = "glyphicon glyphicon-question-sign";
+		legend.appendChild(glyph);
+		if (this.helpTranslationHook) {
+			this.translateHooks = this.translateHooks.filter(h => h !== this.helpTranslationHook);
+		}
+		this.helpTranslationHook = this.lajiMap.addTranslationHook(link, "LayerHelp");
+		this.translateHooks.push(this.helpTranslationHook);
+		link.href = "http://laji.fi/about/5723";
+		list.appendChild(legend);
+		legend.appendChild(link);
+		const oldHelp = this.helpElem;
+		if (oldHelp) {
+			oldHelp.parentElement.removeChild(oldHelp);
+		}
+		this.helpElem = list;
+		this._section.appendChild(this.helpElem);
 	}
 });
 

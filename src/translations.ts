@@ -810,4 +810,9 @@ export default {
 		en: "Other protected areas",
 		sv: "Andra skyddade områden"
 	},
+	layerHelp: {
+		fi: "Lisätietoja",
+		en: "More information",
+		sv: "Mer information",
+	}
 };

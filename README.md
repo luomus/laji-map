@@ -28,7 +28,7 @@ draw                                            | Draw options              | - 
 controls                                        | Control options           | -                                           | An option object that defines which control should be shown.
 customControls                                  | Custom controls options[] | -                                           | An array of custom controls. See custom control options.
 tileLayerName                                   | String                    | "taustakartta"                              | The default tile layer name. Overridden by `tileLayers`
-overlayNames                                    | String[]                  | -                                           | The default overlay layers. Possible values:  "geobiologicalProvinces", "municipalities", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "biodiversityForestZones", "ykjGrid" and "ykjGridLabels". Overridden by `tileLayers`
+overlayNames                                    | String[]                  | -                                           | The default overlay layers. Possible values:  "geobiologicalProvinces", "municipalities", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "biodiversityForestZones", "kiinteistojaotus", "kiinteistotunnukset", "currentProtectedAreas", "plannedProtectedAreas", "ykjGrid" and "ykjGridLabels". Overridden by `tileLayers`
 tileLayers                                      | TileLayers options        | -                                           | Options for the tile layers, which allows multiple active layers. Overrides `tileLayerName`.
 center                                          | LatLng                    | [65, 26]                                    | The coordinates for the initial center of the map.
 zoom                                            | Int                       | 2                                           | The initial zoom level for the map.
@@ -172,7 +172,35 @@ Tile layer options which combine tile layers and overlays into single options ob
 Option | Type                     |  Default  | Description
 -------|--------------------------|-----------|------------------------------------
 active | "finnish" | "world"      | "finnish" | The projection to use.
-layers | Object                   | -         | Signature: {[tile layer or overlay]: boolean \| {opacity: 0-1, visible: boolean}}
+layers | Object                   | -         | Signature: {[tile layer or overlay name]: boolean \| {opacity: 0-1, visible: boolean}}
+
+Possible layer names are:
+
+```
+maastokartta
+taustakartta
+ortokuva
+laser
+openStreetMap
+googleSatellite
+afeGrid
+cgrsGrid
+geobiologicalProvinces
+geobiologicalProvinceBorders
+municipalities
+counties
+ely
+forestVegetationZones
+mireVegetationZones
+threatenedSpeciesEvaluationZones
+biodiversityForestZones
+ykjGrid
+ykjGridLabels
+kiinteistojaotus
+kiinteistotunnukset
+currentProtectedAreas
+plannedProtectedAreas
+```
 
 ## Methods ##
 

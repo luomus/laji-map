@@ -133,7 +133,7 @@ class App {
 				},
 				mouseenter: (e, idx) => {
 					console.info(idx);
-				}
+				},
 			},
 			onChange: this.onMapChange,
 			polyline: {
@@ -147,8 +147,8 @@ class App {
 		this.activeIdx = 0;
 
 		const demoOptions = {
-			availableOverlayNameBlacklist: [],
-			availableTileLayerNamesBlacklist: [],
+			// availableOverlayNameBlacklist: [],
+			// availableTileLayerNamesBlacklist: [],
 			popupOnHover: true,
 			center: {
 				"lat": 79.3499057749654,
@@ -157,13 +157,18 @@ class App {
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
 			//locate: true,
-			//tileLayerName: "taustakartta",
-			tileLayers: {
-				layers: {
-					taustakartta: {opacity: 0.5, visible: true},
-					ortokuva: {opacity: 0.5, visible: true}
+			tileLayerName: "maastokartta",
+			 tileLayers: {
+			 	layers: {
+					afeGrid: true
 				}
-			},
+			 },
+			// tileLayers: {
+			// 	layers: {
+			// 		taustakartta: {opacity: 0.5, visible: true},
+			// 		ortokuva: {opacity: 0.5, visible: true}
+			// 	}
+			// },
 			//overlayNames: ["ykjGrid", "ykjGridLabels"],
 			controls: {
 				location: true,
@@ -198,6 +203,9 @@ class App {
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
 			locate: {on: false, onLocationFound: () => console.info("FOUND")},
 			//clickBeforeZoomAndPan: true,
+			on: {
+				tileLayersChange: (e) => console.log(e)
+			}
 		};
 
 		let options = {

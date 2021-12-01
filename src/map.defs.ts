@@ -221,6 +221,7 @@ export interface Options extends MapOptions {
 	viewLocked?: boolean;
 	controls?: boolean | ControlsOptions;
 	lajiGeoServerAddress?: string;
+	googleSearchUrl?: string;
 }
 
 export interface UserLocationOptions {

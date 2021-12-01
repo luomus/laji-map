@@ -180,9 +180,6 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			{
 				name: "geocoding",
 				control: () => this.getGoogleGeocodingControl(),
-				dependencies: [
-					() => !!this.googleApiKey
-				]
 			},
 			{
 				name: "zoom",
@@ -1187,4 +1184,5 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	shouldNotPreventScrolling(): boolean {
 		return super.shouldNotPreventScrolling() || !!this.activeControl;
 	}
+
 } return LajiMapWithControls; }

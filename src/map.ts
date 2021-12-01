@@ -9,8 +9,8 @@ import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import "leaflet-measure-path";
-import { Provider } from "leaflet-geosearch/lib/providers/provider";
-import { GoogleProvider } from "leaflet-geosearch";
+import { Provider, ProviderOptions } from "leaflet-geosearch/lib/providers/provider";
+import { GoogleProvider as _GoogleProvider } from "leaflet-geosearch";
 import MMLProvider from "./mml-provider";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
@@ -70,6 +70,20 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 		return this;
 	}
 });
+
+interface ExtendedProviderOptions extends ProviderOptions {
+	searchUrl?: string;
+}
+
+class GoogleProvider extends _GoogleProvider {
+	searchUrl: string;
+	constructor(options: ExtendedProviderOptions) {
+		super(options);
+		if (options.searchUrl) {
+			this.searchUrl = options.searchUrl;
+		}
+	}
+}
 
 const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
@@ -152,6 +166,7 @@ declare module "leaflet" {
 
 export default class LajiMap {
 	googleApiKey: string;
+	googleSearchUrl: string;
 	container: HTMLElement;
 	mapElem: HTMLElement;
 	blockerElem: HTMLElement;
@@ -385,7 +400,8 @@ export default class LajiMap {
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
 			viewLocked: false,
-			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset]
+			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset],
+			googleSearchUrl: "https://proxy.laji.fi/google-geocode/json"
 		};
 
 		this.options = {...options, ...props};
@@ -433,6 +449,7 @@ export default class LajiMap {
 			bodyAsDialogRoot: ["setBodyAsDialogRoot", () => this._dialogRoot === document.body],
 			clickBeforeZoomAndPan: ["setClickBeforeZoomAndPan", "_clickBeforeZoomAndPan"],
 			googleApiKey: "setGoogleApiKey",
+			googleSearchUrl: "setGoogleSearchUrl",
 			viewLocked: "setViewLocked",
 			lajiGeoServerAddress: true
 		};
@@ -876,8 +893,7 @@ export default class LajiMap {
 				geobiologicalProvinces: getLajiLayer({
 					maxZoom: 15,
 					layers: "LajiMapData:biogeographical_provinces",
-					version: "1.3.0",
-					defaultOpacity: 0.5
+					version: "1.3.0"
 				}),
 				geobiologicalProvinceBorders: getLajiLayer({
 					layers: "LajiMapData:biogeographical_provinces_borders",
@@ -1453,6 +1469,7 @@ export default class LajiMap {
 		}
 
 		if (isProvided(this, "tileLayer")) {
+			console.log("tilelayer schange fire");
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
 			this.map.fire("tileLayersChange", {tileLayers: this._tileLayers});
 			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});
@@ -3728,13 +3745,15 @@ export default class LajiMap {
 
 	setGoogleApiKey(googleApiKey: string) {
 		this.googleApiKey = googleApiKey;
-		provide(this, "googleApiKey");
+	}
+
+	setGoogleSearchUrl(url: string) {
+		this.googleSearchUrl = url;
 	}
 
 	@reflect()
-	@dependsOn("translations", "googleApiKey")
+	@dependsOn("translations")
 	setGeocodingProvider() {
-		if (!depsProvided(this, "setGeocodingProvider", arguments)) return;
 		this.providers = [
 			["Google", new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}})],
 			["MML", new MMLProvider({params: {language: this.lang, region: "fi"}})]

@@ -456,7 +456,7 @@
 .laji-map .laji-map-control-layers .noUi-base {
 	background: #e4e4e4;
 }
-.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled])li:not(.active):hover .noUi-base {
+.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-base {
 	background: #f1f1f1;
 }
 .laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-target {

@@ -1,5 +1,6 @@
 import * as G from "geojson";
 import AbstractProvider, { EndpointArgument } from "leaflet-geosearch/lib/providers/provider";
+import { convertLatLng } from "./utils";
 
 interface MMLRequestFeatureProperties {
 	label: string
@@ -10,7 +11,8 @@ interface MMLRequestResult {
 
 export default class MMLProvider extends AbstractProvider<MMLRequestResult> {
 	endpoint({query}: EndpointArgument) {
-		const params = typeof query === "string" ? { text: query } : query;
+		const baseParams = { crs: "EPSG:3067" };
+		const params = typeof query === "string" ? {...baseParams, text: query} : {...baseParams, ...query};
 		return this.getUrl("https://proxy.laji.fi/mml-open/geocoding/v2/pelias/search", params);
 	}
 
@@ -24,9 +26,10 @@ export default class MMLProvider extends AbstractProvider<MMLRequestResult> {
 			].filter(s => s).join(", ");
 
 			if (!uniqueLabels.has(label)) {
+				const converted = convertLatLng(f.geometry.coordinates.reverse(), "EPSG:3067", "WGS84").reverse();
 				results.push({
-					x: f.geometry.coordinates[0],
-					y: f.geometry.coordinates[1],
+					x: converted[0],
+					y: converted[1],
 					label,
 					raw: f
 				});

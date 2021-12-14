@@ -1,3 +1,7 @@
+## 3.13.0
+* add flyingSquirrelPredictionModel layer
+* Enable cadastral-units (kiinteistotunnukset) to mml geosearch
+
 ## 3.12.0
 * Remove plannedProtectedAreasRegional layer
 * Add help link to layer control

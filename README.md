@@ -19,43 +19,43 @@ var map = new LajiMap(options);
 
 You can also pass any options that Leaflet accepts when initializing LajiMap. Setting Leaflet options after initialization doesn't work.
 
-Option                                          | Type                      |  Default                                    | Description
-------------------------------------------------|---------------------------|---------------------------------------------|------------------------------------
-rootElem                                        | HTML elem                 | -                                           | The node where to mount.
-lang                                            | String                    | "en"                                        | One of "en", "fi", "sv".
-data                                            | Data options[]            | -                                           | Data to draw on map.
-draw                                            | Draw options              | -                                           | Options for data that can be controlled with the draw control buttons.
-controls                                        | Control options           | -                                           | An option object that defines which control should be shown.
-customControls                                  | Custom controls options[] | -                                           | An array of custom controls. See custom control options.
-tileLayerName                                   | String                    | "taustakartta"                              | The default tile layer name. Overridden by `tileLayers`
-overlayNames                                    | String[]                  | -                                           | The default overlay layers. Possible values:  "geobiologicalProvinces", "municipalities", "forestVegetationZones", "mireVegetationZones", "threatenedSpeciesEvaluationZones", "biodiversityForestZones", "kiinteistojaotus", "kiinteistotunnukset", "currentProtectedAreas", "plannedProtectedAreas", "ykjGrid" and "ykjGridLabels". Overridden by `tileLayers`
-tileLayers                                      | TileLayers options        | -                                           | Options for the tile layers, which allows multiple active layers. Overrides `tileLayerName`.
-center                                          | LatLng                    | [65, 26]                                    | The coordinates for the initial center of the map.
-zoom                                            | Int                       | 2                                           | The initial zoom level for the map.
-zoomToData                                      | FitBounds options         | false                                       | Zooms the map to given data & draw data. Additional options are: {paddingInMeters: number, minZoom: number, dataIdxs: number[], draw: boolean}.
-locate                                          | Object                    | false                                       | Show  user location on map. Options: {on: boolean, onLocationFound: fn(latlng, radius), onLocationError: fn(event), userLocation: {latlng, accuracy}, panOnFound: boolean (true by default)}
-onPopupClose()                                  | Function                  | -                                           | Function to call when a popup is closed
-markerPopupOffset                               | Int                       | 40                                          | Offset (towards up) for popups for markers.
-featurePopupOffset                              | Int                       | 5                                           | Offset (towards up) for popups for features other than markers.
-popupOnHover                                    | Boolean                   | false                                       | Controls whether the popups are shown on hovering a feature or by clicking a feature.
-onInitializeDrawLayer                           | Function                  | -                                           | A callback function that is triggered after the draw layer is initialized.
-lineTransect                                    | Linetransect options      | -                                           | Options for a line transect layer.
-availableTileLayerNamesWhitelist                | String[]                  | -                                           | List of tile layer names to show in the layer control. See the possible values of tileLayerName option.
-availableTileLayerNamesBlacklist                | String[]                  | -                                           | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
-availableOverlayNamesWhitelist                  | String[]                  | -                                           | List of overlay names to show in the layer control. See the possible values of overlayNames option.
-availableOverlayNamesBlacklist                  | String[]                  | ["kiinteistojaotus", "kiinteistotunnukset"] | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
-tileLayerOpacity                                | Float                     | -                                           | Tile layer opacity. Range: 0.0-1.0
-on                                              | Object                    | -                                           | Leaflet events to listen for. Must be an object with event names as keys and value as callbacks. You can also use setEventListeners().
-polygon                                         | Object                    | -                                           | Polygon options: {allowIntersection: Boolean, Path style options}
-polyline                                        | Object                    | -                                           | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true), Path style options}.
-rectangle                                       | Object                    | -                                           | Global path style options.
-circle                                          | Object                    | -                                           | Global Path style options.
-marker                                          | Object                    | -                                           | Global Path style options.
-bodyAsDialogRoot                                | Boolean                   | true                                        | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the map container will be used as the root DOM node for dialogs.
-clickBeforeZoomAndPan                           | Boolean                   | false                                       | Block wheel and touchstart events before map is clicked/touched.
-viewLocked                                      | Boolean                   | false                                       | Prevent all view interaction (panning, zooming).
-googleApikey                                    | String                    | -                                           | Needed for geocoding control.
-lajiGeoServerAddress                            | String                    | "https://geoserver.laji.fi"                 | Override the laji.fi geoserver address
+Option                                          | Type                      |  Default                                                                     | Description
+------------------------------------------------|---------------------------|------------------------------------------------------------------------------|------------------------------------
+rootElem                                        | HTML elem                 | -                                                                            | The node where to mount.
+lang                                            | String                    | "en"                                                                         | One of "en", "fi", "sv".
+data                                            | Data options[]            | -                                                                            | Data to draw on map.
+draw                                            | Draw options              | -                                                                            | Options for data that can be controlled with the draw control buttons.
+controls                                        | Control options           | -                                                                            | An option object that defines which control should be shown.
+customControls                                  | Custom controls options[] | -                                                                            | An array of custom controls. See custom control options.
+tileLayerName                                   | String                    | "taustakartta"                                                               | The default tile layer name. Possible values listed under section "Tile layer options". Overridden by `tileLayers`.
+overlayNames                                    | String[]                  | -                                                                            | The default overlay layers. Possible values listed under section "Tile layer options". Overridden by `tileLayers`
+tileLayers                                      | TileLayers options        | -                                                                            | Options for the tile layers, which allows multiple active layers. Overrides `tileLayerName`.
+center                                          | LatLng                    | [65, 26]                                                                     | The coordinates for the initial center of the map.
+zoom                                            | Int                       | 2                                                                            | The initial zoom level for the map.
+zoomToData                                      | FitBounds options         | false                                                                        | Zooms the map to given data & draw data. Additional options are: {paddingInMeters: number, minZoom: number, dataIdxs: number[], draw: boolean}.
+locate                                          | Object                    | false                                                                        | Show  user location on map. Options: {on: boolean, onLocationFound: fn(latlng, radius), onLocationError: fn(event), userLocation: {latlng, accuracy}, panOnFound: boolean (true by default)}
+onPopupClose()                                  | Function                  | -                                                                            | Function to call when a popup is closed
+markerPopupOffset                               | Int                       | 40                                                                           | Offset (towards up) for popups for markers.
+featurePopupOffset                              | Int                       | 5                                                                            | Offset (towards up) for popups for features other than markers.
+popupOnHover                                    | Boolean                   | false                                                                        | Controls whether the popups are shown on hovering a feature or by clicking a feature.
+onInitializeDrawLayer                           | Function                  | -                                                                            | A callback function that is triggered after the draw layer is initialized.
+lineTransect                                    | Linetransect options      | -                                                                            | Options for a line transect layer.
+availableTileLayerNamesWhitelist                | String[]                  | -                                                                            | List of tile layer names to show in the layer control. See the possible values of tileLayerName option.
+availableTileLayerNamesBlacklist                | String[]                  | -                                                                            | List of tile layer names not to show in the layer control. See the possible values of tileLayerName option.
+availableOverlayNamesWhitelist                  | String[]                  | -                                                                            | List of overlay names to show in the layer control. See the possible values of overlayNames option.
+availableOverlayNamesBlacklist                  | String[]                  | ["kiinteistojaotus", "kiinteistotunnukset", "flyingSquirrelPredictionModel"] | List of overlay names not to show in the layer control. See the possible values of overlayNames option.
+tileLayerOpacity                                | Float                     | -                                                                            | Tile layer opacity. Range: 0.0-1.0
+on                                              | Object                    | -                                                                            | Leaflet events to listen for. Must be an object with event names as keys and value as callbacks. You can also use setEventListeners().
+polygon                                         | Object                    | -                                                                            | Polygon options: {allowIntersection: Boolean, Path style options}
+polyline                                        | Object                    | -                                                                            | Polyline options: {showStart: Boolean (displays a dot at the start of the line. Default: false). showDirection: Boolean (displays arrows to show the direction. Default: true), Path style options}.
+rectangle                                       | Object                    | -                                                                            | Global path style options.
+circle                                          | Object                    | -                                                                            | Global Path style options.
+marker                                          | Object                    | -                                                                            | Global Path style options.
+bodyAsDialogRoot                                | Boolean                   | true                                                                         | If true, body will be used as root DOM node for dialogs & blocker element. Otherwise the map container will be used as the root DOM node for dialogs.
+clickBeforeZoomAndPan                           | Boolean                   | false                                                                        | Block wheel and touchstart events before map is clicked/touched.
+viewLocked                                      | Boolean                   | false                                                                        | Prevent all view interaction (panning, zooming).
+googleApikey                                    | String                    | -                                                                            | Needed for geocoding control.
+lajiGeoServerAddress                            | String                    | "https://geoserver.laji.fi"                                                  | Override the laji.fi geoserver address
 
 ### Data options ###
 
@@ -200,6 +200,7 @@ kiinteistojaotus
 kiinteistotunnukset
 currentProtectedAreas
 plannedProtectedAreas
+flyingSquirrelPredictionModel
 ```
 
 ## Methods ##

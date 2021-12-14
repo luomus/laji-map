@@ -161,6 +161,7 @@ export enum OverlayName {
 	kiinteistotunnukset = "kiinteistotunnukset",
 	currentProtectedAreas = "currentProtectedAreas",
 	plannedProtectedAreas = "plannedProtectedAreas",
+	flyingSquirrelPredictionModel = "flyingSquirrelPredictionModel"
 }
 
 export interface TileLayerOptions {

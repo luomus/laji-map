@@ -147,7 +147,7 @@ class App {
 		this.activeIdx = 0;
 
 		const demoOptions = {
-			// availableOverlayNameBlacklist: [],
+			 availableOverlayNameBlacklist: [],
 			// availableTileLayerNamesBlacklist: [],
 			popupOnHover: true,
 			center: {
@@ -158,11 +158,6 @@ class App {
 			zoomToData: {paddingInMeters: 200},
 			//locate: true,
 			tileLayerName: "maastokartta",
-			 tileLayers: {
-			 	layers: {
-					afeGrid: true
-				}
-			 },
 			// tileLayers: {
 			// 	layers: {
 			// 		taustakartta: {opacity: 0.5, visible: true},
@@ -203,9 +198,7 @@ class App {
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
 			locate: {on: false, onLocationFound: () => console.info("FOUND")},
 			//clickBeforeZoomAndPan: true,
-			on: {
-				tileLayersChange: (e) => console.log(e)
-			}
+			lajiGeoServerAddress: "https://geoserver-dev.laji.fi"
 		};
 
 		let options = {

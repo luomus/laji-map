@@ -285,6 +285,7 @@ export default class LajiMap {
 		"biodiversityForestZones",
 		"currentProtectedAreas",
 		"plannedProtectedAreas",
+		"flyingSquirrelPredictionModel"
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -400,7 +401,7 @@ export default class LajiMap {
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
 			viewLocked: false,
-			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset],
+			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset, OverlayName.flyingSquirrelPredictionModel],
 			googleSearchUrl: "https://proxy.laji.fi/google-geocode/json"
 		};
 
@@ -941,6 +942,10 @@ export default class LajiMap {
 				}),
 				plannedProtectedAreas: getLajiLayer({
 					layers: "ProtectedAreas:plannedProtectedAreas",
+				}),
+				flyingSquirrelPredictionModel: getLajiLayer({
+					layers: "LajiMapData:flyingSquirrel_predictionModel",
+					defaultOpacity: 0.5
 				})
 			};
 

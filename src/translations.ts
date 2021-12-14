@@ -814,5 +814,10 @@ export default {
 		fi: "Lisätietoja",
 		en: "More information",
 		sv: "Mer information",
+	},
+	flyingSquirrelPredictionModel: {
+		fi: "Liito-oravan elinympäristön ennustemalli",
+		en: "Flying squirrel habitat prediction model",
+		sv: "Förutsägelsemodell för flygekorre",
 	}
 };

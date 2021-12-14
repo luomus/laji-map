@@ -1474,7 +1474,6 @@ export default class LajiMap {
 		}
 
 		if (isProvided(this, "tileLayer")) {
-			console.log("tilelayer schange fire");
 			this.map.fire("tileLayerChange", {tileLayerName: currentLayerName});
 			this.map.fire("tileLayersChange", {tileLayers: this._tileLayers});
 			this.map.fire("overlaysChange", {overlayNames: this.getOverlaysByName()});

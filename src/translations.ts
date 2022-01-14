@@ -819,5 +819,10 @@ export default {
 		fi: "Liito-oravan elinympäristön ennustemalli",
 		en: "Flying squirrel habitat prediction model",
 		sv: "Förutsägelsemodell för flygekorre",
+	},
+	atlasGrid: {
+		fi: "Atlas-ruudukko",
+		en: "Atlas grid",
+		sv: "Atlas rutnät",
 	}
 };

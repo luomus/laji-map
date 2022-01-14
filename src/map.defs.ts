@@ -143,6 +143,7 @@ export enum TileLayerName {
 	googleSatellite = "googleSatellite",
 	afeGrid = "afeGrid",
 	cgrsGrid = "cgrsGrid",
+	atlasGrid = "atlasGrid",
 }
 
 export enum OverlayName {
@@ -161,7 +162,7 @@ export enum OverlayName {
 	kiinteistotunnukset = "kiinteistotunnukset",
 	currentProtectedAreas = "currentProtectedAreas",
 	plannedProtectedAreas = "plannedProtectedAreas",
-	flyingSquirrelPredictionModel = "flyingSquirrelPredictionModel"
+	flyingSquirrelPredictionModel = "flyingSquirrelPredictionModel",
 }
 
 export interface TileLayerOptions {

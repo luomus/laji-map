@@ -268,6 +268,7 @@ export default class LajiMap {
 		"ortokuva",
 		"ykjGrid",
 		"ykjGridLabels",
+		"atlasGrid",
 		"afeGrid",
 		"openStreetMap",
 		"googleSatellite",
@@ -865,9 +866,12 @@ export default class LajiMap {
 				ykjGridLabels: getLajiLayer({
 					layers: "LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000",
 				}),
+				atlasGrid: getLajiLayer({
+					layers: "LajiMapData:atlasGrids",
+				}),
 				afeGrid: getLajiLayer({
 					layers: "LajiMapData:afe_grid"
-				})
+				}),
 			};
 
 			this.worldTileLayers = {
@@ -946,7 +950,7 @@ export default class LajiMap {
 				flyingSquirrelPredictionModel: getLajiLayer({
 					layers: "LajiMapData:flyingSquirrel_predictionModel",
 					defaultOpacity: 0.5
-				})
+				}),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

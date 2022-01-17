@@ -106,6 +106,7 @@ export default (lajiMap: LajiMap & WithControls) => {
 					_input.value = match;
 					_input.oninput(<any> {target: _input});
 				});
+				e.preventDefault();
 				submitButton.focus();
 			}
 		};

@@ -9,6 +9,7 @@ import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
 import "leaflet-measure-path";
+import * as NonTiledLayer from "leaflet.nontiledlayer";
 import { Provider, ProviderOptions } from "leaflet-geosearch/lib/providers/provider";
 import { GoogleProvider as _GoogleProvider } from "leaflet-geosearch";
 import MMLProvider from "./mml-provider";
@@ -836,12 +837,16 @@ export default class LajiMap {
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
-			const getLajiLayer = (options: L.WMSOptions) => L.tileLayer.wms(`${this.lajiGeoServerAddress}/ows`, {
-				maxZoom: 15,
-				format: "image/png",
-				transparent: true,
-				...options
-			});
+			const getLajiLayer = (options: L.WMSOptions, nonTiled = false) => {
+				const constructor = nonTiled ? NonTiledLayer.WMS : L.TileLayer.WMS;
+				return new constructor(
+					`${this.lajiGeoServerAddress}/ows`, {
+						maxZoom: 15,
+						format: "image/png",
+						transparent: true,
+						...options
+					});
+			};
 
 			const getTilastokeskusLayer = (layer: string) => L.tileLayer.wms("https://geo.stat.fi/geoserver/tilastointialueet/wms", {
 				layers: layer,
@@ -865,10 +870,10 @@ export default class LajiMap {
 				}),
 				ykjGridLabels: getLajiLayer({
 					layers: "LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000",
-				}),
+				}, true),
 				atlasGrid: getLajiLayer({
-					layers: "LajiMapData:atlasGrids",
-				}),
+					layers: "LajiMapData:atlasGrids"
+				}, true),
 				afeGrid: getLajiLayer({
 					layers: "LajiMapData:afe_grid"
 				}),
@@ -943,10 +948,10 @@ export default class LajiMap {
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
 				currentProtectedAreas: getLajiLayer({
 					layers: "ProtectedAreas:currentProtectedAreas",
-				}),
+				}, true),
 				plannedProtectedAreas: getLajiLayer({
 					layers: "ProtectedAreas:plannedProtectedAreas",
-				}),
+				}, true),
 				flyingSquirrelPredictionModel: getLajiLayer({
 					layers: "LajiMapData:flyingSquirrel_predictionModel",
 					defaultOpacity: 0.5

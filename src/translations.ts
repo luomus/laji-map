@@ -821,7 +821,7 @@ export default {
 		sv: "Förutsägelsemodell för flygekorre",
 	},
 	atlasGrid: {
-		fi: "Atlas-ruudukko",
+		fi: "Atlasruudukko",
 		en: "Atlas grid",
 		sv: "Atlas rutnät",
 	}

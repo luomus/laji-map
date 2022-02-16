@@ -605,6 +605,13 @@
 	height: 100%;
 	z-index: 9999;
 }
+.laji-map-fullscreen .fullscreen-exit {
+	top: 50px;
+	position: absolute;
+	z-index: 400;
+	left: 50%;
+	transform: translateX(-50%);
+}
 
 .laji-map .leaflet-measure-path-measurement {
 	font-size: 12px;

@@ -301,6 +301,8 @@ export default class LajiMap {
 	_trySwapToFinnishOnInitialization = true;
 	_fullscreen = false;
 	_fullscreenElem: HTMLElement;
+	_fullscreenCloseElem: HTMLElement;
+	_fullscreenTranslateHook: () =>  void;
 	_beforeFullscreen: {
 		rootElem: HTMLElement;
 		bodyAsDialogRoot: boolean;
@@ -3834,6 +3836,12 @@ export default class LajiMap {
 		this.setClickBeforeZoomAndPan(false);
 		document.body.style.overflowY = "hidden";
 		this._addKeyListener(ESC, this.setFullscreenOff);
+
+		this._fullscreenCloseElem = document.createElement("button");
+		this._fullscreenCloseElem.addEventListener("click", () => this.setFullscreenOff());
+		this._fullscreenCloseElem.className = "btn btn-danger fullscreen-exit";
+		this._fullscreenTranslateHook = this.addTranslationHook(this._fullscreenCloseElem, "MapExitFullscreen");
+		this.rootElem.appendChild(this._fullscreenCloseElem);
 	}
 
 	setFullscreenOff() {
@@ -3845,5 +3853,8 @@ export default class LajiMap {
 		document.body.style.overflowY = bodyOverflowY;
 		document.body.removeChild(this._fullscreenElem);
 		this._removeKeyListener(ESC, this.setFullscreenOff);
+
+		this._fullscreenCloseElem.remove();
+		this.removeTranslationHook(this._fullscreenTranslateHook);
 	}
 }

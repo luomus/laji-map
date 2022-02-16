@@ -316,18 +316,18 @@
     text-align: center;
 }
 
-.laji-map .leaflet-control-layers .slider-container .noUi-target {
+.laji-map-layer-control-layer-item .slider-container .noUi-target {
     height: 8px;
 }
 
-.laji-map .leaflet-control-layers .slider-container .noUi-handle {
+.laji-map-layer-control-layer-item .slider-container .noUi-handle {
     height: 16px;
     width: 12px;
     left: -8px;
 }
 
-.laji-map .leaflet-control-layers .slider-container .noUi-handle:after,
-.laji-map .leaflet-control-layers .slider-container .noUi-handle:before {
+.laji-map-layer-control-layer-item .slider-container .noUi-handle:after,
+.laji-map-layer-control-layer-item .slider-container .noUi-handle:before {
     height: 5px;
     left: 3px;
     right: 3px;
@@ -420,7 +420,7 @@
 	margin: 0;
 	padding: 0;
 }
-.laji-map .laji-map-control-layers input[type="checkbox"] {
+.laji-map-layer-control-layer-item input[type="checkbox"] {
     top: -4px;
     position: absolute;
     width: 18px;
@@ -434,22 +434,22 @@
     min-width: 325px;
 	user-select: none;
 }
-.laji-map .laji-map-control-layers fieldset li {
+li.laji-map-layer-control-layer-item {
     position: relative;
     margin-bottom: 4px;
 }
-.laji-map .laji-map-control-layers .noUi-horizontal .noUi-handle {
+.laji-map-layer-control-layer-item .noUi-horizontal .noUi-handle {
     display: none;
 }
-.laji-map .laji-map-control-layers fieldset li span {
+li.laji-map-layer-control-layer-item span {
     padding-left: 27px;
     font-size: 11px;
 	white-space: nowrap;
 }
-.laji-map .laji-map-control-layers fieldset li.active span {
+li.laji-map-layer-control-layer-item.active span {
 	font-weight: bold;
 }
-.laji-map .laji-map-control-layers .noUi-target {
+.laji-map-layer-control-layer-item .noUi-target {
     opacity: 0.5;
     position: absolute;
     width: 92%;
@@ -457,16 +457,16 @@
     left: 21px;
 	background: unset;
 }
-.laji-map .laji-map-control-layers .noUi-base {
+.laji-map-layer-control-layer-item .noUi-base {
 	background: #e4e4e4;
 }
-.laji-map .laji-map-control-layers .active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-base {
+.laji-map-layer-control-layer-item.active .noUi-base, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-base {
 	background: #f1f1f1;
 }
-.laji-map .laji-map-control-layers .active .noUi-target, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-target {
+.laji-map-layer-control-layer-item.active .noUi-target, .laji-map .laji-map-control-layers fieldset:not([disabled]) li:not(.active):hover .noUi-target {
 	border-color: #e2e2e2;
 }
-.laji-map .laji-map-control-layers fieldset li:not(.active) .noUi-connect {
+.laji-map-layer-control-layer-item:not(.active) .noUi-connect {
     background-color: #93c1bf;
 }
 .laji-map .laji-map-control-layers fieldset {
@@ -611,6 +611,11 @@
 }
 .laji-map .laji-map-control-layers .layer-close span:nth-child(1) {
 	margin-right: 3px;
+}
+
+
+.laji-map .laji-map-control-layers.sliding {
+	opacity: 0;
 }
 
 .laji-map-fullscreen {

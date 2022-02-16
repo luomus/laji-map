@@ -81,6 +81,7 @@ const LayerControl = L.Control.extend({
 	createListItem(name: string, layerOptions: TileLayerOptions, available: boolean) {
 		const li = document.createElement("li");
 		li.id = name;
+		li.className = "laji-map-layer-control-layer-item";
 		const checkbox = document.createElement("input");
 		checkbox.type = "checkbox";
 		checkbox.addEventListener("change", () => {
@@ -128,6 +129,7 @@ const LayerControl = L.Control.extend({
 			connect: [true, false],
 			behaviour: "snap"
 		});
+		let liSlideHeightFixer: HTMLElement;
 		let firstUpdated = false;
 		slider.on("update", () => {
 			if (!firstUpdated) {
@@ -156,6 +158,37 @@ const LayerControl = L.Control.extend({
 				this.lajiMap._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
 				(this.lajiMap.tileLayers[name] || this.lajiMap.overlaysByNames[name]).setOpacity(opacity);
 			}
+		});
+		L.Browser.mobile && slider.on("start", () => {
+			this._section.className += " sliding";
+			const {top, left, height, width} = li.getBoundingClientRect();
+
+			liSlideHeightFixer = document.createElement("div");
+			liSlideHeightFixer.style.height = `${height}px`;
+
+			li.parentElement.insertBefore(liSlideHeightFixer, li);
+			document.body.appendChild(li);
+
+			li.style.background = "white";
+			li.style.position = "absolute";
+			li.style.top = `${top}px`;
+			li.style.left = `${left}px`;
+			li.style.width = `${width}px`;
+			li.style.height = `${height}px`;
+			li.style.zIndex = "1002";
+		});
+		L.Browser.mobile && slider.on("end", () => {
+			this._section.className = this._section.className.replace(" sliding", "");
+
+			liSlideHeightFixer.parentElement.insertBefore(li, liSlideHeightFixer);
+			liSlideHeightFixer.remove();
+			li.style.background = null;
+			li.style.position = null;
+			li.style.top = null;
+			li.style.left = null;
+			li.style.width = null;
+			li.style.height = null;
+			li.style.zIndex = null;
 		});
 
 		function disableSelect(e) {
@@ -395,7 +428,11 @@ const LayerControl = L.Control.extend({
 			const {opacity, visible} = this.lajiMap._tileLayers.layers[name];
 			const {slider, checkbox, li} = this.elems[name];
 			this.lajiMap._internalTileLayersUpdate = true;
-			li.className = visible ? "active" : "";
+			if (visible) {
+				L.DomUtil.addClass(li, "active");
+			} else {
+				L.DomUtil.removeClass(li, "active");
+			}
 			slider.set(opacity);
 			this.lajiMap._internalTileLayersUpdate = false;
 			checkbox.checked = visible;

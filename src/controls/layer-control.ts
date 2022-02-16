@@ -54,6 +54,9 @@ const LayerControl = L.Control.extend({
 
 		/* end of copy */
 
+		this._finnishAndWorldContainer = document.createElement("div");
+		this._section.appendChild(this._finnishAndWorldContainer);
+
 		this.translateHooks = [];
 		this.elems = {};
 		this.updateLayout();
@@ -232,11 +235,9 @@ const LayerControl = L.Control.extend({
 		this.finnishTranslationHook = finnishTranslationHook;
 		if (finnishList) {
 			if (this.worldList) {
-				this._section.insertBefore(finnishList, this.worldList);
-			} else if (this.overlayList) {
-				this._section.insertBefore(finnishList, this.overlayList);
+				this._finnishAndWorldContainer.insertBefore(finnishList, this.worldList);
 			} else {
-				this._section.appendChild(finnishList);
+				this._finnishAndWorldContainer.appendChild(finnishList);
 			}
 		}
 		return [this.finnishList, this.finnishTranslationHook];
@@ -259,11 +260,7 @@ const LayerControl = L.Control.extend({
 		this.worldList = worldList;
 		this.worldTranslationHook = worldTranslationHook;
 		if (worldList) {
-			if (this.overlayList) {
-				this._section.insertBefore(worldList, this.overlayList);
-			} else {
-				this._section.appendChild(worldList);
-			}
+			this._finnishAndWorldContainer.appendChild(worldList);
 		}
 		return [this.worldList, this.worldTranslationHook];
 	},
@@ -287,6 +284,7 @@ const LayerControl = L.Control.extend({
 		this.updateActiveProj();
 		this.updateLists();
 		this.updateHelp();
+		this.updateClose();
 	},
 	updateActiveProj() {
 		const {activeProjName} = this.lajiMap;
@@ -454,6 +452,34 @@ const LayerControl = L.Control.extend({
 		}
 		this.helpElem = list;
 		this._section.appendChild(this.helpElem);
+	},
+	updateClose() {
+		if (!L.Browser.mobile) {
+			return;
+		}
+		const list = document.createElement("fieldset");
+		list.className = "layer-close";
+
+		const legend = document.createElement("legend");
+		legend.tabIndex = 0;
+		legend.addEventListener("click", L.Control.Layers.prototype.collapse.bind(this));
+
+		const glyph = document.createElement("span");
+		glyph.innerHTML = "✖";
+
+		if (this.closeTranslationHook) {
+			this.translateHooks = this.translateHooks.filter(h => h !== this.closeTranslationHook);
+		}
+
+		const label = document.createElement("span");
+		this.closeTranslationHook = this.lajiMap.addTranslationHook(label, "Close");
+		this.translateHooks.push(this.closeTranslationHook);
+
+		list.appendChild(legend);
+		legend.appendChild(glyph);
+		legend.appendChild(label);
+
+		this._section.insertBefore(list, this._section.children[0]);
 	}
 });
 

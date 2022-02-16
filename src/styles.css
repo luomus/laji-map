@@ -444,6 +444,7 @@
 .laji-map .laji-map-control-layers fieldset li span {
     padding-left: 27px;
     font-size: 11px;
+	white-space: nowrap;
 }
 .laji-map .laji-map-control-layers fieldset li.active span {
 	font-weight: bold;
@@ -598,6 +599,18 @@
 .laji-map .laji-map-control-layers .glyphicon {
 	margin-left: 3px;
 	margin-right: 7px;
+}
+
+.laji-map .laji-map-control-layers .layer-close {
+	margin-bottom: -5px;
+}
+.laji-map .laji-map-control-layers .layer-close legend {
+	background: #d9534f;
+	border: 1px solid #d43f3a;
+	color: white;
+}
+.laji-map .laji-map-control-layers .layer-close span:nth-child(1) {
+	margin-right: 3px;
 }
 
 .laji-map-fullscreen {

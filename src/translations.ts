@@ -824,5 +824,10 @@ export default {
 		fi: "Atlasruudukko",
 		en: "Atlas grid",
 		sv: "Atlas rutnät",
+	},
+	close: {
+		fi: "Sulje",
+		en: "Close",
+		sv: "Stänga",
 	}
 };

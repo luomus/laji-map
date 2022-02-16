@@ -21,6 +21,9 @@
 .laji-map .leaflet-top {
     z-index: 1001;
 }
+.laji-map .leaflet-top.leaflet-left {
+	z-index: 1002;
+}
 
 .laji-map .leaflet-control a {
 	color: #464646;

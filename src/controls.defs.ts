@@ -71,7 +71,7 @@ export interface Options {
 	customControls?: CustomControl[];
 }
 
-export interface CustomControl extends Control {
+export interface CustomControl extends ControlOptions {
 	_custom: boolean;
 	group: string;
 }

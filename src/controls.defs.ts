@@ -68,6 +68,7 @@ export interface InternalControlsOptions extends ControlsOptions {
 
 export interface Options {
 	controls?: boolean | ControlsOptions;
+	customControls?: CustomControl[];
 }
 
 export interface CustomControl extends Control {

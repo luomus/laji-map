@@ -2,7 +2,7 @@ import * as G from "geojson";
 import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
 	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng,
 	ErrorEvent, MarkerCluster } from "leaflet";
-import { ControlsOptions, CustomControl } from "./controls.defs";
+import { ControlOptions, ControlsOptions, CustomControl } from "./controls.defs";
 import { LineTransectOptions } from "./line-transect.defs";
 
 export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
@@ -225,7 +225,7 @@ export interface Options extends MapOptions {
 	controls?: boolean | ControlsOptions;
 	lajiGeoServerAddress?: string;
 	googleSearchUrl?: string;
-	customControls?: CustomControl[];
+	customControls?: ControlOptions[];
 	lineTransect?: LineTransectOptions;
 }
 

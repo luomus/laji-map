@@ -68,12 +68,15 @@ export interface InternalControlsOptions extends ControlsOptions {
 
 export interface Options {
 	controls?: boolean | ControlsOptions;
-	customControls?: CustomControl[];
+	customControls?: ControlOptions[];
 }
 
 export interface CustomControl extends ControlOptions {
 	_custom: boolean;
 	group: string;
+}
+
+export interface InternalCustomControl extends CustomControl {
 }
 
 interface FormatDetector {

@@ -841,13 +841,17 @@ export default class LajiMap {
 
 			const getLajiLayer = (options: L.WMSOptions, nonTiled = false) => {
 				const constructor = nonTiled ? NonTiledLayer.WMS : L.TileLayer.WMS;
+				const _options: any = {
+					maxZoom: 15,
+					format: "image/png",
+					transparent: true,
+					...options
+				};
+				if (_options) {
+					_options.useCanvas = false;
+				}
 				return new constructor(
-					`${this.lajiGeoServerAddress}/ows`, {
-						maxZoom: 15,
-						format: "image/png",
-						transparent: true,
-						...options
-					});
+					`${this.lajiGeoServerAddress}/ows`, _options);
 			};
 
 			const getTilastokeskusLayer = (layer: string) => L.tileLayer.wms("https://geo.stat.fi/geoserver/tilastointialueet/wms", {

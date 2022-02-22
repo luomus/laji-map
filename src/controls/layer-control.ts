@@ -169,6 +169,7 @@ const LayerControl = L.Control.extend({
 			li.parentElement.insertBefore(liSlideHeightFixer, li);
 			document.body.appendChild(li);
 
+			L.DomUtil.addClass(li, "leaflet-container");
 			li.style.background = "white";
 			li.style.position = "absolute";
 			li.style.top = `${top}px`;
@@ -182,6 +183,7 @@ const LayerControl = L.Control.extend({
 
 			liSlideHeightFixer.parentElement.insertBefore(li, liSlideHeightFixer);
 			liSlideHeightFixer.remove();
+			L.DomUtil.removeClass(li, "leaflet-container");
 			li.style.background = null;
 			li.style.position = null;
 			li.style.top = null;

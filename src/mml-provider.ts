@@ -1,4 +1,5 @@
 import * as G from "geojson";
+import * as L from "leaflet";
 import AbstractProvider, { EndpointArgument } from "leaflet-geosearch/lib/providers/provider";
 import { convertLatLng } from "./utils";
 
@@ -17,25 +18,48 @@ export default class MMLProvider extends AbstractProvider<MMLRequestResult> {
 	}
 
 	parse(result) {
+		// combine kiinteistotunnus results into single bounds.
+		if (result.data.features.reduce((kiinteistotunnus, f) =>
+			kiinteistotunnus === null
+				? f.properties.kiinteistotunnus
+				: kiinteistotunnus === f.properties.kiinteistotunnus
+					? kiinteistotunnus
+					: false
+		, null)) {
+			const bounds = L.latLngBounds(result.data.features.map(f =>
+				convertLatLng(f.geometry.coordinates.reverse(), "EPSG:3067", "WGS84")
+			));
+			const [first] = result.data.features;
+			return [
+				{
+					label: this.getLabel(first),
+					x: bounds.getCenter().lng,
+					y: bounds.getCenter().lat,
+					bounds: [bounds.getSouthWest(), bounds.getNorthEast()].map(latlng => [latlng.lat, latlng.lng]),
+					raw: first
+				}
+			];
+		}
+
 		const uniqueLabels = new Set();
 		return result.data.features.reduce((results, f) => {
-			const label = [f.properties.label,
-				f.properties["label:municipality"],
-				f.properties["label:region"],
-				f.properties["label:subregion"]
-			].filter(s => s).join(", ");
+			const label = this.getLabel(f);
 
 			if (!uniqueLabels.has(label)) {
-				const converted = convertLatLng(f.geometry.coordinates.reverse(), "EPSG:3067", "WGS84").reverse();
-				results.push({
-					x: converted[0],
-					y: converted[1],
-					label,
-					raw: f
-				});
+				const [y, x] = convertLatLng(f.geometry.coordinates.reverse(), "EPSG:3067", "WGS84");
+				results.push({x, y, label, raw: f});
 			}
 			uniqueLabels.add(label);
 			return results;
 		}, []);
+	}
+
+	getLabel(feature: G.Feature) {
+		return [
+			feature.properties.label,
+			feature.properties["label:municipality"],
+			feature.properties["label:region"],
+			feature.properties["label:subregion"]
+		].filter(s => s).join(", ");
 	}
 }

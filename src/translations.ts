@@ -829,5 +829,10 @@ export default {
 		fi: "Sulje",
 		en: "Close",
 		sv: "Stänga",
+	},
+	birdAtlasSocietyGridZones: {
+		fi: "Lintuatlasruudut yhdistyksittäin",
+		en: "Bird atlas society grid zones",
+		sv: "Fågelatlas samhällets rutnätszoner",
 	}
 };

@@ -201,6 +201,7 @@ kiinteistotunnukset
 currentProtectedAreas
 plannedProtectedAreas
 flyingSquirrelPredictionModel
+birdAtlasSocietyGridZones
 ```
 
 ## Methods ##

@@ -287,7 +287,8 @@ export default class LajiMap {
 		"biodiversityForestZones",
 		"currentProtectedAreas",
 		"plannedProtectedAreas",
-		"flyingSquirrelPredictionModel"
+		"flyingSquirrelPredictionModel",
+		"birdAtlasSocietyGridZones"
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -962,6 +963,10 @@ export default class LajiMap {
 					layers: "LajiMapData:flyingSquirrel_predictionModel",
 					defaultOpacity: 0.5
 				}),
+				birdAtlasSocietyGridZones: getLajiLayer({
+					layers: "LajiMapData:BirdAtlasSocietyGridZones",
+					defaultOpacity: 0.5
+				}, true)
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

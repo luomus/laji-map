@@ -832,7 +832,7 @@ export default {
 	},
 	birdAtlasSocietyGridZones: {
 		fi: "Lintuatlasruudut yhdistyksittäin",
-		en: "Bird atlas society grid zones",
-		sv: "Fågelatlas samhällets rutnätszoner",
+		en: "Bird atlas squares of bird associations",
+		sv: "Fågelföreningarnas atlasrutor",
 	}
 };

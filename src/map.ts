@@ -3617,7 +3617,7 @@ export default class LajiMap {
 	}
 
 	abortDrawing(e?: Event) {
-		if (e.preventDefault) {
+		if (e?.preventDefault) {
 			e.preventDefault();
 			e.stopPropagation();
 		}

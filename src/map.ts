@@ -165,6 +165,9 @@ declare module "leaflet" {
 	}
 }
 
+
+type MaybeGroupedTileLayer = L.TileLayer | L.LayerGroup<L.TileLayer>;
+
 export default class LajiMap {
 	googleApiKey: string;
 	googleSearchUrl: string;
@@ -219,16 +222,16 @@ export default class LajiMap {
 	_documentEvents: {[eventName: string]: EventListener[]} = {};
 	zoom: number;
 	center: L.LatLngExpression;
-	tileLayer: L.TileLayer;
-	overlaysByNames: {[name: string]: L.TileLayer};
-	availableOverlaysByNames: {[name: string]: L.TileLayer};
-	overlays: L.TileLayer[];
-	finnishTileLayers: {[name in (FinnishLayerNames | Extract<OverlayNames, "ykjGrid" | "ykjGridLabels">)]?: L.TileLayer};
-	worldTileLayers: {[name in WorldLayerNames]?: L.TileLayer};
-	tileLayers: {[name in LayerNames]?: L.TileLayer};
+	tileLayer: MaybeGroupedTileLayer;
+	overlaysByNames: {[name: string]: MaybeGroupedTileLayer};
+	availableOverlaysByNames: {[name: string]: MaybeGroupedTileLayer};
+	overlays: MaybeGroupedTileLayer[];
+	finnishTileLayers: {[name in (FinnishLayerNames | Extract<OverlayNames, "ykjGrid" | "ykjGridLabels">)]?: MaybeGroupedTileLayer};
+	worldTileLayers: {[name in WorldLayerNames]?: MaybeGroupedTileLayer};
+	tileLayers: {[name in LayerNames]?: MaybeGroupedTileLayer};
 	tileLayerName: TileLayerName;
 	_tileLayers: InternalTileLayersOptions;
-	availableTileLayers: {[name: string]: L.TileLayer};
+	availableTileLayers: {[name: string]: MaybeGroupedTileLayer};
 	_listenedEvents: L.LeafletEventHandlerFnMap;
 	_keyListeners: {[eventName: string]: {[key: string]: ((e: Event) => boolean | void)[]}} = {};
 	_swapToWorldFlag: boolean;
@@ -878,9 +881,14 @@ export default class LajiMap {
 				ykjGridLabels: getLajiLayer({
 					layers: "LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000",
 				}, true),
-				atlasGrid: getLajiLayer({
-					layers: "LajiMapData:atlasGrids"
-				}, true),
+				atlasGrid: L.layerGroup([
+					getLajiLayer({
+						layers: "LajiMapData:AtlasYKJ1kmLines,LajiMapData:AtlasYKJ10kmLines",
+					}),
+					getLajiLayer({
+						layers: "LajiMapData:AtlasYKJ1kmLabels,LajiMapData:AtlasYKJ10kmLabels",
+					}, true)
+				]),
 				afeGrid: getLajiLayer({
 					layers: "LajiMapData:afe_grid"
 				}),
@@ -1225,7 +1233,7 @@ export default class LajiMap {
 		this.map.addEventListener(eventListeners);
 	}
 
-	_getDefaultCRSLayers(): L.TileLayer[] {
+	_getDefaultCRSLayers(): MaybeGroupedTileLayer[] {
 		return [
 			this.tileLayers.openStreetMap,
 			this.tileLayers.googleSatellite,
@@ -1233,7 +1241,7 @@ export default class LajiMap {
 		];
 	}
 
-	_getMMLCRSLayers(): L.TileLayer[] {
+	_getMMLCRSLayers(): MaybeGroupedTileLayer[] {
 		return [
 			this.tileLayers.maastokartta,
 			this.tileLayers.taustakartta,
@@ -1252,7 +1260,7 @@ export default class LajiMap {
 		this.setTileLayer(this.tileLayers[name]);
 	}
 
-	getListForAvailableLayers(names: LayerNames[], condition, _tileLayers?: {[name: string]: L.TileLayer}) {
+	getListForAvailableLayers(names: LayerNames[], condition, _tileLayers?: {[name: string]: MaybeGroupedTileLayer}) {
 		const list = names.reduce((_list, name) => {
 			_list[name] = true;
 			return _list;
@@ -1265,7 +1273,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableTileLayers(names: TileLayerName[], condition: boolean, _tileLayers?: {[name: string]: L.TileLayer}) {
+	setAvailableTileLayers(names: TileLayerName[], condition: boolean, _tileLayers?: {[name: string]: MaybeGroupedTileLayer}) {
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
 
 		this.availableTileLayers = this.getListForAvailableLayers(names, condition, _tileLayers);
@@ -1298,16 +1306,16 @@ export default class LajiMap {
 		this.setAvailableTileLayers(names, true, layers);
 	}
 
-	getAvailableOverlaysByNames(): {[name: string]: L.TileLayer[]} {
+	getAvailableOverlaysByNames(): {[name: string]: MaybeGroupedTileLayer[]} {
 		return this.getAvailableLayersFor(this.overlaysByNames, this.availableOverlaysByNames);
 	}
-	getAvailableWorldTileLayers(): {[name: string]: L.TileLayer[]} {
+	getAvailableWorldTileLayers(): {[name: string]: MaybeGroupedTileLayer[]} {
 		return this.getAvailableLayersFor(this.worldTileLayers, this.availableTileLayers);
 	}
-	getAvailableFinnishTileLayers(): {[name: string]: L.TileLayer[]} {
+	getAvailableFinnishTileLayers(): {[name: string]: MaybeGroupedTileLayer[]} {
 		return this.getAvailableLayersFor(this.finnishTileLayers, this.availableTileLayers);
 	}
-	getAvailableLayersFor(_layers, availables): {[name: string]: L.TileLayer[]} {
+	getAvailableLayersFor(_layers, availables): {[name: string]: MaybeGroupedTileLayer[]} {
 		return Object.keys(_layers).reduce((layers, name) => {
 			if (availables[name]) {
 				layers[name] = _layers[name];
@@ -1316,7 +1324,7 @@ export default class LajiMap {
 		}, {});
 	}
 
-	setTileLayer(layer: L.TileLayer) {
+	setTileLayer(layer: MaybeGroupedTileLayer) {
 		const name = Object.keys(this.tileLayers).find(_name => {
 			if (this.tileLayers[_name] === layer) {
 				return !!_name;
@@ -1371,7 +1379,7 @@ export default class LajiMap {
 			layers: Object.keys(combinedLayers).reduce((_layers, name) => {
 				const layerOptions = options.layers[name];
 				_layers[name] = typeof layerOptions === "boolean" || layerOptions === undefined
-					? {opacity: layerOptions ? (combinedLayers[name].options.defaultOpacity || 1) : 0, visible: !!layerOptions}
+					? {opacity: layerOptions ? ((combinedLayers[name] as any).options.defaultOpacity || 1) : 0, visible: !!layerOptions}
 					: {
 						opacity: layerOptions.opacity,
 						visible: layerOptions.hasOwnProperty("visible")  ? layerOptions.visible : !!layerOptions.opacity
@@ -1456,8 +1464,12 @@ export default class LajiMap {
 			prevOptions && (!visible || !activeLayers[name]) && this.map.hasLayer(_layer) && _layer.remove();
 			// Overlays must be reapplied if projection changed.
 			oldActive && oldActive !== newOptions.active && this.overlaysByNames[name] && this.map.removeLayer(_layer);
-			visible && activeLayers[name] && !this.map.hasLayer(_layer) && this.map.addLayer(_layer);
-			visible && activeLayers[name] && _layer.setOpacity(opacity);
+			if (visible && activeLayers[name]) {
+				!this.map.hasLayer(_layer) && this.map.addLayer(_layer);
+				_layer instanceof L.TileLayer
+					? _layer.setOpacity(opacity)
+					: _layer.eachLayer((l: L.TileLayer) => l.setOpacity(opacity));
+			}
 		});
 
 		// Zoom levels behave differently on different projections.
@@ -1535,7 +1547,7 @@ export default class LajiMap {
 		if (!initialCall && triggerEvent) this.map.fire("tileLayerOpacityChange", {tileLayerOpacity: val});
 	}
 
-	setOverlays(overlays: L.TileLayer[] = []) {
+	setOverlays(overlays: MaybeGroupedTileLayer[] = []) {
 		if (!this._initialized && this.options.tileLayers) {
 			return;
 		}
@@ -1616,7 +1628,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	setAvailableOverlays(overlayNames: OverlayName[] = [], condition, _tileLayers?: {[name: string]: L.TileLayer}) {
+	setAvailableOverlays(overlayNames: OverlayName[] = [], condition, _tileLayers?: {[name: string]: MaybeGroupedTileLayer}) {
 		if (!depsProvided(this, "setAvailableOverlays", arguments)) return;
 		if (!depsProvided(this, "setAvailableTileLayers", arguments)) return;
 
@@ -1625,14 +1637,14 @@ export default class LajiMap {
 		isProvided(this, "tileLayer") && this.setTileLayers(this._tileLayers);
 	}
 
-	getNormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {
+	getNormalizedZoom(zoom?: number, tileLayer?: MaybeGroupedTileLayer): number {
 		if (!zoom) {
 			zoom = this.map.getZoom();
 		}
 		return (this._getMMLCRSLayers().indexOf(tileLayer || this.tileLayer) !== -1) ? zoom : zoom - 3;
 	}
 
-	getDenormalizedZoom(zoom?: number, tileLayer?: L.TileLayer): number {
+	getDenormalizedZoom(zoom?: number, tileLayer?: MaybeGroupedTileLayer): number {
 		if (typeof zoom !== "number" || isNaN(zoom)) {
 			zoom = this.map.getZoom();
 		}

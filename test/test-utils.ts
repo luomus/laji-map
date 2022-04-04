@@ -3,14 +3,15 @@ import { browser, $, by } from "protractor";
 import * as utils from "laji-map/lib/utils";
 import { Options } from "laji-map/lib/map.defs";
 
-const joinParams = params => Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
+const joinParams = (params: Record<string, unknown>) =>
+	Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
 const navigateToMap = async (params = {}) => {
 	const url = `http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`;
 	VERBOSE && console.log(url);
 	await browser.get(url);
 };
 
-function getControlButton(name) {
+function getControlButton(name: string) {
 	return $(`.button-${name.replace(/\./g, "_")}`);
 }
 
@@ -28,7 +29,7 @@ export class MapPageObject {
 		}
 	}
 
-	e(path, ...params) {
+	e(path: string, ...params: any[]) {
 		return browser.executeScript(`return window.map.${path}`, ...params);
 	}
 
@@ -36,20 +37,20 @@ export class MapPageObject {
 		return $(".laji-map");
 	}
 
-	mouseMove(x, y) {
+	mouseMove(x: number, y: number) {
 		return browser.actions()
 			.mouseMove(this.$getElement().getWebElement(), {x: x + 1, y})
 			.mouseMove(this.$getElement().getWebElement(), {x, y})
 			.perform();
 	}
 
-	async clickAt(x, y) {
+	async clickAt(x: number, y: number) {
 		await this.mouseMove(x, y);
 		return browser.actions()
 			.click().perform();
 	}
 
-	async doubleClickAt(x, y) {
+	async doubleClickAt(x: number, y: number) {
 		await this.mouseMove(x, y);
 		await browser.sleep(500);
 		return browser.actions()
@@ -94,7 +95,7 @@ class CoordinateInputControlPageObject {
 	$getCloseButton() {
 		return this.$getContainer().$(".close");
 	}
-	async enterLatLng(lat, lng) {
+	async enterLatLng(lat: number, lng: number) {
 		await $("#laji-map-coordinate-input-lat").sendKeys(lat);
 		return $("#laji-map-coordinate-input-lng").sendKeys(lng);
 	}
@@ -116,7 +117,7 @@ class CoordinateUploadControlPageObject {
 	$getCloseButton() {
 		return this.$getContainer().$(".close");
 	}
-	type(text) {
+	type(text: string) {
 		return this.$getContainer().$("textarea").sendKeys(text);
 	}
 	getCRS() {
@@ -164,7 +165,7 @@ class CoordinateCopyControlPageObject {
 }
 
 class DrawControlPageObject {
-	$getButton(name) {
+	$getButton(name: string) {
 		return $(`.leaflet-draw-draw-${name}`);
 	}
 	$getMarkerButton() {
@@ -187,7 +188,7 @@ class DrawControlPageObject {
 class TilelayersControlPageObject {
 	mapPO: MapPageObject;
 
-	constructor(mapPO) {
+	constructor(mapPO: MapPageObject) {
 		this.mapPO = mapPO;
 	}
 	$getContainer() {
@@ -214,19 +215,19 @@ class TilelayersControlPageObject {
 	$getOverlayList() {
 		return this.$getContainer().$(".overlay-list");
 	}
-	$getLayerElement(name) {
+	$getLayerElement(name: string) {
 		return this.$getContainer().$(`#${name}`);
 	}
 }
 
-export const createMap = async (options?) => {
+export const createMap = async (options?: any) => {
 	const map = new MapPageObject(options);
 	await map.initialize();
 	return map;
 };
 
-export const ykjToWgs84 = (latLng) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");
-export const etrsToWgs84 = (latLng) => utils.convertLatLng(
+export const ykjToWgs84 = (latLng: [number, number]) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");
+export const etrsToWgs84 = (latLng: [number, number]) => utils.convertLatLng(
 	latLng,
 	"+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs", "WGS84"
 );
@@ -244,13 +245,13 @@ export class PointTraveller {
 		this.initY = y;
 	}
 
-	travel(xAmount, yAmount) {
+	travel(xAmount: number, yAmount: number) {
 		this.x = this._x(this.x, yAmount);
 		this.y = this._y(this.y, xAmount);
 		return this.return(this.x, this.y);
 	}
 
-	return(x, y) {
+	return(x: number, y: number): [number, number] {
 		return [x, y];
 	}
 
@@ -258,8 +259,8 @@ export class PointTraveller {
 		return this.return(this.initX, this.initY);
 	}
 
-	_x(curVal, amount) { return curVal + amount; }
-	_y(curVal, amount) { return curVal + amount; }
+	_x(curVal: number, amount: number) { return curVal + amount; }
+	_y(curVal: number, amount: number) { return curVal + amount; }
 }
 
 interface LatLngTravellerOptions {
@@ -270,29 +271,29 @@ export class LatLngTraveller extends PointTraveller {
 	options: LatLngTravellerOptions;
 	onlyForward: boolean;
 
-	constructor(lat, lng, options: LatLngTravellerOptions = {}) {
+	constructor(lat: number, lng: number, options: LatLngTravellerOptions = {}) {
 		super(lng, lat);
 		if (options.onlyForward) {
 			this.onlyForward = true;
 		}
 	}
 
-	_y(curVal, amount) {
+	_y(curVal: number, amount: number) {
 		if (this.onlyForward && amount < 0) throw "Can travel only positive amounts if 'onlyForward' true";
 		return super._y(curVal, -amount);
 	}
 
-	_x(curVal, amount) {
+	_x(curVal: number, amount: number) {
 		if (this.onlyForward && amount < 0) throw "Can travel only positive amounts if 'onlyForward' true";
 		return super._x(curVal, amount);
 	}
 
-	northEast(north, east) {
+	northEast(north: number, east: number) {
 		return this.travel(east, north);
 	}
 
-	return() {
-		return [this.y, this.x];
+	return(x: number, y: number): [number, number] {
+		return [y, x];
 	}
 }
 

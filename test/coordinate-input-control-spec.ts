@@ -89,7 +89,7 @@ describe("Coordinate input control", () => {
 				[6666660, 3333340],
 				[6666670, 3333340],
 				[6666670, 3333330],
-			].map(latLng => ykjToWgs84(latLng));
+			].map((latLng: [number, number]) => ykjToWgs84(latLng));
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("YKJ");
 			await control.$getSubmit().click();

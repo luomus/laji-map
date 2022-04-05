@@ -2223,22 +2223,22 @@ export default class LajiMap {
 	}
 
 	_getEventsWithLayers(events: LajiMapEvent[]) {
-			let createCount = 0;
-			return events.slice(0).reverse().map(e => {
-				if (e.type === "create") {
-					const _e = {...e, layer: this.getDrawLayerByIdx(this.getDraw().featureCollection.features.length - 1 - createCount)}
-					createCount++;
-					return _e;
-				} else if (e.type === "insert") {
-					return {...e, layer: this.getDrawLayerByIdx(e.idx)};
-				} else if (e.type === "edit") {
-					return {...e, layers: Object.keys(e.features).reduce((layers, idx) => ({...layers, [idx]: this.getDrawLayerByIdx(+idx)}), {})};
-				}
-				if (e.type === "active") {
-					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
-				}
-				return e;
-			});
+		let createCount = 0;
+		return events.slice(0).reverse().map(e => {
+			if (e.type === "create") {
+				const _e = {...e, layer: this.getDrawLayerByIdx(this.getDraw().featureCollection.features.length - 1 - createCount)};
+				createCount++;
+				return _e;
+			} else if (e.type === "insert") {
+				return {...e, layer: this.getDrawLayerByIdx(e.idx)};
+			} else if (e.type === "edit") {
+				return {...e, layers: Object.keys(e.features).reduce((layers, idx) => ({...layers, [idx]: this.getDrawLayerByIdx(+idx)}), {})};
+			}
+			if (e.type === "active") {
+				this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
+			}
+			return e;
+		});
 	}
 
 	drawUndo() {

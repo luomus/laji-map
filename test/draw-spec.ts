@@ -1,14 +1,16 @@
-import { createMap, PointTraveller, SAFE_CLICK_WAIT } from "./test-utils";
+import { createMap, DrawControlPageObject, MapPageObject, PointTraveller, SAFE_CLICK_WAIT } from "./test-utils";
 import * as utils from "laji-map/lib/utils";
 import { $, $$, browser } from "protractor";
+import G from "geojson";
 
 describe("Drawing", () => {
 
-	const getLastGeometry = () => map.e(
+	const getLastGeometry = <T extends G.Geometry = G.Geometry>(): Promise<T> => map.e(
 		"getDraw().featureCollection.features[map.getDraw().featureCollection.features.length - 1].geometry"
 	);
 
-	let map, control;
+	let map: MapPageObject;
+	let control: DrawControlPageObject;
 	beforeAll(async () => {
 		map = await createMap({
 			draw: true,
@@ -31,7 +33,7 @@ describe("Drawing", () => {
 		});
 
 		it("coordinates length", async () => {
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Point>();
 			expect(geometry.type).toBe("Point");
 			expect(`${geometry.coordinates[0]}`.split(".")[1].length).toBeLessThan(7);
 			expect(`${geometry.coordinates[1]}`.split(".")[1].length).toBeLessThan(7);
@@ -41,7 +43,7 @@ describe("Drawing", () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await map.drawMarker();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Point>();
 			for (const c of geometry.coordinates) {
 				expect(c).toBeLessThan(180);
 				expect(c).toBeGreaterThan(-180);
@@ -97,7 +99,7 @@ describe("Drawing", () => {
 		});
 
 		it("coordinates length", async () => {
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.LineString>();
 			expect(geometry.coordinates.length).toBe(3);
 			for (const c of geometry.coordinates) {
 				expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
@@ -109,7 +111,7 @@ describe("Drawing", () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await addLine();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.LineString>();
 			for (const coords of geometry.coordinates) {
 				for (const c of coords) {
 					expect(c).toBeLessThan(180);
@@ -143,7 +145,7 @@ describe("Drawing", () => {
 
 		it("can be drawn", async () => {
 			await addPolygon();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Polygon>();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates.length).toBe(1);
 			expect(geometry.coordinates[0].length).toBe(coordinates.length);
@@ -160,34 +162,34 @@ describe("Drawing", () => {
 		});
 
 		it("coordinates length", async () => {
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Polygon>();
 			for (const c of geometry.coordinates[0]) {
 				expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
 			}
 		});
 
-		it("coordinates are clockwise", async () => {
-			const geometry = await getLastGeometry();
-			expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
+		it("coordinates are counter clockwise", async () => {
+			const geometry = await getLastGeometry<G.Polygon>();
+			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 		});
 
-		it("coordinates are clockwise when drawn counter clockwise direction", async () => {
+		it("coordinates are counter clockwise when drawn counter clockwise direction", async () => {
 			await clear();
 			await control.$getPolygonButton().click();
 			for (const c of coordinates.slice(0).reverse()) {
 				await browser.sleep(SAFE_CLICK_WAIT);
 				await map.clickAt(...c);
 			}
-			const geometry = await getLastGeometry();
-			expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
+			const geometry = await getLastGeometry<G.Polygon>();
+			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 		});
 
 		it("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await addPolygon();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Polygon>();
 			for (const coords of geometry.coordinates[0]) {
 				for (const c of coords) {
 					expect(c).toBeLessThan(180);
@@ -202,15 +204,15 @@ describe("Drawing", () => {
 
 		it("can be drawn", async () => {
 			await map.drawRectangle();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Polygon>();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates.length).toBe(1);
 			expect(geometry.coordinates[0].length).toBe(5);
 		});
 
 		it("coordinates length", async () => {
-			const geometry = await getLastGeometry();
-			await geometry.coordinates[0].forEach(async (c) => {
+			const geometry = await getLastGeometry<G.Polygon>();
+			geometry.coordinates[0].forEach(async (c: number[]) => {
 				expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
 				expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
 			});
@@ -220,7 +222,7 @@ describe("Drawing", () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await map.drawRectangle();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Polygon>();
 			for (const coords of geometry.coordinates[0]) {
 				for (const c of coords) {
 					expect(c).toBeLessThan(180);
@@ -229,28 +231,67 @@ describe("Drawing", () => {
 			}
 		});
 
-		it("coordinates are clockwise", async () => {
-			const geometry = await getLastGeometry();
-			expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
+		it("coordinates are counter clockwise", async () => {
+			const geometry = await getLastGeometry<G.Polygon>();
+			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 		});
 
-		it("coordinates are clockwise when drawn from any direction", async () => {
-			const geometry = await getLastGeometry();
-			expect(utils.coordinatesAreClockWise(geometry.coordinates)).toBe(true);
+		const drags = [
+			[-10, 10],
+			[10, -10],
+			[-10, -10]
+		] as [number, number][];
 
-			const drags = [
-				[-10, 10],
-				[10, -10],
-				[-10, -10]
-			] as [number, number][];
+		it("coordinates are counter clockwise when drawn from any direction", async () => {
+			const geometry = await getLastGeometry<G.Polygon>();
+			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
+
 			for (const drag of drags) {
 				await clear();
 				await control.$getRectangleButton().click();
 				const traveller = new PointTraveller();
 				await map.drag(traveller.initial(), traveller.travel(...drag));
-				const lastGeometry = await getLastGeometry();
-				expect(utils.coordinatesAreClockWise(lastGeometry.coordinates)).toBe(true);
+				const lastGeometry = await getLastGeometry<G.Polygon>();
+				expect(utils.coordinatesAreClockWise(lastGeometry.coordinates[0])).toBe(false);
 			}
+		});
+
+		describe("editing", () => {
+			const lastDestination = drags[drags.length - 1];
+			let geometryBeforeEdit: G.Polygon;
+
+			beforeAll(async() => {
+				geometryBeforeEdit = await getLastGeometry<G.Polygon>();
+			});
+
+			it("can be started", async () => {
+				await map.doubleClickAt(...lastDestination);
+				expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0, "Rectangle wasn't editable");
+			});
+
+			it("can be finished", async () => {
+				const traveller = new PointTraveller(...lastDestination);
+				await map.drag(traveller.initial(), traveller.travel(-10, -10));
+				await map.clickAt(...traveller.travel(-10, -10));
+			});
+
+			it("geometry is changed", async () => {
+				const lastGeometry = await getLastGeometry<G.Polygon>();
+				expect(lastGeometry).not.toEqual(geometryBeforeEdit);
+			});
+
+			it("coordinates are counter clockwise", async () => {
+				const lastGeometry = await getLastGeometry<G.Polygon>();
+				expect(utils.coordinatesAreClockWise(lastGeometry.coordinates[0])).toBe(false);
+			});
+
+			it("coordinates length", async () => {
+				const lastGeometry = await getLastGeometry<G.Polygon>();
+				lastGeometry.coordinates[0].forEach(async (c: number[]) => {
+					expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
+					expect(`${c[1]}`.split(".")[1].length).toBeLessThan(7);
+				});
+			});
 		});
 	});
 
@@ -264,9 +305,9 @@ describe("Drawing", () => {
 
 		it("can be drawn", async () => {
 			await addCircle();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Point>();
 			expect(geometry.type).toBe("Point");
-			expect(geometry.radius).toBeGreaterThan(0);
+			expect((geometry as any).radius).toBeGreaterThan(0);
 			expect(geometry.coordinates.length).toBe(2);
 		});
 
@@ -281,7 +322,7 @@ describe("Drawing", () => {
 		});
 
 		it("coordinates length", async () => {
-			const {coordinates} = await getLastGeometry();
+			const {coordinates} = await getLastGeometry<G.Point>();
 			expect(`${coordinates[0]}`.split(".")[1].length).toBeLessThan(7);
 			expect(`${coordinates[1]}`.split(".")[1].length).toBeLessThan(7);
 		});
@@ -290,7 +331,7 @@ describe("Drawing", () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await addCircle();
-			const geometry = await getLastGeometry();
+			const geometry = await getLastGeometry<G.Point>();
 			for (const c of geometry.coordinates) {
 				expect(c).toBeLessThan(180);
 				expect(c).toBeGreaterThan(-180);

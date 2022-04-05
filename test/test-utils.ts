@@ -29,8 +29,8 @@ export class MapPageObject {
 		}
 	}
 
-	e(path: string, ...params: any[]) {
-		return browser.executeScript(`return window.map.${path}`, ...params);
+	e<T>(path: string, ...params: any[]): Promise<T> {
+		return browser.executeScript(`return window.map.${path}`, ...params) as Promise<T>;
 	}
 
 	$getElement() {
@@ -164,7 +164,7 @@ class CoordinateCopyControlPageObject {
 	}
 }
 
-class DrawControlPageObject {
+export class DrawControlPageObject {
 	$getButton(name: string) {
 		return $(`.leaflet-draw-draw-${name}`);
 	}

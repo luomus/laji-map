@@ -1757,11 +1757,11 @@ export default class LajiMap {
 			// GeoJSON circles doesn't have radius, so we extend GeoJSON.
 			(<any> feature.geometry).radius = layer.getRadius();
 		} else if  (feature.geometry.type === "Polygon") {
-			// If the coordinates are ordered counterclockwise, reverse them.
+			// If the coordinates are ordered clockwise, reverse them.
 			const coordinates = feature.geometry.coordinates[0].slice(0);
-			const isClockwise = !coordinatesAreClockWise(coordinates);
+			const isClockwise = coordinatesAreClockWise(coordinates);
 
-			if (!isClockwise) {
+			if (isClockwise) {
 				feature = {...feature, geometry: {...feature.geometry, coordinates: [coordinates.reverse()]}};
 			}
 		}

@@ -2,7 +2,7 @@ import * as G from "geojson";
 import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
 	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng,
 	ErrorEvent, MarkerCluster } from "leaflet";
-import { ControlOptions, ControlsOptions, CustomControl } from "./controls.defs";
+import { ControlOptions, ControlsOptions } from "./controls.defs";
 import { LineTransectOptions } from "./line-transect.defs";
 
 export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
@@ -19,10 +19,12 @@ export interface ZoomToDataOptions extends LajiMapFitBoundsOptions {
 export interface LajiMapCreateEvent {
 	type: "create";
 	feature: G.Feature;
+	layer: DataItemLayer;
 }
 export interface LajiMapEditEvent {
 	type: "edit";
 	features: {[idx: number]: G.Feature};
+	layers: {[idx: number]: DataItemLayer};
 }
 export interface LajiMapDeleteEvent {
 	type: "delete";
@@ -33,10 +35,12 @@ export interface LajiMapInsertEvent {
 	type: "insert";
 	idx: number;
 	feature: G.Feature;
+	layer: DataItemLayer;
 }
 export interface LajiMapActivateEvent {
 	type: "active";
 	idx: number;
+	layer: DataItemLayer;
 }
 
 export type LajiMapEvent = LajiMapCreateEvent | LajiMapEditEvent | LajiMapDeleteEvent | LajiMapInsertEvent | LajiMapActivateEvent;
@@ -64,7 +68,7 @@ export interface ShowMeasurementsOptions {
 }
 
 export interface DataOptions {
-	featureCollection?: any;
+	featureCollection?: G.FeatureCollection;
 	geoData?: G.GeoJSON | string;
 	cluster?: boolean | MarkerClusterGroupOptions;
 	activeIdx?: number;

@@ -65,8 +65,8 @@ export default (lajiMap: LajiMap & WithControls) => {
 				features: lajiMap.cloneFeatures(lajiMap.getDraw().featureCollection.features)
 			}];
 			lajiMap.updateDrawData(<DrawOptions> {...lajiMap.getDraw(), featureCollection: undefined, geoData: fixedGeoJSON || textarea.value});
-			lajiMap.getDraw().featureCollection.features.forEach(feature => {
-				events.push({type: "create", feature});
+			lajiMap.getDraw().featureCollection.features.forEach((feature, i) => {
+				events.push({type: "create", feature, layer: lajiMap.getDrawLayerByIdx(i)});
 			});
 			lajiMap._triggerEvent(events, lajiMap.getDraw().onChange);
 			lajiMap._updateDrawUndoStack(events, prevFeatureCollection);

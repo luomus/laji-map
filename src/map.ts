@@ -1836,12 +1836,11 @@ export default class LajiMap {
 				feature.geometry && feature.geometry.type === "GeometryCollection"
 			)
 		) {
-			const {geometry, ..._featureCollection} = item.featureCollection; // eslint-disable-line @typescript-eslint/no-unused-vars
 			item = {
 				...item,
 				featureCollection: {
-					..._featureCollection,
-					features: _featureCollection.features.reduce((features, f) => {
+					...item.featureCollection,
+					features: item.featureCollection.features.reduce((features, f) => {
 						if (f.geometry.type === "GeometryCollection") {
 							f.geometry.geometries.forEach(g => {
 								features.push({type: "Feature", geometry: g, properties: f.properties});
@@ -2223,6 +2222,25 @@ export default class LajiMap {
 		this._drawHistoryPointer = 0;
 	}
 
+	_getEventsWithLayers(events: LajiMapEvent[]) {
+			let createCount = 0;
+			return events.slice(0).reverse().map(e => {
+				if (e.type === "create") {
+					const _e = {...e, layer: this.getDrawLayerByIdx(this.getDraw().featureCollection.features.length - 1 - createCount)}
+					createCount++;
+					return _e;
+				} else if (e.type === "insert") {
+					return {...e, layer: this.getDrawLayerByIdx(e.idx)};
+				} else if (e.type === "edit") {
+					return {...e, layers: Object.keys(e.features).reduce((layers, idx) => ({...layers, [idx]: this.getDrawLayerByIdx(+idx)}), {})};
+				}
+				if (e.type === "active") {
+					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
+				}
+				return e;
+			});
+	}
+
 	drawUndo() {
 		if (this._drawHistoryPointer <= 0) return;
 		const {undoEvents: events} = this._drawHistory[this._drawHistoryPointer];
@@ -2230,13 +2248,8 @@ export default class LajiMap {
 		const {featureCollection} = this._drawHistory[this._drawHistoryPointer];
 		this.updateData(this.drawIdx, <Data> {...this.getDraw(), featureCollection});
 		if (events) {
-			events.some(e => {
-				if (e.type === "active") {
-					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
-					return true;
-				}
-			});
-			this._triggerEvent(events, this.getDraw().onChange);
+			const withLayers = this._getEventsWithLayers(events);
+			this._triggerEvent(withLayers, this.getDraw().onChange);
 		}
 	}
 
@@ -2246,13 +2259,8 @@ export default class LajiMap {
 		const {featureCollection, redoEvents: events} = this._drawHistory[this._drawHistoryPointer];
 		this.updateData(this.drawIdx, <Data> {...this.getDraw(), featureCollection});
 		if (events) {
-			events.some(e => {
-				if (e.type === "active") {
-					this.setActive(this._getLayerByIdxTuple([this.drawIdx, e.idx]));
-					return true;
-				}
-			});
-			this._triggerEvent(events, this.getDraw().onChange);
+			const withLayers = this._getEventsWithLayers(events);
+			this._triggerEvent(withLayers, this.getDraw().onChange);
 		}
 	}
 
@@ -3053,11 +3061,12 @@ export default class LajiMap {
 		const events: LajiMapEvent[] = [
 			{
 				type: "create",
-				feature
+				feature,
+				layer
 			},
 		];
 		if (item.hasActive) {
-			events.push({type: "active", idx: features.length - 1});
+			events.push({type: "active", idx: features.length - 1, layer});
 		}
 
 		this._triggerEvent(events, item.onChange);
@@ -3083,6 +3092,7 @@ export default class LajiMap {
 		}
 
 		const eventData = {};
+		const layersData = {};
 
 		const prevFeatureCollection = {
 			type: "FeatureCollection",
@@ -3097,6 +3107,7 @@ export default class LajiMap {
 			}
 			const idx = this.idsToIdxs[dataIdx][id];
 			eventData[idx] = feature;
+			layersData[idx] = layer;
 			this.data[dataIdx].featureCollection.features[idx] = this.formatFeatureIn(feature, idx);
 		}
 
@@ -3112,7 +3123,8 @@ export default class LajiMap {
 
 		const event = {
 			type: "edit",
-			features: eventData
+			features: eventData,
+			layers: layersData
 		} as LajiMapEditEvent;
 
 		this._triggerEvent(event, item.onChange);
@@ -3202,7 +3214,7 @@ export default class LajiMap {
 		}];
 
 		if (changeActive) {
-			events.push({type: "active", idx: this.idsToIdxs[dataIdx][newActiveId]});
+			events.push({type: "active", idx: this.idsToIdxs[dataIdx][newActiveId], layer: this._getLayerById(newActiveId)});
 		}
 
 		this._triggerEvent(events, item.onChange);
@@ -3230,8 +3242,9 @@ export default class LajiMap {
 		const [dataIdx, featureIdx] = idxTuple;
 		const item = this.data[dataIdx];
 		if (item.hasActive) {
-			this._triggerEvent({type: "active", idx: featureIdx}, item.onChange);
-			this.setActive(this._getLayerByIdxTuple(idxTuple));
+			const layer = this._getLayerByIdxTuple(idxTuple);
+			this._triggerEvent({type: "active", idx: featureIdx, layer}, item.onChange);
+			this.setActive(layer);
 		}
 	}
 

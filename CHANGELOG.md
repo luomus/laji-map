@@ -1,3 +1,6 @@
+## 3.16.0
+* Add layers to draw change events 'create', 'insert' and 'edit'
+
 ## 3.15.0
 * Add birdAtlasSocietyGridZones layer
 

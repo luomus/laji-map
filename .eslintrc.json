@@ -65,19 +65,18 @@
 		],
 		"no-prototype-builtins": "off",
 		"max-len": ["error", {"code": 150}],
-		"protractor/no-shadowing": "off"
-    },
+		"protractor/no-shadowing": "off",
+		"@typescript-eslint/no-unused-vars": [
+			"error",
+			{
+				"ignoreRestSiblings": true
+			}
+		]
+	},
     "plugins": [
 		"protractor"
     ],
 	"globals": {
 		"L": true
-	},
-	"@typescript-eslint/no-unused-vars": [
-		"error",
-		{
-			"ignoreRestSiblings": true
-		}
-	]
-
+	}
 }

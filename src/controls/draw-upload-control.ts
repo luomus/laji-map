@@ -18,7 +18,8 @@ export default (lajiMap: LajiMap & WithControls) => {
 	translationsHooks.push(lajiMap.addTranslationHook(button, "UploadDrawnFeatures"));
 	button.setAttribute("disabled", "disabled");
 
-	const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} = lajiMap.createFormatDetectorElem();
+	const {marker, polygon, polyline, single} = lajiMap.getDraw();
+	const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} = lajiMap.createFormatDetectorElem({point: marker, polygon, polyline, single});
 
 	let fixedGeoJSON = undefined;
 

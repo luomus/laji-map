@@ -81,14 +81,17 @@ export default (lajiMap: LajiMap & WithControls) => {
 
 	translateHooks.push(lajiMap.addTranslationHook(helpSpan, getHelpTxt));
 
+	const {rectangle, polygon, marker} = lajiMap.getDraw();
+
 	const {
 		validate,
 		elem: formatDetectorElem,
 		unmount: unmountFormatDetector
 	} = lajiMap.createFormatDetectorElem({
 		displayFormat: false,
-		displayErrors: false,
-		allowGrid: lajiMap.getDraw().rectangle || lajiMap.getDraw().polygon
+		displayOnlyGeoJSONErrors: true,
+		allowGrid: rectangle || polygon,
+		point: marker
 	});
 
 	const inputValues = ["", ""];

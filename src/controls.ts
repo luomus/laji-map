@@ -3,10 +3,10 @@ import * as G from "geojson";
 import SearchControl from "./controls/geosearch-control";
 import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent, TileLayersOptions } from "./map.defs";
-import { detectFormat, detectCRS, convertAnyToWGS84GeoJSON, isObject, renderLajiMapError } from "./utils";
+import { detectFormat, detectCRS, convertAnyToWGS84GeoJSON, isObject, renderLajiMapError, LajiMapError, LajiMapGeoJSONError, LajiMapGeoJSONConversionError, geoJSONAsFeatureCollection } from "./utils";
 import { ESC, EPSG2393String, EPSG2393WKTString, EPSG3067String, EPSG3067WKTString, } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
-import { ControlsOptions, CustomControl, DrawControlOptions, InternalControlsOptions, WithControls } from "./controls.defs";
+import { ControlsOptions, CustomControl, DrawControlOptions, FormatDetectorOptions, InternalControlsOptions, WithControls } from "./controls.defs";
 import LayerControl from "./controls/layer-control";
 import CoordinatesControl from "./controls/coordinates-control";
 import coordinateInputControl from "./controls/coordinate-input-control";
@@ -925,7 +925,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		return drawCopyControl(this);
 	}
 
-	createFormatDetectorElem(options: {displayFormat?: boolean, displayErrors?: boolean, allowGrid?: boolean} = {}):
+	createFormatDetectorElem(options: FormatDetectorOptions = {}):
 	{elem: HTMLElement, validate: (value?: string) => {valid: boolean, geoJSON: G.GeoJSON}, unmount: () => void} {
 		const _container = document.createElement("div");
 		const formatContainer = document.createElement("div");
@@ -953,7 +953,52 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		let alert = undefined;
 
-		const {displayFormat = true, displayErrors = true, allowGrid = false} = options;
+		const {
+			displayFormat = true,
+			displayOnlyGeoJSONErrors = false,
+			allowGrid = false,
+			point = true,
+			polygon = true,
+			polyline = true,
+			single = false
+		} = options;
+
+		const drawCompatibilityValidation = (value: any) => {
+			value  = geoJSONAsFeatureCollection(value);
+			const errors = [];
+			if (single && value.features.length > 1) {
+				errors.push(new LajiMapGeoJSONError("DrawUploadSingleFeature"));
+			}
+			if (!polygon || !point || !polyline) {
+				value.features.forEach(f => {
+					const {type} = f.geometry;
+					if ((!point && type === "Point")
+						|| (!polygon && type === "Polygon")
+						|| (!polyline && type === "LineString")
+					) {
+						errors.push(new LajiMapGeoJSONError(`DrawUploadInvalidType${type}`));
+					}
+				});
+			}
+			return errors;
+		};
+
+		const validate = (value: any, validateAll = false) => {
+			let valid;
+			try {
+				valid = convertAnyToWGS84GeoJSON(value, validateAll) as G.FeatureCollection;
+			} catch (e) {
+				if (e._lajiMapGeoJSONConversionError && e.geoJSON) {
+					e.errors = [...e.errors, ...drawCompatibilityValidation(e.geoJSON)];
+				}
+				throw e;
+			}
+			const errors = drawCompatibilityValidation(valid);
+			if (errors.length) {
+				throw new LajiMapGeoJSONConversionError("Draw incompatibility", errors, valid);
+			}
+			return valid;
+		};
 
 		let storedValue = "";
 		const updateInfo = (value = "") => {
@@ -982,10 +1027,11 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				} else if (crs === EPSG3067String || crs === EPSG3067WKTString) {
 					crs = "EPSG:3067";
 				}
-				valid = convertAnyToWGS84GeoJSON(value, !!"validate all");
+
+				valid = validate(value, !!"validate all");
 			} catch (e) {
 				const addError = (msg) => {
-					if (!displayErrors) {
+					if (displayOnlyGeoJSONErrors) {
 						return;
 					}
 					alert = document.createElement("div");
@@ -997,7 +1043,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					if (e.translationKey !== "GeoDataFormatDetectionError") {
 						addError(e.stringify(this.translations));
 					}
-				} else if (displayErrors && e._lajiMapGeoJSONConversionError) {
+				} else if (e._lajiMapGeoJSONConversionError) {
 					fixedGeoJSON = e.geoJSON;
 					e.errors.forEach(_e => {
 						const {fixable} = _e;
@@ -1046,14 +1092,14 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 				formatValue.innerHTML = format;
 				if (!hasErrors && hasWarnings) {
-					valid = convertAnyToWGS84GeoJSON(fixedGeoJSON);
+					valid = validate(fixedGeoJSON);
 				}
 				if (this.translations[crs]) {
 					crsValue.innerHTML = this.translations[crs];
 				}
 			}
 
-			return {valid: !!(format && crs && allowGrid || valid), geoJSON: valid};
+			return {valid: !!(!hasErrors && (format && crs && allowGrid || valid)), geoJSON: valid};
 		};
 
 		updateInfo();

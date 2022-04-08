@@ -136,12 +136,18 @@ class App {
 				},
 			},
 			onChange: this.onMapChange,
-			polyline: {
-				showStart: true,
-				showDirection: true
-			},
+			// polyline: {
+			// 	showStart: true,
+			// 	showDirection: true
+			// },
 			activeIdx: 0,
 			//editable: false
+			circle: false,
+			// marker: false,
+			polyline: false,
+			polygon: false,
+			rectangle: false,
+			single: true
 		};
 
 		this.activeIdx = 0;

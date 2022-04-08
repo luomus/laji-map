@@ -915,6 +915,7 @@ export class LajiMapGeoJSONError extends LajiMapError {
 
 	constructor(translationKey: string, path = "", fixable = false) {
 		super("", translationKey);
+		this.translationKey = translationKey;
 		this.path = path;
 		this.fixable = fixable;
 	}
@@ -965,6 +966,7 @@ export function renderLajiMapError(error: LajiMapError, translations: any, elemT
 	} else {
 		const elem = document.createElement(elemType);
 		elem.innerHTML = error.stringify ? stringifyLajiMapError(error, translations) : error.message;
+		console.log(error);
 		return elem;
 	}
 }

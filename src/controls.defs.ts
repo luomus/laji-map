@@ -84,7 +84,16 @@ interface FormatDetector {
 	validate: (value?: string) => {valid: boolean, geoJSON: G.GeoJSON};
 	unmount: () => void;
 }
+export interface FormatDetectorOptions {
+	displayFormat?: boolean;
+	displayOnlyGeoJSONErrors?: boolean;
+	allowGrid?: boolean;
+	point?: boolean;
+	polygon?: boolean;
+	polyline?: boolean;
+	single?: boolean;
+}
 
 export interface WithControls {
-	createFormatDetectorElem: (options?: {displayFormat?: boolean, displayErrors?: boolean, allowGrid?: boolean}) => FormatDetector
+	createFormatDetectorElem: (options?: FormatDetectorOptions) => FormatDetector
 }

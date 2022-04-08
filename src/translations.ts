@@ -834,5 +834,25 @@ export default {
 		fi: "Lintuatlasruudut yhdistyksittäin",
 		en: "Bird atlas squares of bird associations",
 		sv: "Fågelföreningarnas atlasrutor",
-	}
+	},
+	drawUploadInvalidTypePoint: {
+		fi: "Tällä kartalla on estetty pisteen käyttö",
+		en: "This map doesn't allow using a point",
+		sv: "Den här kartan tillåter inte användning av en punkt",
+	},
+	drawUploadInvalidTypePolygon: {
+		fi: "Tällä kartalla on estetty monikulmion käyttö",
+		en: "This map doesn't allow using a polygon",
+		sv: "Den här kartan tillåter inte användning av en polygon",
+	},
+	drawUploadInvalidTypeLineString: {
+		fi: "Tällä kartalla on estetty viivan käyttö",
+		en: "This map doesn't allow using a line",
+		sv: "Den här kartan tillåter inte användning av en linje",
+	},
+	DrawUploadSingleFeature: {
+		fi: "Syötä vain yksi kuvio",
+		en: "Enter only a single geometry",
+		sv: "Ange bara en enda geometri",
+	},
 };

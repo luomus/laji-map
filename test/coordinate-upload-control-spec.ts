@@ -110,10 +110,10 @@ describe("Draw upload control", () => {
 			const wgs84LatLng = ykjToWgs84([lat, lng]);
 			const geoJSON = JSON.parse(asGeoJSON(lat, lng));
 			geoJSON.crs = {
-					type: "name",
-					properties: {
-						name: EPSG2393String
-					}
+				type: "name",
+				properties: {
+					name: EPSG2393String
+				}
 			};
 			await control.type(JSON.stringify(geoJSON));
 			expect(await control.getCRS()).toBe("YKJ");

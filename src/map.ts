@@ -2517,7 +2517,7 @@ export default class LajiMap {
 
 	recluster() {
 		this._reclusterData();
-		this._reclusterDrawData();
+		this.draw && this._reclusterDrawData();
 	}
 
 	_reclusterDrawData() {

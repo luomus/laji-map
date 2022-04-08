@@ -542,7 +542,7 @@ export default class LajiMap {
 
 		this.rootElem = rootElem;
 		this.rootElem.appendChild(this.container);
-		if (oldContainer && oldContainer !== this.container) {
+		if (oldContainer && oldContainer !== this.container && oldContainer.parentElement) {
 			oldContainer.parentElement.removeChild(oldContainer);
 		}
 

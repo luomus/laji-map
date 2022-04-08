@@ -19,7 +19,8 @@ export default (lajiMap: LajiMap & WithControls) => {
 	button.setAttribute("disabled", "disabled");
 
 	const {marker, polygon, polyline, single} = lajiMap.getDraw();
-	const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} = lajiMap.createFormatDetectorElem({point: marker, polygon, polyline, single});
+	const {elem: formatDetectorElem, validate, unmount: unmountFormatDetector} =
+		lajiMap.createFormatDetectorElem({point: marker, polygon, polyline, single});
 
 	let fixedGeoJSON = undefined;
 

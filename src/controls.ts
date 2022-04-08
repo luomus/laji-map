@@ -3,7 +3,8 @@ import * as G from "geojson";
 import SearchControl from "./controls/geosearch-control";
 import LajiMap from "./map";
 import { DrawOptions, DataItemType, LajiMapEvent, TileLayersOptions } from "./map.defs";
-import { detectFormat, detectCRS, convertAnyToWGS84GeoJSON, isObject, renderLajiMapError, LajiMapError, LajiMapGeoJSONError, LajiMapGeoJSONConversionError, geoJSONAsFeatureCollection } from "./utils";
+import { detectFormat, detectCRS, convertAnyToWGS84GeoJSON, isObject, renderLajiMapError, LajiMapGeoJSONError, LajiMapGeoJSONConversionError,
+	geoJSONAsFeatureCollection } from "./utils";
 import { ESC, EPSG2393String, EPSG2393WKTString, EPSG3067String, EPSG3067WKTString, } from "./globals";
 import { dependsOn, depsProvided, provide, reflect, isProvided } from "./dependency-utils";
 import { ControlsOptions, CustomControl, DrawControlOptions, FormatDetectorOptions, InternalControlsOptions, WithControls } from "./controls.defs";

@@ -966,7 +966,6 @@ export function renderLajiMapError(error: LajiMapError, translations: any, elemT
 	} else {
 		const elem = document.createElement(elemType);
 		elem.innerHTML = error.stringify ? stringifyLajiMapError(error, translations) : error.message;
-		console.log(error);
 		return elem;
 	}
 }

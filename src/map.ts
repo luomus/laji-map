@@ -166,7 +166,11 @@ declare module "leaflet" {
 }
 
 
-type MaybeGroupedTileLayer = L.TileLayer | L.LayerGroup<L.TileLayer>;
+type MaybeGroupedTileLayer = L.TileLayer | NonTiledLayer.WMS | L.LayerGroup<L.TileLayer | NonTiledLayer.WMS>;
+
+export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLayer | NonTiledLayer.WMS> {
+	return layer instanceof L.LayerGroup;
+}
 
 export default class LajiMap {
 	googleApiKey: string;
@@ -1466,9 +1470,9 @@ export default class LajiMap {
 			oldActive && oldActive !== newOptions.active && this.overlaysByNames[name] && this.map.removeLayer(_layer);
 			if (visible && activeLayers[name]) {
 				!this.map.hasLayer(_layer) && this.map.addLayer(_layer);
-				_layer instanceof L.TileLayer
-					? _layer.setOpacity(opacity)
-					: _layer.eachLayer((l: L.TileLayer) => l.setOpacity(opacity));
+				isMultiTileLayer(_layer)
+					? _layer.eachLayer((l: L.TileLayer) => l.setOpacity(opacity))
+					: _layer.setOpacity(opacity);
 			}
 		});
 

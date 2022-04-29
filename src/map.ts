@@ -971,10 +971,14 @@ export default class LajiMap {
 					layers: "LajiMapData:flyingSquirrel_predictionModel",
 					defaultOpacity: 0.5
 				}),
-				birdAtlasSocietyGridZones: getLajiLayer({
-					layers: "LajiMapData:BirdAtlasSocietyGridZones",
-					defaultOpacity: 0.5
-				}, true)
+				birdAtlasSocietyGridZones: L.layerGroup([
+					getLajiLayer({
+						layers: "LajiMapData:BirdAtlasSocietyGrids",
+					}),
+					getLajiLayer({
+						layers: "LajiMapData:BirdLifeSocieties",
+					}, true)
+				], {defaultOpacity: 0.5} as any)
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

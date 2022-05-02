@@ -3824,8 +3824,8 @@ export default class LajiMap {
 			return;
 		}
 		const [, _provider] = provider === "mml"
-			? this.providers[0]
-			: this.providers[1];
+			? this.providers[1]
+			: this.providers[0];
 		_provider.search({query, ...(additional || {})}).then((results = []) => {
 			if (!this.map || !results.length) return;
 			const [first] = results;

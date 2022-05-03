@@ -401,7 +401,6 @@ export default class LajiMap {
 		this._constructDictionary();
 
 		const options: Options = {
-			tileLayerName: DEFAULT_LAYER_NAME,
 			lang: Lang.en,
 			data: [],
 			locate: false,
@@ -416,6 +415,11 @@ export default class LajiMap {
 			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset, OverlayName.flyingSquirrelPredictionModel],
 			googleSearchUrl: "https://proxy.laji.fi/google-geocode/json"
 		};
+
+		// Since options are applied in undeterministic order, make sure that props tile layers has higher preference.
+		if (!props.tileLayerName && !props.tileLayers) {
+			options.tileLayerName = DEFAULT_LAYER_NAME;
+		}
 
 		this.options = {...options, ...props};
 		this.leafletOptions = {};

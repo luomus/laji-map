@@ -981,10 +981,16 @@ export default class LajiMap {
 				}),
 				birdAtlasSocietyGridZones: L.layerGroup([
 					getLajiLayer({
-						layers: "LajiMapData:BirdAtlasSocietyGrids",
+						layers: "LajiMapData:BirdAtlasSocietyGrid",
 					}),
 					getLajiLayer({
+						layers: "LajiMapData:BirdAtlasSocietyGridLabels",
+					}, true),
+					getLajiLayer({
 						layers: "LajiMapData:BirdLifeSocieties",
+					}),
+					getLajiLayer({
+						layers: "LajiMapData:BirdLifeSocietyLabels",
 					}, true)
 				], {defaultOpacity: 0.5} as any)
 			};

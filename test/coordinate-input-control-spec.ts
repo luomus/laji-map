@@ -71,6 +71,16 @@ describe("Coordinate input control", () => {
 			expect(mapCoordinates[1]).toBe(lat);
 		});
 
+		it("WGS84 point with negative lng", async () => {
+			const [lat, lng] = [50, -3];
+			await control.enterLatLng(lat, lng);
+			expect(await control.getCRS()).toBe("WGS84");
+			await control.$getSubmit().click();
+			const mapCoordinates = (await getGeometry()).coordinates;
+			expect(mapCoordinates[0]).toBe(lng);
+			expect(mapCoordinates[1]).toBe(lat);
+		});
+
 		it("YKJ point", async () => {
 			const [lat, lng] = [6666666, 3333333];
 			await control.enterLatLng(lat, lng);

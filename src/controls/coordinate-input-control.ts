@@ -44,7 +44,7 @@ export default (lajiMap: LajiMap & WithControls) => {
 
 	function inputValidate(e, value) {
 		if (!value.match(inputRegexp)) {
-			e && e.preventDefault && e.preventDefault();
+			e?.preventDefault?.();
 			return false;
 		}
 		return true;
@@ -122,9 +122,9 @@ export default (lajiMap: LajiMap & WithControls) => {
 			target.value = value;
 			prevVal = value;
 
-			inputValues[i] = value;
+			inputValues[i] = value[0] !== "+" && value[0] !== "-" ? "+" + value : value;
 
-			const {valid} = validate(`${inputValues[0]}:${inputValues[1]}/`);
+			const {valid} = validate(`${inputValues[0]}${inputValues[1]}/`);
 			if (valid) {
 				submitButton.removeAttribute("disabled");
 			} else {

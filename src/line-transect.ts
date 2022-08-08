@@ -467,8 +467,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		idxTuple: PointIdxTuple,
 		callback: (idxTuple) => void,
 		questionTranslationKey = "FirstOrLastPoint",
-		firstTranslationKey = "FirstPartitive",
-		lastTranslationKey = "LastPartitive"
+		firstTranslationKey = "PrecedingPartitive",
+		lastTranslationKey = "FollowingPartitive"
 	) {
 		const [lineIdx, pointIdx] = idxTuple;
 		const overlappingPointIdxTuple =
@@ -817,7 +817,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 				callback: () => {
 					this._getPoint(
 						[lineIdx, pointIdx],
-						_idxTuple => this.removeLTPoint(_idxTuple), "RemoveFirstOrLastPoint", "First", "Last"
+						_idxTuple => this.removeLTPoint(_idxTuple),
+						"RemoveFirstOrLastPoint", "First", "Last"
 					);
 				},
 				iconCls: "glyphicon glyphicon-remove-sign"
@@ -827,7 +828,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 				callback: () => {
 					this._getPoint(
 						[lineIdx, pointIdx],
-						_idxTuple => this._setLTPointEditable(_idxTuple), "RemoveFirstOrLastPoint", "First", "Last"
+						_idxTuple => this._setLTPointEditable(_idxTuple),
+						"EditFirstOrLastPoint", "FirstPartitive", "LastPartitive"
 					);
 				},
 				iconCls: "glyphicon glyphicon-remove-sign"

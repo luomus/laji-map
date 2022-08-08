@@ -305,14 +305,24 @@ export default {
 		en: "Do you want to move the preceding or the following biotope?",
 		sv: "Vill du flytta den föregående eller den följande biotopen?"
 	},
-	firstPartitive: {
+	precedingPartitive: {
 		fi: "Edeltävää",
 		en: "preceding",
 		sv: "Föregående"
 	},
-	lastPartitive: {
+	followingPartitive: {
 		fi: "Seuraavaa",
 		en: "Following",
+		sv: "Följande"
+	},
+	firstPartitive: {
+		fi: "Ensimmäistä",
+		en: "First",
+		sv: "Föregående"
+	},
+	lastPartitive: {
+		fi: "Viimeistä",
+		en: "Last",
 		sv: "Följande"
 	},
 	splitLine: {
@@ -369,6 +379,11 @@ export default {
 		fi: "Poistetaanko ensimmäinen vai viimeinen piste?",
 		en: "Do you want to remove the first or the last point?",
 		sv: "Vill du radera den första eller den sista punkten?"
+	},
+	editFirstOrLastPoint: {
+		fi: "Muokataanko ensimmäistä vai viimeistä pistettä?",
+		en: "Do you want to edit the first or the last point?",
+		sv: "Vill du redigera den första eller den sista punkten?"
 	},
 	first: {
 		fi: "Ensimmäinen",

@@ -926,19 +926,39 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		let followingSegment = followingIdxTuple ? this._getLTLayerForIdxTuple(this._lineLayers, followingIdxTuple) : undefined;
 		let precedingLine = this._lineLayers[precedingLineIdx];
 		let followingLine = this._lineLayers[followingLineIdx];
-		if (precedingLine === followingLine) {
+		if (precedingLine === followingLine) { // Handle removing a point inside a line.
 			const start = (<L.LatLng[]> precedingSegment.getLatLngs())[0];
 			const end = (<L.LatLng[]> followingSegment.getLatLngs())[1];
 			precedingSegment.setLatLngs([start, end]);
 			this._lineLayers[precedingLineIdx] = precedingLine.filter(l => l !== followingSegment);
-			events = addMiddlePointRemoveEvent(events);
-		} else if (precedingLine && !followingLine) {
-			precedingLine.splice(precedingSegmentIdx, 1);
-			events = addMiddlePointRemoveEvent(events);
-		} else if (!precedingLine && followingLine) {
-			followingLine.splice(followingSegmentIdx, 1);
-			events = addMiddlePointRemoveEvent(events);
-		} else if (precedingLine && followingLine) {
+			events = addEditLineEvent(events, precedingLineIdx);
+		} else if (precedingLine && !followingLine) { // Handle removing the last point of the last line of a super line.
+			if (precedingLine.length === 1) {
+				events.push({
+					type: "delete",
+					idx: precedingLineIdx,
+					feature: this._formatLTFeatureOut(),
+					prevFeature
+				});
+				this._lineLayers.splice(precedingLineIdx, 1);
+			} else {
+				precedingLine.splice(precedingSegmentIdx, 1);
+				events = addEditLineEvent(events, precedingLineIdx);
+			}
+		} else if (!precedingLine && followingLine) { // Handle removing the first point of the first line of a super line.
+			if (followingLine.length === 1) {
+				events.push({
+					type: "delete",
+					idx: followingLineIdx,
+					feature: this._formatLTFeatureOut(),
+					prevFeature
+				});
+				this._lineLayers.splice(followingLineIdx, 1);
+			} else {
+				followingLine.splice(followingSegmentIdx, 1);
+				events = addEditLineEvent(events, followingLineIdx);
+			}
+		} else if (precedingLine && followingLine) { // Handle removing a point between lines.
 			const _precedingSegment = precedingLine[precedingSegmentIdx];
 			const _followingSegment = followingLine[followingSegmentIdx];
 			_precedingSegment.setLatLngs([
@@ -974,13 +994,13 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 			return events;
 		}
 
-		function addMiddlePointRemoveEvent(_events: LineTransectEvent[]) {
+		function addEditLineEvent(_events: LineTransectEvent[], lineIdx: number) {
 			const feature = that._formatLTFeatureOut();
 			return [..._events, {
 				type: "edit",
-				idx: precedingLineIdx,
+				idx: lineIdx,
 				feature,
-				geometry: {type: "LineString", coordinates: feature.geometry.coordinates[precedingLineIdx]},
+				geometry: {type: "LineString", coordinates: feature.geometry.coordinates[lineIdx]},
 				prevFeature
 			}];
 		}

@@ -2820,7 +2820,8 @@ export default class LajiMap {
 		this._located = true;
 
 		if (this.userLocationLayer) {
-			this.userLocationRadiusMarker.setLatLng(latlng).setRadius(accuracy);
+			this.userLocationRadiusMarker.setLatLng(latlng);
+			this.userLocationRadiusMarker.setRadius(accuracy);
 			this.userLocationMarker.setLatLng(latlng);
 		} else {
 			const {layerGroup, markerLayer, radiusLayer} = this.createUserLocationLayer(latlng, accuracy);

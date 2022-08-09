@@ -1,3 +1,43 @@
+/**
+ * # TERMINOLOGY
+ *
+ * Consider this ASCII representation of a line transect.
+ *
+ *   1    2   3   4   11   12
+ * 9 O----o---o---O   o----O
+ *   |            |   |   /
+ *   |            |   |  O 13
+ * 8 o            |   |
+ *   |            |   O
+ * 7 O----o-------o   10
+ *        6       5
+ *
+ * Line transect:
+ *   A collection of 1-n continuous or noncontinuous 'super lines'.
+ *   In GeoJSON, the line transect is represented as a MultiLineString.
+ *
+ * Super line:
+ *   A collection of Ranges 1-9 and 10-13.
+ *   In GeoJSON, the super line is a continuous subpart of the LineStrings belonging to the MultiLineString.
+ *
+ * Line:
+ *   A subpart of a super line, or in other words a collection of segments. Ranges 1-4, 4-7, 7-9, 1-12, 12-13
+ *   In GeoSON, a line is a LineString belonging to the MultiLineString.
+ *   A line is synonymous to 'biotope' in line transect jargon.
+ *
+ * Segment:
+ *   A subpart of a line. Ranges 1-2, 2-3, ..., 7-8, 8-9, 10-11, 11-12, 12-13
+ *   In GeoSON, the segment is a coordinate pair belonging to a LineString.
+ *
+ * PointIdxTuple:
+ *   A vector [n, m], where n is the line idx and m is the segment idx (relative to the line).
+ *   E.g. for point 8 the tuple would be [1, 1], and for point 10 the tuple would be [3, 0].
+ *
+ * SegmentIdxTuple:
+ *   A vector [n, m], where n is the line idx and m is the segment idx (relative to the line).
+ *   E.g. for segment 8-9 the tuple would be [1, 1], and for segment 10-11 the tuple would be [3, 0].
+ */
+
 import * as L from "leaflet";
 import * as G from "geojson";
 import { dependsOn, depsProvided, provide, reflect } from "./dependency-utils";

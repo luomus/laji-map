@@ -468,7 +468,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		callback: (idxTuple) => void,
 		questionTranslationKey = "FirstOrLastPoint",
 		firstTranslationKey = "PrecedingPartitive",
-		lastTranslationKey = "FollowingPartitive"
+		lastTranslationKey = "FollowingPartitive",
+		reversePrecedingFollowingMeaning = false
 	) {
 		const [lineIdx, pointIdx] = idxTuple;
 		const overlappingPointIdxTuple =
@@ -477,73 +478,84 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const _latLng = overlappingPointIdxTuple
 			?  this._getLTLayerForIdxTuple(this._pointLayers, overlappingPointIdxTuple).getLatLng()
 			: undefined;
-		if (overlappingPointIdxTuple !== undefined && latLng.equals(_latLng)) {
-			const firstIdxTuple = overlappingPointIdxTuple;
-			const lastIdxTuple: PointIdxTuple = [lineIdx, pointIdx];
-			const lastPoint = this._getLTLayerForIdxTuple(this._pointLayers, lastIdxTuple);
 
-			const translateHooks = [];
-
-			const popup = document.createElement("div");
-			popup.className = "text-center";
-
-			const question = document.createElement("span");
-			translateHooks.push(this.addTranslationHook(question, questionTranslationKey));
-
-			const precedingIdxTuple = this._getIdxTuplePrecedingPoint(firstIdxTuple);
-			const followingIdxTuple = this._getIdxTupleForLineFollowingPoint([lineIdx, pointIdx]);
-
-			const onClick = (_idxTuple) => (e) => {
-				e.preventDefault();
-				const point = this._getLTLayerForIdxTuple(this._pointLayers, _idxTuple);
-				this._overlappingPointDialogSegmentIdxTuple = undefined;
-				point.setStyle(pointStyle);
-				lastPoint.closePopup();
-				callback(_idxTuple);
-			};
-
-			const onMouseOver = (_idxTuple) => () => {
-				if (!_idxTuple) return;
-				this._overlappingPointDialogSegmentIdxTuple = _idxTuple;
-				this._updateLTStyleForIdxTuple(_idxTuple);
-			};
-			const onMouseOut = (_idxTuple) => () => {
-				if (!_idxTuple) return;
-				this._overlappingPointDialogSegmentIdxTuple = undefined;
-				this._updateLTStyleForIdxTuple(_idxTuple);
-			};
-
-			const firstButton = document.createElement("button");
-			firstButton.addEventListener("click", onClick(firstIdxTuple));
-			firstButton.addEventListener("mouseover", onMouseOver(precedingIdxTuple));
-			firstButton.addEventListener("mouseout", onMouseOut(precedingIdxTuple));
-
-			translateHooks.push(this.addTranslationHook(firstButton, firstTranslationKey));
-
-			const lastButton = document.createElement("button");
-			lastButton.addEventListener("click", onClick(lastIdxTuple));
-			lastButton.addEventListener("mouseover", onMouseOver(followingIdxTuple));
-			lastButton.addEventListener("mouseout", onMouseOut(followingIdxTuple));
-			translateHooks.push(this.addTranslationHook(lastButton, lastTranslationKey));
-
-			const buttonContainer = document.createElement("div");
-			buttonContainer.className = "btn-group";
-			[firstButton, lastButton].forEach(button => {
-				button.className = "btn btn-primary btn-xs";
-				buttonContainer.appendChild(button);
-			});
-
-			popup.appendChild(question);
-			popup.appendChild(buttonContainer);
-
-			lastPoint.bindPopup(popup).openPopup();
-			lastPoint.on("popupclose", () => {
-				translateHooks.forEach(hook => this.removeTranslationHook(hook));
-				lastPoint.unbindPopup();
-			});
-		} else {
+		if (overlappingPointIdxTuple === undefined || !latLng.equals(_latLng)) {
 			callback(idxTuple);
+			return;
 		}
+
+		let firstIdxTuple = overlappingPointIdxTuple;
+		let lastIdxTuple: PointIdxTuple = [lineIdx, pointIdx];
+		const lastPoint = this._getLTLayerForIdxTuple(this._pointLayers, lastIdxTuple);
+
+		const translateHooks = [];
+
+		const popup = document.createElement("div");
+		popup.className = "text-center";
+
+		const question = document.createElement("span");
+		translateHooks.push(this.addTranslationHook(question, questionTranslationKey));
+
+		let precedingIdxTuple = this._getIdxTuplePrecedingPoint(firstIdxTuple);
+		let followingIdxTuple = this._getIdxTupleForLineFollowingPoint([lineIdx, pointIdx]);
+
+		if (reversePrecedingFollowingMeaning) {
+			const firstWas = firstIdxTuple;
+			firstIdxTuple = lastIdxTuple;
+			lastIdxTuple = firstWas;
+			const followingWas = followingIdxTuple;
+			followingIdxTuple = precedingIdxTuple;
+			precedingIdxTuple = followingWas;
+		}
+
+		const onClick = (_idxTuple) => (e) => {
+			e.preventDefault();
+			const point = this._getLTLayerForIdxTuple(this._pointLayers, _idxTuple);
+			this._overlappingPointDialogSegmentIdxTuple = undefined;
+			point.setStyle(pointStyle);
+			lastPoint.closePopup();
+			callback(_idxTuple);
+		};
+
+		const onMouseOver = (_idxTuple) => () => {
+			if (!_idxTuple) return;
+			this._overlappingPointDialogSegmentIdxTuple = _idxTuple;
+			this._updateLTStyleForIdxTuple(_idxTuple);
+		};
+		const onMouseOut = (_idxTuple) => () => {
+			if (!_idxTuple) return;
+			this._overlappingPointDialogSegmentIdxTuple = undefined;
+			this._updateLTStyleForIdxTuple(_idxTuple);
+		};
+
+		const firstButton = document.createElement("button");
+		firstButton.addEventListener("click", onClick(firstIdxTuple));
+		firstButton.addEventListener("mouseover", onMouseOver(precedingIdxTuple));
+		firstButton.addEventListener("mouseout", onMouseOut(precedingIdxTuple));
+
+		translateHooks.push(this.addTranslationHook(firstButton, firstTranslationKey));
+
+		const lastButton = document.createElement("button");
+		lastButton.addEventListener("click", onClick(lastIdxTuple));
+		lastButton.addEventListener("mouseover", onMouseOver(followingIdxTuple));
+		lastButton.addEventListener("mouseout", onMouseOut(followingIdxTuple));
+		translateHooks.push(this.addTranslationHook(lastButton, lastTranslationKey));
+
+		const buttonContainer = document.createElement("div");
+		buttonContainer.className = "btn-group";
+		[firstButton, lastButton].forEach(button => {
+			button.className = "btn btn-primary btn-xs";
+			buttonContainer.appendChild(button);
+		});
+
+		popup.appendChild(question);
+		popup.appendChild(buttonContainer);
+
+		lastPoint.bindPopup(popup).openPopup();
+		lastPoint.on("popupclose", () => {
+			translateHooks.forEach(hook => this.removeTranslationHook(hook));
+			lastPoint.unbindPopup();
+		});
 	}
 
 	getIdxsFromLayer(layer: SegmentLayer): LineTransectIdx {
@@ -818,7 +830,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 					this._getPoint(
 						[lineIdx, pointIdx],
 						_idxTuple => this.removeLTPoint(_idxTuple),
-						"RemoveFirstOrLastPoint", "First", "Last"
+						"RemoveFirstOrLastPoint", "First", "Last",
+						true
 					);
 				},
 				iconCls: "glyphicon glyphicon-remove-sign"
@@ -829,7 +842,8 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 					this._getPoint(
 						[lineIdx, pointIdx],
 						_idxTuple => this._setLTPointEditable(_idxTuple),
-						"EditFirstOrLastPoint", "FirstPartitive", "LastPartitive"
+						"EditFirstOrLastPoint", "FirstPartitive", "LastPartitive",
+						true
 					);
 				},
 				iconCls: "glyphicon glyphicon-remove-sign"
@@ -850,8 +864,10 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		};
 	}
 
-	// @param 'commit' can be an array of events that are triggered
-	// at the same time as the event that this function triggers.
+	/**
+	 * @param 'commit' can be an array of events that are triggered
+	 * at the same time as the event that this function triggers.
+	 */
 	removeLTPoint(idxTuple: PointIdxTuple, commit: boolean | LineTransectEvent[] = true) {
 		const [lineIdx] = idxTuple;
 		this._commitPointDrag();

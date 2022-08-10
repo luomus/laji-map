@@ -74,4 +74,4 @@ export default L.Control.extend({
 
 		return container;
 	}
-});
+}) as unknown as { new(...args: any[]): L.Control };

@@ -812,7 +812,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				this._zoomInButton.removeEventListener("click", this.onZoomClick);
 				this._zoomOutButton.removeEventListener("click", this.onZoomClick);
 			}
-		});
+		}) as unknown as { new(...args: any[]): L.Control.Zoom };
 		return new ZoomControl({
 			zoomInTitle: this.translations.ZoomIn,
 			zoomOutTitle: this.translations.ZoomOut

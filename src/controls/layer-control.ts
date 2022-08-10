@@ -523,6 +523,6 @@ const LayerControl = L.Control.extend({
 
 		this._section.insertBefore(list, this._section.children[0]);
 	}
-});
+}) as unknown as { new(...args: any[]): L.Control };
 
 export default LayerControl;

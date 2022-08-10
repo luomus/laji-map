@@ -163,6 +163,10 @@ declare module "leaflet" {
 		interface Options extends ContextmenuOptions {}
 		interface ItemOptions extends ContextmenuItemOptions {}
 	}
+
+	interface WMSOptions {
+		defaultOpacity?: number;
+	}
 }
 
 
@@ -837,16 +841,12 @@ export default class LajiMap {
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 
-			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions = {format: "png"}) =>
+			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions & {format?: "png" | "jpg"} = {format: "png"}) =>
 				L.tileLayer(`https://proxy.laji.fi/mml_wmts/${layerService}/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
 					...options,
-					style: "default",
 					minZoom: 0,
 					maxZoom: 15,
-					version: "1.0.0",
-					format: `image/${options.format}`,
-					transparent: false,
-					attribution : mmlAttribution
+					attribution: mmlAttribution
 				});
 
 			const getMaastoLayer = getMMLLayer("maasto");
@@ -3660,8 +3660,8 @@ export default class LajiMap {
 		};
 	}
 
-	abortDrawing(e?: Event) {
-		if (e?.preventDefault) {
+	abortDrawing(e?: Event | L.LeafletEvent) {
+		if (e instanceof Event && e?.preventDefault) {
 			e.preventDefault();
 			e.stopPropagation();
 		}

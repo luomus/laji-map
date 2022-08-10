@@ -13,11 +13,11 @@
  *        6       5
  *
  * Line transect:
- *   A collection of 1-n continuous or noncontinuous 'super lines'.
+ *   A collection of 1-n 'super lines'.
  *   In GeoJSON, the line transect is represented as a MultiLineString.
  *
  * Super line:
- *   A collection of Ranges 1-9 and 10-13.
+ *   A collection of continuous lines. In the figure, there are two ranges: 1-9 and 10-13.
  *   In GeoJSON, the super line is a continuous subpart of the LineStrings belonging to the MultiLineString.
  *
  * Line:
@@ -26,7 +26,7 @@
  *   A line is synonymous to 'biotope' in line transect jargon.
  *
  * Segment:
- *   A subpart of a line. Ranges 1-2, 2-3, ..., 7-8, 8-9, 10-11, 11-12, 12-13
+ *   A subpart of a line. Ranges 1-2, 2-3, ..., 7-8, 8-9, 10-11, 11-12, 12-13.
  *   In GeoSON, the segment is a coordinate pair belonging to a LineString.
  *
  * PointIdxTuple:

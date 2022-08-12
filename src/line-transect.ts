@@ -533,7 +533,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 		const popup = document.createElement("div");
 		popup.className = "text-center";
 
-		const question = document.createElement("span");
+		const question = document.createElement("p");
 		translateHooks.push(this.addTranslationHook(question, questionTranslationKey));
 
 		let precedingIdxTuple = this._getIdxTuplePrecedingPoint(firstIdxTuple);

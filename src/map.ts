@@ -169,7 +169,6 @@ declare module "leaflet" {
 	}
 }
 
-
 type MaybeGroupedTileLayer = L.TileLayer | NonTiledLayer.WMS | L.LayerGroup<L.TileLayer | NonTiledLayer.WMS>;
 
 export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLayer | NonTiledLayer.WMS> {

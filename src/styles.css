@@ -3,6 +3,7 @@
 	width: 100%;
 	height: 100%;
 	background-color: #fff;
+	font-size: 1.2rem;
 }
 .laji-map .leaflet-mouse-marker {
 	opacity: 0.5;

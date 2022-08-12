@@ -180,7 +180,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			},
 			{
 				name: "geocoding",
-				control: () => this.getGoogleGeocodingControl(),
+				control: () => this.getGoogleGeocodingControl()
 			},
 			{
 				name: "zoom",
@@ -470,7 +470,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		this.controlItems.filter(({control, name}) => {
 			return !control || this._controlIsAllowed(name);
-		}).forEach(({name, control, controls, position, iconCls, fn, finishFn, cancelFn, text, eventName, onAdd: _onAdd}) => {
+		}).forEach(({name, control, controls, position = "topright", iconCls, fn, finishFn, cancelFn, text, eventName, onAdd: _onAdd}) => {
 			const leafletControl = (control ? control() : undefined) || (() => {
 				const onAdd = (controls) ?
 					function() {
@@ -529,7 +529,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				}
 
 				const Control = L.Control.extend({
-					options: position ? {position} : undefined,
+					options: {position},
 					onAdd,
 					_createActionHandler,
 					_createFinishHandler,
@@ -1189,7 +1189,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			showMarker: false,
 			autoClose: true,
 			searchLabel: `${this.translations.GeocodingSearchLabel}...`,
-			notFoundMessage: this.translations.GeocodingSearchFail
+			notFoundMessage: this.translations.GeocodingSearchFail,
+			position: "topleft"
 		});
 		return control;
 	}

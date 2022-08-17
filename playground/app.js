@@ -142,12 +142,12 @@ class App {
 			// },
 			activeIdx: 0,
 			//editable: false
-			circle: false,
+			// circle: false,
 			// marker: false,
-			polyline: false,
-			polygon: false,
-			rectangle: false,
-			single: true
+			// polyline: false,
+			// polygon: false,
+			// rectangle: false,
+			// single: true
 		};
 
 		this.activeIdx = 0;

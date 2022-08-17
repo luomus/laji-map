@@ -841,7 +841,7 @@ export function coordinatesAreClockWise(coordinates: G.Position[]) {
 		.reduce((_sum, edge) =>
 			(_sum + (edge[1][0] - edge[0][0]) * (edge[1][1] + edge[0][1])),
 		0);
-	const isClockwise = sum >= 0;
+	const isClockwise = sum > 0;
 	return isClockwise;
 }
 

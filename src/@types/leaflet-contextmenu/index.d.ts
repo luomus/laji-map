@@ -47,11 +47,10 @@
 //		interface ItemOptions extends ContextmenuItemOptions {}
 //	}
 //}
-import * as L from "leaflet";
 import "leaflet-draw";
 
 declare module "leaflet" {
-	interface LeafletEventHandlerFnMap extends L.LeafletEventHandlerFnMap {
+	interface LeafletEventHandlerFnMap {
 		"contextmenu.show": (event: any) => void;
 		"contextmenu.hide": (event: any) => void;
 	}

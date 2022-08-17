@@ -56,6 +56,6 @@ exports.config = {
 	},
 	plugins: multiCapabilities.length === 1 && multiCapabilities[0] === chrome && [{
 		package: "protractor-console-plugin",
-		exclude: [/Uncaught \(in promise\)/, /listener not found/]
+		exclude: [/Uncaught \(in promise\)/, /listener not found/, /Deprecated use of _flat/]
 	}]
 };

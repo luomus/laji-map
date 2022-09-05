@@ -47,6 +47,7 @@ import * as L from "leaflet";
       closeButton.href = '#close';
       closeButton.innerHTML = '&#215;';
 
+      L.DomEvent.on(closeButton, "click", L.DomEvent.preventDefault, this);
       L.DomEvent.on(closeButton, 'click', this.close, this);
     }
 

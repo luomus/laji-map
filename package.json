@@ -67,7 +67,7 @@
     "@types/node": "^8.10.52",
     "@types/proj4leaflet": "*",
     "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#17601bee91f2dae098a0a76e96714d59ec958fe6",
-    "leaflet": "^1.8.0",
+    "leaflet": "1.8.0",
     "leaflet-contextmenu": "1.4.0",
     "leaflet-draw": "git+https://git@github.com/luomus/Leaflet.draw.git#19ab897a08d15a44213e53d486e2611c50f8c8ba",
     "leaflet-geometryutil": "0.8.0",
@@ -82,7 +82,6 @@
     "proj4leaflet": "1.0.2"
   },
   "resolutions": {
-    "leaflet": "1.7.0",
     "proj4": "2.3.16",
     "leaflet-textpath": "git+https://git@github.com/olzraiti/Leaflet.textPath.git#61b77ff750be090f748208532aa5a5137862b541"
   }

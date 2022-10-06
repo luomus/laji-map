@@ -88,6 +88,7 @@ export interface DataOptions {
 	editable?: boolean;
 	hasActive?: boolean;
 	getClusterStyle?: (childCount: number, featureIdxs: number[], cluster: MarkerCluster) => PathOptions;
+	getClusterClassName?: (childCount: number, featureIdxs: number[], cluster: MarkerCluster) => string;
 	tooltipOptions?: any;
 	on?: {[type: string]: DataWrappedLeafletEvent};
 	highlightOnHover?: boolean;

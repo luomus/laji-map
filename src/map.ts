@@ -2485,6 +2485,16 @@ export default class LajiMap {
 				if (featureStyle.color) color = featureStyle.color;
 				if (featureStyle.opacity) opacity = featureStyle.opacity;
 			}
+			if (data.getClusterClassName) {
+				const customClassName = data.getClusterClassName(
+					childCount,
+					cluster.getAllChildMarkers().map(marker => marker.feature.properties.lajiMapIdx),
+					cluster
+				);
+				if (customClassName) {
+					className = " " + customClassName;
+				}
+			}
 
 			const styleObject = {
 				"background-color": color,

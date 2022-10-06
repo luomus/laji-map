@@ -130,10 +130,7 @@ class App {
 			on: {
 				click: (e, idx) => {
 					console.info(idx);
-				},
-				mouseenter: (e, idx) => {
-					console.info(idx);
-				},
+				}
 			},
 			onChange: this.onMapChange,
 			// polyline: {

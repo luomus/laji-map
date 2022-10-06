@@ -67,6 +67,19 @@ export interface ShowMeasurementsOptions {
 	showOnHover: boolean;
 }
 
+export interface DataWrappedLeafletEventData {
+	feature?: G.Feature;
+		layer?: DataItemLayer;
+		idx?: number;
+		dataIdx?: number;
+		featureIdx?: number;
+}
+
+export type DataWrappedLeafletEvent = (
+		e: LeafletEvent,
+		data: DataWrappedLeafletEventData
+	) => void;
+
 export interface DataOptions {
 	featureCollection?: G.FeatureCollection;
 	geoData?: G.GeoJSON | string;
@@ -76,16 +89,7 @@ export interface DataOptions {
 	hasActive?: boolean;
 	getClusterStyle?: (childCount: number, featureIdxs: number[], cluster: MarkerCluster) => PathOptions;
 	tooltipOptions?: any;
-	on?: {[type: string]: (
-		e: LeafletEvent,
-		data: {
-			feature?: G.Feature,
-			layer?: DataItemLayer,
-			idx?: number,
-			dataIdx?: number,
-			featureIdx?: number
-		}
-	) => void};
+	on?: {[type: string]: DataWrappedLeafletEvent};
 	highlightOnHover?: boolean;
 	onChange?(events: LajiMapEvent[]): void;
 	getFeatureStyle?(options: GetFeatureStyleOptions): PathOptions;

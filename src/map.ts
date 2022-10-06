@@ -34,7 +34,7 @@ import {
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, InternalTileLayersOptions,
 	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem, LayerNames, WorldLayerNames, FinnishLayerNames,
-	OverlayNames, ShowMeasurementsOptions
+	OverlayNames, ShowMeasurementsOptions, DataWrappedLeafletEventData
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1873,9 +1873,9 @@ export default class LajiMap {
 			return;
 		}
 
-		const features = item.featureCollection && item.featureCollection.features ?
-			item.featureCollection.features :
-			[] ;
+		const features = item.featureCollection?.features
+			?  item.featureCollection.features
+			: [] ;
 
 		item = {
 			getFeatureStyle: () => this._getDefaultDataStyle(item)(),
@@ -1929,20 +1929,28 @@ export default class LajiMap {
 		item.groupContainer.addTo(this.map);
 
 		if (item.on) Object.keys(item.on).forEach(eventName => {
-			item.group.on(eventName, (e: any) => {
+			item.groupContainer.on(eventName, (e: any) => {
 				const {layer: _layer} = e;
 				const {feature} = _layer;
-				const idx = feature.properties.lajiMapIdx;
+				const idx = feature?.properties?.lajiMapIdx;
 				if (eventName === "click" && this._interceptClick()) return;
-				item.on[eventName](e, {
-					idx, // for bw compatibility
-					featureIdx: idx,
-					dataIdx,
-					layer: _layer,
-					feature: feature && _layer
-						? this.formatFeatureOut(feature, _layer)
-						: undefined
-				});
+
+				const event: DataWrappedLeafletEventData = {
+					dataIdx
+				};
+
+				if (idx) {
+					event.featureIdx = idx;
+					event.idx = idx; // for bw compatibility
+				}
+				if (layer) {
+					event.layer = _layer;
+				}
+				if (feature && _layer) {
+					event.feature = this.formatFeatureOut(feature, _layer);
+				}
+
+				item.on[eventName](e, event);
 			});
 		});
 

@@ -481,7 +481,7 @@ export function latLngTuplesDistance(first, second) {
 	return distance(first, second);
 }
 
-export function latLngSegmentsToGeoJSONGeometry(_lines): LineTransectGeometry {
+function latLngSegmentsToGeoJSONGeometry(_lines): LineTransectGeometry {
 	let lines: G.Position[][] = [];
 	_lines.forEach(segments => {
 		lines.push([]);
@@ -505,17 +505,13 @@ export function latLngSegmentsToGeoJSONGeometry(_lines): LineTransectGeometry {
 
 	lines = lines.filter(line => line.length);
 
-	// TODO we aren't checking for length of zero
-	const isMulti = lines.length > 1;
-
-	return isMulti ? {
+	return {
 		type: "MultiLineString",
 		coordinates: lines
-	} as G.MultiLineString : {
-		type: "LineString",
-		coordinates: lines[0]
-	} as G.LineString;
+	} as G.MultiLineString;
 }
+
+export { latLngSegmentsToGeoJSONGeometry };
 
 export function geoJSONLineToLatLngSegmentArrays(geometry) {
 	function lineStringToSegments(lineString) {

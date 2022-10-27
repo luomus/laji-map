@@ -30,7 +30,7 @@ export interface LineTransectIdx {
 	idxTuple: SegmentIdxTuple;
 }
 
-export type LineTransectGeometry = G.LineString | G.MultiLineString;
+export type LineTransectGeometry = G.MultiLineString;
 export interface LineTransectFeature {
 	type: string;
 	geometry: LineTransectGeometry;

@@ -91,7 +91,7 @@ export default (lajiMap: LajiMap & WithControls) => {
 		displayFormat: false,
 		displayOnlyGeoJSONErrors: true,
 		allowGrid: rectangle || polygon,
-		point: marker
+		point: !!marker
 	});
 
 	const inputValues = ["", ""];

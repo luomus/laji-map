@@ -125,7 +125,9 @@ export interface Draw extends Data {
 	polygon?: boolean;
 	polyline?: boolean;
 	circle?: boolean;
-	marker?: boolean;
+	marker?: boolean | {
+		icon: any;
+	};
 }
 
 export type IdxTuple = [number, number];

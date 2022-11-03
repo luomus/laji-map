@@ -91,19 +91,19 @@ L.Marker.include({
 	_initIcon() {
 		_initIcon.call(this);
 		if (this._initStyle) {
-			this._setIconStyle(this._initStyle);
+			this._setIconStyle?.(this._initStyle);
 		}
 	},
 	setStyle(style: L.PathOptions) {
 		// Ran into a bug? See known issues section of README.
 		if ((<any> this)._icon) {
-			this._setIconStyle(style);
+			this._setIconStyle?.(style);
 		} else {
 			this._initStyle = style;
 		}
 	},
 	_setIconStyle(style: L.PathOptions) {
-		if ((<any> this)._icon) {
+		if ((<any> this)._icon?.firstChild?.firstChild?.style) {
 			(<any> this)._icon.firstChild.firstChild.style.fill = style.color;
 			(<any> this)._icon.firstChild.firstChild.style.opacity = style.opacity || 2;
 		}

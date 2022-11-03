@@ -99,6 +99,15 @@ export interface DataOptions {
 	getPopup?(options: GetPopupOptions, callback: (content: string | HTMLElement) => void): string;
 	single?: boolean;
 	showMeasurements?: boolean | ShowMeasurementsOptions;
+	rectangle?: boolean;
+	polygon?: boolean;
+	polyline?: boolean;
+	circle?: boolean;
+	marker?: boolean | MarkerOptions;
+}
+
+export interface MarkerOptions extends DrawOptions.MarkerOptions {
+	icon: any;
 }
 
 export type OnChangeCoordinateSystem = CoordinateSystem | "GeoJSONFeatureCollection" | "GeoJSONGeometryCollection";
@@ -112,23 +121,8 @@ export interface Data extends DataOptions {
 	crs: string;
 }
 
-export interface DrawOptions extends DataOptions {
-	rectangle?: boolean;
-	polygon?: boolean;
-	polyline?: boolean;
-	circle?: boolean;
-	marker?: boolean;
-}
-
-export interface Draw extends Data {
-	rectangle?: boolean;
-	polygon?: boolean;
-	polyline?: boolean;
-	circle?: boolean;
-	marker?: boolean | {
-		icon: any;
-	};
-}
+export type DrawOptions = DataOptions;
+export type Draw = Data;
 
 export type IdxTuple = [number, number];
 export type DataItemLayer = Polygon | Polyline | Marker | Circle;

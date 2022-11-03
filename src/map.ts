@@ -34,7 +34,7 @@ import {
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, InternalTileLayersOptions,
 	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem, LayerNames, WorldLayerNames, FinnishLayerNames,
-	OverlayNames, ShowMeasurementsOptions, DataWrappedLeafletEventData
+	OverlayNames, ShowMeasurementsOptions, DataWrappedLeafletEventData, MarkerOptions
 } from "./map.defs";
 
 import translations from "./translations";
@@ -2450,9 +2450,12 @@ export default class LajiMap {
 		this._origLatLngs = undefined;
 	}
 
-	_createIcon(options: L.PathOptions = {}): L.Icon {
+	_createIcon(options: L.PathOptions = {}, Icon?: any): L.Icon {
 		const markerColor = options.color || NORMAL_COLOR;
 		const opacity = options.opacity ?? 1;
+		if (Icon) {
+			return new Icon({...options, markerColor, opacity});
+		}
 		return new L.VectorMarkers.Icon({
 			prefix: "glyphicon",
 			icon: "record",
@@ -3383,7 +3386,11 @@ export default class LajiMap {
 				layer = (feature.geometry.radius)
 					? new L.Circle(latLng, feature.geometry.radius)
 					: L.marker(latLng, {
-						icon: this._createIcon(getFeatureStyle(params))
+						icon: this._createIcon(
+							getFeatureStyle(params),
+							(typeof dataIdx === "number" && this.data[dataIdx].marker && typeof this.data[dataIdx].marker !== "boolean")
+							&& (this.data[dataIdx].marker as MarkerOptions).icon
+						)
 					});
 			} else {
 				layer = L.GeoJSON.geometryToLayer(feature);
@@ -3412,7 +3419,7 @@ export default class LajiMap {
 		});
 
 		const mergeOptions = (type: DataItemType) => {
-			return {...(this[type] || {}), ...(item[type] || {})};
+			return {...(this[type] || {}), ...(item[type] && typeof item[type] !== "boolean" ?  (item[type] as any) : {})};
 		};
 
 		let featureTypeStyle = undefined;
@@ -3632,7 +3639,7 @@ export default class LajiMap {
 		}
 	}
 
-	_getDrawOptionsForType<T extends L.PathOptions> (featureType: DataItemType): T  {
+	_getDrawOptionsForType<T extends L.PathOptions> (featureType: DataItemType): T {
 		const baseStyle = this.getDraw().getDraftStyle();
 
 		interface AdditionalOptions {
@@ -3646,7 +3653,11 @@ export default class LajiMap {
 		switch (featureType) {
 		case "marker":
 			additionalOptions = {
-				icon: this._createIcon({...this.getDraw().getDraftStyle()})
+				icon: this._createIcon(
+					{...this.getDraw().getDraftStyle()},
+					(this.getDraw().marker && typeof this.getDraw().marker !== "boolean")
+						&& (this.getDraw().marker as MarkerOptions).icon
+				)
 			};
 			break;
 		case "polygon":
@@ -3657,7 +3668,8 @@ export default class LajiMap {
 		}
 
 		const _userDefined = this.getDraw()[featureType];
-		const userDefined = isObject(_userDefined) ? <any> _userDefined : {};
+		const {...userDefined} = isObject(_userDefined) ? <any> _userDefined : {};
+		delete userDefined.icon; // let this._createIcon decorate icon.
 
 		return {
 			metric: true,

@@ -137,7 +137,7 @@ export default (lajiMap: LajiMap & WithControls) => {
 		e.preventDefault();
 
 		const feature = latLngGridToGeoJSON([latInput.value, lngInput.value]);
-		const layer = lajiMap._featureToLayer(lajiMap.getDraw().getFeatureStyle)(feature);
+		const layer = lajiMap._featureToLayer(lajiMap.getDraw().getFeatureStyle, lajiMap.drawIdx)(feature);
 		const isMarker = layer instanceof L.Marker;
 
 		lajiMap._onAdd(lajiMap.drawIdx, layer, latInput.value + ":" + lngInput.value);

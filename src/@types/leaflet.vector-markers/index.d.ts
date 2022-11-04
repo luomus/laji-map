@@ -4,6 +4,7 @@ interface VectorMarkerIconOptions {
     icon?: string;
     prefix?: string;
     markerColor?: string;
+    color?: string;
     iconColor?: string;
     spin?: boolean;
     extraClasses?: string;

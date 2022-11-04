@@ -86,27 +86,50 @@ class GoogleProvider extends _GoogleProvider {
 	}
 }
 
+// Patch L.Marker to call `setStyle` so it works the same as all the other rendered features (polygon, polyline etc).
+// If icons are customized, they should have a `setStyle()` implementation.
 const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
 	_initIcon() {
 		_initIcon.call(this);
 		if (this._initStyle) {
-			this._setIconStyle?.(this._initStyle);
+			this.setStyle(this._initStyle);
 		}
 	},
+
 	setStyle(style: L.PathOptions) {
-		// Ran into a bug? See known issues section of README.
-		if ((<any> this)._icon) {
-			this._setIconStyle?.(style);
-		} else {
+		if (!this._icon) {
 			this._initStyle = style;
+			return;
 		}
+		// eslint-disable-next-line max-len
+		console.warn("[laji-map warning] Seems like you are using a customized marker icon. You should implement 'setStyle()' for it if you wish it to work with the coloring & other styling that laji-map provides.");
+		this.options.icon.setStyle(this._icon, style);
+	}
+});
+
+L.Icon.Default.include({
+	setStyle() {
+		console.warn("[laji-map warning] The Leaflet default icon doesn't have an implementation for 'setStyle()'");
+	}
+});
+
+const origSetIconStyles = (L.VectorMarkers.Icon.prototype as any)._setIconStyles;
+const origInitialize = (L.VectorMarkers.Icon.prototype as any).initialize;
+L.VectorMarkers.Icon.include({
+	initialize(options) {
+		if (options.color) {
+			options.markerColor = options.color;
+		}
+		origInitialize.call(this, options);
 	},
-	_setIconStyle(style: L.PathOptions) {
-		if ((<any> this)._icon?.firstChild?.firstChild?.style) {
-			(<any> this)._icon.firstChild.firstChild.style.fill = style.color;
-			(<any> this)._icon.firstChild.firstChild.style.opacity = style.opacity || 2;
+	setStyle(iconDomElem, name) {
+		origSetIconStyles.call(this, iconDomElem, name);
+		if (!iconDomElem.firstChild) {
+			return;
 		}
+		iconDomElem.firstChild.firstChild.style.fill = name.color;
+		iconDomElem.firstChild.firstChild.style.opacity = name.opacity || 1;
 	}
 });
 
@@ -2450,17 +2473,18 @@ export default class LajiMap {
 		this._origLatLngs = undefined;
 	}
 
-	_createIcon(options: L.PathOptions = {}, Icon?: any): L.Icon {
-		const markerColor = options.color || NORMAL_COLOR;
+	_createIcon(options: L.PathOptions = {}, icon?: (pathOptions: L.PathOptions, feature: G.Feature) => L.Icon, feature?: G.Feature): L.Icon {
+		const color = options.color || NORMAL_COLOR;
 		const opacity = options.opacity ?? 1;
-		if (Icon) {
-			return new Icon({...options, markerColor, opacity});
+		if (icon) {
+			return icon({...options, color, opacity}, feature);
 		}
 		return new L.VectorMarkers.Icon({
 			prefix: "glyphicon",
 			icon: "record",
-			markerColor,
-			opacity
+			...options,
+			color,
+			opacity,
 		});
 	}
 
@@ -3389,7 +3413,8 @@ export default class LajiMap {
 						icon: this._createIcon(
 							getFeatureStyle(params),
 							(typeof dataIdx === "number" && this.data[dataIdx].marker && typeof this.data[dataIdx].marker !== "boolean")
-							&& (this.data[dataIdx].marker as MarkerOptions).icon
+							&& (this.data[dataIdx].marker as MarkerOptions).icon,
+							feature
 						)
 					});
 			} else {
@@ -3675,6 +3700,7 @@ export default class LajiMap {
 			metric: true,
 			showLength: true,
 			showRadius: true,
+			...baseStyle,
 			...additionalOptions,
 			...userDefined,
 			shapeOptions: {
@@ -3685,7 +3711,7 @@ export default class LajiMap {
 				...baseStyle,
 				...(additionalOptions.shapeOptions || {}),
 				...userDefined
-			}
+			},
 		};
 	}
 

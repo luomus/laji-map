@@ -57,5 +57,8 @@ module.exports = {
 	},
 	resolve: {
 		extensions: [".ts", ".js"]
+	},
+	watchOptions: {
+		ignored: /\.swp$/,
 	}
 };

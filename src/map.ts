@@ -114,6 +114,7 @@ L.Icon.Default.include({
 	}
 });
 
+// Implement `setStyle()` for Vector Marker which is the default icon for laji-map.
 const origSetIconStyles = (L.VectorMarkers.Icon.prototype as any)._setIconStyles;
 const origInitialize = (L.VectorMarkers.Icon.prototype as any).initialize;
 L.VectorMarkers.Icon.include({

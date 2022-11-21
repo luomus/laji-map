@@ -627,6 +627,13 @@ export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, validate: boo
 	return convert(data, "GeoJSON", "WGS84", validate);
 }
 
+/**
+ * Geometric data conversion between supported formats & coordinate systems.
+ * @param input Geometric data in GeoJSON, WKT or ISO 6709.
+ * @param outputFormat The output format - one of "GeoJSON", "WKT" or "ISO 6709".
+ * @param outputCRS The output coordinate system. Can be any system that proj4 supports, or EPSG:2393 or EPSG:3067.
+ * @param validate If true, validates strictly with warning level errors. If "errors", doesn't validate with warning level errors. If false, doesn't validate at all.
+ */
 export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: string, validate?: boolean | "errors"): string;
 export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection;
 export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection; // eslint-disable-line

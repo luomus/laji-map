@@ -826,7 +826,7 @@ export function validateGeoJSON(geoJSON, crs?: string, warnings = true): {errors
 			}
 			_geoJSON.coordinates.forEach((coordinates, i) => {
 				_geoJSON = <G.MultiPolygon> _geoJSON;
-				geoJSON.coordinates[i] = _geoJSON.coordinates[i].map((ring, j) => validateRing(ring, !!i, `${_path}/coordinates/${i}/${j}`));
+				_geoJSON.coordinates[i] = _geoJSON.coordinates[i].map((ring, j) => validateRing(ring, !!i, `${_path}/coordinates/${i}/${j}`));
 			});
 			return _geoJSON;
 		}
@@ -945,7 +945,7 @@ export class CoordinateError extends LajiMapGeoJSONError {
 			? translations[this.translationKey]
 			: "";
 		const coordinateStr = this.half
-			? `${translations.Erronous} ${translations[this.half === "lat" ? "Latitude" : "Longitude"]} ${this.latOrLng}`
+			? `${translations.Erronous} ${translations[this.half === "lat" ? "latitude" : "longitude"]} ${this.latOrLng}`
 			: `${translations.Coordinate}: ${this.latOrLng}`;
 
 		return [msg, coordinateStr].filter(s => s).join(". ");

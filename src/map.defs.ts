@@ -9,7 +9,7 @@ export interface LajiMapFitBoundsOptions extends FitBoundsOptions {
 	paddingInMeters?: number;
 	minZoom?: number;
 }
-import { CoordinateSystem } from "./utils";
+import { GeometryFormat } from "./utils";
 
 export interface ZoomToDataOptions extends LajiMapFitBoundsOptions {
 	dataIdxs?: number[];
@@ -110,14 +110,14 @@ export interface MarkerOptions extends DrawOptions.MarkerOptions {
 	icon: any;
 }
 
-export type OnChangeCoordinateSystem = CoordinateSystem | "GeoJSONFeatureCollection" | "GeoJSONGeometryCollection";
+export type OnChangeGeometryFormat = GeometryFormat | "GeoJSONFeatureCollection" | "GeoJSONGeometryCollection";
 
 export interface Data extends DataOptions {
 	group: GeoJSON;
 	groupContainer: FeatureGroup;
 	idx: number;
 	hasCustomGetFeatureStyle: boolean;
-	format: OnChangeCoordinateSystem;
+	format: OnChangeGeometryFormat;
 	crs: string;
 }
 

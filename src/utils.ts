@@ -9,7 +9,7 @@ import * as G from "geojson";
 import { LineTransectFeature, LineTransectGeometry } from "./line-transect.defs";
 
 export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
-export type CoordinateSystem = "GeoJSON" | "WKT" | "ISO 6709";
+export type GeometryFormat = "GeoJSON" | "WKT" | "ISO 6709";
 export interface GeoJSONValidationErrors { [path: string]: { message: string; }; }
 
 export function reverseCoordinate(c: [number, number]): [number, number] {
@@ -524,7 +524,7 @@ export function geoJSONLineToLatLngSegmentArrays(geometry) {
 		geometry.coordinates : [geometry.coordinates]).map(lineStringToSegments);
 }
 
-export function detectFormat(data): CoordinateSystem {
+export function detectFormat(data): GeometryFormat {
 	if (typeof data === "string" && data.indexOf("{") === -1 && data.indexOf("(") !== -1) {
 		return "WKT";
 	} else if (typeof data === "string" && data.indexOf("{") === -1 && data.indexOf("/") !== -1) {
@@ -636,9 +636,9 @@ export function convertAnyToWGS84GeoJSON(data: string | G.GeoJSON, validate: boo
  */
 export function convert(input: string | G.GeoJSON, outputFormat: "WKT" | "ISO 6709", outputCRS: string, validate?: boolean | "errors"): string;
 export function convert(input: string | G.GeoJSON, outputFormat: "GeoJSON", outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection; // eslint-disable-line
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string;
-export function convert(input: string | G.GeoJSON, outputFormat: CoordinateSystem, outputCRS: string, validate?: boolean | "errors"): string | G.FeatureCollection { // eslint-disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: GeometryFormat, outputCRS: string, validate?: boolean | "errors"): G.FeatureCollection; // eslint-disable-line
+export function convert(input: string | G.GeoJSON, outputFormat: GeometryFormat, outputCRS: string, validate?: boolean | "errors"): string;
+export function convert(input: string | G.GeoJSON, outputFormat: GeometryFormat, outputCRS: string, validate?: boolean | "errors"): string | G.FeatureCollection { // eslint-disable-line
 	if (input === undefined) {
 		return undefined;
 	}

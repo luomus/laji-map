@@ -33,8 +33,8 @@ import {
 	Data, DataItemType, DataItemLayer, DataOptions, OverlayName, IdxTuple, DrawHistoryEntry,
 	Lang, Options, Draw, LajiMapFitBoundsOptions, TileLayerName, DrawOptions, LajiMapEvent, CustomPolylineOptions,
 	GetFeatureStyleOptions, ZoomToDataOptions, TileLayersOptions, InternalTileLayersOptions,
-	UserLocationOptions, LajiMapEditEvent, OnChangeCoordinateSystem, LayerNames, WorldLayerNames, FinnishLayerNames,
-	OverlayNames, ShowMeasurementsOptions, DataWrappedLeafletEventData, MarkerOptions
+	UserLocationOptions, LajiMapEditEvent, OnChangeGeometryFormat, LayerNames, WorldLayerNames, FinnishLayerNames,
+	OverlayNames, ShowMeasurementsOptions, DataWrappedLeafletEventData, MarkerOptions,
 } from "./map.defs";
 
 import translations from "./translations";
@@ -1843,7 +1843,7 @@ export default class LajiMap {
 
 		let item = <Data> (options || {});
 		let {geoData, ..._item} = item;
-		let format: OnChangeCoordinateSystem = item.format || geoData ? detectFormat(geoData) : undefined;
+		let format: OnChangeGeometryFormat = item.format || geoData ? detectFormat(geoData) : undefined;
 		const crs = item.crs || (geoData || item.featureCollection) ? detectCRS(geoData || item.featureCollection) : "WGS84";
 		if ("geoData" in item) {
 			const detectedFormat = detectFormat(geoData);
@@ -2319,7 +2319,7 @@ export default class LajiMap {
 	}
 
 	@dependsOn("data")
-	_setOnChangeForItem(item, format: OnChangeCoordinateSystem = "GeoJSON", crs = "WGS84") {
+	_setOnChangeForItem(item, format: OnChangeGeometryFormat = "GeoJSON", crs = "WGS84") {
 		if (!depsProvided(this, "_setOnChangeForItem", arguments)) return;
 
 		const convertCoordinateSystem =

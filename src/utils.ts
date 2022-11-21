@@ -51,7 +51,7 @@ proj4.defs("EPSG:3883", "+proj=tmerc +lat_0=0 +lon_0=29 +k=1 +x_0=29500000 +y_0=
 proj4.defs("EPSG:3884", "+proj=tmerc +lat_0=0 +lon_0=30 +k=1 +x_0=30500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 proj4.defs("EPSG:3885", "+proj=tmerc +lat_0=0 +lon_0=31 +k=1 +x_0=31500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 
-export function convertLatLng(latlng: [number, number], from: string, to: string) {
+export function convertLatLng(latlng: [number, number], from: string, to: string, validate = true) {
 	function formatToProj4Format(format) {
 		return proj4.defs(format) || format;
 	}
@@ -71,8 +71,8 @@ export function convertLatLng(latlng: [number, number], from: string, to: string
 	if (fromValidator && fromValidator[0].formatter) {
 		latlng = format(latlng, fromValidator);
 	}
-	if (fromValidator && (fromValidator[0].regexp || fromValidator[0].range)) {
-		validateLatLng(latlng.map(c => `${c}`), fromValidator, !!"throwMode");
+	if (validate && fromValidator && (fromValidator[0].regexp || fromValidator[0].range)) {
+		validateLatLng(latlng.map(c => `${c}`), fromValidator, validate);
 	}
 
 	const converted = reverseCoordinate(proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng)));
@@ -96,7 +96,7 @@ export function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value
 	return _updater(parseJSON(JSON.stringify(obj)));
 }
 
-export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string): G.GeoJSON {
+export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string, validate: boolean | "errors" = false): G.GeoJSON {
 	const convertCoordinates = coords => {
 		if (typeof coords[0] === "number") {
 			let validator = undefined;
@@ -111,8 +111,8 @@ export function convertGeoJSON(geoJSON: G.GeoJSON, from: string, to: string): G.
 				validator = wgs84Validator;
 				break;
 			}
-			validator && validateLatLng(reverseCoordinate(coords).map(_c => `${_c}`), validator, !!"throwMode");
-			return reverseCoordinate(convertLatLng(reverseCoordinate(coords), from, to));
+			validate && validator && validateLatLng(reverseCoordinate(coords).map(_c => `${_c}`), validator, !!"throwMode");
+			return reverseCoordinate(convertLatLng(reverseCoordinate(coords), from, to, !!validate));
 		} else {
 			return coords.map(convertCoordinates);
 		}
@@ -661,7 +661,7 @@ export function convert(input: string | G.GeoJSON, outputFormat: GeometryFormat,
 		throw new LajiMapError("Couldn't detect geo data CRS", "GeoDataCRSDetectionError");
 	}
 
-	if (inputCRS !== outputCRS) geoJSON = convertGeoJSON(geoJSON, inputCRS, outputCRS);
+	if (inputCRS !== outputCRS) geoJSON = convertGeoJSON(geoJSON, inputCRS, outputCRS, validate);
 
 	if (outputCRS !== "WGS84") geoJSON.crs = getCRSObjectForGeoJSON(geoJSON, outputCRS);
 
@@ -686,7 +686,7 @@ export function convert(input: string | G.GeoJSON, outputFormat: GeometryFormat,
 	}
 }
 
-export function validateGeoJSON(geoJSON, crs?: string, warnings = true): {errors: Error[], geoJSON: G.GeoJSON} {
+export function validateGeoJSON(geoJSON: string | G.GeoJSON, crs?: string, warnings = true): {errors: Error[], geoJSON: G.GeoJSON} {
 	if (!crs) {
 		crs = detectCRS(geoJSON);
 	}

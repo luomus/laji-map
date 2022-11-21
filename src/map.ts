@@ -86,7 +86,7 @@ class GoogleProvider extends _GoogleProvider {
 	}
 }
 
-// Patch L.Marker to call `setStyle` so it works the same as all the other rendered features (polygon, polyline etc).
+// Patch L.Marker to have `setStyle()` so it works the same as all the other rendered features (polygon, polyline etc).
 // If icons are customized, they should have a `setStyle()` implementation.
 const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
@@ -102,20 +102,22 @@ L.Marker.include({
 			this._initStyle = style;
 			return;
 		}
-		// eslint-disable-next-line max-len
-		console.warn("[laji-map warning] Seems like you are using a customized marker icon. You should implement 'setStyle()' for it if you wish it to work with the coloring & other styling that laji-map provides.");
-		this.options.icon.setStyle(this._icon, style);
+		if (this.options.icon && !this.options.icon.setStyle) {
+			// eslint-disable-next-line max-len
+			console.warn("[laji-map warning] Seems like you are using a customized marker icon. You should implement 'setStyle({color, opacity})' for it if you wish it to work with the coloring & other styling that laji-map provides.");
+		} else {
+			this.options.icon.setStyle(this._icon, style);
+		}
 	}
 });
 
 L.Icon.Default.include({
 	setStyle() {
-		console.warn("[laji-map warning] The Leaflet default icon doesn't have an implementation for 'setStyle()'");
+		console.warn("[laji-map warning] The Leaflet default icon doesn't have an implementation for 'setStyle({color, opacity})'");
 	}
 });
 
 // Implement `setStyle()` for Vector Marker which is the default icon for laji-map.
-const origSetIconStyles = (L.VectorMarkers.Icon.prototype as any)._setIconStyles;
 const origInitialize = (L.VectorMarkers.Icon.prototype as any).initialize;
 L.VectorMarkers.Icon.include({
 	initialize(options) {
@@ -124,13 +126,12 @@ L.VectorMarkers.Icon.include({
 		}
 		origInitialize.call(this, options);
 	},
-	setStyle(iconDomElem, name) {
-		origSetIconStyles.call(this, iconDomElem, name);
+	setStyle(iconDomElem, style) {
 		if (!iconDomElem.firstChild) {
 			return;
 		}
-		iconDomElem.firstChild.firstChild.style.fill = name.color;
-		iconDomElem.firstChild.firstChild.style.opacity = name.opacity || 1;
+		iconDomElem.firstChild.firstChild.style.fill = style.color;
+		iconDomElem.firstChild.firstChild.style.opacity = style.opacity || 1;
 	}
 });
 
@@ -2603,6 +2604,7 @@ export default class LajiMap {
 			this.map.removeLayer(item.groupContainer);
 			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item)).addTo(this.map);
 			item.groupContainer.addLayer(item.group);
+			item.group.eachLayer(l => this.updateLayerStyle(l as DataItemLayer));
 		}
 	}
 
@@ -3680,7 +3682,7 @@ export default class LajiMap {
 		case "marker":
 			additionalOptions = {
 				icon: this._createIcon(
-					{...this.getDraw().getDraftStyle()},
+					this.getDraw().getDraftStyle(),
 					(this.getDraw().marker && typeof this.getDraw().marker !== "boolean")
 						&& (this.getDraw().marker as MarkerOptions).icon
 				)

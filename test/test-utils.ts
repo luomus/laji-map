@@ -1,7 +1,8 @@
 const {HOST, PORT, VERBOSE, DELAY} = process.env;
-import { browser, $, by } from "protractor";
+import { browser, $, $$, by } from "protractor";
 import * as utils from "laji-map/lib/utils";
 import { Options } from "laji-map/lib/map.defs";
+import G from "geojson";
 
 const joinParams = (params: Record<string, unknown>) =>
 	Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
@@ -68,9 +69,9 @@ export class MapPageObject {
 			.perform();
 	}
 
-	async drawMarker() {
+	async drawMarker(x = 0, y = 0) {
 		await this.getDrawControl().$getMarkerButton().click();
-		await this.clickAt(0, 0);
+		await this.clickAt(x, y);
 	}
 
 	async drawRectangle() {
@@ -78,11 +79,24 @@ export class MapPageObject {
 		await this.drag([0, 0], [10, 10]);
 	}
 
+	getDrawData = () => this.e<G.FeatureCollection>("getDraw().featureCollection");
+
 	getCoordinateInputControl() { return new CoordinateInputControlPageObject(); }
 	getCoordinateUploadControl() { return new CoordinateUploadControlPageObject(); }
 	getCoordinateCopyControl() { return new CoordinateCopyControlPageObject(); }
 	getDrawControl() { return new DrawControlPageObject(); }
 	getTileLayersControl() { return new TilelayersControlPageObject(this); }
+	getDeleteControl() { return new DeleteControl(); }
+
+}
+
+export class DeleteControl {
+	start() {
+		return getControlButton("drawUtils.delete").click();
+	}
+	finish() {
+		return $$(".leaflet-draw-actions a").last().click();
+	}
 }
 
 class CoordinateInputControlPageObject {
@@ -251,16 +265,16 @@ export class PointTraveller {
 		return this.return(this.x, this.y);
 	}
 
-	return(x: number, y: number): [number, number] {
-		return [x, y];
-	}
-
 	initial() {
 		return this.return(this.initX, this.initY);
 	}
 
-	_x(curVal: number, amount: number) { return curVal + amount; }
-	_y(curVal: number, amount: number) { return curVal + amount; }
+	protected return(x: number, y: number): [number, number] {
+		return [x, y];
+	}
+
+	protected _x(curVal: number, amount: number) { return curVal + amount; }
+	protected _y(curVal: number, amount: number) { return curVal + amount; }
 }
 
 interface LatLngTravellerOptions {

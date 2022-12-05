@@ -3280,7 +3280,11 @@ export default class LajiMap {
 		}];
 
 		if (changeActive) {
-			events.push({type: "active", idx: this.idsToIdxs[dataIdx][newActiveId], layer: this._getLayerById(newActiveId)});
+			events.push({
+				type: "active",
+				idx: newActiveId !== undefined ? this.idsToIdxs[dataIdx][newActiveId] : undefined,
+				layer: newActiveId !== undefined ? this._getLayerById(newActiveId) : undefined
+			});
 		}
 
 		this._triggerEvent(events, item.onChange);
@@ -3289,13 +3293,16 @@ export default class LajiMap {
 			this._updateDrawUndoStack(events, prevFeatureCollection, newActiveId ? activeIdx : undefined);
 		}
 
-		if (changeActive) {
+		if (changeActive && newActiveId !== undefined) {
 			this.setActive(this._getLayerByIdxTuple([dataIdx, this.idsToIdxs[dataIdx][newActiveId]]));
 		}
 
 	}
 
 	_removeLayerFromItem(item: Data, layer: DataItemLayer) {
+		if (!layer) {
+			return;
+		}
 		if (item.group !== item.groupContainer && item.groupContainer.hasLayer(layer)) {
 			item.groupContainer.removeLayer(layer);
 		}

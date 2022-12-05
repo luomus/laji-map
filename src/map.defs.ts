@@ -39,8 +39,8 @@ export interface LajiMapInsertEvent {
 }
 export interface LajiMapActivateEvent {
 	type: "active";
-	idx: number;
-	layer: DataItemLayer;
+	idx: number | undefined;
+	layer?: DataItemLayer;
 }
 
 export type LajiMapEvent = LajiMapCreateEvent | LajiMapEditEvent | LajiMapDeleteEvent | LajiMapInsertEvent | LajiMapActivateEvent;

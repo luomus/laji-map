@@ -399,7 +399,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		const that = this;
 
-		function _createActionHandler(name, fn, eventName, text) {
+		function _createActionHandler(name, fn, eventName, text, commitOnBur) {
 			let cont = this.buttonActionContainer[name];
 
 			const _that = this;
@@ -407,6 +407,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			function stop() {
 				fn();
 				that.map.off("controlClick", stopOnControlClick);
+				commitOnBur && that.map.off("blur", stop);
 				that._removeKeyListener(ESC, stop);
 				if (_that.container.contains(cont)) _that.container.removeChild(cont);
 				if (eventName) that.map.off(eventName);
@@ -437,6 +438,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			}
 
 			that._addKeyListener(ESC, stop, undefined);
+			if (commitOnBur) {
+				that.map.on("blur", stop);
+			}
 			if (eventName) that.map.on(eventName, stop);
 
 			const parentBtn = that._controlButtons[name];
@@ -448,7 +452,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		}
 
 		function _createFinishHandler(name, fn, eventName) {
-			this._createActionHandler(name, fn, eventName, "Finish");
+			this._createActionHandler(name, fn, eventName, "Finish", true);
 		}
 
 		function _createCancelHandler(name, fn, eventName) {

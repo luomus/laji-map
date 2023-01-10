@@ -13,7 +13,7 @@
     "build": "npm run build:lib && npm run build:dist && npm run build:tests",
     "preversion": "npm run lint && npm run test:multi:slow && npm run build",
     "version": "./update-changelog.sh",
-    "postversion": "npm publish && git push",
+    "postversion": "npm publish && git push && git push --tags",
     "lint": "eslint -c .eslintrc.prod.json src playground",
     "test": "HOST=127.0.0.1 PORT=4000 protractor protractor.conf.cjs",
     "test:debug": "HEADLESS=false HOST=127.0.0.1 PORT=4000 node --inspect-brk node_modules/protractor/bin/protractor protractor.conf.cjs",

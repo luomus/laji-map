@@ -982,6 +982,7 @@ export default class LajiMap {
 				threatenedSpeciesEvaluationZones: createLajiLayer({
 					layers: "LajiMapData:threatened_species_evaluation_zones",
 					version: "1.1.0",
+					defaultOpacity: 0.5,
 					attribution: sykeAttribution
 				}),
 				biodiversityForestZones: L.tileLayer.wms(
@@ -1005,6 +1006,7 @@ export default class LajiMap {
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
 				currentProtectedAreas: createLajiLayer({
 					layers: "ProtectedAreas:currentProtectedAreas",
+					defaultOpacity: 0.5,
 				}, true),
 				plannedProtectedAreas: createLajiLayer({
 					layers: "ProtectedAreas:plannedProtectedAreas",

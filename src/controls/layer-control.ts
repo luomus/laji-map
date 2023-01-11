@@ -157,7 +157,7 @@ const LayerControl = L.Control.extend({
 			} else {
 				this.lajiMap._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
 				const layer = this.lajiMap.tileLayers[name] || this.lajiMap.overlaysByNames[name];
-				layer instanceof L.TileLayer
+				layer.setOpacity
 					? layer.setOpacity(opacity)
 					: layer.eachLayer((l: L.TileLayer) => l.setOpacity(opacity));
 			}

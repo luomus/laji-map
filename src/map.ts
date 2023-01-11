@@ -319,6 +319,8 @@ export default class LajiMap {
 		"mireVegetationZones",
 		"threatenedSpeciesEvaluationZones",
 		"biodiversityForestZones",
+		"habitat",
+		"ageOfTrees",
 		"currentProtectedAreas",
 		"plannedProtectedAreas",
 		"flyingSquirrelPredictionModel",
@@ -863,6 +865,7 @@ export default class LajiMap {
 			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer" tabindex="-1">&copy; ${text}</a>`;
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
+			const lukeAttribution = getAttribution("https://kartta.luke.fi/", "LUKE");
 
 			const getMMLLayer = (layerService: string) => (name, options: L.TileLayerOptions & {format?: "png" | "jpg"} = {format: "png"}) =>
 				L.tileLayer(`https://proxy.laji.fi/mml_wmts/${layerService}/wmts/1.0.0/${name}/default/ETRS-TM35FIN/{z}/{y}/{x}.${options.format}`, {
@@ -874,7 +877,7 @@ export default class LajiMap {
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
-			const getLajiLayer = (options: L.WMSOptions, nonTiled = false) => {
+			const createLayer = (address: string) => (options: L.WMSOptions, nonTiled = false) => {
 				const constructor = nonTiled ? NonTiledLayer.WMS : L.TileLayer.WMS;
 				const _options: any = {
 					maxZoom: 15,
@@ -886,8 +889,10 @@ export default class LajiMap {
 					_options.useCanvas = false;
 				}
 				return new constructor(
-					`${this.lajiGeoServerAddress}/ows`, _options);
+					`${address}/ows`, _options);
 			};
+
+			const createLajiLayer = createLayer(this.lajiGeoServerAddress);
 
 			const getTilastokeskusLayer = (layer: string) => L.tileLayer.wms("https://geo.stat.fi/geoserver/tilastointialueet/wms", {
 				layers: layer,
@@ -906,21 +911,21 @@ export default class LajiMap {
 					tileSize: 256,
 					attribution : `${mmlAttribution}, ${getAttribution("https://www.mapant.fi", "Mapant")}`
 				}),
-				ykjGrid: getLajiLayer({
+				ykjGrid: createLajiLayer({
 					layers: "LajiMapData:YKJlines100,LajiMapData:YKJlines1000,LajiMapData:YKJlines10000,LajiMapData:YKJlines100000",
 				}),
-				ykjGridLabels: getLajiLayer({
+				ykjGridLabels: createLajiLayer({
 					layers: "LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000",
 				}, true),
 				atlasGrid: L.layerGroup([
-					getLajiLayer({
+					createLajiLayer({
 						layers: "LajiMapData:AtlasYKJ1kmLines,LajiMapData:AtlasYKJ10kmLines",
 					}),
-					getLajiLayer({
+					createLajiLayer({
 						layers: "LajiMapData:AtlasYKJ1kmLabels,LajiMapData:AtlasYKJ10kmLabels",
 					}, true)
 				]),
-				afeGrid: getLajiLayer({
+				afeGrid: createLajiLayer({
 					layers: "LajiMapData:afe_grid"
 				}),
 			};
@@ -933,7 +938,7 @@ export default class LajiMap {
 					subdomains: ["mt0", "mt1", "mt2", "mt3"],
 					attribution: getAttribution("https://developers.google.com/maps/terms", "Google")
 				}),
-				cgrsGrid: getLajiLayer({
+				cgrsGrid: createLajiLayer({
 					layers: "LajiMapData:cgrs_grid"
 				})
 			};
@@ -946,7 +951,7 @@ export default class LajiMap {
 			this.availableTileLayers = this.tileLayers;
 
 			this.overlaysByNames = {
-				geobiologicalProvinces: getLajiLayer({
+				geobiologicalProvinces: createLajiLayer({
 					maxZoom: 15,
 					layers: "LajiMapData:biogeographical_provinces",
 					version: "1.3.0"
@@ -974,7 +979,7 @@ export default class LajiMap {
 						defaultOpacity: 0.5,
 						attribution: sykeAttribution
 					}),
-				threatenedSpeciesEvaluationZones: getLajiLayer({
+				threatenedSpeciesEvaluationZones: createLajiLayer({
 					layers: "LajiMapData:threatened_species_evaluation_zones",
 					version: "1.1.0",
 					attribution: sykeAttribution
@@ -986,29 +991,39 @@ export default class LajiMap {
 						defaultOpacity: 0.5,
 						attribution: sykeAttribution
 					}),
+				habitat: createLayer("https://kartta.luke.fi/geoserver/ows")({
+					layers: "MVMI:kasvupaikka_1519",
+					defaultOpacity: 0.5,
+					attribution: lukeAttribution
+				}),
+				ageOfTrees: createLayer("https://kartta.luke.fi/geoserver/ows")({
+					layers: "MVMI:kasvupaikka_1519",
+					defaultOpacity: 0.5,
+					attribution: lukeAttribution
+				}),
 				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
-				currentProtectedAreas: getLajiLayer({
+				currentProtectedAreas: createLajiLayer({
 					layers: "ProtectedAreas:currentProtectedAreas",
 				}, true),
-				plannedProtectedAreas: getLajiLayer({
+				plannedProtectedAreas: createLajiLayer({
 					layers: "ProtectedAreas:plannedProtectedAreas",
 				}, true),
-				flyingSquirrelPredictionModel: getLajiLayer({
+				flyingSquirrelPredictionModel: createLajiLayer({
 					layers: "LajiMapData:flyingSquirrel_predictionModel",
 					defaultOpacity: 0.5
 				}),
 				birdAtlasSocietyGridZones: L.layerGroup([
-					getLajiLayer({
+					createLajiLayer({
 						layers: "LajiMapData:BirdAtlasSocietyGrid",
 					}),
-					getLajiLayer({
+					createLajiLayer({
 						layers: "LajiMapData:BirdAtlasSocietyGridLabels",
 					}, true),
-					getLajiLayer({
+					createLajiLayer({
 						layers: "LajiMapData:BirdLifeSocieties",
 					}),
-					getLajiLayer({
+					createLajiLayer({
 						layers: "LajiMapData:BirdLifeSocietyLabels",
 					}, true)
 				], {defaultOpacity: 0.5} as any)

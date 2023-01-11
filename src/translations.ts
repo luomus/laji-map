@@ -869,5 +869,15 @@ export default {
 		fi: "Raahaa säätääksesi läpinäkyvyyttä",
 		en: "Drag to adjust opacity",
 		sv: "Dra för att justera opaciteten",
+	},
+	habitat: {
+		fi: "Kasvupaikka 2019 (LUKE)",
+		en: "Habitat 2019 (LUKE)",
+		sv: "Livsmiljö 2019 (LUKE)",
+	},
+	ageOfTrees: {
+		fi: "Puuston ikä 2019 (LUKE)",
+		en: "Age of trees 2019 (LUKE)",
+		sv: "Trädens ålder 2019 (LUKE)",
 	}
 };

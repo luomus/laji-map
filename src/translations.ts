@@ -530,11 +530,6 @@ export default {
 		en: "Biogeographical provinces",
 		sv: "biogeografiska provinser"
 	},
-	geobiologicalProvinceBorders: {
-		fi: "Eliömaakuntien rajat",
-		en: "Borders of biogeographical provinces",
-		sv: "Gränserna av Biogeografiska provinser"
-	},
 	createPoint: {
 		fi: "Luo piste biotoopin sisälle",
 		en: "Create point inside the biotope",

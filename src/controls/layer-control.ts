@@ -82,6 +82,7 @@ const LayerControl = L.Control.extend({
 		const li = document.createElement("li");
 		li.id = name;
 		li.className = "laji-map-layer-control-layer-item";
+		this.translateHooks.push(this.lajiMap.addTranslationHook(li, "LayerControlOpacityHelp", "title"));
 		const checkbox = document.createElement("input");
 		checkbox.type = "checkbox";
 		checkbox.addEventListener("change", () => {

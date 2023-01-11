@@ -870,4 +870,9 @@ export default {
 		en: "Enter only a single geometry",
 		sv: "Ange bara en enda geometri",
 	},
+	layerControlOpacityHelp: {
+		fi: "Raahaa säätääksesi läpinäkyvyyttä",
+		en: "Drag to adjust opacity",
+		sv: "Dra för att justera opaciteten",
+	}
 };

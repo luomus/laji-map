@@ -998,7 +998,7 @@ export default class LajiMap {
 					attribution: lukeAttribution
 				}),
 				ageOfTrees: createLayer("https://kartta.luke.fi/geoserver/ows")({
-					layers: "MVMI:kasvupaikka_1519",
+					layers: "MVMI:ika_1519",
 					defaultOpacity: 0.5,
 					attribution: lukeAttribution
 				}),

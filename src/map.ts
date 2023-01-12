@@ -955,7 +955,7 @@ export default class LajiMap {
 					maxZoom: 15,
 					layers: "LajiMapData:biogeographical_provinces",
 					version: "1.3.0"
-				}, true),
+				}),
 				municipalities: getTilastokeskusLayer("kunta1000k"),
 				counties: getTilastokeskusLayer( "maakunta1000k"),
 				ely: getTilastokeskusLayer( "ely1000k"),

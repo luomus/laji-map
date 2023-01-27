@@ -93,10 +93,7 @@ const LayerControl = L.Control.extend({
 			const checked = (e.target as any).checked;
 			const data = this.dataLayersByName[name];
 			if (data) {
-				const opacity = checked ? 1 : 0;
-				this.updateDataOpacity(data, opacity);
-				data.visible = checked;
-				data.onVisibleChange?.(checked);
+				this.updateDataOpacity(data, data.opacity, checked);
 				if (checked) {
 					L.DomUtil.addClass(li, "active");
 				} else {
@@ -268,18 +265,20 @@ const LayerControl = L.Control.extend({
 		return li;
 	},
 
-	updateDataOpacity(data: Data, opacity: number) {
+	updateDataOpacity(data: Data, opacity: number, visible = true) {
 		data.groupContainer.eachLayer((l: any) => {
-			l.setStyle({...l._initStyle, ...computeOpacities(opacity, data.maxFillOpacity)});
+			l.setStyle({...l._initStyle, ...computeOpacities(visible, opacity, data.maxFillOpacity)});
 			if (data.cluster) {
 				const visibleParent = (data.groupContainer as any).getVisibleParent(l);
-				visibleParent?.setOpacity(opacity);
+				visibleParent?.setOpacity(visible ? opacity : 0);
 			}
 		});
+		console.log('update data opacity', opacity, visible);
+		data.visible = visible;
 		data.opacity = opacity;
 		data.onOpacityChange?.(opacity);
-		if (!data.visible && opacity) {
-			data.visible = true;
+		if (data.visible !== visible) {
+			data.visible = visible;
 			data.onVisibleChange?.(true);
 		}
 	},

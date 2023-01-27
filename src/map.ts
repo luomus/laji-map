@@ -203,8 +203,8 @@ export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLa
 	return layer instanceof L.LayerGroup;
 }
 
-export const computeOpacities = (opacity: number, maxFillOpacity = 0.4) => {
-	return {opacity: opacity, fillOpacity: maxFillOpacity * opacity};
+export const computeOpacities = (visible: boolean, opacity: number, maxFillOpacity = 0.4) => {
+	return {opacity: visible ? opacity : 0, fillOpacity: visible ? (maxFillOpacity * opacity) : 0 };
 };
 
 export default class LajiMap {
@@ -3582,7 +3582,7 @@ export default class LajiMap {
 		style = {
 			...style,
 			...dataStyles,
-			...computeOpacities(opacity, item.maxFillOpacity),
+			...computeOpacities(item.visible, opacity, item.maxFillOpacity),
 			...overrideStyles
 		};
 

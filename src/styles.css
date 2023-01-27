@@ -103,6 +103,11 @@
 	pointer-events: none;
 	transition: opacity 200ms ease-in;
 }
+/* In this state the scroll preventer is displayed. We made it capture the pointer events,
+ * so that when the user clicks is order to dismiss the blocker, the click doesn't end up to the map */
+.laji-map .laji-map-scroll-prevent.leaving {
+	pointer-events: initial;
+}
 .laji-map .laji-map-scroll-prevent.enter, .laji-map-scroll-prevent.left {
 	opacity: 0 !important;
 }

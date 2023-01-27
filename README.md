@@ -193,7 +193,6 @@ googleSatellite
 afeGrid
 cgrsGrid
 geobiologicalProvinces
-geobiologicalProvinceBorders
 municipalities
 counties
 ely
@@ -201,6 +200,8 @@ forestVegetationZones
 mireVegetationZones
 threatenedSpeciesEvaluationZones
 biodiversityForestZones
+habitat
+ageOfTrees
 ykjGrid
 ykjGridLabels
 kiinteistojaotus

@@ -85,6 +85,7 @@ const LayerControl = L.Control.extend({
 		const li = document.createElement("li");
 		li.id = name;
 		li.className = "laji-map-layer-control-layer-item";
+		this.translateHooks.push(this.lajiMap.addTranslationHook(li, "LayerControlOpacityHelp", "title"));
 		const checkbox = document.createElement("input");
 		checkbox.type = "checkbox";
 		checkbox.addEventListener("change", (e) => {
@@ -185,7 +186,7 @@ const LayerControl = L.Control.extend({
 			} else {
 				this.lajiMap._tileLayers.layers[name] = {..._layerOptions, visible: true, opacity};
 				const layer = this.lajiMap.tileLayers[name] || this.lajiMap.overlaysByNames[name];
-				layer instanceof L.TileLayer
+				layer.setOpacity
 					? layer.setOpacity(opacity)
 					: layer.eachLayer((l: L.TileLayer) => l.setOpacity(opacity));
 			}

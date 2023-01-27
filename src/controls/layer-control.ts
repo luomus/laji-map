@@ -266,13 +266,6 @@ const LayerControl = L.Control.extend({
 	},
 
 	updateDataOpacity(data: Data, opacity: number, visible = true) {
-		data.groupContainer.eachLayer((l: any) => {
-			l.setStyle({...l._initStyle, ...computeOpacities(visible, opacity, data.maxFillOpacity)});
-			if (data.cluster) {
-				const visibleParent = (data.groupContainer as any).getVisibleParent(l);
-				visibleParent?.setOpacity(visible ? opacity : 0);
-			}
-		});
 		data.visible = visible;
 		data.opacity = opacity;
 		data.onOpacityChange?.(opacity);
@@ -280,6 +273,13 @@ const LayerControl = L.Control.extend({
 			data.visible = visible;
 			data.onVisibleChange?.(true);
 		}
+		data.groupContainer.eachLayer((l: any) => {
+			l.setStyle(this.lajiMap._getStyleForLayer(l));
+			if (data.cluster) {
+				const visibleParent = (data.groupContainer as any).getVisibleParent(l);
+				visibleParent?.setOpacity(visible ? opacity : 0);
+			}
+		});
 	},
 	createList(
 		layers: {[name: string]: L.TileLayer[]},

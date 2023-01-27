@@ -1,3 +1,7 @@
+## 3.18.0
+* Data opacity controllable via the layer control, if `label` option is provided.
+* Add `label`, `opacity`, `visible`, `onOpacityChange` and   `onVisibleChange` to data options
+
 ## 3.16.0
 * Add layers to draw change events 'create', 'insert' and 'edit'
 

@@ -273,7 +273,6 @@ const LayerControl = L.Control.extend({
 				visibleParent?.setOpacity(visible ? opacity : 0);
 			}
 		});
-		console.log('update data opacity', opacity, visible);
 		data.visible = visible;
 		data.opacity = opacity;
 		data.onOpacityChange?.(opacity);

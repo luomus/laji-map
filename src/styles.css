@@ -666,3 +666,11 @@ li.laji-map-layer-control-layer-item.active span {
 	right: 9px;
 	z-index: -1;
 }
+
+.coordinate-accuracy-1 {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border: 1px solid hsl(204deg,10%,50%)
+}
+

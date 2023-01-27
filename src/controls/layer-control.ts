@@ -95,8 +95,13 @@ const LayerControl = L.Control.extend({
 			if (data) {
 				const opacity = checked ? 1 : 0;
 				this.updateDataOpacity(data, opacity);
-				data.onVisibleChange?.(checked);
 				data.visible = checked;
+				data.onVisibleChange?.(checked);
+				if (checked) {
+					L.DomUtil.addClass(li, "active");
+				} else {
+					L.DomUtil.removeClass(li, "active");
+				}
 				return;
 			}
 
@@ -273,6 +278,10 @@ const LayerControl = L.Control.extend({
 		});
 		data.opacity = opacity;
 		data.onOpacityChange?.(opacity);
+		if (!data.visible && opacity) {
+			data.visible = true;
+			data.onVisibleChange?.(true);
+		}
 	},
 	createList(
 		layers: {[name: string]: L.TileLayer[]},

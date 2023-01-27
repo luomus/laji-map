@@ -870,4 +870,9 @@ export default {
 		en: "Enter only a single geometry",
 		sv: "Ange bara en enda geometri",
 	},
+	layerControlData: {
+		fi: "Data",
+		en: "Data",
+		sv: "Data"
+	},
 };

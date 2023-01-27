@@ -108,7 +108,10 @@ L.Marker.include({
 		} else {
 			this.options.icon.setStyle(this._icon, style);
 		}
-	}
+		if (this._shadow && style.hasOwnProperty("opacity")) {
+			this._shadow.style.opacity = style.opacity;
+		}
+	},
 });
 
 L.Icon.Default.include({
@@ -131,7 +134,7 @@ L.VectorMarkers.Icon.include({
 			return;
 		}
 		iconDomElem.firstChild.firstChild.style.fill = style.color;
-		iconDomElem.firstChild.firstChild.style.opacity = style.opacity || 1;
+		iconDomElem.firstChild.firstChild.style.opacity = style.opacity ?? 1;
 	}
 });
 
@@ -199,6 +202,16 @@ type MaybeGroupedTileLayer = L.TileLayer | NonTiledLayer.WMS | L.LayerGroup<L.Ti
 export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLayer | NonTiledLayer.WMS> {
 	return layer instanceof L.LayerGroup;
 }
+
+const defaultDataOpacities = {
+	opacity: 1,
+	fillOpacity: 0.4,
+};
+export const computeOpacities = (opacity: number) => {
+	const {fillOpacity, opacity: otherOpacity} = defaultDataOpacities;
+	return {opacity: otherOpacity * opacity, fillOpacity: fillOpacity * opacity};
+};
+
 
 export default class LajiMap {
 	googleApiKey: string;
@@ -1531,7 +1544,7 @@ export default class LajiMap {
 			// Prevent moveend event triggering layer swap, since view reset below must be ran sequentially.
 			this._viewCriticalSection++;
 			 // Redraw all layers according to new projection.
-			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true);
+			(<any> this.map)._resetView(this.map.getCenter(), this.map.getZoom(), true); // lähettää ekan
 			this.map.setView(center, zoom, {animate: false});
 			this.recluster();
 			this._viewCriticalSection--;
@@ -1917,7 +1930,13 @@ export default class LajiMap {
 			idx: dataIdx
 		};
 
-		item.hasActive = ("activeIdx" in item);
+		item.hasActive = ("activeIdx" in item) || item.hasActive;
+		if (item.visible === undefined) {
+			item.visible = true;
+		}
+		if (item.opacity === undefined) {
+			item.opacity = 1;
+		}
 
 		this.idxsToIds[dataIdx] = {};
 		this.idsToIdxs[dataIdx] = {};
@@ -2170,6 +2189,7 @@ export default class LajiMap {
 		if (!Array.isArray(data)) data = [data];
 		data.forEach((item, idx) => (idx !== this.drawIdx) && this.updateData(idx, item));
 		this.reorderData();
+		this.map.fire("lajiMap:dataChange", this.data);
 		provide(this, "data");
 	}
 
@@ -2183,14 +2203,17 @@ export default class LajiMap {
 		if (!items) return;
 		if (!Array.isArray(items)) items = [items];
 		items.forEach(item => this.initializeDataItem(item));
+		this.map.fire("lajiMap:dataChange", this.data);
 	}
 
 	updateData(dataIdx, item: DataOptions) {
 		this.initializeDataItem(item, dataIdx);
+		this.map.fire("lajiMap:dataChange", this.data);
 	}
 
 	updateDrawData(item: DrawOptions) {
 		this.updateData(this.drawIdx, <DataOptions> this.getDrawOptions(item));
+		this.map.fire("lajiMap:dataChange", this.data);
 	}
 
 	removeData(dataIdx: number) {
@@ -2198,6 +2221,7 @@ export default class LajiMap {
 			this.data[dataIdx].groupContainer.clearLayers();
 			delete this.data[dataIdx];
 		}
+		this.map.fire("lajiMap:dataChange", this.data);
 	}
 
 	getDrawOptions(options: DrawOptions | boolean): DrawOptions {
@@ -2211,7 +2235,7 @@ export default class LajiMap {
 				_options[key] = optionValue;
 				return _options;
 			}, {})
-		};
+		} as Draw;
 		draw = {
 			...draw,
 			...{
@@ -2225,7 +2249,7 @@ export default class LajiMap {
 
 		draw = {
 			getFeatureStyle: () => this._getDefaultDrawStyle(),
-			getClusterStyle: () => this._getDefaultDrawClusterStyle(),
+			getClusterStyle: () => this._getDefaultDrawClusterStyle(draw),
 			getDraftStyle: () => this._getDefaultDrawDraftStyle(),
 			hasCustomGetFeatureStyle: !!(<any> draw).getFeatureStyle,
 			editable: true,
@@ -2504,7 +2528,7 @@ export default class LajiMap {
 			}
 
 			let color =  NORMAL_COLOR;
-			let opacity = 0.5;
+			let opacity = data.opacity ?? 0.5;
 			if (data.getClusterStyle) {
 				const featureStyle = data.getClusterStyle(
 					childCount,
@@ -3498,6 +3522,10 @@ export default class LajiMap {
 		const item = this.data[dataIdx];
 		const feature = item.featureCollection.features[featureIdx];
 		const active = item.activeIdx === featureIdx;
+		const visible = item.visible !== undefined ? item.visible : true;
+		const opacity = visible
+			? item.opacity !== undefined ? item.opacity : 1
+			: 0;
 		let editing = false;
 		if (this.editIdxTuple) {
 			const [_dataIdx, _featureIdx] = this.editIdxTuple;
@@ -3540,8 +3568,6 @@ export default class LajiMap {
 		);
 
 		let style: L.PathOptions = {
-			opacity: 1,
-			fillOpacity: 0.4,
 			color: NORMAL_COLOR,
 			fillColor: NORMAL_COLOR,
 		};
@@ -3551,6 +3577,7 @@ export default class LajiMap {
 		style = {
 			...style,
 			...dataStyles,
+			...computeOpacities(opacity),
 			...overrideStyles
 		};
 
@@ -3604,8 +3631,8 @@ export default class LajiMap {
 		return {color: NORMAL_COLOR, fillColor: NORMAL_COLOR, opacity: 1, fillOpacity: 0.7};
 	}
 
-	_getDefaultDrawClusterStyle(): L.PathOptions {
-		return {color: this.getDraw().getFeatureStyle({}).color, opacity: 1};
+	_getDefaultDrawClusterStyle(item: Data): L.PathOptions {
+		return {color: this.getDraw().getFeatureStyle({}).color, opacity: item.opacity};
 	}
 
 	_getDefaultDataStyle(item: Data): () => L.PathOptions {return () => {
@@ -3621,7 +3648,7 @@ export default class LajiMap {
 			const style = item.getFeatureStyle({});
 			if (style.color) color = style.color;
 		}
-		return {color, opacity: 1};
+		return {color, opacity: item.opacity};
 	}
 
 	_getDefaultDraftStyle(dataIdx: number): L.PathOptions {

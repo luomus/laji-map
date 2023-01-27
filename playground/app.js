@@ -31,6 +31,7 @@ class App {
 
 		this.data = [
 			{
+				hasActive: true,
 				featureCollection: {
 					type: "featureCollection",
 					features: [
@@ -95,6 +96,7 @@ class App {
 					return {color: "#f00"};
 				},
 				cluster: true,
+				// opacity: 0.5,
 				on: {
 					click: (e, {idx, feature, layer}) => {
 						console.info("clicked", idx, feature, layer);
@@ -103,11 +105,19 @@ class App {
 				//activeIdx: 0,
 				//editable: true,
 				highlightOnHover: true,
-				showMeasurements: true
+				showMeasurements: true,
+				label: "Red data",
+				// marker: {
+				// 	icon: (po) => {
+				// 		return L.divIcon({
+				// 		});
+				// 	}
+				// }
 			}
 		];
 
 		this.drawOptions = {
+			label: "draw",
 			showMeasurements: true,
 			featureCollection: {
 				type: "FeatureCollection",
@@ -227,21 +237,22 @@ class App {
 		const map = new LajiMap(options);
 		this.map = map;
 
-		//map.addData({
-		//	geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
-		//	getFeatureStyle: (e) => {
-		//		const {featureIdx} = e;
-		//		return {
-		//			weight: featureIdx,
-		//			opacity: 1,
-		//			fillOpacity: 1,
-		//			color: "#0f0"
-		//		};
-		//	},
-		//	getPopup: (idx) => {
-		//		return `green ${idx}`;
-		//	}
-		//});
+		// map.addData({
+		// 	label: "lol",
+		// 	geoData: {type:"GeometryCollection", "geometries": [{"type":"Point","coordinates":[22.24,60.42]}]},
+		// 	getFeatureStyle: (e) => {
+		// 		const {featureIdx} = e;
+		// 		return {
+		// 			weight: featureIdx,
+		// 			opacity: 1,
+		// 			fillOpacity: 1,
+		// 			color: "#0f0"
+		// 		};
+		// 	},
+		// 	getPopup: (idx) => {
+		// 		return `green ${idx}`;
+		// 	}
+		// });
 
 		["fi", "en", "sv"].forEach(lang => {
 			document.getElementById(lang).addEventListener("click", () => map.setLang(lang));

@@ -1,8 +1,8 @@
 import * as L from "leaflet";
-import LajiMap from "../map";
+import LajiMap, { computeOpacities } from "../map";
 import * as noUiSlider from "nouislider";
-import { TileLayerOptions } from "../map.defs";
 import { capitalizeFirstLetter } from "../utils";
+import { Data } from "../map.defs";
 
 const LayerControl = L.Control.extend({
 	options: L.Control.Layers.prototype.options,
@@ -13,6 +13,7 @@ const LayerControl = L.Control.extend({
 	onAdd(map: L.Map) {
 		this._map = map;
 		this.__checkDisabledLayers = () => this._checkDisabledLayers();
+		this.dataLayersByName = {};
 		map.on("moveend", this.__checkDisabledLayers);
 
 		/* Code below copied from L.Control.Layers._initLayout() with some modifications */
@@ -65,6 +66,8 @@ const LayerControl = L.Control.extend({
 		this._map.on("tileLayersChange", this.updateLists, this);
 		this._map.on("tileLayersChange", this.updateActiveProj, this);
 		this._map.on("projectionChange", this.updateActiveProj, this);
+		this._map.on("lajiMap:dataChange", this.updateListContainers, this);
+		this._map.on("lajiMap:dataChange", this.updateLists, this);
 
 		return container;
 	},
@@ -78,13 +81,25 @@ const LayerControl = L.Control.extend({
 		this._map.off("projectionChange", this.updateActiveProj);
 		this._map.off("moveend", this.__checkDisabledLayers);
 	},
-	createListItem(name: string, layerOptions: TileLayerOptions, available: boolean) {
+	createListItem(name: string, available: boolean) {
 		const li = document.createElement("li");
 		li.id = name;
 		li.className = "laji-map-layer-control-layer-item";
 		const checkbox = document.createElement("input");
 		checkbox.type = "checkbox";
-		checkbox.addEventListener("change", () => {
+		checkbox.addEventListener("change", (e) => {
+			// Handle data item.
+			const checked = (e.target as any).checked;
+			const data = this.dataLayersByName[name];
+			if (data) {
+				const opacity = checked ? 1 : 0;
+				this.updateDataOpacity(data, opacity);
+				data.onVisibleChange?.(checked);
+				data.visible = checked;
+				return;
+			}
+
+			// Handle tile layer.
 			const {layers} = this.lajiMap._tileLayers;
 			const _layerOptions = layers[name];
 			const _layer = {...this.lajiMap.tileLayers, ...this.lajiMap.overlaysByNames}[name];
@@ -109,7 +124,11 @@ const LayerControl = L.Control.extend({
 		});
 
 		const label = document.createElement("span");
-		this.translateHooks.push(this.lajiMap.addTranslationHook(label, capitalizeFirstLetter(name)));
+		if (this.dataLayersByName[name]) {
+			label.innerHTML = name;
+		} else {
+			this.translateHooks.push(this.lajiMap.addTranslationHook(label, capitalizeFirstLetter(name)));
+		}
 		li.appendChild(label);
 
 		const checkboxContainer = document.createElement("div");
@@ -136,8 +155,17 @@ const LayerControl = L.Control.extend({
 				firstUpdated = true;
 				return;
 			}
-			if (this.lajiMap._internalTileLayersUpdate) return;
 			const opacity = +slider.get();
+
+			const data = this.dataLayersByName[name];
+			// Handle data item.
+			if (data) {
+				this.updateDataOpacity(data, opacity);
+				return;
+			}
+
+			// Handle tile layer
+			if (this.lajiMap._internalTileLayersUpdate) return;
 			const {layers} = this.lajiMap._tileLayers;
 			const _layerOptions = layers[name];
 			const active = this.lajiMap.finnishTileLayers[name]
@@ -207,6 +235,12 @@ const LayerControl = L.Control.extend({
 			document.removeEventListener("selectstart", disableSelect);
 
 			const opacity = +slider.get();
+
+			if (this.dataLayersByName[name]) {
+				this.updateDataOpacity(this.dataLayersByName[name], opacity);
+				return;
+			}
+
 			const {layers} = this.lajiMap._tileLayers;
 			const _layerOptions = layers[name];
 			if (!opacity && _layerOptions.visible) {
@@ -227,8 +261,20 @@ const LayerControl = L.Control.extend({
 
 		return li;
 	},
+
+	updateDataOpacity(data: Data, opacity: number) {
+		data.groupContainer.eachLayer((l: any) => {
+			l.setStyle({...l.style, ...computeOpacities(opacity)});
+			if (data.cluster) {
+				const visibleParent = (data.groupContainer as any).getVisibleParent(l);
+				visibleParent?.setOpacity(opacity);
+			}
+		});
+		data.opacity = opacity;
+		data.onOpacityChange?.(opacity);
+	},
 	createList(
-		tileLayers: {[name: string]: L.TileLayer[]},
+		layers: {[name: string]: L.TileLayer[]},
 		availableLayers: {[name: string]: L.TileLayer[]},
 		label: string,
 		className?: string
@@ -245,13 +291,9 @@ const LayerControl = L.Control.extend({
 
 		list.appendChild(legend);
 		list.appendChild(innerList);
-		Object.keys(tileLayers).sort((a, b) => this.lajiMap._tileLayerOrder.indexOf(a) - this.lajiMap._tileLayerOrder.indexOf(b)).forEach(name => {
-			innerList.appendChild(this.createListItem(name, this.lajiMap._tileLayers.layers[name], availableLayers[name]));
+		Object.keys(layers).sort((a, b) => this.lajiMap._tileLayerOrder.indexOf(a) - this.lajiMap._tileLayerOrder.indexOf(b)).forEach(name => {
+			innerList.appendChild(this.createListItem(name, availableLayers[name]));
 		});
-		this.layers = {
-			...(this.layers || {}),
-			...tileLayers
-		};
 		return [list, translationHook];
 	},
 	getFinnishList(): [HTMLElement, () => void]  {
@@ -302,7 +344,7 @@ const LayerControl = L.Control.extend({
 		}
 		return [this.worldList, this.worldTranslationHook];
 	},
-	getOverlayList(): HTMLElement {
+	getOverlayList() {
 		const availableLayers = this.lajiMap.getAvailableOverlaysByNames();
 		if (Object.keys(availableLayers).length === 0) {
 			this.overlayList = undefined;
@@ -315,6 +357,18 @@ const LayerControl = L.Control.extend({
 		this.overlayList = overlayList;
 		if (overlayList) {
 			this._section.appendChild(overlayList);
+		}
+	},
+	getDataList() {
+		const data: any[] = [this.lajiMap.getDraw(), ...this.lajiMap.data].filter(d => typeof d?.label === "string");
+		this.dataLayersByName = data.reduce<Record<string, L.LayerGroup>>((byName, d: any) => {
+			byName[d.label] = d;
+			return byName;
+		}, {});
+		const [dataList] = this.createList(this.dataLayersByName, this.dataLayersByName, "LayerControlData", "overlay-list");
+		this.dataList = dataList;
+		if (dataList) {
+			this._section.appendChild(dataList);
 		}
 	},
 	updateLayout() {
@@ -375,15 +429,17 @@ const LayerControl = L.Control.extend({
 		const oldFinnish = this.finnishList;
 		const oldWorld = this.worldList;
 		const oldOverlayList = this.overlayList;
+		const oldDataList = this.dataList;
 		const [finnishList] = this.getFinnishList();
 		const [worldList] = this.getWorldList();
 		const overlayList = this.getOverlayList();
+		const dataList = this.getDataList();
 		const lists = [
 			[oldFinnish, finnishList, "finnish"],
-			[oldWorld, worldList, "world"]
+			[oldWorld, worldList, "world"],
 		];
 
-		[...lists, [oldOverlayList, overlayList]].forEach(([oldList, list]) => {
+		[...lists, [oldOverlayList, overlayList], [oldDataList, dataList]].forEach(([oldList, list]) => {
 			if (oldList && !list) {
 				oldList.parentElement.removeChild(oldList);
 			}
@@ -405,7 +461,7 @@ const LayerControl = L.Control.extend({
 				const worldLayers = this.lajiMap.getAvailableWorldTileLayers();
 				const finnishLayers = this.lajiMap.getAvailableFinnishTileLayers();
 
-				const checkLayer = name => !this.lajiMap._tileLayers.layers[name].visible;
+				const checkLayer = name => !(this.lajiMap._tileLayers.layers[name] || this.dataLayersByName[name]).visible;
 
 				const ensureHasLayersIfProjChanged = (_active, layers) =>
 					active === _active
@@ -421,8 +477,8 @@ const LayerControl = L.Control.extend({
 		});
 	},
 	updateLists() {
-		Object.keys({...this.lajiMap.tileLayers, ...this.lajiMap.overlaysByNames}).forEach(name => {
-			const available = this.lajiMap._tileLayers.layers[name];
+		Object.keys({...this.lajiMap.tileLayers, ...this.lajiMap.overlaysByNames, ...this.dataLayersByName}).forEach(name => {
+			const available = this.lajiMap._tileLayers.layers[name] || this.dataLayersByName[name];
 
 			if (!this.elems[name]) return;
 
@@ -430,7 +486,7 @@ const LayerControl = L.Control.extend({
 
 			if (!available) return;
 
-			const {opacity, visible} = this.lajiMap._tileLayers.layers[name];
+			const {opacity, visible} = this.lajiMap._tileLayers.layers[name] || this.dataLayersByName[name];
 			const {slider, checkbox, li} = this.elems[name];
 			this.lajiMap._internalTileLayersUpdate = true;
 			if (visible) {

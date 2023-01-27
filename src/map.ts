@@ -203,7 +203,7 @@ export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLa
 	return layer instanceof L.LayerGroup;
 }
 
-export const computeOpacities = (visible: boolean, opacity: number, maxFillOpacity = 0.4) => {
+const computeOpacities = (visible: boolean, opacity: number, maxFillOpacity = 0.4) => {
 	return {opacity: visible ? opacity : 0, fillOpacity: visible ? (maxFillOpacity * opacity) : 0 };
 };
 

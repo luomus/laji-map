@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import LajiMap, { computeOpacities } from "../map";
+import LajiMap from "../map";
 import * as noUiSlider from "nouislider";
 import { capitalizeFirstLetter } from "../utils";
 import { Data } from "../map.defs";

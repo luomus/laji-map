@@ -265,7 +265,7 @@ const LayerControl = L.Control.extend({
 
 	updateDataOpacity(data: Data, opacity: number) {
 		data.groupContainer.eachLayer((l: any) => {
-			l.setStyle({...l.style, ...computeOpacities(opacity)});
+			l.setStyle({...l._initStyle, ...computeOpacities(opacity, data.maxFillOpacity)});
 			if (data.cluster) {
 				const visibleParent = (data.groupContainer as any).getVisibleParent(l);
 				visibleParent?.setOpacity(opacity);

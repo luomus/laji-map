@@ -81,6 +81,7 @@ highlightOnHover                                                                
 single                                                                                      | Boolean                           | false                               | Allows only a single feature on the data. Adding new feature removes all other features.
 showMeasurements                                                                            | Boolean \| {showOnHover: boolean} | false                               | Shows feature measurements.
 opacity                                                                                     | number (0 - 1)                    | 1                                   | Opacity of the data.
+maxFillOpacity                                                                              | number (0 - 1)                    | 0.4                                 | Max fill opacity (for polygons & circles) that the layer control can adjust the opacity to.
 visible                                                                                     | Boolean                           | true                                | Whether the data is visible.
 onOpacityChange                                                                             | Function                          | -                                   | Callback for opacity change
 onVisibleChange                                                                             | Function                          | -                                   | Whether the data is visible.

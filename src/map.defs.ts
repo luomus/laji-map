@@ -104,10 +104,12 @@ export interface DataOptions {
 	polyline?: boolean;
 	circle?: boolean;
 	marker?: boolean | MarkerOptions;
+	label?: string;
 	visible?: boolean
 	opacity?: number;
 	onOpacityChange?(opacity: number): void;
 	onVisibleChange?(visible: boolean): void;
+	maxFillOpacity?: number;
 }
 
 export interface MarkerOptions extends DrawOptions.MarkerOptions {

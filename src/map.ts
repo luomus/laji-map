@@ -203,15 +203,9 @@ export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLa
 	return layer instanceof L.LayerGroup;
 }
 
-const defaultDataOpacities = {
-	opacity: 1,
-	fillOpacity: 0.4,
+export const computeOpacities = (opacity: number, maxFillOpacity = 0.4) => {
+	return {opacity: opacity, fillOpacity: maxFillOpacity * opacity};
 };
-export const computeOpacities = (opacity: number) => {
-	const {fillOpacity, opacity: otherOpacity} = defaultDataOpacities;
-	return {opacity: otherOpacity * opacity, fillOpacity: fillOpacity * opacity};
-};
-
 
 export default class LajiMap {
 	googleApiKey: string;
@@ -2207,7 +2201,6 @@ export default class LajiMap {
 
 	getData = () => {
 		const data = [...this.data];
-		delete data[this.drawIdx];
 		return data;
 	}
 
@@ -3589,7 +3582,7 @@ export default class LajiMap {
 		style = {
 			...style,
 			...dataStyles,
-			...computeOpacities(opacity),
+			...computeOpacities(opacity, item.maxFillOpacity),
 			...overrideStyles
 		};
 

@@ -170,7 +170,7 @@ class App {
 			//zoom: 12,
 			zoomToData: {paddingInMeters: 200},
 			//locate: true,
-			tileLayerName: "maastokartta",
+			tileLayerName: "taustakartta",
 			// tileLayers: {
 			// 	layers: {
 			// 		taustakartta: {opacity: 0.5, visible: true},

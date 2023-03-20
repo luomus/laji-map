@@ -448,7 +448,7 @@ export function WKTToGeoJSON(WKT: string): G.FeatureCollection {
 		return line.match(`^${("POINT")}`);
 	}
 
-	WKT = WKT.replace(/^PROJCS.*/, "");
+	WKT = WKT.replace(/^PROJCS.*/m, "");
 	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint);
 }
 

@@ -3598,7 +3598,7 @@ export default class LajiMap {
 			colors.push([`#${r}ff${b}`, 30]);
 		}
 
-		if (!item.hasCustomGetFeatureStyle && hovered) {
+		if (!item.hasCustomGetFeatureStyle && (hovered || this._idxsToContextMenuOpen[dataIdx][featureIdx])) {
 			colors.push(["#ffffff", 30]);
 		}
 
@@ -3607,9 +3607,7 @@ export default class LajiMap {
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
 					let finalColor = undefined;
-					if (
-						this._idxsToContextMenuOpen[dataIdx][featureIdx]
-						|| hovered && (this._onDrawRemove || (this._onDrawReverse && isLine))
+					if (hovered && (this._onDrawRemove || (this._onDrawReverse && isLine))
 					) {
 						finalColor = "#ff0000";
 					} else {

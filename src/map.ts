@@ -1989,7 +1989,7 @@ export default class LajiMap {
 					dataIdx
 				};
 
-				if (idx) {
+				if (idx !== undefined) {
 					event.featureIdx = idx;
 					event.idx = idx; // for bw compatibility
 				}

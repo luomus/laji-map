@@ -331,7 +331,8 @@ export default class LajiMap {
 		"currentProtectedAreas",
 		"plannedProtectedAreas",
 		"flyingSquirrelPredictionModel",
-		"birdAtlasSocietyGridZones"
+		"birdAtlasSocietyGridZones",
+		"barentsRegion",
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -448,7 +449,12 @@ export default class LajiMap {
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
 			viewLocked: false,
-			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset, OverlayName.flyingSquirrelPredictionModel],
+			availableOverlayNameBlacklist: [
+				OverlayName.kiinteistojaotus,
+				OverlayName.kiinteistotunnukset,
+				OverlayName.flyingSquirrelPredictionModel,
+				OverlayName.barentsRegion
+			],
 			googleSearchUrl: "https://proxy.laji.fi/google-geocode/json"
 		};
 
@@ -1035,7 +1041,10 @@ export default class LajiMap {
 					createLajiLayer({
 						layers: "LajiMapData:BirdLifeSocietyLabels",
 					}, true)
-				], {defaultOpacity: 0.5} as any)
+				], {defaultOpacity: 0.5} as any),
+				barentsRegion: createLajiLayer({
+					layers: "LajiMapData:barentsRegion"
+				}),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

@@ -884,5 +884,10 @@ export default {
 		fi: "Puuston ikä 2019 (LUKE)",
 		en: "Age of trees 2019 (LUKE)",
 		sv: "Trädens ålder 2019 (LUKE)",
+	},
+	barentsRegion: {
+		fi: "Barentsin alue",
+		en: "Barents region",
+		sv: "Barentsregionen",
 	}
 };

@@ -1043,7 +1043,7 @@ export default class LajiMap {
 					}, true)
 				], {defaultOpacity: 0.5} as any),
 				barentsRegion: createLajiLayer({
-					layers: "LajiMapData:barentsRegion"
+					layers: "LajiMapData:barentsRegion2"
 				}),
 			};
 

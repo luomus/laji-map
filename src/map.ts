@@ -317,6 +317,7 @@ export default class LajiMap {
 		"googleSatellite",
 		"cgrsGrid",
 		"geobiologicalProvinces",
+		"geobiologicalProvincesBorders",
 		"municipalities",
 		"counties",
 		"ely",
@@ -959,8 +960,11 @@ export default class LajiMap {
 
 			this.overlaysByNames = {
 				geobiologicalProvinces: createLajiLayer({
-					maxZoom: 15,
 					layers: "LajiMapData:biogeographical_provinces",
+					version: "1.3.0"
+				}),
+				geobiologicalProvincesBorders: createLajiLayer({
+					layers: "LajiMapData:biogeographical_provinces_borders",
 					version: "1.3.0"
 				}),
 				municipalities: getTilastokeskusLayer("kunta1000k"),

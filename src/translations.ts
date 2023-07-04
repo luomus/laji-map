@@ -884,5 +884,10 @@ export default {
 		fi: "Puuston ikä 2019 (LUKE)",
 		en: "Age of trees 2019 (LUKE)",
 		sv: "Trädens ålder 2019 (LUKE)",
-	}
+	},
+	geobiologicalProvincesBorders: {
+		fi: "Eliömaakuntien rajat",
+		en: "Borders of biogeographical provinces",
+		sv: "Gränser för biogeografiska provinser"
+	},
 };

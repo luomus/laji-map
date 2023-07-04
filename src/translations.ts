@@ -885,6 +885,11 @@ export default {
 		en: "Age of trees 2019 (LUKE)",
 		sv: "Trädens ålder 2019 (LUKE)",
 	},
+	barentsRegion: {
+		fi: "Barentsin alue",
+		en: "Barents region",
+		sv: "Barentsregionen",
+	},
 	geobiologicalProvincesBorders: {
 		fi: "Eliömaakuntien rajat",
 		en: "Borders of biogeographical provinces",

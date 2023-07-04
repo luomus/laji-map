@@ -175,7 +175,8 @@ export enum OverlayName {
 	currentProtectedAreas = "currentProtectedAreas",
 	plannedProtectedAreas = "plannedProtectedAreas",
 	flyingSquirrelPredictionModel = "flyingSquirrelPredictionModel",
-	birdAtlasSocietyGridZones = "birdAtlasSocietyGridZones"
+	birdAtlasSocietyGridZones = "birdAtlasSocietyGridZones",
+	barentsRegion =  "barentsRegion"
 }
 
 export interface TileLayerOptions {

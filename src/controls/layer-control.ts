@@ -232,6 +232,11 @@ const LayerControl = L.Control.extend({
 		}
 
 		slider.on("start", () => {
+			if (this.dataLayersByName[name]) {
+				if (!checkbox.checked) {
+					checkbox.click();
+				}
+			}
 			document.addEventListener("selectstart", disableSelect);
 		});
 		slider.on("end", () => {

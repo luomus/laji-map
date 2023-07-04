@@ -252,7 +252,8 @@ function fixWgs84Length(coordinateHalf: string, intLength: number, decLength: nu
 	const parts = coordHalfStr.split(".");
 
 	const integerPart = `${"0".repeat(intLength)}${parts[0]}`.slice(-intLength);
-	const decimalPart = `${parts[1]}${"0".repeat(decLength)}`.slice(0, decLength);
+	const decimal = parts[1] || 0;
+	const decimalPart = `${decimal}${"0".repeat(decLength)}`.slice(0, decLength);
 	return `${integerPart}.${decimalPart}`;
 }
 
@@ -447,7 +448,7 @@ export function WKTToGeoJSON(WKT: string): G.FeatureCollection {
 		return line.match(`^${("POINT")}`);
 	}
 
-	WKT = WKT.replace(/^PROJCS.*/, "");
+	WKT = WKT.replace(/^PROJCS.*/m, "");
 	return textualFormatToGeoJSON(WKT, lineToCoordinates, lineIsPolygon, lineIsLineString, lineIsPoint);
 }
 

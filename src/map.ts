@@ -332,7 +332,8 @@ export default class LajiMap {
 		"currentProtectedAreas",
 		"plannedProtectedAreas",
 		"flyingSquirrelPredictionModel",
-		"birdAtlasSocietyGridZones"
+		"birdAtlasSocietyGridZones",
+		"barentsRegion",
 	];
 	viewLocked: boolean;
 	_locateParam: UserLocationOptions | boolean;
@@ -449,7 +450,12 @@ export default class LajiMap {
 			bodyAsDialogRoot: true,
 			clickBeforeZoomAndPan: false,
 			viewLocked: false,
-			availableOverlayNameBlacklist: [OverlayName.kiinteistojaotus, OverlayName.kiinteistotunnukset, OverlayName.flyingSquirrelPredictionModel],
+			availableOverlayNameBlacklist: [
+				OverlayName.kiinteistojaotus,
+				OverlayName.kiinteistotunnukset,
+				OverlayName.flyingSquirrelPredictionModel,
+				OverlayName.barentsRegion
+			],
 			googleSearchUrl: "https://proxy.laji.fi/google-geocode/json"
 		};
 
@@ -1039,7 +1045,10 @@ export default class LajiMap {
 					createLajiLayer({
 						layers: "LajiMapData:BirdLifeSocietyLabels",
 					}, true)
-				], {defaultOpacity: 0.5} as any)
+				], {defaultOpacity: 0.5} as any),
+				barentsRegion: createLajiLayer({
+					layers: "LajiMapData:barentsRegion2"
+				}),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};
@@ -1993,7 +2002,7 @@ export default class LajiMap {
 					dataIdx
 				};
 
-				if (idx) {
+				if (idx !== undefined) {
 					event.featureIdx = idx;
 					event.idx = idx; // for bw compatibility
 				}
@@ -3602,7 +3611,7 @@ export default class LajiMap {
 			colors.push([`#${r}ff${b}`, 30]);
 		}
 
-		if (!item.hasCustomGetFeatureStyle && hovered) {
+		if (!item.hasCustomGetFeatureStyle && (hovered || this._idxsToContextMenuOpen[dataIdx][featureIdx])) {
 			colors.push(["#ffffff", 30]);
 		}
 
@@ -3611,9 +3620,7 @@ export default class LajiMap {
 			["color", "fillColor"].forEach(prop => {
 				if (style[prop]) {
 					let finalColor = undefined;
-					if (
-						this._idxsToContextMenuOpen[dataIdx][featureIdx]
-						|| hovered && (this._onDrawRemove || (this._onDrawReverse && isLine))
+					if (hovered && (this._onDrawRemove || (this._onDrawReverse && isLine))
 					) {
 						finalColor = "#ff0000";
 					} else {

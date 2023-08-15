@@ -889,5 +889,10 @@ export default {
 		fi: "Barentsin alue",
 		en: "Barents region",
 		sv: "Barentsregionen",
-	}
+	},
+	geobiologicalProvincesBorders: {
+		fi: "Eliömaakuntien rajat",
+		en: "Borders of biogeographical provinces",
+		sv: "Gränser för biogeografiska provinser"
+	},
 };

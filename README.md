@@ -194,6 +194,7 @@ googleSatellite
 afeGrid
 cgrsGrid
 geobiologicalProvinces
+geobiologicalProvincesBorders
 municipalities
 counties
 ely

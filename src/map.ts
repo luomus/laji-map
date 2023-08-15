@@ -972,39 +972,30 @@ export default class LajiMap {
 				municipalities: getTilastokeskusLayer("kunta1000k"),
 				counties: getTilastokeskusLayer( "maakunta1000k"),
 				ely: getTilastokeskusLayer( "ely1000k"),
-				forestVegetationZones: L.tileLayer.wms(
-					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-						maxZoom: 15,
-						layers: "br.Metsakasvillisuusvyohykkeet",
-						format: "image/png",
-						transparent: true,
-						version: "1.3.0",
-						defaultOpacity: 0.5,
-						attribution: sykeAttribution
-					}),
-				mireVegetationZones: L.tileLayer.wms(
-					"https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer", {
-						maxZoom: 15,
-						layers: "br.Suokasvillisuusvyohykkeet",
-						format: "image/png",
-						transparent: true,
-						version: "1.3.0",
-						defaultOpacity: 0.5,
-						attribution: sykeAttribution
-					}),
+				// eslint-disable-next-line max-len
+				forestVegetationZones: createLayer("https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer")({
+					layers: "br.Metsakasvillisuusvyohykkeet",
+					defaultOpacity: 0.5,
+					attribution: sykeAttribution
+				}),
+				// eslint-disable-next-line max-len
+				mireVegetationZones: createLayer("https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer")({
+					layers: "br.Suokasvillisuusvyohykkeet",
+					defaultOpacity: 0.5,
+					attribution: sykeAttribution
+				}),
 				threatenedSpeciesEvaluationZones: createLajiLayer({
 					layers: "LajiMapData:threatened_species_evaluation_zones",
 					version: "1.1.0",
 					defaultOpacity: 0.5,
 					attribution: sykeAttribution
 				}),
-				biodiversityForestZones: L.tileLayer.wms(
-					"https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer", { // eslint-disable-line max-len
-						maxZoom: 15,
-						layers: "8",
-						defaultOpacity: 0.5,
-						attribution: sykeAttribution
-					}),
+				// eslint-disable-next-line max-len
+				biodiversityForestZones: createLayer("https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer")({
+					layers: "8",
+					defaultOpacity: 0.5,
+					attribution: sykeAttribution
+				}),
 				habitat: createLayer("https://kartta.luke.fi/geoserver/ows")({
 					layers: "MVMI:kasvupaikka_1519",
 					defaultOpacity: 0.5,
@@ -1017,10 +1008,27 @@ export default class LajiMap {
 				}),
 				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
-				currentProtectedAreas: createLajiLayer({
-					layers: "ProtectedAreas:currentProtectedAreas",
-					defaultOpacity: 0.5,
-				}, true),
+				currentProtectedAreas: L.layerGroup([
+					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/inspire_ps/wms")({
+						layers: [
+							"PS.ProtectedSitesValtionOmistamaLuonnonsuojelualue",
+							"PS.ProtectedSitesYksityistenMaillaOlevaLuonnonsuojelualue",
+							"PS.ProtectedSitesEramaaAlue",
+							"PS.ProtectedSitesProposedSiteOfCommunityImportance",
+							"PS.ProtectedSitesSpecialAreaOfConservation",
+							"PS.ProtectedSitesSpecialProtectionArea"
+
+						].join(","),
+						attribution: sykeAttribution
+					}),
+					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_luonnonsuojeluohjelma_alueet/wms")({
+						layers: "syke_luonnonsuojeluohjelma_alueet:Luonnonsuojeluohjelmaalueet",
+						attribution: sykeAttribution
+					}),
+					createLajiLayer({
+						layers: "ProtectedAreas:protectedArea_labels",
+					}, true)
+				], {defaultOpacity: 0.5} as any),
 				plannedProtectedAreas: createLajiLayer({
 					layers: "ProtectedAreas:plannedProtectedAreas",
 				}, true),

@@ -1023,11 +1023,20 @@ export default class LajiMap {
 							"PS.ProtectedSitesSpecialProtectionArea"
 
 						].join(","),
-						attribution: sykeAttribution
+						attribution: sykeAttribution,
+						styles: [
+							"PS.ValtionMaidenSuojelualueet.Luokiteltu",
+							"PS.YksityisetSuojelualueet.Luokiteltu",
+							"PS.EramaaAlueet",
+							"PS.Natura2000SCI",
+							"PS.Natura2000SAC",
+							"PS.Natura2000SPA"
+						].join(",")
 					}),
 					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_luonnonsuojeluohjelma_alueet/wms")({
 						layers: "syke_luonnonsuojeluohjelma_alueet:Luonnonsuojeluohjelmaalueet",
-						attribution: sykeAttribution
+						attribution: sykeAttribution,
+						styles: "lsohjelma_alueet_luokiteltu"
 					}),
 					createLajiLayer({
 						layers: "ProtectedAreas:protectedArea_labels",

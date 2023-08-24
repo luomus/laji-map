@@ -1043,7 +1043,7 @@ export default class LajiMap {
 					}, true)
 				], {defaultOpacity: 0.5} as any),
 				plannedProtectedAreas: createLajiLayer({
-					layers: "ProtectedAreas:plannedProtectedAreas",
+					layers: "ProtectedAreas:otherProtectedAreas",
 				}, true),
 				flyingSquirrelPredictionModel: createLajiLayer({
 					layers: "LajiMapData:flyingSquirrel_predictionModel",

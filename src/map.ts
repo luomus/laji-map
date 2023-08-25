@@ -1033,18 +1033,20 @@ export default class LajiMap {
 							"PS.Natura2000SPA"
 						].join(",")
 					}),
-					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_luonnonsuojeluohjelma_alueet/wms")({
-						layers: "syke_luonnonsuojeluohjelma_alueet:Luonnonsuojeluohjelmaalueet",
-						attribution: sykeAttribution,
-						styles: "lsohjelma_alueet_luokiteltu"
-					}),
 					createLajiLayer({
 						layers: "ProtectedAreas:protectedArea_labels",
 					}, true)
 				], {defaultOpacity: 0.5} as any),
-				plannedProtectedAreas: createLajiLayer({
-					layers: "ProtectedAreas:otherProtectedAreas",
-				}, true),
+				plannedProtectedAreas: L.layerGroup([
+					createLajiLayer({
+						layers: "ProtectedAreas:otherProtectedAreas",
+					}, true),
+					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_luonnonsuojeluohjelma_alueet/wms")({
+						layers: "syke_luonnonsuojeluohjelma_alueet:Luonnonsuojeluohjelmaalueet",
+						attribution: sykeAttribution,
+						styles: "lsohjelma_alueet_luokiteltu"
+					})
+				], {defaultOpacity: 0.5} as any),
 				flyingSquirrelPredictionModel: createLajiLayer({
 					layers: "LajiMapData:flyingSquirrel_predictionModel",
 					defaultOpacity: 0.5

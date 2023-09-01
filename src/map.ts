@@ -92,12 +92,14 @@ const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
 	_initIcon() {
 		_initIcon.call(this);
+		// Order of init and setStyle() not guaranteed, so we use the stored _initStyle if setStyle() has ran before.
 		if (this._initStyle) {
 			this.setStyle(this._initStyle);
 		}
 	},
 
 	setStyle(style: L.PathOptions) {
+		this.__storedStyle = style;
 		if (!this._icon) {
 			this._initStyle = style;
 			return;
@@ -106,11 +108,18 @@ L.Marker.include({
 			// eslint-disable-next-line max-len
 			console.warn("[laji-map warning] Seems like you are using a customized marker icon. You should implement 'setStyle({color, opacity})' for it if you wish it to work with the coloring & other styling that laji-map provides.");
 		} else {
-			this.options.icon.setStyle(this._icon, style);
+			if (this.setStyle !== this.options.icon.setStyle) {
+				this.options.icon.setStyle(this._icon, style);
+			}
 		}
 		if (this._shadow && style.hasOwnProperty("opacity")) {
 			this._shadow.style.opacity = style.opacity;
 		}
+	},
+	// Take control of opacity setting so that it's handled by the icon setStyle() (called by this.setStyle()) instead of
+	// messing up with the DOM straight by Leaflet.
+	setOpacity(opacity) {
+		this.setStyle({...this.__storedStyle, opacity});
 	},
 });
 

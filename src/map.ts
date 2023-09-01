@@ -134,10 +134,10 @@ L.VectorMarkers.Icon.include({
 			return;
 		}
 		iconDomElem.firstChild.firstChild.style.fill = style.color;
-		iconDomElem.firstChild.firstChild.style.opacity = style.opacity ?? 1;
+		iconDomElem.style.opacity = style.opacity ?? 1;
 	}
 });
-
+//
 // Remove tabindex from markers https://github.com/Leaflet/Leaflet/issues/3472#issuecomment-103058457
 L.Marker.addInitHook(function () {
 	this.options.keyboard = false;
@@ -3157,6 +3157,7 @@ export default class LajiMap {
 	_onAdd(dataIdx: number, layer: DataItemLayer, coordinateVerbatim?: string) {
 		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
 
+
 		const prevActiveIdx = this.data[dataIdx].activeIdx;
 
 		let item = this.data[dataIdx];
@@ -3465,6 +3466,7 @@ export default class LajiMap {
 		if (!layer) return;
 
 		layer.setStyle(style);
+		(layer as any)._initStyle = style; // Fixes style when clustered layer unspiderfies.
 		if ((<any> layer)._startCircle) (<any> layer)._startCircle.setStyle(this._getStartCircleStyle(layer));
 	}
 

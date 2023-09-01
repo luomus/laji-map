@@ -279,12 +279,14 @@ const LayerControl = L.Control.extend({
 			data.onVisibleChange?.(true);
 		}
 		data.groupContainer.eachLayer((l: any) => {
-			l.setStyle(this.lajiMap._getStyleForLayer(l));
-			if (data.cluster) {
-				const visibleParent = (data.groupContainer as any).getVisibleParent(l);
-				visibleParent?.setOpacity(visible ? opacity : 0);
-			}
+			l.options.opacity = opacity;
+			l.options.opacityHack = opacity;
+			const style = this.lajiMap._getStyleForLayer(l);
+			l.setStyle(style);
 		});
+		if (data.cluster) {
+			(data.groupContainer as any).refreshClusters();
+		}
 	},
 	createList(
 		layers: {[name: string]: L.TileLayer[]},

@@ -279,8 +279,6 @@ const LayerControl = L.Control.extend({
 			data.onVisibleChange?.(true);
 		}
 		data.groupContainer.eachLayer((l: any) => {
-			l.options.opacity = opacity;
-			l.options.opacityHack = opacity;
 			const style = this.lajiMap._getStyleForLayer(l);
 			l.setStyle(style);
 		});

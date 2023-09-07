@@ -88,7 +88,16 @@ class GoogleProvider extends _GoogleProvider {
 
 // Patch L.Marker to have `setStyle()` so it works the same as all the other rendered features (polygon, polyline etc).
 // If icons are customized, they should have a `setStyle()` implementation.
+const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
+	_initIcon() {
+		_initIcon.call(this);
+		// Order of init and setStyle() not guaranteed, so we use the stored _initStyle if setStyle() has ran before.
+		if (this._initStyle) {
+			this.setStyle(this._initStyle);
+		}
+	},
+
 	setStyle(style: L.PathOptions) {
 		if (!this._icon) {
 			this._initStyle = style;

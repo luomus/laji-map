@@ -241,24 +241,6 @@ const LayerControl = L.Control.extend({
 		});
 		slider.on("end", () => {
 			document.removeEventListener("selectstart", disableSelect);
-
-			const opacity = +slider.get();
-
-			if (this.dataLayersByName[name]) {
-				this.updateDataOpacity(this.dataLayersByName[name], opacity);
-				return;
-			}
-
-			const {layers} = this.lajiMap._tileLayers;
-			const _layerOptions = layers[name];
-			if (!opacity && _layerOptions.visible) {
-				this.lajiMap.setTileLayers({
-					...this.lajiMap._tileLayers,
-					layers: {
-						...layers, [name]: {..._layerOptions, visible: false}
-					}
-				});
-			}
 		});
 
 		this.elems[name] = {li, slider, checkbox};

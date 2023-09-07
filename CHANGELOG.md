@@ -1,3 +1,7 @@
+## 3.22.0
+* `maxFillOpacity` can be controlled per layer type
+* Add `controlFillOpacity` option
+
 ## 3.19.0
 * Add `maxFillOpacity` to data options
 

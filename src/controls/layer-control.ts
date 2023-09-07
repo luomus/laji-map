@@ -287,6 +287,7 @@ const LayerControl = L.Control.extend({
 				l.options.opacity = opacity; // The cluster plugin checks the opacity from the options when a cluster unspiderfies.
 			}
 			const style = this.lajiMap._getStyleForLayer(l);
+			(l as any)._initStyle = style; // Fixes style when layer is shown as spiderfied (has spider legs) and opacity is edited and the layer clusters and unclusters.
 			l.setStyle(style);
 		});
 		if (data.cluster) {

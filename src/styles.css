@@ -667,43 +667,4 @@ li.laji-map-layer-control-layer-item.active span {
 	z-index: -1;
 }
 
-.coordinate-accuracy-1 {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border: 1px solid hsl(204deg,10%,50%)
-}
 
-
-.coordinate-accuracy-3 {
-	border: 3px dashed hsl(204deg, 15%, 30%);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 30px !important;
-	width: 30px !important;
-	border-radius: 100% !important;
-}
-
-/* .coordinate-accuracy-cluster { */
-/*   display: flex; */
-/*   justify-content: center; */
-/*   align-items: center; */
-/*   height: 30px !important; */
-/*   width: 30px !important; */
-/*   border-radius: 100% !important; */
-/*   box-shadow: 1px 0 4px 0 rgba(#000, .6); */
-/*   height: 26px !important; */
-/*   width: 26px !important; */
-/*   border-radius: 0 !important; */
-/* } */
-/*  */
-/* .leaflet-marker-icon { */
-/*     border: 1px solid hsl(204deg, 10%, 50%); */
-/*     display: flex; */
-/*     justify-content: center; */
-/*     align-items: center; */
-/*     height: 30px !important; */
-/*     width: 30px !important; */
-/*     border-radius: 100% !important; */
-/* } */

@@ -88,18 +88,8 @@ class GoogleProvider extends _GoogleProvider {
 
 // Patch L.Marker to have `setStyle()` so it works the same as all the other rendered features (polygon, polyline etc).
 // If icons are customized, they should have a `setStyle()` implementation.
-const _initIcon = (L.Marker.prototype as any)._initIcon;
 L.Marker.include({
-	_initIcon() {
-		_initIcon.call(this);
-		// Order of init and setStyle() not guaranteed, so we use the stored _initStyle if setStyle() has ran before.
-		if (this._initStyle) {
-			this.setStyle(this._initStyle);
-		}
-	},
-
 	setStyle(style: L.PathOptions) {
-		this.__storedStyle = style;
 		if (!this._icon) {
 			this._initStyle = style;
 			return;
@@ -115,11 +105,6 @@ L.Marker.include({
 		if (this._shadow && style.hasOwnProperty("opacity")) {
 			this._shadow.style.opacity = style.opacity;
 		}
-	},
-	// Take control of opacity setting so that it's handled by the icon setStyle() (called by this.setStyle()) instead of
-	// messing up with the DOM straight by Leaflet.
-	setOpacity(opacity) {
-		this.setStyle({...this.__storedStyle, opacity});
 	},
 });
 
@@ -212,8 +197,15 @@ export function isMultiTileLayer(layer: L.Layer): layer is L.LayerGroup<L.TileLa
 	return layer instanceof L.LayerGroup;
 }
 
-const computeOpacities = (visible: boolean, opacity: number, maxFillOpacity = 0.4) => {
-	return {opacity: visible ? opacity : 0, fillOpacity: visible ? (maxFillOpacity * opacity) : 0 };
+const computeOpacities = (visible: boolean, opacity: number, controlFillOpacity: boolean, maxFillOpacity = 0.4) => {
+	if (controlFillOpacity) {
+		const style: L.PathOptions = { fillOpacity: visible ? (maxFillOpacity * opacity) : 0 };
+		if (!visible) {
+			style.opacity = 0;
+		}
+		return style;
+	}
+	return { opacity: visible ? opacity : 0, fillOpacity: visible ? (maxFillOpacity * opacity) : 0 };
 };
 
 export default class LajiMap {
@@ -3622,10 +3614,11 @@ export default class LajiMap {
 		if (isLine) {
 			style.weight = 10;
 		}
+		const maxFillOpacity = getMaxFillOpacity(item, layer);
 		style = {
 			...style,
 			...dataStyles,
-			...computeOpacities(item.visible, opacity, item.maxFillOpacity),
+			...computeOpacities(item.visible, opacity, controlFillOpacity(item, layer), maxFillOpacity),
 			...overrideStyles
 		};
 
@@ -4048,4 +4041,54 @@ export default class LajiMap {
 		this._fullscreenCloseElem.remove();
 		this.removeTranslationHook(this._fullscreenTranslateHook);
 	}
+}
+
+export function controlFillOpacity(data: DataOptions, l: DataItemLayer): boolean {
+	let useFillOpacity = false;
+	if ("controlFillOpacity" in data) {
+		useFillOpacity = data.controlFillOpacity;
+	} else {
+		if (data.marker && typeof data.marker !== "boolean"
+			&& "controlFillOpacity" in data.marker && l instanceof L.Marker) {
+			useFillOpacity = data.marker.controlFillOpacity;
+		} else if (data.polyline && typeof data.polyline !== "boolean"
+			&& "controlFillOpacity" in data.polyline && isPolyline(l)) {
+			useFillOpacity = data.polyline.controlFillOpacity;
+		} else if (data.rectangle && typeof data.rectangle !== "boolean"
+			&& "controlFillOpacity" in data.rectangle &&  l instanceof L.Rectangle) {
+			useFillOpacity = data.rectangle.controlFillOpacity;
+		} else if (data.polygon && typeof data.polygon !== "boolean"
+			&& "controlFillOpacity" in data.polygon &&  l instanceof L.Polygon) {
+			useFillOpacity = data.polygon.controlFillOpacity;
+		} else if (data.circle && typeof data.circle !== "boolean"
+			&& "controlFillOpacity" in data.circle &&  l instanceof L.Circle) {
+			useFillOpacity = data.circle.controlFillOpacity;
+		}
+	}
+	return useFillOpacity;
+}
+
+export function getMaxFillOpacity(data: DataOptions, l: DataItemLayer): number {
+	if (data.marker && typeof data.marker !== "boolean"
+		&& "maxFillOpacity" in data.marker && l instanceof L.Marker) {
+		return data.marker.maxFillOpacity;
+	} else if (data.polyline && typeof data.polyline !== "boolean"
+		&& "maxFillOpacity" in data.polyline && isPolyline(l)) {
+		return data.polyline.maxFillOpacity;
+	} else if (data.rectangle && typeof data.rectangle !== "boolean"
+		&& "maxFillOpacity" in data.rectangle &&  l instanceof L.Rectangle) {
+		return data.rectangle.maxFillOpacity;
+	} else if (data.polygon && typeof data.polygon !== "boolean"
+		&& "maxFillOpacity" in data.polygon &&  l instanceof L.Polygon) {
+		return data.polygon.maxFillOpacity;
+	} else if (data.circle && typeof data.circle !== "boolean"
+		&& "maxFillOpacity" in data.circle &&  l instanceof L.Circle) {
+		return data.circle.maxFillOpacity;
+	}
+
+
+	if (l instanceof L.Marker) {
+		return 1;
+	}
+	return 0.4;
 }

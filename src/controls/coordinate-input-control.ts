@@ -90,7 +90,7 @@ export default (lajiMap: LajiMap & WithControls) => {
 	} = lajiMap.createFormatDetectorElem({
 		displayFormat: false,
 		displayOnlyGeoJSONErrors: true,
-		allowGrid: rectangle || polygon,
+		allowGrid: !!rectangle || !!polygon,
 		point: !!marker
 	});
 

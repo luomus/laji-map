@@ -1071,7 +1071,7 @@ export function createTextArea(rows = 10, cols = 10): HTMLTextAreaElement {
 	return input;
 }
 
-export function isObject(obj): boolean {
+export function isObject(obj: any): obj is Record<string, unknown> {
 	return typeof obj === "object" && obj !== null && !Array.isArray(obj) && obj.constructor === Object;
 }
 

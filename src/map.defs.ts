@@ -80,6 +80,11 @@ export type DataWrappedLeafletEvent = (
 		data: DataWrappedLeafletEventData
 	) => void;
 
+interface LayerTypeOpacityControlOptions {
+	maxFillOpacity?: number;
+	controlFillOpacity?: boolean;
+}
+
 export interface DataOptions {
 	featureCollection?: G.FeatureCollection;
 	geoData?: G.GeoJSON | string;
@@ -99,17 +104,19 @@ export interface DataOptions {
 	getPopup?(options: GetPopupOptions, callback: (content: string | HTMLElement) => void): string;
 	single?: boolean;
 	showMeasurements?: boolean | ShowMeasurementsOptions;
-	rectangle?: boolean;
-	polygon?: boolean;
-	polyline?: boolean;
-	circle?: boolean;
-	marker?: boolean | MarkerOptions;
+	rectangle?: boolean | LayerTypeOpacityControlOptions;
+	polygon?: boolean | LayerTypeOpacityControlOptions;
+	polyline?: boolean | (CustomPolylineOptions & LayerTypeOpacityControlOptions);
+	circle?: boolean | LayerTypeOpacityControlOptions;
+	marker?: boolean | (MarkerOptions & LayerTypeOpacityControlOptions);
 	label?: string;
 	visible?: boolean
 	opacity?: number;
+	fillOpacity?: number;
 	onOpacityChange?(opacity: number): void;
 	onVisibleChange?(visible: boolean): void;
 	maxFillOpacity?: number;
+	controlFillOpacity?: boolean;
 }
 
 export interface MarkerOptions extends DrawOptions.MarkerOptions {

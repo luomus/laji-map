@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import LajiMap from "../map";
+import LajiMap, { controlFillOpacity } from "../map";
 import * as noUiSlider from "nouislider";
 import { capitalizeFirstLetter } from "../utils";
 import { Data } from "../map.defs";
@@ -279,6 +279,13 @@ const LayerControl = L.Control.extend({
 			data.onVisibleChange?.(true);
 		}
 		data.groupContainer.eachLayer((l: any) => {
+			const useFillOpacity = controlFillOpacity(data, l);
+
+			if (useFillOpacity) {
+				l.options.fillOpacity = opacity; // The cluster plugin checks the opacity from the options when a cluster unspiderfies.
+			} else {
+				l.options.opacity = opacity; // The cluster plugin checks the opacity from the options when a cluster unspiderfies.
+			}
 			const style = this.lajiMap._getStyleForLayer(l);
 			l.setStyle(style);
 		});

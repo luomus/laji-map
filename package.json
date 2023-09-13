@@ -66,7 +66,7 @@
     "@types/leaflet.markercluster": "^1.5.1",
     "@types/node": "^8.10.52",
     "@types/proj4leaflet": "*",
-    "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#c3603634c579aa5e665d7ba4b9440996e9bb4948",
+    "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#7c0e1a8717ef728bbd79c27fe88f9e6e3def0e31",
     "leaflet": "1.8.0",
     "leaflet-contextmenu": "1.4.0",
     "leaflet-draw": "git+https://git@github.com/luomus/Leaflet.draw.git#19ab897a08d15a44213e53d486e2611c50f8c8ba",

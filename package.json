@@ -6,6 +6,7 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "prepare": "self-import",
+    "postinstall": "patch-package",
     "start": "npx webpack serve",
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
@@ -46,6 +47,7 @@
     "jasmine-spec-reporter": "^4.2.1",
     "json-loader": "^0.5.7",
     "mini-css-extract-plugin": "^1.6.2",
+    "patch-package": "^8.0.0",
     "protractor": "^7.0.0",
     "protractor-console-plugin": "^0.1.1",
     "rimraf": "2.5.4",

@@ -84,5 +84,8 @@
   "resolutions": {
     "proj4": "2.3.16",
     "leaflet-textpath": "git+https://git@github.com/olzraiti/Leaflet.textPath.git#61b77ff750be090f748208532aa5a5137862b541"
+  },
+  "volta": {
+    "node": "14.21.3"
   }
 }

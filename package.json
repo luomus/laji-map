@@ -1,6 +1,6 @@
 {
   "name": "@luomus/laji-map",
-  "version": "3.22.6",
+  "version": "3.22.7",
   "description": "A map with drawing functionality",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -85,8 +85,8 @@
   },
   "volta": {
     "node": "14.21.3"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

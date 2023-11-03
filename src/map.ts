@@ -1,6 +1,6 @@
 import * as L from "leaflet";
 import * as G from "geojson";
-import "leaflet-draw";
+import "@luomus/leaflet-draw";
 import "proj4leaflet";
 import "@luomus/leaflet.vector-markers";
 import "leaflet.markercluster";

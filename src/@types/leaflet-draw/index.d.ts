@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import "leaflet-draw";
+import "@luomus/leaflet-draw";
 
 declare module "leaflet" {
 	interface LeafletEventHandlerFnMap {

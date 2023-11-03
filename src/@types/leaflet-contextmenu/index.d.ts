@@ -47,7 +47,7 @@
 //		interface ItemOptions extends ContextmenuItemOptions {}
 //	}
 //}
-import "leaflet-draw";
+import "@luomus/leaflet-draw";
 
 declare module "leaflet" {
 	interface LeafletEventHandlerFnMap {

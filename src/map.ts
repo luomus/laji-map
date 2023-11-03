@@ -2,7 +2,7 @@ import * as L from "leaflet";
 import * as G from "geojson";
 import "leaflet-draw";
 import "proj4leaflet";
-import "Leaflet.vector-markers";
+import "@luomus/leaflet.vector-markers";
 import "leaflet.markercluster";
 import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet.smoothwheelzoom";

@@ -62,13 +62,13 @@
     "webpack-dev-server": "^4.2.1"
   },
   "dependencies": {
+    "@luomus/leaflet.vector-markers": "0.0.6",
     "@types/geojson": "*",
     "@types/leaflet": "^1.7.11",
     "@types/leaflet-draw": "*",
     "@types/leaflet.markercluster": "^1.5.1",
     "@types/node": "^8.10.52",
     "@types/proj4leaflet": "*",
-    "Leaflet.vector-markers": "git+https://git@github.com/olzraiti/Leaflet.vector-markers.git#d8e8bd0893c566ad43aa3f582d8287905de000c8",
     "leaflet": "1.8.0",
     "leaflet-contextmenu": "1.4.0",
     "leaflet-draw": "git+https://git@github.com/luomus/Leaflet.draw.git#19ab897a08d15a44213e53d486e2611c50f8c8ba",

@@ -2,7 +2,7 @@
 require("leaflet/dist/leaflet.css");
 require("leaflet-draw/dist/leaflet.draw.css");
 require("leaflet-contextmenu/dist/leaflet.contextmenu.css");
-require("Leaflet.vector-markers/dist/leaflet-vector-markers.css");
+require("@luomus/leaflet.vector-markers/dist/leaflet-vector-markers.css");
 require("leaflet.markercluster/dist/MarkerCluster.Default.css");
 require("leaflet.markercluster/dist/MarkerCluster.css");
 require("leaflet-geosearch/assets/css/leaflet.css");

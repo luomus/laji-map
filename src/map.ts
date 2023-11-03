@@ -8,7 +8,7 @@ import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
 import "leaflet-textpath";
-import "leaflet-measure-path";
+import "@luomus/leaflet-measure-path";
 import * as NonTiledLayer from "leaflet.nontiledlayer";
 import { Provider, ProviderOptions } from "leaflet-geosearch/lib/providers/provider";
 import { GoogleProvider as _GoogleProvider } from "leaflet-geosearch";

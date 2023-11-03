@@ -9,4 +9,4 @@ require("leaflet-geosearch/assets/css/leaflet.css");
 require("nouislider/distribute/nouislider.min.css");
 require("./lib/Leaflet.rrose/leaflet.rrose.css");
 require("./styles.css");
-require("leaflet-measure-path/leaflet-measure-path.css");
+require("@luomus/leaflet-measure-path/leaflet-measure-path.css");

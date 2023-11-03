@@ -1,7 +1,7 @@
 const {HOST, PORT, VERBOSE, DELAY} = process.env;
 import { browser, $, $$, by } from "protractor";
-import * as utils from "laji-map/lib/utils";
-import { Options } from "laji-map/lib/map.defs";
+import * as utils from "@luomus/laji-map/lib/utils";
+import { Options } from "@luomus/laji-map/lib/map.defs";
 import G from "geojson";
 
 const joinParams = (params: Record<string, unknown>) =>

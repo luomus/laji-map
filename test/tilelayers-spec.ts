@@ -1,5 +1,4 @@
 import { createMap } from "./test-utils";
-import translations from "laji-map/lib/translations";
 
 let map;
 describe("Initializing", () => {

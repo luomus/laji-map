@@ -1,6 +1,6 @@
 import { createMap, ykjToWgs84, etrsToWgs84 } from "./test-utils";
-import { reverseCoordinate } from "laji-map/lib/utils";
-import { EPSG2393String } from "laji-map/lib/globals";
+import { reverseCoordinate } from "@luomus/laji-map/lib/utils";
+import { EPSG2393String } from "@luomus/laji-map/lib/globals";
 
 describe("Draw upload control", () => {
 

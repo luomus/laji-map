@@ -1,4 +1,4 @@
-import * as utils from "laji-map/lib/utils";
+import * as utils from "@luomus/laji-map/lib/utils";
 
 describe("convertLatLlng()", () => {
 	it("convert ykj to wgs84 correct", () => {

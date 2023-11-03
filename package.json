@@ -1,12 +1,12 @@
 {
-  "name": "laji-map",
+  "name": "@luomus/laji-map",
   "version": "3.22.6",
   "description": "A map with drawing functionality",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
     "prepare": "self-import",
-    "postinstall": "patch-package",
+    "patch": "patch-package",
     "start": "npx webpack serve",
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
@@ -85,5 +85,8 @@
   },
   "volta": {
     "node": "14.21.3"
-  }
+	},
+	"publishConfig": {
+		"access": "public"
+	}
 }

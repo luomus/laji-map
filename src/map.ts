@@ -7,7 +7,7 @@ import "leaflet.markercluster";
 import "./lib/Leaflet.rrose/leaflet.rrose-src";
 import "leaflet.smoothwheelzoom";
 import "leaflet-contextmenu";
-import "leaflet-textpath";
+import "@luomus/leaflet-textpath";
 import "@luomus/leaflet-measure-path";
 import * as NonTiledLayer from "leaflet.nontiledlayer";
 import { Provider, ProviderOptions } from "leaflet-geosearch/lib/providers/provider";

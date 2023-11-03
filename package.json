@@ -83,9 +83,6 @@
     "proj4": "2.3.16",
     "proj4leaflet": "1.0.2"
   },
-  "resolutions": {
-    "proj4": "2.3.16"
-  },
   "volta": {
     "node": "14.21.3"
   }

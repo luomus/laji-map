@@ -5,7 +5,7 @@ import "proj4leaflet";
 import "@luomus/leaflet.vector-markers";
 import "leaflet.markercluster";
 import "./lib/Leaflet.rrose/leaflet.rrose-src";
-import "leaflet.smoothwheelzoom";
+import "@luomus/leaflet-smooth-wheel-zoom";
 import "leaflet-contextmenu";
 import "@luomus/leaflet-textpath";
 import "@luomus/leaflet-measure-path";

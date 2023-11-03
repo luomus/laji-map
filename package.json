@@ -64,6 +64,7 @@
   "dependencies": {
     "@luomus/leaflet-draw": "^1.0.2",
     "@luomus/leaflet-measure-path": "^1.5.0",
+    "@luomus/leaflet-smooth-wheel-zoom": "^1.0.0",
     "@luomus/leaflet-textpath": "^1.2.3",
     "@luomus/leaflet.vector-markers": "0.0.6",
     "@types/geojson": "*",
@@ -78,7 +79,6 @@
     "leaflet-geosearch": "~3.6.0",
     "leaflet.markercluster": "^1.5.3",
     "leaflet.nontiledlayer": "^1.0.9",
-    "leaflet.smoothwheelzoom": "git+https://git@github.com/olzraiti/Leaflet.SmoothWheelZoom.git#688a55b325cfcad618952c036636743811d9d01d",
     "nouislider": "13.1.0",
     "proj4": "2.3.16",
     "proj4leaflet": "1.0.2"

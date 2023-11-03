@@ -5,7 +5,7 @@ LajiMap is a configurable map component built on Leaflet. The main focus is on r
 ## Installing ##
 
 ```
-npm install laji-map --save
+npm install @luomus/laji-map --save
 ```
 
 ## Usage ##

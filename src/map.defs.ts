@@ -1,5 +1,5 @@
 import * as G from "geojson";
-import {FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
+import type { FitBoundsOptions, PolylineOptions, MarkerClusterGroupOptions, PathOptions, LeafletEvent, GeoJSON, FeatureGroup,
 	Polygon, Polyline, Marker, Circle, LatLngExpression, LeafletEventHandlerFnMap, DrawOptions, MapOptions, LatLng,
 	ErrorEvent, MarkerCluster } from "leaflet";
 import { ControlOptions, ControlsOptions } from "./controls.defs";

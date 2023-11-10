@@ -1,6 +1,6 @@
 import * as G from "geojson";
-import {IdxTuple} from "./map.defs";
-import {PathOptions, Polyline, CircleMarker, Polygon} from "leaflet";
+import { IdxTuple } from "./map.defs";
+import type { PathOptions, Polyline, CircleMarker, Polygon } from "leaflet";
 
 export interface Options {
 	lineTransect?: LineTransectOptions;

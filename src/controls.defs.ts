@@ -1,4 +1,4 @@
-import { Control } from "leaflet";
+import type { Control } from "leaflet";
 import * as G from "geojson";
 
 export interface ControlOptions {

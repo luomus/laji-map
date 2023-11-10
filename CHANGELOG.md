@@ -1,3 +1,6 @@
+## 3.23.0
+* typings from `*defs.ts` files can be now imported without Leaflet being imported
+
 ## 3.22.0
 * `maxFillOpacity` can be controlled per layer type
 * Add `controlFillOpacity` option

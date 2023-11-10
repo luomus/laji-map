@@ -1,5 +1,5 @@
 import { createMap, DrawControlPageObject, MapPageObject, PointTraveller, SAFE_CLICK_WAIT } from "./test-utils";
-import * as utils from "laji-map/lib/utils";
+import * as utils from "@luomus/laji-map/lib/utils";
 import { $, $$, browser } from "protractor";
 import G from "geojson";
 

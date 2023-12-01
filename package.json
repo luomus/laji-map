@@ -6,7 +6,6 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "prepare": "self-import",
-    "patch": "patch-package",
     "start": "npx webpack serve",
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
@@ -39,7 +38,6 @@
     "eslint": "^7.29.0",
     "json-loader": "^0.5.7",
     "mini-css-extract-plugin": "^1.6.2",
-    "patch-package": "^8.0.0",
     "rimraf": "2.5.4",
     "self-import": "^1.0.1",
     "style-loader": "^3.0.0",

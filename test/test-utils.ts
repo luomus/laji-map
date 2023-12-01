@@ -63,16 +63,14 @@ export class MapPageObject {
 		return this.page.mouse.click(...this.relativeToCenter(x, y));
 	}
 
-	/** Double clicks at a point on page relative to the center of the viewport **/
+	/**
+	 * Double clicks at a point on page relative to the center of the viewport.
+	 *
+	 * WARNING: For some reason clicks three times in headless firefox / webkit.
+	 * **/
 	async doubleClickAt(x: number, y: number) {
-		// await this.mouseMove(x, y);
 		await this.page.mouse.click(...this.relativeToCenter(x, y));
-		// return this.page.mouse.click(...this.relativeToCenter(x, y));
 		return this.page.mouse.dblclick(...this.relativeToCenter(x, y));
-		// await this.mouseMove(x, y);
-		// await browser.sleep(500);
-		// return browser.actions()
-		// 	.doubleClick().perform();
 	}
 
 	async drag([x, y], [x2, y2]) {

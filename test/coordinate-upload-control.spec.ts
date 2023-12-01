@@ -1,12 +1,17 @@
-import { createMap, ykjToWgs84, etrsToWgs84 } from "./test-utils";
+import { test, expect } from "@playwright/test";
+import { createMap, ykjToWgs84, etrsToWgs84, CoordinateUploadControlPageObject, MapPageObject } from "./test-utils";
 import { reverseCoordinate } from "@luomus/laji-map/lib/utils";
 import { EPSG2393String } from "@luomus/laji-map/lib/globals";
 
-describe("Draw upload control", () => {
+test.describe.configure({ mode: "serial" });
 
-	let map, control;
-	beforeAll(async () => {
-		map = await createMap({
+test.describe("Draw upload control", () => {
+
+	let map: MapPageObject;
+	let control: CoordinateUploadControlPageObject;
+	test.beforeAll(async ({browser}) => {
+		const page = await browser.newPage();
+		map = await createMap(page, {
 			draw: true,
 			controls: {
 				draw: {
@@ -31,44 +36,38 @@ describe("Draw upload control", () => {
 		{name: "WKT", latLngToFormat: asWKT}
 	];
 
-	it("opens on click", async () => {
+	test("opens on click", async () => {
 		const $button = control.$getButton();
 		await $button.click();
-		expect(await control.$getContainer().isPresent()).toBe(true);
+		await expect(control.$getContainer()).toBeVisible();
 	});
 
-	it("is disabled when no input", async () => {
+	test("is disabled when no input", async () => {
 		const $submit = control.$getSubmit();
-		expect(await $submit.isEnabled()).toBe(false);
+		await expect($submit).toBeDisabled();
 	});
 
-	it("is disabled with invalid latlng", async () => {
+	test("is disabled with invalid latlng", async () => {
 		const $submit = control.$getSubmit();
 		await control.type("sdfsdf");
-		expect(await $submit.isEnabled()).toBe(false);
+		await expect($submit).toBeDisabled();
 	});
 
-	it("closes on close button click", async () => {
+	test("closes on close button click", async () => {
 		await control.$getCloseButton().click();
-		expect(await control.$getContainer().isPresent()).toBe(false);
+		await expect(control.$getContainer()).not.toBeVisible();
 	});
 
-	describe("accepts", () => {
+	test.describe("accepts", () => {
 
-		beforeEach(async () => {
+		test.beforeEach(async () => {
 			const $button = control.$getButton();
 			await $button.click();
 		});
 
-		afterEach(async () => {
-			if (await control.$getContainer().isPresent()) {
-				await control.$getCloseButton().click();
-			}
-		});
-
 		for (const {name, latLngToFormat} of pointTestsDescriptions) {
-			describe(name, () => {
-				it("WGS84 point", async () => {
+			test.describe(name, () => {
+				test("WGS84 point", async () => {
 					const [lat, lng] = [60, 25];
 					await control.type(latLngToFormat(lat, lng));
 					expect(await control.getCRS()).toBe("WGS84");
@@ -79,7 +78,7 @@ describe("Draw upload control", () => {
 					expect(mapCoordinates[1]).toBe(lat);
 				});
 
-				it("YKJ point", async () => {
+				test("YKJ point", async () => {
 					const [lat, lng] = [6666666, 3333333];
 					const wgs84LatLng = ykjToWgs84([lat, lng]);
 					await control.type(latLngToFormat(lat, lng));
@@ -91,7 +90,7 @@ describe("Draw upload control", () => {
 					expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
 				});
 
-				it("ETRS point", async () => {
+				test("ETRS point", async () => {
 					const [lat, lng] = [6666666, 333333];
 					const wgs84LatLng = etrsToWgs84([lat, lng]);
 					await control.type(latLngToFormat(lat, lng));
@@ -105,7 +104,7 @@ describe("Draw upload control", () => {
 			});
 		}
 
-		it("GeoJSON YKJ point when CRS marked", async () => {
+		test("GeoJSON YKJ point when CRS marked", async () => {
 			const [lat, lng] = [6666666, 3333333];
 			const wgs84LatLng = ykjToWgs84([lat, lng]);
 			const geoJSON = JSON.parse(asGeoJSON(lat, lng));
@@ -124,7 +123,7 @@ describe("Draw upload control", () => {
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
 		});
 
-		it("ISO6709 point with CRS on same line", async () => {
+		test("ISO6709 point with CRS on same line", async () => {
 			const [lat, lng] = [6666666, 333333];
 			const wgs84LatLng = etrsToWgs84([lat, lng]);
 			await control.type(`${asISO6709(lat, lng)}CRSEPSG:3067`);
@@ -136,7 +135,7 @@ describe("Draw upload control", () => {
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
 		});
 
-		it("ISO6709 points with CRS on own line", async () => {
+		test("ISO6709 points with CRS on own line", async () => {
 			const [lat, lng] = [6666666, 333333];
 			const wgs84LatLng = etrsToWgs84([lat, lng]);
 			await control.type(`${asISO6709(lat, lng)}\nCRSEPSG:3067`);

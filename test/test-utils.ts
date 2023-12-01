@@ -1,72 +1,85 @@
-const {HOST, PORT, VERBOSE, DELAY} = process.env;
-import { browser, $, $$, by } from "protractor";
+const { HOST = "localhost", PORT = 4000, VERBOSE, DELAY } = process.env;
+import { Page } from "@playwright/test";
 import * as utils from "@luomus/laji-map/lib/utils";
 import { Options } from "@luomus/laji-map/lib/map.defs";
 import G from "geojson";
 
 const joinParams = (params: Record<string, unknown>) =>
 	Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
-const navigateToMap = async (params = {}) => {
+
+const navigateToMap = async (page: Page, params = {}) => {
 	const url = `http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`;
 	VERBOSE && console.log(url);
-	await browser.get(url);
+	await page.goto(url);
 };
 
-function getControlButton(name: string) {
-	return $(`.button-${name.replace(/\./g, "_")}`);
+function getControlButton(page: Page, name: string) {
+	return page.locator(`.button-${name.replace(/\./g, "_")}`);
 }
 
 export class MapPageObject {
+	private page: Page;
 	options: Options;
 
-	constructor(options = {}) {
+	constructor(page: Page, options = {}) {
+		this.page = page;
 		this.options = options;
 	}
 
 	async initialize() {
-		await navigateToMap(this.options);
+		// await this.page.route("**/*.{png,jpg,jpeg}", route => route.abort()); // Don't load tilelayers, should speed up?
+		await navigateToMap(this.page, this.options);
 		if (DELAY) {
-			await browser.sleep(parseInt(DELAY));
+			await this.page.waitForTimeout(parseInt(DELAY));
 		}
 	}
 
-	e<T>(path: string, ...params: any[]): Promise<T> {
-		return browser.executeScript(`return window.map.${path}`, ...params) as Promise<T>;
+	e<T = any>(path: string, ...params: any[]) {
+		return this.page.evaluate<T>(`window.map.${path}`, ...params);
 	}
 
 	$getElement() {
-		return $(".laji-map");
+		return this.page.locator(".laji-map");
 	}
 
+	/** Moves mouse on page relative to the center of the viewport **/
 	mouseMove(x: number, y: number) {
-		return browser.actions()
-			.mouseMove(this.$getElement().getWebElement(), {x: x + 1, y})
-			.mouseMove(this.$getElement().getWebElement(), {x, y})
-			.perform();
+		return this.page.mouse.move(...this.relativeToCenter(x, y));
 	}
 
+	private relativeToCenter(x: number, y: number): [number, number] {
+		const size = this.page.viewportSize();
+		if (!size) {
+			throw new Error("Couldn't get viewport");
+		}
+		const relativeX = size.width / 2 + x;
+		const relativeY = size.height / 2 + y;
+		return [relativeX, relativeY];
+	}
+
+	/** Clicks at a point on page relative to the center of the viewport **/
 	async clickAt(x: number, y: number) {
 		await this.mouseMove(x, y);
-		return browser.actions()
-			.click().perform();
+		return this.page.mouse.click(...this.relativeToCenter(x, y));
 	}
 
+	/** Double clicks at a point on page relative to the center of the viewport **/
 	async doubleClickAt(x: number, y: number) {
-		await this.mouseMove(x, y);
-		await browser.sleep(500);
-		return browser.actions()
-			.doubleClick().perform();
+		// await this.mouseMove(x, y);
+		await this.page.mouse.click(...this.relativeToCenter(x, y));
+		// return this.page.mouse.click(...this.relativeToCenter(x, y));
+		return this.page.mouse.dblclick(...this.relativeToCenter(x, y));
+		// await this.mouseMove(x, y);
+		// await browser.sleep(500);
+		// return browser.actions()
+		// 	.doubleClick().perform();
 	}
 
 	async drag([x, y], [x2, y2]) {
 		await this.mouseMove(x, y);
-		await browser.actions()
-			.mouseDown()
-			.perform();
+		await this.page.mouse.down();
 		await this.mouseMove(x2, y2);
-		return browser.actions()
-			.mouseUp()
-			.perform();
+		await this.page.mouse.up();
 	}
 
 	async drawMarker(x = 0, y = 0) {
@@ -74,113 +87,166 @@ export class MapPageObject {
 		await this.clickAt(x, y);
 	}
 
+	async drawLine(...lineCoordinates: [number, number][]) {
+		await this.getDrawControl().$getPolylineButton().click();
+		for (const coordinates of lineCoordinates) {
+			await this.clickAt(...coordinates);
+			await this.page.waitForTimeout(SAFE_CLICK_WAIT);
+		}
+		await this.clickAt(...lineCoordinates[lineCoordinates.length - 1]);
+		return this.page.mouse.move(1, 1);
+	}
+
 	async drawRectangle() {
 		await this.getDrawControl().$getRectangleButton().click();
 		await this.drag([0, 0], [10, 10]);
 	}
 
+	async drawPolygon(...polyCoordinates: [number, number][]) {
+		await this.getDrawControl().$getPolygonButton().click();
+		for (const coordinates of polyCoordinates) {
+			await this.clickAt(...coordinates);
+			await this.page.waitForTimeout(SAFE_CLICK_WAIT);
+		}
+		await this.clickAt(...polyCoordinates[0]);
+	}
+
 	getDrawData = () => this.e<G.FeatureCollection>("getDraw().featureCollection");
 
-	getCoordinateInputControl() { return new CoordinateInputControlPageObject(); }
-	getCoordinateUploadControl() { return new CoordinateUploadControlPageObject(); }
-	getCoordinateCopyControl() { return new CoordinateCopyControlPageObject(); }
-	getDrawControl() { return new DrawControlPageObject(); }
-	getTileLayersControl() { return new TilelayersControlPageObject(this); }
-	getDeleteControl() { return new DeleteControl(); }
+	getCoordinateInputControl() { return new CoordinateInputControlPageObject(this.page); }
+	getCoordinateUploadControl() { return new CoordinateUploadControlPageObject(this.page); }
+	getCoordinateCopyControl() { return new CoordinateCopyControlPageObject(this.page); }
+	getDrawControl() { return new DrawControlPageObject(this.page); }
+	getTileLayersControl() { return new TilelayersControlPageObject(this.page); }
+	getDeleteControl() { return new DeleteControl(this.page); }
+
+	$getEditableMarkers() {
+		return this.page.locator(".leaflet-marker-draggable");
+	}
 
 }
 
 export class DeleteControl {
-	start() {
-		return getControlButton("drawUtils.delete").click();
+	page: Page
+	constructor(page: Page) {
+		this.page = page;
 	}
+
+	start() {
+		return (getControlButton(this.page, "drawUtils.delete"))?.click();
+	}
+
+	isOpen() {
+		return getControlButton(this.page, "drawUtils.delete").locator(".glyphicon-remove-sign").isVisible();
+	}
+
 	finish() {
-		return $$(".leaflet-draw-actions a").last().click();
+		return this.page.locator(".leaflet-draw-actions a").last().click();
 	}
 }
 
-class CoordinateInputControlPageObject {
+export class CoordinateInputControlPageObject {
+	private page: Page
+	constructor(page: Page) {
+		this.page = page;
+	}
+
 	$getButton() {
-		return getControlButton("drawUtils.coordinateInput");
+		return getControlButton(this.page, "drawUtils.coordinateInput");
 	}
 	$getContainer() {
-		return $(".laji-map-coordinates").element(by.xpath("..")); // eslint-disable-line protractor/no-by-xpath
+		return this.page.locator(".laji-map-coordinates").locator("xpath=..");
 	}
 	$getCloseButton() {
-		return this.$getContainer().$(".close");
+		return this.$getContainer().locator(".close");
 	}
 	async enterLatLng(lat: number, lng: number) {
-		await $("#laji-map-coordinate-input-lat").sendKeys(lat);
-		return $("#laji-map-coordinate-input-lng").sendKeys(lng);
+		await this.page.locator("#laji-map-coordinate-input-lat").type("" +lat);
+		return this.page.locator("#laji-map-coordinate-input-lng").type("" + lng);
 	}
-	getCRS() {
-		return this.$getContainer().$(".crs-info span:last-child").getText();
+	async getCRS() {
+		return this.$getContainer().locator(".crs-info span").last().textContent();
 	}
 	$getSubmit() {
-		return this.$getContainer().$("button[type=\"submit\"]");
+		return this.$getContainer().locator("button[type=\"submit\"]");
 	}
 }
 
-class CoordinateUploadControlPageObject {
+export class CoordinateUploadControlPageObject {
+	private page: Page
+	constructor(page: Page) {
+		this.page = page;
+	}
+
 	$getButton() {
-		return getControlButton("drawUtils.upload");
+		return getControlButton(this.page, "drawUtils.upload");
 	}
 	$getContainer() {
-		return $(".laji-map-coordinate-upload").element(by.xpath("..")); // eslint-disable-line protractor/no-by-xpath
+		return this.page.locator(".laji-map-coordinate-upload").locator("xpath=..");
 	}
 	$getCloseButton() {
-		return this.$getContainer().$(".close");
+		return this.$getContainer().locator(".close");
 	}
 	type(text: string) {
-		return this.$getContainer().$("textarea").sendKeys(text);
+		return this.$getContainer().locator("textarea").type(text);
 	}
 	getCRS() {
-		return this.$getContainer().$(".crs-info span:last-child").getText();
+		return this.$getContainer().locator(".crs-info span").last().textContent();
 	}
 	getFormat() {
-		return this.$getContainer().$(".format-info span:last-child").getText();
+		return this.$getContainer().locator(".format-info span").last().textContent();
 	}
 	$getSubmit() {
-		return this.$getContainer().$("button[type=\"submit\"]");
+		return this.$getContainer().locator("button[type=\"submit\"]");
 	}
 }
 
-class CoordinateCopyControlPageObject {
+export class CoordinateCopyControlPageObject {
+	private page: Page
+	constructor(page: Page) {
+		this.page = page;
+	}
+
 	$getButton() {
-		return getControlButton("drawUtils.copy");
+		return getControlButton(this.page, "drawUtils.copy");
 	}
 	$getContainer() {
-		return $(".laji-map-draw-copy-table").element(by.xpath("..")); // eslint-disable-line protractor/no-by-xpath
+		return this.page.locator(".laji-map-draw-copy-table").locator("xpath=..");
 	}
 	$getCloseButton() {
-		return this.$getContainer().$(".close");
+		return this.$getContainer().locator(".close");
 	}
 	getConverted() {
-		return this.$getContainer().$("textarea").getAttribute("value");
+		return this.$getContainer().locator("textarea").inputValue();
 	}
 	GeoJSON() {
-		return this.$getContainer().element(by.cssContainingText("a", "GeoJSON")).click();
+		return this.$getContainer().locator("text=GeoJSON").click();
 	}
 	ISO6709() {
-		return this.$getContainer().element(by.cssContainingText("a", "ISO 6709")).click();
+		return this.$getContainer().locator("text=ISO 6709").click();
 	}
 	WKT() {
-		return this.$getContainer().element(by.cssContainingText("a", "WKT")).click();
+		return this.$getContainer().locator("text=WKT").click();
 	}
 	WGS84() {
-		return this.$getContainer().element(by.cssContainingText("a", "WGS84")).click();
+		return this.$getContainer().locator("text=WGS84").click();
 	}
 	YKJ() {
-		return this.$getContainer().element(by.cssContainingText("a", "YKJ")).click();
+		return this.$getContainer().locator("text=YKJ").click();
 	}
 	ETRS() {
-		return this.$getContainer().element(by.cssContainingText("a", "ETRS-TM35FIN")).click();
+		return this.$getContainer().locator("text=ETRS-TM35FIN").click();
 	}
 }
 
 export class DrawControlPageObject {
+	private page: Page;
+	constructor(page: Page) {
+		this.page = page;
+	}
+
 	$getButton(name: string) {
-		return $(`.leaflet-draw-draw-${name}`);
+		return this.page.locator(`.leaflet-draw-draw-${name}`);
 	}
 	$getMarkerButton() {
 		return this.$getButton("marker");
@@ -199,43 +265,44 @@ export class DrawControlPageObject {
 	}
 }
 
-class TilelayersControlPageObject {
-	mapPO: MapPageObject;
+export class TilelayersControlPageObject {
+	page: Page;
 
-	constructor(mapPO: MapPageObject) {
-		this.mapPO = mapPO;
+	constructor(page: Page) {
+		this.page = page;
 	}
 	$getContainer() {
-		return $("div.laji-map-control-layers");
+		return this.page.locator("div.laji-map-control-layers");
 	}
 	$getButton() {
-		return $(".leaflet-control-layers-toggle");
+		return this.page.locator(".leaflet-control-layers-toggle");
 	}
-	showList() {
-		return browser.actions().mouseMove(this.$getButton()).perform();
+	async showList() {
+		const {x, y} = (await this.$getButton().boundingBox() as any);
+		return this.page.mouse.move(x, y);
 	}
 	$getFinnishList() {
-		return this.$getContainer().$(".finnish-list");
+		return this.$getContainer().locator(".finnish-list");
 	}
 	$getWorldList() {
-		return this.$getContainer().$(".world-list");
+		return this.$getContainer().locator(".world-list");
 	}
 	selectFinnishList() {
-		return this.$getFinnishList().$("legend").click();
+		return this.$getFinnishList().locator("legend").click();
 	}
 	selectWorldList() {
-		return this.$getWorldList().$("legend").click();
+		return this.$getWorldList().locator("legend").click();
 	}
 	$getOverlayList() {
-		return this.$getContainer().$(".overlay-list");
+		return this.$getContainer().locator(".overlay-list");
 	}
 	$getLayerElement(name: string) {
-		return this.$getContainer().$(`#${name}`);
+		return this.$getContainer().locator(`#${name}`);
 	}
 }
 
-export const createMap = async (options?: any) => {
-	const map = new MapPageObject(options);
+export const createMap = async (page: Page, options?: any) => {
+	const map = new MapPageObject(page, options);
 	await map.initialize();
 	return map;
 };

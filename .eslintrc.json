@@ -7,8 +7,7 @@
     },
     "extends": [
 		"eslint:recommended",
-		"plugin:@typescript-eslint/recommended",
-		"plugin:protractor/recommended"
+		"plugin:@typescript-eslint/recommended"
 	],
     "parserOptions": {
 		"ecmaVersion": 2020,
@@ -44,7 +43,6 @@
             "error",
             {"checkLoops": false}
         ],
-        "protractor/no-describe-selectors": "off",
         "no-console": "off",
         "keyword-spacing": 1,
 		"@typescript-eslint/no-explicit-any": "off",
@@ -53,9 +51,6 @@
 		"@typescript-eslint/no-empty-function": "off",
 		"prefer-const": "off",
 		"@typescript-eslint/no-this-alias": "off",
-		"protractor/no-browser-sleep": "off",
-		"protractor/no-repetitive-selectors": "off",
-		"protractor/no-repetitive-locators": "off",
 		"prefer-rest-params": "off",
 		"@typescript-eslint/no-empty-interface": [
 			"error",
@@ -65,7 +60,6 @@
 		],
 		"no-prototype-builtins": "off",
 		"max-len": ["error", {"code": 150, "ignoreComments": true}],
-		"protractor/no-shadowing": "off",
 		"@typescript-eslint/no-unused-vars": [
 			"error",
 			{
@@ -73,9 +67,6 @@
 			}
 		]
 	},
-    "plugins": [
-		"protractor"
-    ],
 	"globals": {
 		"L": true
 	}

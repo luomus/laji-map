@@ -1,6 +1,7 @@
 src/
 playground/
 test/
+!test/test-utils.ts
 .idea/
 .npmignore
 .babelrc

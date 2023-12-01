@@ -1,9 +1,11 @@
-import { createMap, DrawControlPageObject, MapPageObject, PointTraveller, SAFE_CLICK_WAIT } from "./test-utils";
+import { test, expect } from "@playwright/test";
+import { createMap, DrawControlPageObject, MapPageObject, PointTraveller } from "./test-utils";
 import * as utils from "@luomus/laji-map/lib/utils";
-import { $, $$, browser } from "protractor";
 import G from "geojson";
 
-describe("Drawing", () => {
+test.describe.configure({ mode: "serial" });
+
+test.describe("Drawing", () => {
 
 	const getLastGeometry = <T extends G.Geometry = G.Geometry>(): Promise<T> => map.e(
 		"getDraw().featureCollection.features[map.getDraw().featureCollection.features.length - 1].geometry"
@@ -11,8 +13,9 @@ describe("Drawing", () => {
 
 	let map: MapPageObject;
 	let control: DrawControlPageObject;
-	beforeAll(async () => {
-		map = await createMap({
+	test.beforeAll(async ({browser}) => {
+		const page = await browser.newPage();
+		map = await createMap(page, {
 			draw: true,
 			controls: {
 				draw: true
@@ -23,23 +26,23 @@ describe("Drawing", () => {
 
 	const clear = () => map.e("clearDrawData()");
 
-	describe("point", () => {
-		afterAll(clear);
+	test.describe("point", () => {
+		test.afterAll(clear);
 
-		it("can be drawn", async () => {
+		test("can be drawn", async () => {
 			await map.drawMarker();
 			const geometry = await getLastGeometry();
 			expect(geometry.type).toBe("Point");
 		});
 
-		it("coordinates length", async () => {
+		test("coordinates length", async () => {
 			const geometry = await getLastGeometry<G.Point>();
 			expect(geometry.type).toBe("Point");
 			expect(`${geometry.coordinates[0]}`.split(".")[1].length).toBeLessThan(7);
 			expect(`${geometry.coordinates[1]}`.split(".")[1].length).toBeLessThan(7);
 		});
 
-		it("coordinates are wrapped", async () => {
+		test("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await map.drawMarker();
@@ -50,55 +53,58 @@ describe("Drawing", () => {
 			}
 		});
 
-		it("can be set editable", async () => {
+		test("can be set editable", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 			await clear();
 			await map.drawMarker();
 			await map.doubleClickAt(0, -10);
-			expect(await $(".leaflet-marker-draggable").isPresent()).toBe(true);
+			await expect(map.$getEditableMarkers()).toBeVisible();
 		});
 
 		// Drag doesn't work...
-		// it("can be moved when editing", async () => {
-		// 	await map.drag([0, 0], [-100, -100]);
-		// });
+		test("can be moved when editing", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
+			const $marker = map.$getEditableMarkers().first(); // There's only one.
+			const positionBefore = await $marker.boundingBox();
+			await map.drag([0, -10], [-100, -100]);
+			const positionAfter = await $marker.boundingBox();
+			expect(positionBefore!.x).not.toBe(positionAfter!.x);
+		});
 
-		it("can finish editing", async () => {
+		test("can finish editing", async () => {
 			await map.clickAt(20, 20);
-			expect(await $(".leaflet-marker-draggable").isPresent()).toBe(false);
+			await expect(map.$getEditableMarkers()).not.toBeVisible();
 		});
 	});
 
-	describe("polyline", () => {
-		afterAll(clear);
+	test.describe("polyline", () => {
+		test.afterAll(clear);
 
-		const addLine = async () => {
-			await control.$getPolylineButton().click();
-			await map.clickAt(0, 0);
-			await browser.sleep(SAFE_CLICK_WAIT);
-			await map.clickAt(10, 0);
-			await browser.sleep(SAFE_CLICK_WAIT);
-			await map.clickAt(20, 10);
-			await browser.sleep(SAFE_CLICK_WAIT);
-			await map.clickAt(20, 10);
-		};
+		const addLine = () => map.drawLine(
+			[0, 0],
+			[40, 0],
+			[80, 30]
+		);
 
-		it("can be drawn", async () => {
+		test("can be drawn", async () => {
 			await addLine();
 			const geometry = await getLastGeometry();
 			expect(geometry.type).toBe("LineString");
 		});
 
-		it("can be set editable", async () => {
+		test("can be set editable", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 			await map.doubleClickAt(0, 0);
-			expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
+			expect(await map.$getEditableMarkers().count()).toBeGreaterThan(0);
 		});
 
-		it("can finish editing", async () => {
-			await map.clickAt(-30, -30);
-			expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
+		test("can finish editing", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
+			await map.clickAt(-30, -30); // Click somewhere else than the line layer.
+			expect(await map.$getEditableMarkers().count()).toBe(0);
 		});
 
-		it("coordinates length", async () => {
+		test("coordinates length", async () => {
 			const geometry = await getLastGeometry<G.LineString>();
 			expect(geometry.coordinates.length).toBe(3);
 			for (const c of geometry.coordinates) {
@@ -107,7 +113,7 @@ describe("Drawing", () => {
 			}
 		});
 
-		it("coordinates are wrapped", async () => {
+		test("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await addLine();
@@ -121,8 +127,8 @@ describe("Drawing", () => {
 		});
 	});
 
-	describe("polygon", () => {
-		afterAll(clear);
+	test.describe("polygon", () => {
+		test.afterAll(clear);
 
 		const traveller = new PointTraveller();
 
@@ -132,36 +138,31 @@ describe("Drawing", () => {
 			traveller.travel(0, -30),
 			traveller.travel(30, 0),
 			traveller.travel(0, 30),
-			traveller.initial()
 		];
 
-		const addPolygon = async () => {
-			await control.$getPolygonButton().click();
-			for (const c of coordinates) {
-				await browser.sleep(SAFE_CLICK_WAIT);
-				await map.clickAt(...c);
-			}
-		};
+		const addPolygon = () => map.drawPolygon(...coordinates);
 
-		it("can be drawn", async () => {
+		test("can be drawn", async () => {
 			await addPolygon();
 			const geometry = await getLastGeometry<G.Polygon>();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates.length).toBe(1);
-			expect(geometry.coordinates[0].length).toBe(coordinates.length);
+			expect(geometry.coordinates[0].length).toBe(coordinates.length + 1);
 		});
 
-		it("can be set editable", async () => {
+		test("can be set editable", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 			await map.doubleClickAt(0, 0);
-			expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
+			expect(await map.$getEditableMarkers().count()).toBeGreaterThan(0);
 		});
 
-		it("can finish editing", async () => {
+		test("can finish editing", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 			await map.clickAt(-30, -30);
-			expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
+			expect(await map.$getEditableMarkers().count()).toBe(0);
 		});
 
-		it("coordinates length", async () => {
+		test("coordinates length", async () => {
 			const geometry = await getLastGeometry<G.Polygon>();
 			for (const c of geometry.coordinates[0]) {
 				expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
@@ -169,23 +170,19 @@ describe("Drawing", () => {
 			}
 		});
 
-		it("coordinates are counter clockwise", async () => {
+		test("coordinates are counter clockwise", async () => {
 			const geometry = await getLastGeometry<G.Polygon>();
 			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 		});
 
-		it("coordinates are counter clockwise when drawn counter clockwise direction", async () => {
+		test("coordinates are counter clockwise when drawn counter clockwise direction", async () => {
 			await clear();
-			await control.$getPolygonButton().click();
-			for (const c of coordinates.slice(0).reverse()) {
-				await browser.sleep(SAFE_CLICK_WAIT);
-				await map.clickAt(...c);
-			}
+			await map.drawPolygon(...coordinates.slice(0).reverse());
 			const geometry = await getLastGeometry<G.Polygon>();
 			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 		});
 
-		it("coordinates are wrapped", async () => {
+		test("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await addPolygon();
@@ -199,10 +196,10 @@ describe("Drawing", () => {
 		});
 	});
 
-	describe("rectangle", () => {
-		afterAll(clear);
+	test.describe("rectangle", () => {
+		test.afterAll(clear);
 
-		it("can be drawn", async () => {
+		test("can be drawn", async () => {
 			await map.drawRectangle();
 			const geometry = await getLastGeometry<G.Polygon>();
 			expect(geometry.type).toBe("Polygon");
@@ -210,7 +207,7 @@ describe("Drawing", () => {
 			expect(geometry.coordinates[0].length).toBe(5);
 		});
 
-		it("coordinates length", async () => {
+		test("coordinates length", async () => {
 			const geometry = await getLastGeometry<G.Polygon>();
 			geometry.coordinates[0].forEach(async (c: number[]) => {
 				expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
@@ -218,7 +215,7 @@ describe("Drawing", () => {
 			});
 		});
 
-		it("coordinates are wrapped", async () => {
+		test("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await map.drawRectangle();
@@ -231,7 +228,7 @@ describe("Drawing", () => {
 			}
 		});
 
-		it("coordinates are counter clockwise", async () => {
+		test("coordinates are counter clockwise", async () => {
 			const geometry = await getLastGeometry<G.Polygon>();
 			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 		});
@@ -242,7 +239,7 @@ describe("Drawing", () => {
 			[-10, -10]
 		] as [number, number][];
 
-		it("coordinates are counter clockwise when drawn from any direction", async () => {
+		test("coordinates are counter clockwise when drawn from any direction", async () => {
 			const geometry = await getLastGeometry<G.Polygon>();
 			expect(utils.coordinatesAreClockWise(geometry.coordinates[0])).toBe(false);
 
@@ -256,36 +253,39 @@ describe("Drawing", () => {
 			}
 		});
 
-		describe("editing", () => {
+		test.describe("editing", () => {
 			const lastDestination = drags[drags.length - 1];
 			let geometryBeforeEdit: G.Polygon;
 
-			beforeAll(async() => {
+			test.beforeAll(async () => {
 				geometryBeforeEdit = await getLastGeometry<G.Polygon>();
 			});
 
-			it("can be started", async () => {
+			test("can be started", async ({browserName}) => {
+				test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 				await map.doubleClickAt(...lastDestination);
-				expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0, "Rectangle wasn't editable");
+				expect(await map.$getEditableMarkers().count()).toBeGreaterThan(0);
 			});
 
-			it("can be finished", async () => {
+			test("can be finished", async ({browserName}) => {
+				test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 				const traveller = new PointTraveller(...lastDestination);
 				await map.drag(traveller.initial(), traveller.travel(-10, -10));
 				await map.clickAt(...traveller.travel(-10, -10));
 			});
 
-			it("geometry is changed", async () => {
+			test("geometry is changed", async ({browserName}) => {
+				test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 				const lastGeometry = await getLastGeometry<G.Polygon>();
 				expect(lastGeometry).not.toEqual(geometryBeforeEdit);
 			});
 
-			it("coordinates are counter clockwise", async () => {
+			test("coordinates are counter clockwise", async () => {
 				const lastGeometry = await getLastGeometry<G.Polygon>();
 				expect(utils.coordinatesAreClockWise(lastGeometry.coordinates[0])).toBe(false);
 			});
 
-			it("coordinates length", async () => {
+			test("coordinates length", async () => {
 				const lastGeometry = await getLastGeometry<G.Polygon>();
 				lastGeometry.coordinates[0].forEach(async (c: number[]) => {
 					expect(`${c[0]}`.split(".")[1].length).toBeLessThan(7);
@@ -295,15 +295,15 @@ describe("Drawing", () => {
 		});
 	});
 
-	describe("circle", () => {
-		afterAll(clear);
+	test.describe("circle", () => {
+		test.afterAll(clear);
 
 		const addCircle = async () => {
 			await control.$getCircleButton().click();
 			await map.drag([0, 0], [10, 0]);
 		};
 
-		it("can be drawn", async () => {
+		test("can be drawn", async () => {
 			await addCircle();
 			const geometry = await getLastGeometry<G.Point>();
 			expect(geometry.type).toBe("Point");
@@ -311,23 +311,25 @@ describe("Drawing", () => {
 			expect(geometry.coordinates.length).toBe(2);
 		});
 
-		it("can be set editable", async () => {
+		test("can be set editable", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 			await map.doubleClickAt(0, 0);
-			expect(await $$(".leaflet-marker-draggable").count()).toBeGreaterThan(0);
+			expect(await map.$getEditableMarkers().count()).toBeGreaterThan(0);
 		});
 
-		it("can finish editing", async () => {
+		test("can finish editing", async ({browserName}) => {
+			test.skip(["firefox", "webkit"].includes(browserName), "Double click clicks three times in headless firefox/webkit");
 			await map.clickAt(-10, -10);
-			expect(await $$(".leaflet-marker-draggable").count()).toBe(0);
+			expect(await map.$getEditableMarkers().count()).toBe(0);
 		});
 
-		it("coordinates length", async () => {
+		test("coordinates length", async () => {
 			const {coordinates} = await getLastGeometry<G.Point>();
 			expect(`${coordinates[0]}`.split(".")[1].length).toBeLessThan(7);
 			expect(`${coordinates[1]}`.split(".")[1].length).toBeLessThan(7);
 		});
 
-		it("coordinates are wrapped", async () => {
+		test("coordinates are wrapped", async () => {
 			await clear();
 			await map.e("setCenter([60, 300])");
 			await addCircle();

@@ -1,3 +1,6 @@
+## 4.0.0
+* protractor -> playwright migration: `test-export` moved to `test`. Includes only the `test-utils.ts`.
+
 ## 3.23.0
 * typings from `*defs.ts` files can be now imported without Leaflet being imported
 

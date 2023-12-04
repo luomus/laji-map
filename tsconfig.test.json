@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"outDir": "./test-export",
 		"declaration": true,
-		"module": "commonjs"
+		"module": "commonjs",
+		"skipLibCheck": true
 	},
 	"include": [
 		"./test/test-utils.ts"

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { PointTraveller, createMap, MapPageObject, DeleteControl } from "./test-utils";
+import { PointTraveller, navigateToMapPage, MapPageObject, DeleteControl } from "./test-utils";
 
 test.describe.configure({ mode: "serial" });
 
@@ -11,7 +11,7 @@ test.describe("Delete control", () => {
 
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
-		map = await createMap(page, {
+		map = await navigateToMapPage(page, {
 			draw: true,
 			controls: {
 				draw: {

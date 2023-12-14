@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createMap, DrawControlPageObject, MapPageObject, PointTraveller } from "./test-utils";
+import { navigateToMapPage, DrawControlPageObject, MapPageObject, PointTraveller } from "./test-utils";
 import * as utils from "@luomus/laji-map/lib/utils";
 import G from "geojson";
 
@@ -15,7 +15,7 @@ test.describe("Drawing", () => {
 	let control: DrawControlPageObject;
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
-		map = await createMap(page, {
+		map = await navigateToMapPage(page, {
 			draw: true,
 			controls: {
 				draw: true

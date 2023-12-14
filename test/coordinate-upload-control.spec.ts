@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createMap, ykjToWgs84, etrsToWgs84, CoordinateUploadControlPageObject, MapPageObject } from "./test-utils";
+import { navigateToMapPage, ykjToWgs84, etrsToWgs84, CoordinateUploadControlPageObject, MapPageObject } from "./test-utils";
 import { reverseCoordinate } from "@luomus/laji-map/lib/utils";
 import { EPSG2393String } from "@luomus/laji-map/lib/globals";
 
@@ -11,7 +11,7 @@ test.describe("Draw upload control", () => {
 	let control: CoordinateUploadControlPageObject;
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
-		map = await createMap(page, {
+		map = await navigateToMapPage(page, {
 			draw: true,
 			controls: {
 				draw: {

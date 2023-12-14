@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createMap, ykjToWgs84, etrsToWgs84, MapPageObject, CoordinateCopyControlPageObject } from "./test-utils";
+import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject, CoordinateCopyControlPageObject } from "./test-utils";
 
 test.describe.configure({ mode: "serial" });
 
@@ -11,7 +11,7 @@ test.describe("Draw copy control", () => {
 	let control: CoordinateCopyControlPageObject;
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
-		map = await createMap(page, {
+		map = await navigateToMapPage(page, {
 			draw: {geoData: {type: "Point", coordinates: [lng, lat]}},
 			controls: {
 				draw: {

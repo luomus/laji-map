@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { MapPageObject, createMap } from "./test-utils";
+import { MapPageObject, navigateToMapPage } from "./test-utils";
 
 test.describe("Initializing", () => {
 	test("tileLayers overrides tileLayerName", async ({page}) => {
-		const map = await createMap(page, {
+		const map = await navigateToMapPage(page, {
 			tileLayerName: "ortokuva",
 			tileLayers: {
 				layers: {
@@ -16,7 +16,7 @@ test.describe("Initializing", () => {
 	});
 
 	test("with tileLayerName work", async ({page}) => {
-		const map = await createMap(page, {
+		const map = await navigateToMapPage(page, {
 			tileLayerName: "maastokartta",
 		});
 
@@ -29,7 +29,7 @@ test.describe("Initializing", () => {
 			lng: 21.160612106323246
 		};
 
-		const map = await createMap(page, {
+		const map = await navigateToMapPage(page, {
 			tileLayerName: "taustakartta",
 			center: congo
 		});
@@ -41,12 +41,12 @@ test.describe("Initializing", () => {
 test.describe("Tile layers control", () => {
 
 	test("is rendered", async ({page}) => {
-		const map = await createMap(page, {controls: true});
+		const map = await navigateToMapPage(page, {controls: true});
 		await expect(map.getTileLayersControl().$getContainer()).toBeVisible();
 	});
 
 	test("opens on click", async ({page}) => {
-		const map = await createMap(page, {controls: true});
+		const map = await navigateToMapPage(page, {controls: true});
 		const control = map.getTileLayersControl();
 		await expect(control.$getFinnishList()).not.toBeVisible();
 		await control.showList();
@@ -102,19 +102,19 @@ test.describe("Tile layers control", () => {
 		};
 
 		test(`${name} after initialization`, async ({page}) => {
-			const map = await createMap(page, options);
+			const map = await navigateToMapPage(page, options);
 			await testCase(map);
 		});
 
 		test(`${name} when set after initialization`, async ({page}) => {
-			const map = await createMap(page, {controls: true});
+			const map = await navigateToMapPage(page, {controls: true});
 			await map.e(`setOptions(${JSON.stringify(options)})`);
 			await testCase(map);
 		});
 	}
 
 	test("adds layer when added to options after control initialization", async ({page}) => {
-		const map = await createMap(page, {controls: true, availableTileLayerNamesBlacklist: ["maastokartta"]});
+		const map = await navigateToMapPage(page, {controls: true, availableTileLayerNamesBlacklist: ["maastokartta"]});
 		const control = map.getTileLayersControl();
 		await control.showList();
 		await expect(control.$getLayerElement("maastokartta")).not.toBeVisible();
@@ -123,7 +123,7 @@ test.describe("Tile layers control", () => {
 	});
 
 	test("removes layer when removed from options after control initialization", async ({page}) => {
-		const map = await createMap(page, {controls: true, availableTileLayerNamesBlacklist: []});
+		const map = await navigateToMapPage(page, {controls: true, availableTileLayerNamesBlacklist: []});
 		const control = map.getTileLayersControl();
 		await control.showList();
 		await expect(control.$getLayerElement("maastokartta")).toBeVisible();
@@ -132,7 +132,7 @@ test.describe("Tile layers control", () => {
 	});
 
 	test("Sets openStreetMap as active when changing to world projection and there are no visible world layers", async ({page}) => {
-		const map = await createMap(page, {controls: true, tileLayerName: "taustakartta"});
+		const map = await navigateToMapPage(page, {controls: true, tileLayerName: "taustakartta"});
 		const control = map.getTileLayersControl();
 		await control.showList();
 		await control.selectWorldList();
@@ -141,7 +141,7 @@ test.describe("Tile layers control", () => {
 	});
 
 	test("Sets taustakartta as active when changing to finnish projection and there are no visible finnish layers", async ({page}) => {
-		const map = await createMap(page, {controls: true, tileLayerName: "openStreetMap"});
+		const map = await navigateToMapPage(page, {controls: true, tileLayerName: "openStreetMap"});
 		const control = map.getTileLayersControl();
 		await control.showList();
 		await control.selectFinnishList();

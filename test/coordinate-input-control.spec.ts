@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createMap, ykjToWgs84, etrsToWgs84, MapPageObject, CoordinateInputControlPageObject } from "./test-utils";
+import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject, CoordinateInputControlPageObject } from "./test-utils";
 import { reverseCoordinate } from "@luomus/laji-map/lib/utils";
 
 test.describe.configure({ mode: "serial" });
@@ -10,7 +10,7 @@ test.describe("Coordinate input control", () => {
 	let control: CoordinateInputControlPageObject;
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
-		map = await createMap(page, {
+		map = await navigateToMapPage(page, {
 			draw: true,
 			controls: true
 		});

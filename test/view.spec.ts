@@ -1,27 +1,27 @@
 import { test, expect } from "@playwright/test";
-import { createMap, LatLngTraveller, MapPageObject } from "./test-utils";
+import { navigateToMapPage, LatLngTraveller, MapPageObject } from "./test-utils";
 
 // Internal logic tested because the later tests rely heavily on it.
 test.describe("Internal logic of zoom level normalization", () => {
 	test("uses the real zoom level for Finnish layer", async ({page}) => {
-		const map = await createMap(page, {tileLayerName: "taustakartta", zoom: 0});
+		const map = await navigateToMapPage(page, {tileLayerName: "taustakartta", zoom: 0});
 		expect(await map.e("map.getZoom()")).toBe(0);
 		expect(await map.e("getNormalizedZoom()")).toBe(0);
 	});
 
 	test("uses offset of 3 for world map layer", async ({page}) => {
-		const map = await createMap(page, {tileLayerName: "openStreetMap", zoom: 0});
+		const map = await navigateToMapPage(page, {tileLayerName: "openStreetMap", zoom: 0});
 		expect(await map.e("map.getZoom()")).toBe(3);
 		expect(await map.e("getNormalizedZoom()")).toBe(0);
 	});
 
 	test("getNormalizedZoom() returns updated zoom after changing zoom", async ({page}) => {
-		const map = await createMap(page, {tileLayerName: "taustakartta", zoom: 0});
+		const map = await navigateToMapPage(page, {tileLayerName: "taustakartta", zoom: 0});
 		map.e("setNormalizedZoom(2)");
 		expect(await map.e("getNormalizedZoom()")).toBe(2);
 	});
 	test("getNormalizedZoom() returns updated zoom after changing projection", async ({page}) => {
-		const map = await createMap(page, {tileLayerName: "taustakartta", zoom: 0});
+		const map = await navigateToMapPage(page, {tileLayerName: "taustakartta", zoom: 0});
 		map.e("setTileLayerByName(\"openStreetMap\")");
 		expect(await map.e("getNormalizedZoom()")).toBe(0);
 	});
@@ -36,7 +36,7 @@ test.describe("Initializing", () => {
 		let map: MapPageObject;
 		test.beforeAll(async ({browser}) => {
 			const page = await browser.newPage();
-			map = await createMap(page);
+			map = await navigateToMapPage(page);
 		});
 
 		test("opens with taustakartta", async () => {
@@ -53,7 +53,7 @@ test.describe("Initializing", () => {
 		let map: MapPageObject;
 		test.beforeAll(async ({browser}) => {
 			const page = await browser.newPage();
-			map = await createMap(page, {tileLayerName: "openStreetMap"});
+			map = await navigateToMapPage(page, {tileLayerName: "openStreetMap"});
 		});
 
 		test("opens with openStreetMap", async () => {
@@ -70,17 +70,17 @@ test.describe("Initializing", () => {
 			lat: 79.3499057749654,
 			lng: 21.160612106323246
 		};
-		const map = await createMap(page, {tileLayerName: "taustakartta", zoom: 4, center: congo});
+		const map = await navigateToMapPage(page, {tileLayerName: "taustakartta", zoom: 4, center: congo});
 		expect(await map.e("getNormalizedZoom()")).toBe(4);
 	});
 
 	test("openStreetMap can have negative zoom level", async ({page}) => {
-		const map = await createMap(page, {tileLayerName: "openStreetMap", zoom: -3});
+		const map = await navigateToMapPage(page, {tileLayerName: "openStreetMap", zoom: -3});
 		expect(await map.e("getNormalizedZoom()")).toBe(-3);
 	});
 
 	test("taustakartta is zoomed to it's minimum (0) with negative value", async ({page}) => {
-		const map = await createMap(page, {tileLayerName: "taustakartta", zoom: -3});
+		const map = await navigateToMapPage(page, {tileLayerName: "taustakartta", zoom: -3});
 		expect(await map.e("getNormalizedZoom()")).toBe(0);
 	});
 });
@@ -92,7 +92,7 @@ test.describe("Zooms to data", () => {
 	test.describe.configure({ mode: "serial" });
 
 	test("when using openStreetMap", async ({page}) => {
-		const map = await createMap(page, {
+		const map = await navigateToMapPage(page, {
 			tileLayerName: "openStreetMap",
 			zoomToData: true,
 			data: {geoData: {type: "Point", coordinates: [lng, lat]}}
@@ -105,7 +105,7 @@ test.describe("Zooms to data", () => {
 	});
 
 	test("when using taustakartta", async ({page}) => {
-		const map = await createMap(page, {
+		const map = await navigateToMapPage(page, {
 			tileLayerName: "taustakartta",
 			zoomToData: true,
 			data: {geoData: {type: "Point", coordinates: [lng, lat]}}
@@ -146,15 +146,15 @@ test.describe("Zooms to data", () => {
 		};
 
 		test("when using openStreetMap", async ({page}) => {
-			const map = await createMap(page, {
+			const map = await navigateToMapPage(page, {
 				tileLayerName: "openStreetMap",
 				...options
 			});
 
 			const bounds = await map.e("map.getBounds()") as any;
-			expect(bounds._northEast.lat).toBeGreaterThan(minNorth - 0.01); // 0.01 for Firefox inaccuracy
+			expect(bounds._northEast.lat).toBeGreaterThan(minNorth - 0.03); // 0.03 for Firefox inaccuracy
 			expect(bounds._southWest.lat).toBeLessThan(minNorth);
-			expect(bounds._northEast.lat).toBeGreaterThan(north - 0.01); // 0.01 for Firefox inaccuracy
+			expect(bounds._northEast.lat).toBeGreaterThan(north - 0.03); // 0.03 for Firefox inaccuracy
 			expect(bounds._southWest.lat).toBeLessThan(north);
 			expect(bounds._northEast.lng).toBeGreaterThan(minEast);
 			expect(bounds._southWest.lng).toBeLessThan(minEast);
@@ -163,15 +163,15 @@ test.describe("Zooms to data", () => {
 		});
 
 		test("when using taustakartta", async ({page}) => {
-			const map = await createMap(page, {
+			const map = await navigateToMapPage(page, {
 				tileLayerName: "taustakartta",
 				...options
 			});
 
 			const bounds = await map.e("map.getBounds()") as any;
-			expect(bounds._northEast.lat).toBeGreaterThan(minNorth - 0.01); // 0.01 for Firefox inaccuracy
+			expect(bounds._northEast.lat).toBeGreaterThan(minNorth - 0.03); // 0.03 for Firefox inaccuracy
 			expect(bounds._southWest.lat).toBeLessThan(minNorth);
-			expect(bounds._northEast.lat).toBeGreaterThan(north - 0.01); // 0.01 for Firefox inaccuracy
+			expect(bounds._northEast.lat).toBeGreaterThan(north - 0.03); // 0.03 for Firefox inaccuracy
 			expect(bounds._southWest.lat).toBeLessThan(north);
 			expect(bounds._northEast.lng).toBeGreaterThan(minEast);
 			expect(bounds._southWest.lng).toBeLessThan(minEast);
@@ -189,7 +189,7 @@ test("Falls back to center when no data and zoomToData given", async ({page}) =>
 		data: {type: "FeatureCollection", features: []}
 	};
 
-	const map = await createMap(page, {
+	const map = await navigateToMapPage(page, {
 		...options
 	});
 
@@ -205,7 +205,7 @@ test("Falls back to center when no zoomToData given", async ({page}) => {
 		data: {geoData: {type: "Point", coordinates: [45, 70]}}
 	};
 
-	const map = await createMap(page, {
+	const map = await navigateToMapPage(page, {
 		...options
 	});
 
@@ -220,6 +220,6 @@ test("keeps finnish tileLayer if center is outside Finland but zoomToData causes
 		lng: 21.160612106323246
 	};
 	const data = {geoData: {type: "Point", coordinates: [25, 60]}};
-	const map = await createMap(page, {tileLayerName: "taustakartta", zoom: 4, center: congo, data, zoomToData: true});
+	const map = await navigateToMapPage(page, {tileLayerName: "taustakartta", zoom: 4, center: congo, data, zoomToData: true});
 	expect(await map.e("tileLayerName")).toBe("taustakartta");
 });

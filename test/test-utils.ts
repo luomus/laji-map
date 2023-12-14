@@ -1,14 +1,13 @@
-const { HOST = "localhost", PORT = 4000, VERBOSE, DELAY } = process.env;
-import { Page } from "@playwright/test";
+const { VERBOSE, DELAY } = process.env;
+import { Locator, Page } from "@playwright/test";
 import * as utils from "@luomus/laji-map/lib/utils";
-import { Options } from "@luomus/laji-map/lib/map.defs";
 import G from "geojson";
 
 const joinParams = (params: Record<string, unknown>) =>
 	Object.keys(params).reduce((s, a, i) => `${s}${i === 0 ? "?" : "&"}${a}=${JSON.stringify(params[a])}`, "");
 
 const navigateToMap = async (page: Page, params = {}) => {
-	const url = `http://${HOST}:${PORT}${joinParams({testMode: true, ...params})}`;
+	const url = `/${joinParams({testMode: true, ...params})}`;
 	VERBOSE && console.log(url);
 	await page.goto(url);
 };
@@ -19,48 +18,37 @@ function getControlButton(page: Page, name: string) {
 
 export class MapPageObject {
 	private page: Page;
-	options: Options;
+	private locator: Locator;
 
-	constructor(page: Page, options = {}) {
+	constructor(page: Page, locator: Locator) {
 		this.page = page;
-		this.options = options;
-	}
-
-	async initialize() {
-		// await this.page.route("**/*.{png,jpg,jpeg}", route => route.abort()); // Don't load tilelayers, should speed up?
-		await navigateToMap(this.page, this.options);
-		if (DELAY) {
-			await this.page.waitForTimeout(parseInt(DELAY));
-		}
+		this.locator = locator;
 	}
 
 	e<T = any>(path: string, ...params: any[]) {
 		return this.page.evaluate<T>(`window.map.${path}`, ...params);
 	}
 
-	$getElement() {
-		return this.page.locator(".laji-map");
-	}
-
 	/** Moves mouse on page relative to the center of the viewport **/
-	mouseMove(x: number, y: number) {
-		return this.page.mouse.move(...this.relativeToCenter(x, y));
+	async mouseMove(x: number, y: number) {
+		return this.page.mouse.move(...(await this.relativeToCenter(x, y)));
 	}
 
-	private relativeToCenter(x: number, y: number): [number, number] {
-		const size = this.page.viewportSize();
-		if (!size) {
-			throw new Error("Couldn't get viewport");
+	private async relativeToCenter(x: number, y: number): Promise<[number, number]> {
+		const elem = await this.locator.boundingBox();
+		// const size = this.page.viewportSize();
+		if (!elem) {
+			throw new Error("Couldn't get MapPageObject viewport. Did you pass a valid locator?");
 		}
-		const relativeX = size.width / 2 + x;
-		const relativeY = size.height / 2 + y;
+		const relativeX = elem.x + elem.width / 2 + x;
+		const relativeY = elem.y + elem.height / 2 + y;
 		return [relativeX, relativeY];
 	}
 
-	/** Clicks at a point on page relative to the center of the viewport **/
+	/** Clicks at a point on page relative to the center of the map element **/
 	async clickAt(x: number, y: number) {
 		await this.mouseMove(x, y);
-		return this.page.mouse.click(...this.relativeToCenter(x, y));
+		return this.page.mouse.click(...(await this.relativeToCenter(x, y)));
 	}
 
 	/**
@@ -69,8 +57,8 @@ export class MapPageObject {
 	 * WARNING: For some reason clicks three times in headless firefox / webkit.
 	 * **/
 	async doubleClickAt(x: number, y: number) {
-		await this.page.mouse.click(...this.relativeToCenter(x, y));
-		return this.page.mouse.dblclick(...this.relativeToCenter(x, y));
+		await this.page.mouse.click(...(await this.relativeToCenter(x, y)));
+		return this.page.mouse.dblclick(...(await this.relativeToCenter(x, y)));
 	}
 
 	async drag([x, y], [x2, y2]) {
@@ -109,8 +97,6 @@ export class MapPageObject {
 		await this.clickAt(...polyCoordinates[0]);
 	}
 
-	getDrawData = () => this.e<G.FeatureCollection>("getDraw().featureCollection");
-
 	getCoordinateInputControl() { return new CoordinateInputControlPageObject(this.page); }
 	getCoordinateUploadControl() { return new CoordinateUploadControlPageObject(this.page); }
 	getCoordinateCopyControl() { return new CoordinateCopyControlPageObject(this.page); }
@@ -121,7 +107,11 @@ export class MapPageObject {
 	$getEditableMarkers() {
 		return this.page.locator(".leaflet-marker-draggable");
 	}
+}
 
+/** Page object in laji-map's local playground page */
+export class DemoPageMapPageObject extends MapPageObject {
+	getDrawData = () => this.e<G.FeatureCollection>("getDraw().featureCollection");
 }
 
 export class DeleteControl {
@@ -299,10 +289,12 @@ export class TilelayersControlPageObject {
 	}
 }
 
-export const createMap = async (page: Page, options?: any) => {
-	const map = new MapPageObject(page, options);
-	await map.initialize();
-	return map;
+export const navigateToMapPage = async (page: Page, options?: any) => {
+	await navigateToMap(page, options);
+	if (DELAY) {
+		await page.waitForTimeout(parseInt(DELAY));
+	}
+	return new DemoPageMapPageObject(page, page.locator("#root .laji-map"));
 };
 
 export const ykjToWgs84 = (latLng: [number, number]) => utils.convertLatLng(latLng, "EPSG:2393", "WGS84");

@@ -1,6 +1,6 @@
 {
   "name": "@luomus/laji-map",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "A map with drawing functionality",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -9,7 +9,7 @@
     "start": "npx webpack serve",
     "build:lib": "rimraf lib && NODE_ENV=production tsc -p tsconfig.lib.json && copyfiles -f src/styles.css lib/",
     "build:dist": "rimraf dist && NODE_ENV=production webpack --config webpack.config.dist.js && rimraf dist/styles.js",
-		"build:tests": "rimraf test-export && NODE_ENV=production tsc -p tsconfig.test.json",
+    "build:tests": "rimraf test-export && NODE_ENV=production tsc -p tsconfig.test.json",
     "build": "npm run build:lib && npm run build:dist",
     "preversion": "npm run lint && npm run test:slow && npm run build",
     "version": "./update-changelog.sh",

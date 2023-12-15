@@ -424,7 +424,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			}
 
 			if (!cont) {
-				this.buttonActionContainer[name] = L.DomUtil.create("ul", "leaflet-draw-actions");
+				this.buttonActionContainer[name] = L.DomUtil.create("ul", `leaflet-draw-actions laji-map-subcontrol-${name}`);
 				cont = this.buttonActionContainer[name];
 			}
 

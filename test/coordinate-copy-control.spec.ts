@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject, CoordinateCopyControlPageObject } from "./test-utils";
+import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject } from "./test-utils";
 
 test.describe.configure({ mode: "serial" });
 
@@ -8,7 +8,7 @@ test.describe("Draw copy control", () => {
 	const [lat, lng] = [60.5, 25.5];
 
 	let map: MapPageObject;
-	let control: CoordinateCopyControlPageObject;
+	let control: MapPageObject["controls"]["coordinateCopy"];
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
 		map = await navigateToMapPage(page, {
@@ -19,15 +19,15 @@ test.describe("Draw copy control", () => {
 				}
 			}
 		});
-		control = map.getCoordinateCopyControl();
+		control = map.controls.coordinateCopy;
 	});
 
 	test.beforeEach("open control", async () => {
-		await control.$getButton().click();
+		await control.$button.click();
 	});
 
 	test.afterEach("close control", async () => {
-		await control.$getCloseButton().click();
+		await control.$closeButton.click();
 	});
 
 	const formats = [

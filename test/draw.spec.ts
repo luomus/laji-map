@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { navigateToMapPage, DrawControlPageObject, MapPageObject, PointTraveller } from "./test-utils";
+import { navigateToMapPage, MapPageObject, PointTraveller } from "./test-utils";
 import * as utils from "@luomus/laji-map/lib/utils";
 import G from "geojson";
 
@@ -12,7 +12,7 @@ test.describe("Drawing", () => {
 	);
 
 	let map: MapPageObject;
-	let control: DrawControlPageObject;
+	let control: MapPageObject["controls"]["draw"];
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
 		map = await navigateToMapPage(page, {
@@ -21,7 +21,7 @@ test.describe("Drawing", () => {
 				draw: true
 			}
 		});
-		control = map.getDrawControl();
+		control = map.controls.draw;
 	});
 
 	const clear = () => map.e("clearDrawData()");
@@ -245,7 +245,7 @@ test.describe("Drawing", () => {
 
 			for (const drag of drags) {
 				await clear();
-				await control.$getRectangleButton().click();
+				await control.$rectangleButton.click();
 				const traveller = new PointTraveller();
 				await map.drag(traveller.initial(), traveller.travel(...drag));
 				const lastGeometry = await getLastGeometry<G.Polygon>();
@@ -299,7 +299,7 @@ test.describe("Drawing", () => {
 		test.afterAll(clear);
 
 		const addCircle = async () => {
-			await control.$getCircleButton().click();
+			await control.$circleButton.click();
 			await map.drag([0, 0], [10, 0]);
 		};
 

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { navigateToMapPage, ykjToWgs84, etrsToWgs84, CoordinateUploadControlPageObject, MapPageObject } from "./test-utils";
+import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject } from "./test-utils";
 import { reverseCoordinate } from "@luomus/laji-map/lib/utils";
 import { EPSG2393String } from "@luomus/laji-map/lib/globals";
 
@@ -8,7 +8,7 @@ test.describe.configure({ mode: "serial" });
 test.describe("Draw upload control", () => {
 
 	let map: MapPageObject;
-	let control: CoordinateUploadControlPageObject;
+	let control: MapPageObject["controls"]["coordinateUpload"];
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
 		map = await navigateToMapPage(page, {
@@ -19,7 +19,7 @@ test.describe("Draw upload control", () => {
 				}
 			}
 		});
-		control = map.getCoordinateUploadControl();
+		control = map.controls.coordinateUpload;
 	});
 
 	const getGeometry = () => map.e(
@@ -37,31 +37,31 @@ test.describe("Draw upload control", () => {
 	];
 
 	test("opens on click", async () => {
-		const $button = control.$getButton();
+		const $button = control.$button;
 		await $button.click();
-		await expect(control.$getContainer()).toBeVisible();
+		await expect(control.$container).toBeVisible();
 	});
 
 	test("is disabled when no input", async () => {
-		const $submit = control.$getSubmit();
+		const $submit = control.$submit;
 		await expect($submit).toBeDisabled();
 	});
 
 	test("is disabled with invalid latlng", async () => {
-		const $submit = control.$getSubmit();
+		const $submit = control.$submit;
 		await control.type("sdfsdf");
 		await expect($submit).toBeDisabled();
 	});
 
 	test("closes on close button click", async () => {
-		await control.$getCloseButton().click();
-		await expect(control.$getContainer()).not.toBeVisible();
+		await control.$closeButton.click();
+		await expect(control.$container).not.toBeVisible();
 	});
 
 	test.describe("accepts", () => {
 
 		test.beforeEach(async () => {
-			const $button = control.$getButton();
+			const $button = control.$button;
 			await $button.click();
 		});
 
@@ -72,7 +72,7 @@ test.describe("Draw upload control", () => {
 					await control.type(latLngToFormat(lat, lng));
 					expect(await control.getCRS()).toBe("WGS84");
 					expect(await control.getFormat()).toBe(name);
-					await control.$getSubmit().click();
+					await control.$submit.click();
 					const mapCoordinates = (await getGeometry()).coordinates;
 					expect(mapCoordinates[0]).toBe(lng);
 					expect(mapCoordinates[1]).toBe(lat);
@@ -84,7 +84,7 @@ test.describe("Draw upload control", () => {
 					await control.type(latLngToFormat(lat, lng));
 					expect(await control.getCRS()).toBe("YKJ");
 					expect(await control.getFormat()).toBe(name);
-					await control.$getSubmit().click();
+					await control.$submit.click();
 					const geometry = await getGeometry();
 					expect(geometry.type).toBe("Point");
 					expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
@@ -96,7 +96,7 @@ test.describe("Draw upload control", () => {
 					await control.type(latLngToFormat(lat, lng));
 					expect(await control.getCRS()).toBe("ETRS-TM35FIN");
 					expect(await control.getFormat()).toBe(name);
-					await control.$getSubmit().click();
+					await control.$submit.click();
 					const geometry = await getGeometry();
 					expect(geometry.type).toBe("Point");
 					expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
@@ -117,7 +117,7 @@ test.describe("Draw upload control", () => {
 			await control.type(JSON.stringify(geoJSON));
 			expect(await control.getCRS()).toBe("YKJ");
 			expect(await control.getFormat()).toBe("GeoJSON");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
@@ -129,7 +129,7 @@ test.describe("Draw upload control", () => {
 			await control.type(`${asISO6709(lat, lng)}CRSEPSG:3067`);
 			expect(await control.getCRS()).toBe("ETRS-TM35FIN");
 			expect(await control.getFormat()).toBe("ISO 6709");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);
@@ -141,7 +141,7 @@ test.describe("Draw upload control", () => {
 			await control.type(`${asISO6709(lat, lng)}\nCRSEPSG:3067`);
 			expect(await control.getCRS()).toBe("ETRS-TM35FIN");
 			expect(await control.getFormat()).toBe("ISO 6709");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(wgs84LatLng);

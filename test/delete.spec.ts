@@ -1,11 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { PointTraveller, navigateToMapPage, MapPageObject, DeleteControl } from "./test-utils";
+import { PointTraveller, navigateToMapPage, DemoPageMapPageObject } from "./test-utils";
 
 test.describe.configure({ mode: "serial" });
 
 test.describe("Delete control", () => {
 
-	let map: MapPageObject, control: DeleteControl;
+	let map: DemoPageMapPageObject;
+	let control: DemoPageMapPageObject["controls"]["delete"];
 	const traveller = new PointTraveller();
 	const interval = 10;
 
@@ -19,7 +20,7 @@ test.describe("Delete control", () => {
 				}
 			}
 		});
-		control = map.getDeleteControl();
+		control = map.controls.delete;
 
 		await map.drawMarker(...traveller.initial());
 		await map.drawMarker(...traveller.travel(interval, 0));
@@ -28,7 +29,7 @@ test.describe("Delete control", () => {
 
 	test("opens", async () => {
 		await control.start();
-		expect(await control.isOpen()).toBe(true);
+		await expect(control.$finish).toBeVisible();
 	});
 
 	test("deletes items", async () => {

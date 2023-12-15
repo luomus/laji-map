@@ -31,8 +31,10 @@ export interface DrawControlOptions {
 	copy?: boolean;
 	clear?: boolean;
 	reverse?: boolean;
-	delete?: boolean; undo?: boolean;
+	delete?: boolean;
+	undo?: boolean;
 	redo?: boolean;
+	upload?: boolean;
 }
 
 export interface LineTransectControlOptions {

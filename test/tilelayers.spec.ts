@@ -42,15 +42,15 @@ test.describe("Tile layers control", () => {
 
 	test("is rendered", async ({page}) => {
 		const map = await navigateToMapPage(page, {controls: true});
-		await expect(map.getTileLayersControl().$getContainer()).toBeVisible();
+		await expect(map.controls.layer.$container).toBeVisible();
 	});
 
 	test("opens on click", async ({page}) => {
 		const map = await navigateToMapPage(page, {controls: true});
-		const control = map.getTileLayersControl();
-		await expect(control.$getFinnishList()).not.toBeVisible();
+		const control = map.controls.layer;
+		await expect(control.$finnishList).not.toBeVisible();
 		await control.showList();
-		await expect(control.$getFinnishList()).toBeVisible();
+		await expect(control.$finnishList).toBeVisible();
 	});
 
 	const tests = {
@@ -60,12 +60,12 @@ test.describe("Tile layers control", () => {
 				availableTileLayerNamesWhitelist: ["openStreetMap"]
 			},
 			testCase: async (map: MapPageObject) => {
-				const control = map.getTileLayersControl();
+				const control = map.controls.layer;
 				await control.showList();
-				await expect(control.$getWorldList()).toBeVisible();
-				await expect(control.$getWorldList().locator("legend")).toBeVisible();
-				expect(await control.$getWorldList().locator("legend").textContent()).toBe(await map.e("translations.Maps"));
-				await expect(control.$getFinnishList()).not.toBeVisible();
+				await expect(control.$worldList).toBeVisible();
+				await expect(control.$worldList.locator("legend")).toBeVisible();
+				expect(await control.$worldList.locator("legend").textContent()).toBe(await map.e("translations.Maps"));
+				await expect(control.$finnishList).not.toBeVisible();
 			}
 		},
 		"doesn't render world layers when not available": {
@@ -74,11 +74,11 @@ test.describe("Tile layers control", () => {
 				availableTileLayerNamesWhitelist: ["taustakartta"]
 			},
 			testCase: async (map: MapPageObject) => {
-				const control = map.getTileLayersControl();
+				const control = map.controls.layer;
 				await control.showList();
-				await expect(control.$getFinnishList()).toBeVisible();
-				expect(await control.$getFinnishList().locator("legend").textContent()).toBe(await map.e("translations.Maps"));
-				await expect(control.$getWorldList()).not.toBeVisible();
+				await expect(control.$finnishList).toBeVisible();
+				expect(await control.$finnishList.locator("legend").textContent()).toBe(await map.e("translations.Maps"));
+				await expect(control.$worldList).not.toBeVisible();
 			}
 		},
 		"doesn't render overlays when not available": {
@@ -86,9 +86,9 @@ test.describe("Tile layers control", () => {
 				availableOverlayNameWhitelist: []
 			},
 			testCase: async (map: MapPageObject) => {
-				const control = map.getTileLayersControl();
+				const control = map.controls.layer;
 				await control.showList();
-				await expect(control.$getOverlayList()).not.toBeVisible();
+				await expect(control.$overlayList).not.toBeVisible();
 			}
 		}
 	};
@@ -115,7 +115,7 @@ test.describe("Tile layers control", () => {
 
 	test("adds layer when added to options after control initialization", async ({page}) => {
 		const map = await navigateToMapPage(page, {controls: true, availableTileLayerNamesBlacklist: ["maastokartta"]});
-		const control = map.getTileLayersControl();
+		const control = map.controls.layer;
 		await control.showList();
 		await expect(control.$getLayerElement("maastokartta")).not.toBeVisible();
 		await map.e("setOption('availableTileLayerNamesBlacklist', [])");
@@ -124,7 +124,7 @@ test.describe("Tile layers control", () => {
 
 	test("removes layer when removed from options after control initialization", async ({page}) => {
 		const map = await navigateToMapPage(page, {controls: true, availableTileLayerNamesBlacklist: []});
-		const control = map.getTileLayersControl();
+		const control = map.controls.layer;
 		await control.showList();
 		await expect(control.$getLayerElement("maastokartta")).toBeVisible();
 		await map.e("setOption('availableTileLayerNamesBlacklist', ['maastokartta'])");
@@ -133,7 +133,7 @@ test.describe("Tile layers control", () => {
 
 	test("Sets openStreetMap as active when changing to world projection and there are no visible world layers", async ({page}) => {
 		const map = await navigateToMapPage(page, {controls: true, tileLayerName: "taustakartta"});
-		const control = map.getTileLayersControl();
+		const control = map.controls.layer;
 		await control.showList();
 		await control.selectWorldList();
 		const layerOptions = await map.e("getTileLayers()");
@@ -142,7 +142,7 @@ test.describe("Tile layers control", () => {
 
 	test("Sets taustakartta as active when changing to finnish projection and there are no visible finnish layers", async ({page}) => {
 		const map = await navigateToMapPage(page, {controls: true, tileLayerName: "openStreetMap"});
-		const control = map.getTileLayersControl();
+		const control = map.controls.layer;
 		await control.showList();
 		await control.selectFinnishList();
 		const layerOptions = await map.e("getTileLayers()");

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject, CoordinateInputControlPageObject } from "./test-utils";
+import { navigateToMapPage, ykjToWgs84, etrsToWgs84, MapPageObject  } from "./test-utils";
 import { reverseCoordinate } from "@luomus/laji-map/lib/utils";
 
 test.describe.configure({ mode: "serial" });
@@ -7,41 +7,41 @@ test.describe.configure({ mode: "serial" });
 test.describe("Coordinate input control", () => {
 
 	let map: MapPageObject;
-	let control: CoordinateInputControlPageObject;
+	let control: MapPageObject["controls"]["coordinateInput"];
 	test.beforeAll(async ({browser}) => {
 		const page = await browser.newPage();
 		map = await navigateToMapPage(page, {
 			draw: true,
 			controls: true
 		});
-		control = map.getCoordinateInputControl();
+		control = map.controls.coordinateInput;
 	});
 
 	test("opens on click", async () => {
-		const $button = control.$getButton();
+		const $button = control.$button;
 		await $button.click();
-		await expect(control.$getContainer()).toBeVisible();
+		await expect(control.$container).toBeVisible();
 	});
 
 	test("is disabled when no latlng", async () => {
-		await expect(control.$getSubmit()).toBeDisabled();
+		await expect(control.$submit).toBeDisabled();
 	});
 
 	test("is disabled with invalid latlng", async () => {
-		const $submit = control.$getSubmit();
+		const $submit = control.$submit;
 		await control.enterLatLng(1231231231, 123092834);
 		await expect($submit).toBeDisabled();
 	});
 
 	test("closes on close button click", async () => {
-		await control.$getCloseButton().click();
-		await expect(control.$getContainer()).not.toBeVisible();
+		await control.$closeButton.click();
+		await expect(control.$container).not.toBeVisible();
 	});
 
 	test.describe("accepts", async () => {
 
 		test.beforeEach(async () => {
-			await control.$getButton().click();
+			await control.$button.click();
 		});
 
 		const getGeometry = () => map.e(
@@ -52,7 +52,7 @@ test.describe("Coordinate input control", () => {
 			const [lat, lng] = [60, 25];
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("WGS84");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
 			expect(mapCoordinates[1]).toBe(lat);
@@ -62,7 +62,7 @@ test.describe("Coordinate input control", () => {
 			const [lat, lng] = [60.5, 25.5];
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("WGS84");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
 			expect(mapCoordinates[1]).toBe(lat);
@@ -72,7 +72,7 @@ test.describe("Coordinate input control", () => {
 			const [lat, lng] = [50, -3];
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("WGS84");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const mapCoordinates = (await getGeometry()).coordinates;
 			expect(mapCoordinates[0]).toBe(lng);
 			expect(mapCoordinates[1]).toBe(lat);
@@ -82,7 +82,7 @@ test.describe("Coordinate input control", () => {
 			const [lat, lng] = [6666666, 3333333];
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("YKJ");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(ykjToWgs84([lat, lng]));
@@ -99,7 +99,7 @@ test.describe("Coordinate input control", () => {
 			].map((latLng: [number, number]) => ykjToWgs84(latLng));
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("YKJ");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Polygon");
 			expect(geometry.coordinates[0].length).toBe(5);
@@ -115,7 +115,7 @@ test.describe("Coordinate input control", () => {
 			const [lat, lng] = [6666666, 333333];
 			await control.enterLatLng(lat, lng);
 			expect(await control.getCRS()).toBe("ETRS-TM35FIN");
-			await control.$getSubmit().click();
+			await control.$submit.click();
 			const geometry = await getGeometry();
 			expect(geometry.type).toBe("Point");
 			expect(reverseCoordinate(geometry.coordinates)).toEqual(etrsToWgs84([lat, lng]));

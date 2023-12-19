@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { TileLayerName } from "../lib/map.defs";
 import { MapPageObject, navigateToMapPage } from "./test-utils";
 
 test.describe("Initializing", () => {
 	test("tileLayers overrides tileLayerName", async ({page}) => {
 		const map = await navigateToMapPage(page, {
-			tileLayerName: "ortokuva",
+			tileLayerName: TileLayerName.ortokuva,
 			tileLayers: {
 				layers: {
 					maastokartta: true
@@ -17,7 +18,7 @@ test.describe("Initializing", () => {
 
 	test("with tileLayerName work", async ({page}) => {
 		const map = await navigateToMapPage(page, {
-			tileLayerName: "maastokartta",
+			tileLayerName: TileLayerName.maastokartta,
 		});
 
 		expect(await map.e("tileLayerName")).toBe("maastokartta");
@@ -30,7 +31,7 @@ test.describe("Initializing", () => {
 		};
 
 		const map = await navigateToMapPage(page, {
-			tileLayerName: "taustakartta",
+			tileLayerName: TileLayerName.taustakartta,
 			center: congo
 		});
 

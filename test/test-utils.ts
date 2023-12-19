@@ -13,12 +13,18 @@ const navigateToMap = async (page: Page, params = {}) => {
 	await page.goto(url);
 };
 
-function getControlButton(locator: Locator, name: string) {
+function getControlButton(locator: { locator: (selector: string) => Locator }, name: string) {
 	return locator.locator(`.button-${name.replace(/\./g, "_")}`);
 }
 
 export class MapPageObject {
-	constructor(private page: Page, private locator: Locator) { }
+	/**
+	 * @param page The Playwright page object.
+	 *
+	 * @param locator The locator for be the element containing LajiMap, or the
+	 * LajiMap element itself. Needed only if there are multiple instances of LajiMap on the page.
+	 * */
+	constructor(private page: Page, private locator: Locator = page.locator(".laji-map")) { }
 
 	e<T = any>(path: string, ...params: any[]) {
 		return this.page.evaluate<T>(`window.map.${path}`, ...params);
@@ -95,20 +101,20 @@ export class MapPageObject {
 		await this.clickAt(...polyCoordinates[0]);
 	}
 
-	private $coordinateInputControlContainer = this.locator.locator(".laji-map-coordinates").locator("xpath=..");
-	private $coordinateUploadControlContainer = this.locator.locator(".laji-map-coordinate-upload").locator("xpath=..");
-	private $coordinateCopyControlContainer = this.locator.locator(".laji-map-draw-copy-table").locator("xpath=..");
+	private $coordinateInputControlContainer = this.page.locator(".laji-map-coordinates").locator("xpath=..");
+	private $coordinateUploadControlContainer = this.page.locator(".laji-map-coordinate-upload").locator("xpath=..");
+	private $coordinateCopyControlContainer = this.page.locator(".laji-map-draw-copy-table").locator("xpath=..");
 	private $layerControlContainer = this.locator.locator("div.laji-map-control-layers");
 	private $getDrawButton = (name: string) => this.locator.locator(`.leaflet-draw-draw-${name}`);
 
 	controls = {
 		coordinateInput: {
 			$container: this.$coordinateInputControlContainer,
-			$button: getControlButton(this.locatr, "drawUtils.coordinateInput"),
+			$button: getControlButton(this.locator, "drawUtils.coordinateInput"),
 			$closeButton: this.$coordinateInputControlContainer.locator(".close"),
 			enterLatLng: async (lat: number, lng: number) => {
-				await this.locator.locator("#laji-map-coordinate-input-lat").fill("" +lat);
-				return this.locator.locator("#laji-map-coordinate-input-lng").fill("" + lng);
+				await this.controls.coordinateInput.$container.locator("#laji-map-coordinate-input-lat").fill("" +lat);
+				return this.controls.coordinateInput.$container.locator("#laji-map-coordinate-input-lng").fill("" + lng);
 			},
 			getCRS: async () => this.$coordinateInputControlContainer.locator(".crs-info span").last().textContent(),
 			$submit: this.$coordinateInputControlContainer.locator("button[type=\"submit\"]")
@@ -139,7 +145,7 @@ export class MapPageObject {
 			$button: this.locator.locator(".leaflet-control-layers-toggle"),
 			showList: async () => {
 				const {x, y} = (await this.locator.locator(".leaflet-control-layers-toggle").boundingBox() as any);
-				return this.locator.mouse.move(x, y);
+				return this.page.mouse.move(x, y);
 			},
 			$finnishList: this.$layerControlContainer.locator(".finnish-list"),
 			$worldList: this.$layerControlContainer.locator(".world-list"),

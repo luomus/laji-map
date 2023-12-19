@@ -13,7 +13,7 @@
     "build": "npm run build:lib && npm run build:dist && npm run build:tests",
     "preversion": "npm run lint && npm run test:slow && npm run build",
     "version": "./update-changelog.sh",
-    "postversion": "npm publish && git push && git push --tags",
+    "postversion": "git push && git push --tags && npm publish",
     "lint": "eslint -c .eslintrc.prod.json src playground",
     "test": "playwright test",
     "test:slow": "DELAY=500 npm run test"

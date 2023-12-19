@@ -13,8 +13,8 @@ const navigateToMap = async (page: Page, params = {}) => {
 	await page.goto(url);
 };
 
-function getControlButton(page: Page, name: string) {
-	return page.locator(`.button-${name.replace(/\./g, "_")}`);
+function getControlButton(locator: Locator, name: string) {
+	return locator.locator(`.button-${name.replace(/\./g, "_")}`);
 }
 
 export class MapPageObject {
@@ -31,7 +31,6 @@ export class MapPageObject {
 
 	private async relativeToCenter(x: number, y: number): Promise<[number, number]> {
 		const elem = await this.locator.boundingBox();
-		// const size = this.page.viewportSize();
 		if (!elem) {
 			throw new Error("Couldn't get MapPageObject viewport. Did you pass a valid locator?");
 		}
@@ -96,26 +95,26 @@ export class MapPageObject {
 		await this.clickAt(...polyCoordinates[0]);
 	}
 
-	private $coordinateInputControlContainer = this.page.locator(".laji-map-coordinates").locator("xpath=..");
-	private $coordinateUploadControlContainer = this.page.locator(".laji-map-coordinate-upload").locator("xpath=..");
-	private $coordinateCopyControlContainer = this.page.locator(".laji-map-draw-copy-table").locator("xpath=..");
-	private $layerControlContainer = this.page.locator("div.laji-map-control-layers");
-	private $getDrawButton = (name: string) => this.page.locator(`.leaflet-draw-draw-${name}`);
+	private $coordinateInputControlContainer = this.locator.locator(".laji-map-coordinates").locator("xpath=..");
+	private $coordinateUploadControlContainer = this.locator.locator(".laji-map-coordinate-upload").locator("xpath=..");
+	private $coordinateCopyControlContainer = this.locator.locator(".laji-map-draw-copy-table").locator("xpath=..");
+	private $layerControlContainer = this.locator.locator("div.laji-map-control-layers");
+	private $getDrawButton = (name: string) => this.locator.locator(`.leaflet-draw-draw-${name}`);
 
 	controls = {
 		coordinateInput: {
 			$container: this.$coordinateInputControlContainer,
-			$button: getControlButton(this.page, "drawUtils.coordinateInput"),
+			$button: getControlButton(this.locatr, "drawUtils.coordinateInput"),
 			$closeButton: this.$coordinateInputControlContainer.locator(".close"),
 			enterLatLng: async (lat: number, lng: number) => {
-				await this.page.locator("#laji-map-coordinate-input-lat").fill("" +lat);
-				return this.page.locator("#laji-map-coordinate-input-lng").fill("" + lng);
+				await this.locator.locator("#laji-map-coordinate-input-lat").fill("" +lat);
+				return this.locator.locator("#laji-map-coordinate-input-lng").fill("" + lng);
 			},
 			getCRS: async () => this.$coordinateInputControlContainer.locator(".crs-info span").last().textContent(),
 			$submit: this.$coordinateInputControlContainer.locator("button[type=\"submit\"]")
 		},
 		coordinateUpload: {
-			$button: getControlButton(this.page, "drawUtils.upload"),
+			$button: getControlButton(this.locator, "drawUtils.upload"),
 			$container: this.$coordinateUploadControlContainer,
 			$closeButton: this.$coordinateUploadControlContainer.locator(".close"),
 			type: (text: string) => this.$coordinateUploadControlContainer.locator("textarea").fill(text),
@@ -125,7 +124,7 @@ export class MapPageObject {
 		},
 		coordinateCopy: {
 			$container: this.$coordinateCopyControlContainer,
-			$button: getControlButton(this.page, "drawUtils.copy"),
+			$button: getControlButton(this.locator, "drawUtils.copy"),
 			$closeButton: this.$coordinateCopyControlContainer.locator(".close"),
 			getConverted: () => this.$coordinateCopyControlContainer.locator("textarea").inputValue(),
 			GeoJSON: () => this.$coordinateCopyControlContainer.locator("text=GeoJSON").click(),
@@ -137,10 +136,10 @@ export class MapPageObject {
 		},
 		layer: {
 			$container: this.$layerControlContainer,
-			$button: this.page.locator(".leaflet-control-layers-toggle"),
+			$button: this.locator.locator(".leaflet-control-layers-toggle"),
 			showList: async () => {
-				const {x, y} = (await this.page.locator(".leaflet-control-layers-toggle").boundingBox() as any);
-				return this.page.mouse.move(x, y);
+				const {x, y} = (await this.locator.locator(".leaflet-control-layers-toggle").boundingBox() as any);
+				return this.locator.mouse.move(x, y);
 			},
 			$finnishList: this.$layerControlContainer.locator(".finnish-list"),
 			$worldList: this.$layerControlContainer.locator(".world-list"),
@@ -150,9 +149,9 @@ export class MapPageObject {
 			$getLayerElement: (name: string) => this.$layerControlContainer.locator(`#${name}`)
 		},
 		delete: {
-			start: () => (getControlButton(this.page, "drawUtils.delete"))?.click(),
-			$finish: this.page.locator(".leaflet-draw-actions.laji-map-subcontrol-drawUtils\\.delete a"),
-			finish: () => this.page.locator(".leaflet-draw-actions a").last().click()
+			start: () => (getControlButton(this.locator, "drawUtils.delete"))?.click(),
+			$finish: this.locator.locator(".leaflet-draw-actions.laji-map-subcontrol-drawUtils\\.delete a"),
+			finish: () => this.locator.locator(".leaflet-draw-actions a").last().click()
 		},
 		draw: {
 			$markerButton: this.$getDrawButton("marker"),
@@ -164,7 +163,7 @@ export class MapPageObject {
 	}
 
 	$getEditableMarkers() {
-		return this.page.locator(".leaflet-marker-draggable");
+		return this.locator.locator(".leaflet-marker-draggable");
 	}
 }
 

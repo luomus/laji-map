@@ -256,23 +256,36 @@ The map options can be controlled with query parameters. In addition, `testMode`
 
 ## Tests ##
 
-You need to update the webdriver before testing: 
+You might need to install playwright dependencies to run the tests:
 
 ```
-webdriver-manager update
+npx playwright install
 ```
 
-The playground server must be running before running the tests.
+The playground server can be running or or not. If it's not running, it will be automatically started.
 
-Run the tests with `npm test`. For more robust testing, run `npm run test:slow`. It runs test after 500ms delay after the map has been initialized.
+Run the tests:
 
-### Test parameters ###
+```
+npm test
+```
+
+If you run into issues with browser dependencies etc, there's also a dockerized runner:
+
+```
+# Run all tests (builds docker image & runs it)
+npm run test:docker
+
+# Or if you want to give playwright params, run certain tests etc:
+npm run test:docker:build # build first
+npm run test:docker:run -- test/draw.spec.ts --project chromium # pass params to playwright
+```
+
+### Test env variables ###
 
 Parameters are given as envirnment variables, i.e. `TEST_BROWSER=chrome npm test`
 
 Option         | Default | Description
 ---------------|---------|-----------------------------------------------------------------------------------------------
-TEST_BROWSER   | -       | `chrome` or `firefox`. Tests are run for both by default.
-HEADLESS       | `true`  | Run the tests in a visible browser window if `true`.
 VERBOSE        | `false` | Logs the playground URI's used by tests so you can get debug the test cases in playground easier.
 DELAY          | -       | Makes all tests wait DELAY milliseconds ebetween the map being initialized and the test run.

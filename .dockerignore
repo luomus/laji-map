@@ -1,0 +1,9 @@
+node_modules
+build
+lib
+dist
+test-export
+test-results
+tmp
+.git
+.idea

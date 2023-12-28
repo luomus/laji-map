@@ -277,8 +277,7 @@ If you run into issues with browser dependencies etc, there's also a dockerized 
 npm run test:docker
 
 # Or if you want to give playwright params, run certain tests etc:
-npm run test:docker:build # build first
-npm run test:docker:run -- test/draw.spec.ts --project chromium # pass params to playwright
+npm run test:docker -- test/draw.spec.ts --project chromium
 ```
 
 ### Test env variables ###

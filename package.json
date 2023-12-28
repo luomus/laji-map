@@ -18,7 +18,7 @@
     "lint": "eslint -c .eslintrc.prod.json src playground",
     "test": "playwright test",
     "test:slow": "DELAY=500 npm run test",
-    "test:docker": "npm run test:docker:build && npm run test:docker:run",
+    "test:docker": "npm run test:docker:build && npm run test:docker:run --",
     "test:docker:build": "docker build -t laji-map-test -f test.Dockerfile .",
     "test:docker:run": "docker run laji-map-test:latest"
   },

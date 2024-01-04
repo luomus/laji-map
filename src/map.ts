@@ -2003,9 +2003,6 @@ export default class LajiMap {
 			convertAnyToWGS84GeoJSON(item.featureCollection),
 			{
 				pointToLayer: this._featureToLayer(item.getFeatureStyle, dataIdx),
-				style: (feature: G.Feature) => {
-					return this._getStyleForType([dataIdx, feature.properties.lajiMapIdx]);
-				},
 				onEachFeature: (feature: G.Feature, _layer: DataItemLayer) => {
 					this._initializeLayer(_layer, [dataIdx, feature.properties.lajiMapIdx]);
 				}
@@ -2014,6 +2011,14 @@ export default class LajiMap {
 
 		item.group = layer;
 		item.groupContainer = layer;
+
+		// the style fn depends on item.group being present,
+		// so it has to be added after the initialization of item.group above
+		// rather than during the initialization of layer
+		layer.setStyle((feature: G.Feature) => {
+			return this._getStyleForType([dataIdx, feature.properties.lajiMapIdx]);
+		});
+
 		if (item.cluster) {
 			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item));
 			item.group.addTo(item.groupContainer);

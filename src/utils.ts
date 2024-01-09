@@ -12,8 +12,12 @@ export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
 export type GeometryFormat = "GeoJSON" | "WKT" | "ISO 6709";
 export interface GeoJSONValidationErrors { [path: string]: { message: string; }; }
 
-export function reverseCoordinate(c: [number, number]): [number, number] {
-	return <[number, number]> c.slice(0).reverse();
+type Tuple = [number, number];
+type Position = Tuple | number[];
+
+export function reverseCoordinate<T extends Position>(c: T): T {
+	const [first, second, ...rest] = c;
+	return [second, first, ...rest] as T;
 }
 
 proj4.defs("EPSG:2393", EPSG2393String);
@@ -51,10 +55,14 @@ proj4.defs("EPSG:3883", "+proj=tmerc +lat_0=0 +lon_0=29 +k=1 +x_0=29500000 +y_0=
 proj4.defs("EPSG:3884", "+proj=tmerc +lat_0=0 +lon_0=30 +k=1 +x_0=30500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 proj4.defs("EPSG:3885", "+proj=tmerc +lat_0=0 +lon_0=31 +k=1 +x_0=31500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 
-export function convertLatLng(latlng: [number, number], from: string, to: string, validate = true) {
+export function convertLatLng(latlng: Position, from: string, to: string, validate = true): Position {
 	function formatToProj4Format(format) {
 		return proj4.defs(format) || format;
 	}
+
+	 // 'rest' is altitude etc extra untouched.
+	const [first, sec, ...rest] = latlng;
+	latlng = [first, sec];
 
 	const [fromValidator, toValidator] = [from, to].map(crs => {
 		if (crs === "EPSG:2393") {
@@ -77,9 +85,9 @@ export function convertLatLng(latlng: [number, number], from: string, to: string
 
 	const converted = reverseCoordinate(proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng)));
 	if (toValidator && toValidator[0].formatter) {
-		return format(converted, toValidator);
+		return [...format(converted, toValidator), ...rest];
 	}
-	return converted;
+	return [...converted, ...rest];
 }
 
 export function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) => any): any {
@@ -374,7 +382,7 @@ function textualFormatToGeoJSON(
 export function ISO6709ToGeoJSON(ISO6709: string): G.FeatureCollection {
 	function lineToCoordinates(line) {
 		return line.split("/").filter(l => l).map(coordString => {
-			return coordString.match(/-?\d+\.?\d*/g).map(n => +n).reverse();
+			return reverseCoordinate(coordString.match(/-?\d+\.?\d*/g).map(n => +n));
 		});
 	}
 	function lineIsPolygon(line) {
@@ -395,7 +403,7 @@ export function ISO6709ToGeoJSON(ISO6709: string): G.FeatureCollection {
 
 export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 	function latLngToWKTString(latLng) {
-		return latLng.reverse().join(" ");
+		return reverseCoordinate(latLng).join(" ");
 	}
 	function coordinateJoiner(coords) {
 		return coords.join(",");
@@ -617,7 +625,7 @@ export function detectCRS(data: string | G.GeoJSON, allowGrid = false): string {
 			if (geometrySample && geometrySample.coordinates) {
 				let coordinateSample = geometrySample.coordinates;
 				while (Array.isArray(coordinateSample[0])) coordinateSample = coordinateSample[0];
-				coordinateSample = coordinateSample.map(c => `${c}`).reverse();
+				coordinateSample = reverseCoordinate(coordinateSample.map(c => `${c}`));
 				return detectCRSFromLatLng(coordinateSample, allowGrid);
 			}
 		}
@@ -721,7 +729,7 @@ export function validateGeoJSON(geoJSON: string | G.GeoJSON, crs?: string, warni
 				validator = wgs84Validator;
 				break;
 			}
-			validator && validateLatLng(c.slice(0).reverse().map(_c => `${_c}`), validator, !!"throwMode");
+			validator && validateLatLng(reverseCoordinate(c).map(_c => `${_c}`), validator, !!"throwMode");
 		} catch (e) {
 			if (e.latOrLng) {
 				addError(new CoordinateError(e.translationKey, e.latOrLng, e.half, path));
@@ -1034,7 +1042,11 @@ export {wgs84Validator, ykjValidator, ykjGridValidator, ykjGridStrictValidator, 
 const stripLeadingZeros = c => `${parseInt(c, 10)}`;
 
 export function validateLatLng(latlng: string[], latLngValidator: CoordinateValidator[], throwError = false): boolean {
-	return latlng.every((value, i) => {
+	if (!Array.isArray(latlng)) {
+		throw new Error("invalid latlng type for validateLatLng. Expected array");
+	}
+
+	return [latlng[0], latlng[1]].every((value, i) => {
 		value = stripLeadingZeros(`${value}`);
 		const validator = latLngValidator[i];
 		if (!validator) {
@@ -1213,13 +1225,13 @@ export function latLngGridToGeoJSON(latlngStr: [string, string]): G.Feature<G.Po
 
 	let geometry: G.Point | G.Polygon = {
 		type: "Point",
-		coordinates: ((isYKJ)
+		coordinates: reverseCoordinate((isYKJ)
 			? convert(latlng, "EPSG:2393")
 			: (isETRS)
 				? convert(latlng, "EPSG:3067")
 				: (isWGS84Coordinates)
 					? latlng
-					: []).reverse()
+					: [])
 	};
 
 	if (isYKJGrid || isETRSGrid) {

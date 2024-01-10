@@ -58,7 +58,7 @@
     "@luomus/leaflet-draw": "^1.0.2",
     "@luomus/leaflet-measure-path": "^1.5.0",
     "@luomus/leaflet-smooth-wheel-zoom": "^1.0.0",
-    "@luomus/leaflet-textpath": "^1.2.3",
+    "@luomus/leaflet-textpath": "^1.2.4",
     "@luomus/leaflet.vector-markers": "0.0.6",
     "@types/geojson": "*",
     "@types/leaflet": "^1.7.11",

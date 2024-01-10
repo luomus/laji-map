@@ -161,7 +161,8 @@ const LayerControl = L.Control.extend({
 			const opacity = +slider.get();
 
 			const data = this.dataLayersByName[name];
-			// Handle data item.
+
+			// Handle data item
 			if (data) {
 				this.updateDataOpacity(data, opacity);
 				return;
@@ -253,6 +254,9 @@ const LayerControl = L.Control.extend({
 	},
 
 	updateDataOpacity(data: Data, opacity: number, visible = true) {
+		if (data.opacity === opacity) {
+			return;
+		}
 		data.visible = visible;
 		data.opacity = opacity;
 		data.onOpacityChange?.(opacity);

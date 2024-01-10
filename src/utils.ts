@@ -55,14 +55,14 @@ proj4.defs("EPSG:3883", "+proj=tmerc +lat_0=0 +lon_0=29 +k=1 +x_0=29500000 +y_0=
 proj4.defs("EPSG:3884", "+proj=tmerc +lat_0=0 +lon_0=30 +k=1 +x_0=30500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 proj4.defs("EPSG:3885", "+proj=tmerc +lat_0=0 +lon_0=31 +k=1 +x_0=31500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
 
-export function convertLatLng(latlng: Position, from: string, to: string, validate = true): Position {
+export function convertLatLng<T extends Position>(position: T, from: string, to: string, validate = true): T {
 	function formatToProj4Format(format) {
 		return proj4.defs(format) || format;
 	}
 
 	 // 'rest' is altitude etc extra untouched.
-	const [first, sec, ...rest] = latlng;
-	latlng = [first, sec];
+	const [first, sec, ...rest] = position;
+	let latlng = [first, sec];
 
 	const [fromValidator, toValidator] = [from, to].map(crs => {
 		if (crs === "EPSG:2393") {
@@ -85,9 +85,9 @@ export function convertLatLng(latlng: Position, from: string, to: string, valida
 
 	const converted = reverseCoordinate(proj4(formatToProj4Format(from), formatToProj4Format(to), reverseCoordinate(latlng)));
 	if (toValidator && toValidator[0].formatter) {
-		return [...format(converted, toValidator), ...rest];
+		return [...format(converted, toValidator), ...rest] as T;
 	}
-	return [...converted, ...rest];
+	return [...converted, ...rest] as T;
 }
 
 export function updateImmutablyRecursivelyWith(obj: any, fn: (key: string, value: any) => any): any {

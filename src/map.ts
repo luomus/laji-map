@@ -4064,13 +4064,13 @@ export function controlFillOpacity(data: DataOptions, l: DataItemLayer): boolean
 			&& "controlFillOpacity" in data.polyline && isPolyline(l)) {
 			useFillOpacity = data.polyline.controlFillOpacity;
 		} else if (data.rectangle && typeof data.rectangle !== "boolean"
-			&& "controlFillOpacity" in data.rectangle &&  l instanceof L.Rectangle) {
+			&& "controlFillOpacity" in data.rectangle && l instanceof L.Rectangle) {
 			useFillOpacity = data.rectangle.controlFillOpacity;
 		} else if (data.polygon && typeof data.polygon !== "boolean"
-			&& "controlFillOpacity" in data.polygon &&  l instanceof L.Polygon) {
+			&& "controlFillOpacity" in data.polygon && l instanceof L.Polygon) {
 			useFillOpacity = data.polygon.controlFillOpacity;
 		} else if (data.circle && typeof data.circle !== "boolean"
-			&& "controlFillOpacity" in data.circle &&  l instanceof L.Circle) {
+			&& "controlFillOpacity" in data.circle && l instanceof L.Circle) {
 			useFillOpacity = data.circle.controlFillOpacity;
 		}
 	}
@@ -4085,13 +4085,13 @@ export function getMaxFillOpacity(data: DataOptions, l: DataItemLayer): number {
 		&& "maxFillOpacity" in data.polyline && isPolyline(l)) {
 		return data.polyline.maxFillOpacity;
 	} else if (data.rectangle && typeof data.rectangle !== "boolean"
-		&& "maxFillOpacity" in data.rectangle &&  l instanceof L.Rectangle) {
+		&& "maxFillOpacity" in data.rectangle && l instanceof L.Rectangle) {
 		return data.rectangle.maxFillOpacity;
 	} else if (data.polygon && typeof data.polygon !== "boolean"
-		&& "maxFillOpacity" in data.polygon &&  l instanceof L.Polygon) {
+		&& "maxFillOpacity" in data.polygon && l instanceof L.Polygon) {
 		return data.polygon.maxFillOpacity;
 	} else if (data.circle && typeof data.circle !== "boolean"
-		&& "maxFillOpacity" in data.circle &&  l instanceof L.Circle) {
+		&& "maxFillOpacity" in data.circle && l instanceof L.Circle) {
 		return data.circle.maxFillOpacity;
 	}
 
@@ -4099,5 +4099,5 @@ export function getMaxFillOpacity(data: DataOptions, l: DataItemLayer): number {
 	if (l instanceof L.Marker) {
 		return 1;
 	}
-	return 0.4;
+	return data.maxFillOpacity ?? 0.4;
 }

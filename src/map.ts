@@ -2014,6 +2014,7 @@ export default class LajiMap {
 
 		item.group = layer;
 		item.groupContainer = layer;
+
 		if (item.cluster) {
 			item.groupContainer = L.markerClusterGroup(this.getClusterOptionsFor(item));
 			item.group.addTo(item.groupContainer);
@@ -3607,12 +3608,7 @@ export default class LajiMap {
 			dataStyles = this._fillStyleWithGlobals([dataIdx, featureIdx]);
 		}
 
-		let layer = undefined;
-		if (this.idxsToIds[dataIdx]) layer = this._getLayerByIdxTuple([dataIdx, featureIdx]);
-
 		const isLine = (
-			layer && isPolyline(layer)
-			||
 			feature && (feature.geometry.type === "LineString" || feature.geometry.type === "MultiLineString")
 		);
 
@@ -3623,11 +3619,11 @@ export default class LajiMap {
 		if (isLine) {
 			style.weight = 10;
 		}
-		const maxFillOpacity = getMaxFillOpacity(item, layer);
+		const maxFillOpacity = feature && getMaxFillOpacity(item, feature);
 		style = {
 			...style,
 			...dataStyles,
-			...computeOpacities(item.visible, opacity, controlFillOpacity(item, layer), maxFillOpacity),
+			...computeOpacities(item.visible, opacity, feature && controlFillOpacity(item, feature), maxFillOpacity),
 			...overrideStyles
 		};
 
@@ -4052,51 +4048,47 @@ export default class LajiMap {
 	}
 }
 
-export function controlFillOpacity(data: DataOptions, l: DataItemLayer): boolean {
+export function controlFillOpacity(data: DataOptions, feature: G.Feature): boolean {
+	const {type} = feature.geometry;
 	let useFillOpacity = false;
 	if ("controlFillOpacity" in data) {
 		useFillOpacity = data.controlFillOpacity;
 	} else {
-		if (data.marker && typeof data.marker !== "boolean"
-			&& "controlFillOpacity" in data.marker && l instanceof L.Marker) {
+		if (data.circle && typeof data.circle !== "boolean"
+			&& "controlFillOpacity" in data.circle && type === "Point" && (feature.geometry as any).radius) {
+			useFillOpacity = data.circle.controlFillOpacity;
+		} else if (data.marker && typeof data.marker !== "boolean"
+			&& "controlFillOpacity" in data.marker && type === "Point") {
 			useFillOpacity = data.marker.controlFillOpacity;
 		} else if (data.polyline && typeof data.polyline !== "boolean"
-			&& "controlFillOpacity" in data.polyline && isPolyline(l)) {
+			&& "controlFillOpacity" in data.polyline && (type === "LineString" || type === "MultiLineString")) {
 			useFillOpacity = data.polyline.controlFillOpacity;
-		} else if (data.rectangle && typeof data.rectangle !== "boolean"
-			&& "controlFillOpacity" in data.rectangle && l instanceof L.Rectangle) {
-			useFillOpacity = data.rectangle.controlFillOpacity;
 		} else if (data.polygon && typeof data.polygon !== "boolean"
-			&& "controlFillOpacity" in data.polygon && l instanceof L.Polygon) {
+			&& "controlFillOpacity" in data.polygon && (type === "Polygon" || type === "MultiPolygon")) {
 			useFillOpacity = data.polygon.controlFillOpacity;
-		} else if (data.circle && typeof data.circle !== "boolean"
-			&& "controlFillOpacity" in data.circle && l instanceof L.Circle) {
-			useFillOpacity = data.circle.controlFillOpacity;
 		}
+		return useFillOpacity;
 	}
-	return useFillOpacity;
 }
 
-export function getMaxFillOpacity(data: DataOptions, l: DataItemLayer): number {
-	if (data.marker && typeof data.marker !== "boolean"
-		&& "maxFillOpacity" in data.marker && l instanceof L.Marker) {
+export function getMaxFillOpacity(data: DataOptions, feature: G.Feature): number {
+	const {type} = feature.geometry;
+	if (data.circle && typeof data.circle !== "boolean"
+		&& "maxFillOpacity" in data.circle && type === "Point" && (feature.geometry as any).radius) {
+		return data.circle.maxFillOpacity;
+	} else if (data.marker && typeof data.marker !== "boolean"
+		&& "maxFillOpacity" in data.marker && type === "Point") {
 		return data.marker.maxFillOpacity;
 	} else if (data.polyline && typeof data.polyline !== "boolean"
-		&& "maxFillOpacity" in data.polyline && isPolyline(l)) {
+		&& "maxFillOpacity" in data.polyline && (type === "LineString" || type === "MultiLineString")) {
 		return data.polyline.maxFillOpacity;
-	} else if (data.rectangle && typeof data.rectangle !== "boolean"
-		&& "maxFillOpacity" in data.rectangle && l instanceof L.Rectangle) {
-		return data.rectangle.maxFillOpacity;
 	} else if (data.polygon && typeof data.polygon !== "boolean"
-		&& "maxFillOpacity" in data.polygon && l instanceof L.Polygon) {
+		&& "maxFillOpacity" in data.polygon && (type === "Polygon" || type === "MultiPolygon")) {
 		return data.polygon.maxFillOpacity;
-	} else if (data.circle && typeof data.circle !== "boolean"
-		&& "maxFillOpacity" in data.circle && l instanceof L.Circle) {
-		return data.circle.maxFillOpacity;
 	}
 
 
-	if (l instanceof L.Marker) {
+	if (type === "Point") {
 		return 1;
 	}
 	return data.maxFillOpacity ?? 0.4;

@@ -261,7 +261,7 @@ const LayerControl = L.Control.extend({
 			data.onVisibleChange?.(true);
 		}
 		data.groupContainer.eachLayer((l: any) => {
-			const useFillOpacity = controlFillOpacity(data, l);
+			const useFillOpacity = controlFillOpacity(data, l.feature);
 
 			if (useFillOpacity) {
 				l.options.fillOpacity = opacity; // The cluster plugin checks the opacity from the options when a cluster unspiderfies.

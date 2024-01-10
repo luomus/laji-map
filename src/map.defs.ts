@@ -69,10 +69,10 @@ export interface ShowMeasurementsOptions {
 
 export interface DataWrappedLeafletEventData {
 	feature?: G.Feature;
-		layer?: DataItemLayer;
-		idx?: number;
-		dataIdx?: number;
-		featureIdx?: number;
+	layer?: DataItemLayer;
+	idx?: number;
+	dataIdx?: number;
+	featureIdx?: number;
 }
 
 export type DataWrappedLeafletEvent = (
@@ -104,7 +104,7 @@ export interface DataOptions {
 	getPopup?(options: GetPopupOptions, callback: (content: string | HTMLElement) => void): string;
 	single?: boolean;
 	showMeasurements?: boolean | ShowMeasurementsOptions;
-	rectangle?: boolean | LayerTypeOpacityControlOptions;
+	rectangle?: boolean;
 	polygon?: boolean | LayerTypeOpacityControlOptions;
 	polyline?: boolean | (CustomPolylineOptions & LayerTypeOpacityControlOptions);
 	circle?: boolean | LayerTypeOpacityControlOptions;

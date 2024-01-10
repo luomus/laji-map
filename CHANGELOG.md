@@ -1,3 +1,6 @@
+## 5.0.0
+* `rectangle` `maxFillOpacity` and `controlFillOpacity` removed. Rectangles use the respective `polygon` options instead.
+
 ## 4.0.0
 * protractor -> playwright migration: `test-export` moved to `test`. Includes only the `test-utils.ts`.
 

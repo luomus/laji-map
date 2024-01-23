@@ -901,28 +901,33 @@ export default class LajiMap {
 
 			const getMaastoLayer = getMMLLayer("maasto");
 
-			const createLayer = (address: string) => (options: L.WMSOptions, nonTiled = false) => {
-				const constructor = nonTiled ? NonTiledLayer.WMS : L.TileLayer.WMS;
-				const _options: any = {
-					maxZoom: 15,
-					format: "image/png",
-					transparent: true,
-					...options
+			const createLayer = (address: string, defaultOptions?: L.WMSOptions) =>
+				(layers: string | string[], options?: L.WMSOptions & { nonTiled?: boolean }) => {
+					const constructor = options?.nonTiled ? NonTiledLayer.WMS : L.TileLayer.WMS;
+					const _options: any = {
+						layers,
+						maxZoom: 15,
+						format: "image/png",
+						transparent: true,
+						...(defaultOptions || {}),
+						...options
+					};
+					if (_options) {
+						_options.useCanvas = false;
+					}
+					return new constructor(
+						address, _options);
 				};
-				if (_options) {
-					_options.useCanvas = false;
-				}
-				return new constructor(
-					`${address}/ows`, _options);
-			};
 
-			const createLajiLayer = createLayer(this.lajiGeoServerAddress);
-
-			const getTilastokeskusLayer = (layer: string) => L.tileLayer.wms("https://geo.stat.fi/geoserver/tilastointialueet/wms", {
-				layers: layer,
-				transparent: true,
-				format: "image/png",
+			const lajiLayer = createLayer(this.lajiGeoServerAddress + "/ows");
+			const tilastokeskusLayer = createLayer("https://geo.stat.fi/geoserver/tilastointialueet/wms", {
 				attribution: getAttribution( "https://www.stat.fi/org/lainsaadanto/copyright.html", "Tilastokeskus")
+			});
+			const sykeLayer = createLayer("https://paikkatiedot.ymparisto.fi/geoserver/inspire_br/wms", {
+				attribution: sykeAttribution,
+			});
+			const lukeLayer = createLayer("https://kartta.luke.fi/geoserver/ows", {
+				attribution: lukeAttribution
 			});
 
 			this.finnishTileLayers = {
@@ -935,23 +940,13 @@ export default class LajiMap {
 					tileSize: 256,
 					attribution : `${mmlAttribution}, ${getAttribution("https://www.mapant.fi", "Mapant")}`
 				}),
-				ykjGrid: createLajiLayer({
-					layers: "LajiMapData:YKJlines100,LajiMapData:YKJlines1000,LajiMapData:YKJlines10000,LajiMapData:YKJlines100000",
-				}),
-				ykjGridLabels: createLajiLayer({
-					layers: "LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000",
-				}, true),
+				ykjGrid: lajiLayer("LajiMapData:YKJlines100,LajiMapData:YKJlines1000,LajiMapData:YKJlines10000,LajiMapData:YKJlines100000"),
+				ykjGridLabels: lajiLayer("LajiMapData:YKJlabels1000,LajiMapData:YKJlabels10000,LajiMapData:YKJlabels100000", { nonTiled: true }),
 				atlasGrid: L.layerGroup([
-					createLajiLayer({
-						layers: "LajiMapData:AtlasYKJ1kmLines,LajiMapData:AtlasYKJ10kmLines",
-					}),
-					createLajiLayer({
-						layers: "LajiMapData:AtlasYKJ1kmLabels,LajiMapData:AtlasYKJ10kmLabels",
-					}, true)
+					lajiLayer("LajiMapData:AtlasYKJ1kmLines,LajiMapData:AtlasYKJ10kmLines"),
+					lajiLayer("LajiMapData:AtlasYKJ1kmLabels,LajiMapData:AtlasYKJ10kmLabels", { nonTiled: true })
 				]),
-				afeGrid: createLajiLayer({
-					layers: "LajiMapData:afe_grid"
-				}),
+				afeGrid: lajiLayer("LajiMapData:afe_grid"),
 			};
 
 			this.worldTileLayers = {
@@ -962,9 +957,7 @@ export default class LajiMap {
 					subdomains: ["mt0", "mt1", "mt2", "mt3"],
 					attribution: getAttribution("https://developers.google.com/maps/terms", "Google")
 				}),
-				cgrsGrid: createLajiLayer({
-					layers: "LajiMapData:cgrs_grid"
-				})
+				cgrsGrid: lajiLayer("LajiMapData:cgrs_grid")
 			};
 
 			this.tileLayers = {
@@ -975,109 +968,68 @@ export default class LajiMap {
 			this.availableTileLayers = this.tileLayers;
 
 			this.overlaysByNames = {
-				geobiologicalProvinces: createLajiLayer({
-					layers: "LajiMapData:biogeographical_provinces",
-					version: "1.3.0"
+				geobiologicalProvinces: lajiLayer("LajiMapData:biogeographical_provinces", { version: "1.3.0" }),
+				geobiologicalProvincesBorders: lajiLayer("LajiMapData:biogeographical_provinces_borders", { version: "1.3.0" }),
+				municipalities: tilastokeskusLayer("kunta1000k"),
+				counties: tilastokeskusLayer( "maakunta1000k"),
+				ely: tilastokeskusLayer( "ely1000k"),
+				forestVegetationZones: sykeLayer("BR.Metsakasvillisuusvyohykkeet", {
+					styles: "BR.Metsakasvillisuusvyohykkeet.Luokiteltu",
+					defaultOpacity: 0.5
 				}),
-				geobiologicalProvincesBorders: createLajiLayer({
-					layers: "LajiMapData:biogeographical_provinces_borders",
-					version: "1.3.0"
+				mireVegetationZones: sykeLayer("BR.Suokasvillisuusvyohykkeet", {
+					styles: "BR.Suokasvillisuusvyohykkeet.Luokiteltu",
+					defaultOpacity: 0.5
 				}),
-				municipalities: getTilastokeskusLayer("kunta1000k"),
-				counties: getTilastokeskusLayer( "maakunta1000k"),
-				ely: getTilastokeskusLayer( "ely1000k"),
-				// eslint-disable-next-line max-len
-				forestVegetationZones: createLayer("https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer")({
-					layers: "br.Metsakasvillisuusvyohykkeet",
-					defaultOpacity: 0.5,
-					attribution: sykeAttribution
-				}),
-				// eslint-disable-next-line max-len
-				mireVegetationZones: createLayer("https://paikkatieto.ymparisto.fi/arcgis/services/INSPIRE/SYKE_EliomaantieteellisetAlueet/MapServer/WmsServer")({
-					layers: "br.Suokasvillisuusvyohykkeet",
-					defaultOpacity: 0.5,
-					attribution: sykeAttribution
-				}),
-				threatenedSpeciesEvaluationZones: createLajiLayer({
-					layers: "LajiMapData:threatened_species_evaluation_zones",
+				threatenedSpeciesEvaluationZones: lajiLayer("LajiMapData:threatened_species_evaluation_zones", {
 					version: "1.1.0",
 					defaultOpacity: 0.5,
 					attribution: sykeAttribution
 				}),
 				// eslint-disable-next-line max-len
-				biodiversityForestZones: createLayer("https://paikkatieto.ymparisto.fi/arcgis/services/SYKE/SYKE_MonimuotoisuudelleTarkeatMetsaalueetZonation/MapServer/WmsServer")({
-					layers: "8",
-					defaultOpacity: 0.5,
-					attribution: sykeAttribution
-				}),
-				habitat: createLayer("https://kartta.luke.fi/geoserver/ows")({
-					layers: "MVMI:kasvupaikka_1519",
-					defaultOpacity: 0.5,
-					attribution: lukeAttribution
-				}),
-				ageOfTrees: createLayer("https://kartta.luke.fi/geoserver/ows")({
-					layers: "MVMI:ika_1519",
-					defaultOpacity: 0.5,
-					attribution: lukeAttribution
-				}),
+				biodiversityForestZones: createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_monimuotoisuudelletarkeatmetsaalueetzonation/wms", { defaultOpacity: 0.5 })("Alueellinen_1_Lahopuupotentiaali"),
+				habitat: lukeLayer("MVMI:kasvupaikka_1519", { defaultOpacity: 0.5 }),
+				ageOfTrees: lukeLayer("MVMI:ika_1519", { defaultOpacity: 0.5 }),
 				kiinteistojaotus: getMMLLayer("kiinteisto")("kiinteistojaotus"),
 				kiinteistotunnukset: getMMLLayer("kiinteisto")("kiinteistotunnukset"),
 				currentProtectedAreas: L.layerGroup([
-					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/inspire_ps/wms")({
-						layers: [
+					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/inspire_ps/wms", {
+						attribution: sykeAttribution,
+					})(
+						[
 							"PS.ProtectedSitesValtionOmistamaLuonnonsuojelualue",
 							"PS.ProtectedSitesYksityistenMaillaOlevaLuonnonsuojelualue",
 							"PS.ProtectedSitesEramaaAlue",
 							"PS.ProtectedSitesProposedSiteOfCommunityImportance",
 							"PS.ProtectedSitesSpecialAreaOfConservation",
 							"PS.ProtectedSitesSpecialProtectionArea"
-
-						].join(","),
-						attribution: sykeAttribution,
-						styles: [
-							"PS.ValtionMaidenSuojelualueet.Luokiteltu",
-							"PS.YksityisetSuojelualueet.Luokiteltu",
-							"PS.EramaaAlueet",
-							"PS.Natura2000SCI",
-							"PS.Natura2000SAC",
-							"PS.Natura2000SPA"
-						].join(",")
-					}),
-					createLajiLayer({
-						layers: "ProtectedAreas:protectedArea_labels",
-					}, true)
+						].join(","), {
+							styles: [
+								"PS.ValtionMaidenSuojelualueet.Luokiteltu",
+								"PS.YksityisetSuojelualueet.Luokiteltu",
+								"PS.EramaaAlueet",
+								"PS.Natura2000SCI",
+								"PS.Natura2000SAC",
+								"PS.Natura2000SPA"
+							].join(",")
+						}),
+					lajiLayer("ProtectedAreas:protectedArea_labels", { nonTiled: true })
 				], {defaultOpacity: 0.5} as any),
 				plannedProtectedAreas: L.layerGroup([
-					createLajiLayer({
-						layers: "ProtectedAreas:otherProtectedAreas",
-					}, true),
-					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_luonnonsuojeluohjelma_alueet/wms")({
-						layers: "syke_luonnonsuojeluohjelma_alueet:Luonnonsuojeluohjelmaalueet",
-						attribution: sykeAttribution,
-						styles: "lsohjelma_alueet_luokiteltu"
-					})
+					lajiLayer("ProtectedAreas:otherProtectedAreas", { nonTiled: true }),
+					createLayer("https://paikkatiedot.ymparisto.fi/geoserver/syke_luonnonsuojeluohjelma_alueet/wms")(
+						"syke_luonnonsuojeluohjelma_alueet:Luonnonsuojeluohjelmaalueet",
+						{ styles: "lsohjelma_alueet_luokiteltu", attribution: sykeAttribution }
+					)
 				], {defaultOpacity: 0.5} as any),
-				flyingSquirrelPredictionModel: createLajiLayer({
-					layers: "LajiMapData:flyingSquirrel_predictionModel",
-					defaultOpacity: 0.5
-				}),
+				flyingSquirrelPredictionModel: lajiLayer("LajiMapData:flyingSquirrel_predictionModel", { defaultOpacity: 0.5 }),
 				birdAtlasSocietyGridZones: L.layerGroup([
-					createLajiLayer({
-						layers: "LajiMapData:BirdAtlasSocietyGrid",
-					}),
-					createLajiLayer({
-						layers: "LajiMapData:BirdAtlasSocietyGridLabels",
-					}, true),
-					createLajiLayer({
-						layers: "LajiMapData:BirdLifeSocieties",
-					}),
-					createLajiLayer({
-						layers: "LajiMapData:BirdLifeSocietyLabels",
-					}, true)
+					lajiLayer("LajiMapData:BirdAtlasSocietyGrid"),
+					lajiLayer("LajiMapData:BirdAtlasSocietyGridLabels", { nonTiled: true }),
+					lajiLayer("LajiMapData:BirdLifeSocieties"),
+					lajiLayer("LajiMapData:BirdLifeSocietyLabels", { nonTiled: true })
 				], {defaultOpacity: 0.5} as any),
-				barentsRegion: createLajiLayer({
-					layers: "LajiMapData:barentsRegion2"
-				}),
+				barentsRegion: lajiLayer("LajiMapData:barentsRegion2"),
 			};
 
 			const combined = {...this.tileLayers, ...this.overlaysByNames};

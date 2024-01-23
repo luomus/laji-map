@@ -12,8 +12,8 @@ export type CRSString = "WGS84" | "EPSG:2393" | "EPSG:3067";
 export type GeometryFormat = "GeoJSON" | "WKT" | "ISO 6709";
 export interface GeoJSONValidationErrors { [path: string]: { message: string; }; }
 
-type Tuple = [number, number];
-type Position = Tuple | number[];
+type NumericTuple = [number, number];
+type Position = NumericTuple | number[];
 
 export function reverseCoordinate<T extends Position>(c: T): T {
 	const [first, second, ...rest] = c;

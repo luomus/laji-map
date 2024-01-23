@@ -4088,7 +4088,7 @@ export function getMaxFillOpacity(data: DataOptions, feature: G.Feature): number
 	}
 
 
-	if (type === "Point") {
+	if (type === "Point" && !(feature.geometry as any).radius) {
 		return 1;
 	}
 	return data.maxFillOpacity ?? 0.4;

@@ -211,7 +211,7 @@ class App {
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
 			locate: {on: false, onLocationFound: () => console.info("FOUND")},
 			//clickBeforeZoomAndPan: true,
-			lajiGeoServerAddress: "https://geoserver-dev.laji.fi"
+			lajiGeoServerAddress: "https://geoserver-dev.laji.fi/geoserver"
 		};
 
 		let options = {

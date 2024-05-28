@@ -1,16 +1,16 @@
 {
   "name": "@luomus/laji-map",
-  "version": "5.0.3",
+  "version": "5.1.0",
   "description": "A map with drawing functionality",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-	"files": [
-		"lib",
-		"dist",
-		"test-export",
-		"README.md",
-		"CHANGELOG.md"
-	],
+  "files": [
+    "lib",
+    "dist",
+    "test-export",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "prepare": "self-import",
     "start": "npx webpack serve",

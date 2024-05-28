@@ -1,3 +1,6 @@
+## 5.1.0
+* added OGC URN format support for WGS84, YKJ & ETRS-TM35FIN
+
 ## 5.0.0
 * `rectangle` `maxFillOpacity` and `controlFillOpacity` removed. Rectangles use the respective `polygon` options instead.
 

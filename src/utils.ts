@@ -23,6 +23,10 @@ export function reverseCoordinate<T extends Position>(c: T): T {
 proj4.defs("EPSG:2393", EPSG2393String);
 proj4.defs("EPSG:3067", EPSG3067String);
 
+proj4.defs("urn:ogc:def:crs:OGC:1.3:CRS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+proj4.defs("urn:ogc:def:crs:EPSG::2393", EPSG2393String);
+proj4.defs("urn:ogc:def:crs:EPSG::3067", EPSG3067String);
+
 // There are two sets of ETRS-GKn. Read more: http://latuviitta.org/documents/ETRS-GKn_ja_EPSG-koodit.html
 // Old ETRS-GKn
 proj4.defs("EPSG:3126", "+proj=tmerc +lat_0=0 +lon_0=19 +k=1 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");

@@ -254,7 +254,7 @@ const LayerControl = L.Control.extend({
 	},
 
 	updateDataOpacity(data: Data, opacity: number, visible = true) {
-		if (data.opacity === opacity) {
+		if (data.opacity === opacity && data.visible === visible) {
 			return;
 		}
 		data.visible = visible;

@@ -80,7 +80,7 @@ export function convertLatLng<T extends Position>(position: T, from: string, to:
 
 	const format = (_latlng, validator) => _latlng.map(c => `${c}`).map((c, i) => +validator[i].formatter(c));
 
-	if (fromValidator && fromValidator[0].formatter) {
+	if (fromValidator?.[0].formatter) {
 		latlng = format(latlng, fromValidator);
 	}
 	if (validate && fromValidator && (fromValidator[0].regexp || fromValidator[0].range)) {

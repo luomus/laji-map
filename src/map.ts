@@ -1229,6 +1229,9 @@ export default class LajiMap {
 		if (isEscape) {
 			key = ESC;
 		}
+		if (key === undefined) {
+			return;
+		}
 		if (this._triggerKeyEvent(key.toLowerCase(), e, type)) {
 			e.preventDefault();
 			e.stopPropagation();

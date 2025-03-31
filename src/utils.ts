@@ -200,20 +200,17 @@ export function geoJSONToTextualFormatWith(
 	name: string,
 	latLngCoordConverter: (latlng: number[]) => string,
 	coordinateJoiner: (latlng: number[]) => string,
+	coordinateSetJoiner: (latlng: number[]) => string,
 	coordinateStrToPoint: (coordinate: string) => string,
 	coordinateStrToLine: (coordinate: string) => string,
-	coordinateStrToPolygon: (coordinate: string) => string): string {
+	coordinateStrToPolygon: (coordinate: string) => string
+): string {
 	function geoJSONCoordToTextual(coords) {
 		return latLngCoordConverter(reverseCoordinate(coords));
 	}
 
 	function geoJSONCoordsJoin(coords) {
 		return coordinateJoiner(coords.map(geoJSONCoordToTextual));
-	}
-
-	function geoJSONCoordsToTextualArea(coords) {
-		let _coords = coords.slice(0);
-		return geoJSONCoordsJoin(_coords);
 	}
 
 	function geometryConverterFn(geometry) {
@@ -225,8 +222,7 @@ export function geoJSONToTextualFormatWith(
 		case "LineString":
 			return coordinateStrToLine(geoJSONCoordsJoin(geometry.coordinates));
 		case "Polygon": {
-			if (geometry.coordinates.length > 1) throw new Error(`${name} doesn't support polygons with interior rings.`);
-			return coordinateStrToPolygon(geoJSONCoordsToTextualArea(geometry.coordinates[0]));
+			return coordinateStrToPolygon(coordinateSetJoiner(geometry.coordinates.map(geoJSONCoordsJoin)));
 		}
 		default:
 			throw new Error(`Unknown geometry type ${geometry.type} for ${name} conversion`);
@@ -301,6 +297,13 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 		return coords.join("");
 	}
 
+	function coordinateSetJoiner(coords) {
+		if (coords.length > 1) {
+			throw new Error("ISO 6709 doesn't support polygons with interior rings.");
+		}
+		return coords;
+	}
+
 	function coordinateStrToPoint(coords) {
 		return coords;
 	}
@@ -316,6 +319,7 @@ export function geoJSONToISO6709(geoJSON: G.GeoJSON): string {
 		"ISO 6709",
 		latLngToISO6709String,
 		coordinateJoiner,
+		coordinateSetJoiner,
 		coordinateStrToPoint,
 		coordinateStrToLine,
 		coordinateStrToPolygon
@@ -412,6 +416,9 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 	function coordinateJoiner(coords) {
 		return coords.join(",");
 	}
+	function coordinateSetJoiner(coords) {
+		return coords.map(c => `(${c})`).join(",");
+	}
 	function coordinateStrToPoint(coords) {
 		return `POINT(${coords})`;
 	}
@@ -419,14 +426,15 @@ export function geoJSONToWKT(geoJSON: G.GeoJSON): string {
 		return `LINESTRING(${coords})`;
 	}
 	function coordinateStrToPolygon(coords) {
-		return `POLYGON((${coords}))`;
+		return `POLYGON(${coords})`;
 	}
 
 	let WKTGeo = geoJSONToTextualFormatWith(
 		geoJSON,
-		"ISO 6709",
+		"WKT",
 		latLngToWKTString,
 		coordinateJoiner,
+		coordinateSetJoiner,
 		coordinateStrToPoint,
 		coordinateStrToLine,
 		coordinateStrToPolygon

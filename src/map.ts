@@ -1481,22 +1481,20 @@ export default class LajiMap {
 		const existingLayer = this._tileLayers && this.tileLayers[Object.keys(this.getActiveLayers(this._tileLayers)).find(findNonOverlay)];
 
 		const center = this.map.getCenter();
-		this.map.options.crs = defaultCRSLayers.indexOf(layer) !== -1 ? L.CRS.EPSG3857 : this.mmlProj;
+		this.map.options.crs = defaultCRSLayers.includes(layer) ? L.CRS.EPSG3857 : this.mmlProj;
 
 		let zoom = this.map.getZoom();
 
 		if (this.activeProjName && newOptions.active !== this.activeProjName
 			&& this.activeProjName !== "finnish"
-			&& (!layer
-				|| (mmlCRSLayers.indexOf(layer) !== -1 && mmlCRSLayers.indexOf(existingLayer) === -1))
+			&& (!layer || (mmlCRSLayers.includes(layer) && !mmlCRSLayers.includes(existingLayer)))
 		) {
 			if (isProvided(this, "tileLayer")) {
 				zoom = zoom - 3;
 			}
 		} else if (newOptions.active !== this.activeProjName
 			&& this.activeProjName !== "world"
-			&& (!layer
-				|| (defaultCRSLayers.indexOf(layer) !== -1 && defaultCRSLayers.indexOf(existingLayer) === -1))
+			&& (!layer || (defaultCRSLayers.indexOf(layer) !== -1 && !defaultCRSLayers.includes(existingLayer)))
 		) {
 			zoom = zoom + 3;
 		}
@@ -3527,7 +3525,7 @@ export default class LajiMap {
 		const item = this.data[dataIdx];
 		const feature = item.featureCollection.features[featureIdx];
 		const active = item.activeIdx === featureIdx;
-		const visible = item.visible !== undefined ? item.visible : true;
+		const visible = item.visible ?? true;
 		const opacity = visible
 			? item.opacity !== undefined ? item.opacity : 1
 			: 0;

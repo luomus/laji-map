@@ -152,7 +152,7 @@ const LayerControl = L.Control.extend({
 			behaviour: "snap"
 		});
 		let liSlideHeightFixer: HTMLElement;
-		slider.on("slide", (e, ee, eee, eeee) => {
+		slider.on("slide", () => {
 			const opacity = +slider.get();
 
 			const data = this.dataLayersByName[name];

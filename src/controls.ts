@@ -545,25 +545,33 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			if (leafletControl) this._addControl(name, leafletControl);
 		});
 
-		// Hrefs cause map to scroll to top when a control is clicked. This is fixed below.
-
-		function removeHref(selector: string) {
+		function fixAccessibility(selector: string) {
 			const elems = document.querySelectorAll(selector);
 			for (let i = 0; i < elems.length; i++) {
-				const elem = elems[i];
+				const elem = elems[i] as HTMLElement;
+				// Hrefs cause map to scroll to top when a control is clicked.
 				elem.removeAttribute("href");
+				elem.setAttribute("role", "button");
+				elem.setAttribute("tabindex", "0");
+				elem.addEventListener("keydown", e => {
+					if ([" ", "Enter"].includes(e.key)) {
+						e.preventDefault();
+						e.stopPropagation();
+						elem.click();
+					}
+				});
 			}
 		}
 
 		["in", "out"].forEach(zoomType => {
-			removeHref(`.leaflet-control-zoom-${zoomType}`);
+			fixAccessibility(`.leaflet-control-zoom-${zoomType}`);
 		});
 		this.getFeatureTypes().forEach(featureType => {
-			removeHref(`.leaflet-draw-draw-${featureType}`);
+			fixAccessibility(`.leaflet-draw-draw-${featureType}`);
 		});
-		removeHref(".leaflet-control-layers-toggle");
-		removeHref(".leaflet-contextmenu-item");
-		removeHref(".leaflet-control-geosearch a");
+		fixAccessibility(".leaflet-control-layers-toggle");
+		fixAccessibility(".leaflet-contextmenu-item");
+		fixAccessibility(".leaflet-control-geosearch a");
 
 		provide(this, "controls");
 	}
@@ -754,12 +762,21 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 	_createControlButton(that: any, container, fn, name?): HTMLElement {
 		const elem = L.DomUtil.create("a", name ? "button-" + name.replace(".", "_") : "", container);
+		elem.setAttribute("role", "button");
+		elem.setAttribute("tabindex", "0");
 
 		L.DomEvent.on(elem, "click", L.DomEvent.stopPropagation);
 		L.DomEvent.on(elem, "mousedown", L.DomEvent.stopPropagation);
 		L.DomEvent.on(elem, "click", L.DomEvent.preventDefault);
 		L.DomEvent.on(elem, "click", that._refocusOnMap, that);
 		L.DomEvent.on(elem, "click", fn);
+		L.DomEvent.on(elem, "keydown", (e: any) => {
+			if ([" ", "Enter"].includes(e.key)) {
+				e.preventDefault();
+				e.stopPropagation();
+				fn();
+			}
+		});
 		L.DomEvent.disableClickPropagation(container);
 
 		return elem;

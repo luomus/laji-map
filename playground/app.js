@@ -31,7 +31,7 @@ class App {
 
 		this.data = [
 			{
-				hasActive: true,
+				hasActive: false,
 				featureCollection: {
 					type: "featureCollection",
 					features: [
@@ -209,7 +209,6 @@ class App {
 			draw: this.drawOptions,
 			data: this.data,
 			//locate: [undefined, undefined, {latlng: [66,25], accuracy: 200}]
-			locate: {on: false, onLocationFound: () => console.info("FOUND")},
 			//clickBeforeZoomAndPan: true,
 			lajiGeoServerAddress: "https://geoserver-dev.laji.fi/geoserver"
 		};

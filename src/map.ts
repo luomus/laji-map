@@ -140,14 +140,6 @@ L.VectorMarkers.Icon.include({
 		iconDomElem.style.opacity = style.opacity ?? 1;
 	}
 });
-//
-// Remove tabindex from markers https://github.com/Leaflet/Leaflet/issues/3472#issuecomment-103058457
-L.Marker.addInitHook(function () {
-	this.options.keyboard = false;
-});
-L.MarkerCluster.addInitHook(function () {
-	this.options.keyboard = false;
-});
 
 interface ContextmenuItemOptions {
 	text: string;
@@ -2152,6 +2144,16 @@ export default class LajiMap {
 			&& !(isObject(item.showMeasurements) && (item.showMeasurements as any).showOnHover)) {
 			layer.options.showMeasurements = true;
 		}
+		const clickable = item.hasActive || item.on?.click;
+		if (!clickable) {
+			layer.options.interactive = false;
+			(layer.options as any).keyboard = false;
+		} else {
+			layer.on("add", () => {
+				(layer as any)._path.setAttribute("tabindex", 0);
+				(layer as any)._path.setAttribute("role", "button");
+			});
+		}
 	}
 
 	fitBounds(_bounds: L.LatLngBoundsExpression, options: LajiMapFitBoundsOptions = {}) {
@@ -3120,7 +3122,6 @@ export default class LajiMap {
 
 	_onAdd(dataIdx: number, layer: DataItemLayer, coordinateVerbatim?: string) {
 		if (isPolyline(layer) && (<L.Polyline> layer).getLatLngs().length < 2) return;
-
 
 		const prevActiveIdx = this.data[dataIdx].activeIdx;
 

@@ -2426,7 +2426,7 @@ export default class LajiMap {
 	}
 
 	_stopDrawRemove() {
-		this.getDraw().group.removeEventListener( "click",
+		this.getDraw().group.removeEventListener("click",
 			({layer}: L.GeoJSONEvent) => this._onDrawRemove(<DataItemLayer> layer));
 		this._onDrawRemove = undefined;
 		this._disposeTooltip();

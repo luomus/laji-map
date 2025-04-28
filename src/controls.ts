@@ -407,7 +407,9 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 			function stop() {
 				fn();
 				that.map.off("controlClick", stopOnControlClick);
-				commitOnBur && that.map.off("blur", stop);
+				if (commitOnBur) {
+					that.map.getContainer().removeEventListener("blur", stopOnBlur)
+				}
 				that._removeKeyListener(ESC, stop);
 				if (_that.container.contains(cont)) _that.container.removeChild(cont);
 				if (eventName) that.map.off(eventName);
@@ -417,6 +419,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				});
 				_that.buttonActions[name] = {};
 				that.activeControl = undefined;
+			}
+
+			function stopOnBlur(e: any) {
+				if (that.map.getContainer().contains(e.relatedTarget)) {
+					return;
+				}
+				stop();
 			}
 
 			function stopOnControlClick({name: _name}: any) {
@@ -439,7 +448,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 			that._addKeyListener(ESC, stop, undefined);
 			if (commitOnBur) {
-				that.map.on("blur", stop);
+				that.map.getContainer().addEventListener("blur", stopOnBlur);
 			}
 			if (eventName) that.map.on(eventName, stop);
 

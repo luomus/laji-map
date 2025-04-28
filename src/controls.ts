@@ -408,7 +408,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				fn();
 				that.map.off("controlClick", stopOnControlClick);
 				if (commitOnBur) {
-					that.map.getContainer().removeEventListener("blur", stopOnBlur)
+					that.map.getContainer().removeEventListener("blur", stopOnBlur);
 				}
 				that._removeKeyListener(ESC, stop);
 				if (_that.container.contains(cont)) _that.container.removeChild(cont);

@@ -2150,6 +2150,9 @@ export default class LajiMap {
 			(layer.options as any).keyboard = false;
 		} else {
 			layer.on("add", () => {
+				if (!(layer as any)._path) {
+					return;
+				}
 				(layer as any)._path.setAttribute("tabindex", 0);
 				(layer as any)._path.setAttribute("role", "button");
 			});

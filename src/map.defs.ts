@@ -117,6 +117,7 @@ export interface DataOptions {
 	onVisibleChange?(visible: boolean): void;
 	maxFillOpacity?: number;
 	controlFillOpacity?: boolean;
+	tabbable?: boolean;
 }
 
 export interface MarkerOptions extends DrawOptions.MarkerOptions {

@@ -95,6 +95,7 @@ class App {
 				getFeatureStyle: () => {
 					return {color: "#f00"};
 				},
+				tabbable: false,
 				cluster: true,
 				// opacity: 0.5,
 				on: {

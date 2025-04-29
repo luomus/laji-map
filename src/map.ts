@@ -878,7 +878,7 @@ export default class LajiMap {
 			this.mmlProj.distance =  L.CRS.Earth.distance;
 			(<any> this.mmlProj).R = 6378137;
 
-			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer" tabindex="-1">&copy; ${text}</a>`;
+			const getAttribution = (link, text) => `<a href="${link}" target="_blank" rel="noopener noreferrer">&copy; ${text}</a>`;
 			const mmlAttribution = getAttribution("https://www.maanmittauslaitos.fi/avoindata_lisenssi_versio1_20120501", "Maanmittauslaitos");
 			const sykeAttribution = getAttribution("https://www.syke.fi/fi-FI/Avoin_tieto/Kayttolupa_ja_vastuut", "SYKE");
 			const lukeAttribution = getAttribution("https://kartta.luke.fi/", "LUKE");
@@ -2147,14 +2147,18 @@ export default class LajiMap {
 		const clickable = item.hasActive || item.on?.click;
 		if (!clickable) {
 			layer.options.interactive = false;
-			(layer.options as any).keyboard = false;
 		} else {
 			layer.on("add", () => {
-				if (!(layer as any)._path) {
+				const elem: HTMLElement | undefined = (layer as any)._path || (layer as any)._icon;
+				if (!elem) {
 					return;
 				}
-				(layer as any)._path.setAttribute("tabindex", 0);
-				(layer as any)._path.setAttribute("role", "button");
+				if (item.tabbable !== false) {
+					elem.setAttribute("tabindex", "0");
+				} else {
+					elem.removeAttribute("tabindex");
+				}
+				elem.setAttribute("role", "button");
 			});
 		}
 	}

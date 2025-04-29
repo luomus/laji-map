@@ -893,11 +893,15 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		if (historyPointer <= 0 && undoButton.className.indexOf("leaflet-disabled") === -1) {
 			undoButton.className += " leaflet-disabled";
+			undoButton.setAttribute("tabindex", "-1");
+			undoButton.setAttribute("aria-disabled", "true");
 		} else if (historyPointer > 0
 			&& historyPointer < history.length
 			&& undoButton.className.indexOf("leaflet-disabled") !== -1
 		) {
 			undoButton.className = undoButton.className.replace(" leaflet-disabled", "");
+			undoButton.setAttribute("tabindex", "0");
+			undoButton.removeAttribute("aria-disabled");
 		}
 		if (this._contextMenuItems) {
 			const contextMenuItem = this._contextMenuItems[buttonName];
@@ -911,11 +915,15 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 
 		if (historyPointer >= history.length - 1 && redoButton.className.indexOf("leaflet-disabled") === -1) {
 			redoButton.className += " leaflet-disabled";
+			redoButton.setAttribute("tabindex", "-1");
+			redoButton.setAttribute("aria-disabled", "true");
 		} else if (historyPointer >= 0
 			&& historyPointer < history.length - 1
 			&& redoButton.className.indexOf("leaflet-disabled") !== -1
 		) {
 			redoButton.className = redoButton.className.replace(" leaflet-disabled", "");
+			redoButton.setAttribute("tabindex", "0");
+			redoButton.removeAttribute("aria-disabled");
 		}
 
 		if (this._contextMenuItems) {

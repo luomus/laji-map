@@ -2147,18 +2147,22 @@ export default class LajiMap {
 		const interactive = item.hasActive || item.on?.click || item.editable;
 		if (!interactive) {
 			layer.options.interactive = false;
-		} else if (item.hasActive || item.on?.click) {
+		} else {
 			layer.on("add", () => {
 				const elem: HTMLElement | undefined = (layer as any)._path || (layer as any)._icon;
 				if (!elem) {
 					return;
 				}
-				if (item.tabbable !== false) {
+				if (item.tabbable !== false && (item.hasActive || item.on?.click)) {
 					elem.setAttribute("tabindex", "0");
 				} else {
 					elem.removeAttribute("tabindex");
 				}
-				elem.setAttribute("role", "button");
+				if (item.hasActive || item.on?.click) {
+					elem.setAttribute("role", "button");
+				} else {
+					elem.removeAttribute("role");
+				}
 			});
 		}
 	}

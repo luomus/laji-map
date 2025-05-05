@@ -2144,10 +2144,10 @@ export default class LajiMap {
 			&& !(isObject(item.showMeasurements) && (item.showMeasurements as any).showOnHover)) {
 			layer.options.showMeasurements = true;
 		}
-		const clickable = item.hasActive || item.on?.click || item.editable;
-		if (!clickable) {
+		const interactive = item.hasActive || item.on?.click || item.editable;
+		if (!interactive) {
 			layer.options.interactive = false;
-		} else {
+		} else if (item.hasActive || item.on?.click) {
 			layer.on("add", () => {
 				const elem: HTMLElement | undefined = (layer as any)._path || (layer as any)._icon;
 				if (!elem) {

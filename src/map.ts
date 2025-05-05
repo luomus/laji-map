@@ -2144,7 +2144,7 @@ export default class LajiMap {
 			&& !(isObject(item.showMeasurements) && (item.showMeasurements as any).showOnHover)) {
 			layer.options.showMeasurements = true;
 		}
-		const clickable = item.hasActive || item.on?.click;
+		const clickable = item.hasActive || item.on?.click || item.editable;
 		if (!clickable) {
 			layer.options.interactive = false;
 		} else {

@@ -1,6 +1,6 @@
 {
   "name": "@luomus/laji-map",
-  "version": "5.1.9",
+  "version": "5.1.10",
   "description": "A map with drawing functionality",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

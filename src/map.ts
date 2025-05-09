@@ -2144,8 +2144,8 @@ export default class LajiMap {
 			&& !(isObject(item.showMeasurements) && (item.showMeasurements as any).showOnHover)) {
 			layer.options.showMeasurements = true;
 		}
-		const interactive = item.hasActive || item.on?.click || item.editable;
-		if (!interactive) {
+		const interactive = item.hasActive || item.on?.click || layer.listens("click");
+		if (!interactive && !item.editable) {
 			layer.options.interactive = false;
 		} else {
 			layer.on("add", () => {
@@ -2158,7 +2158,7 @@ export default class LajiMap {
 				} else {
 					elem.removeAttribute("tabindex");
 				}
-				if (item.hasActive || item.on?.click) {
+				if (interactive) {
 					elem.setAttribute("role", "button");
 				} else {
 					elem.removeAttribute("role");
@@ -2743,6 +2743,18 @@ export default class LajiMap {
 				if (item.getPopup) {
 					closePopup();
 					getContentAndOpenPopup(e.latlng);
+				}
+			});
+
+			layer.on("keydown", (e: L.LeafletKeyboardEvent) => {
+				if (!["Enter", " "].includes(e.originalEvent.key)) {
+					return;
+				}
+				if (item.getPopup) {
+					closePopup();
+					const latlng = (layer as any).getLatLng && (layer as any).getLatLng()
+						|| (layer as any).getCenter && (layer as any).getCenter();
+					latlng && getContentAndOpenPopup(latlng);
 				}
 			});
 		}

@@ -2153,7 +2153,7 @@ export default class LajiMap {
 				if (!elem) {
 					return;
 				}
-				if (item.tabbable !== false && (item.hasActive || item.on?.click)) {
+				if (item.tabbable !== false && interactive) {
 					elem.setAttribute("tabindex", "0");
 				} else {
 					elem.removeAttribute("tabindex");

@@ -2956,8 +2956,8 @@ export default class LajiMap {
 	}
 
 	_onLocationNotFound(e: L.ErrorEvent) {
-		const {onLocationError} = this.locateOptions;
-		if (onLocationError) onLocationError(e);
+		this.locateOptions.onLocationError?.(e);
+		this._setLocateOff();
 	}
 
 	getDrawLayerByIdx(idx: number) {

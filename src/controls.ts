@@ -103,12 +103,23 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	_toggleLocate() {
-		this._locateOn ? this._setLocateOff() : this._setLocateOn(!!"triggerEvent");
+		this._locateOn ? this._setLocateOff() : this._setLocateOnFromControl(!!"triggerEvent");
 	}
 
 	_setLocateOn(triggerEvent = false) {
 		super._setLocateOn(triggerEvent);
 		this._updateUserLocate(true);
+	}
+
+	/**
+	 * Used to decide whether to show an alert to the user if locating is blocked. We want to show the alert only if the
+	 * user himself requests locating (=clicks the geolocate control)
+	 */
+	locatingFromControl?: boolean;
+
+	_setLocateOnFromControl(triggerEvent?: boolean) {
+		this.locatingFromControl = true;
+		this._setLocateOn(triggerEvent);
 	}
 
 	_setLocateOff() {
@@ -119,6 +130,16 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	_onLocationFound(e: L.LocationEvent) {
 		super._onLocationFound(e);
 		this._updateUserLocate(this._locateOn);
+		this.locatingFromControl = undefined;
+	}
+
+	_onLocationNotFound(e: L.ErrorEvent) {
+		if (this.locatingFromControl) {
+			alert(this.translations.GeolocatingBlocked);
+		}
+		super._onLocationNotFound(e);
+		this._updateUserLocate(this._locateOn);
+		this.locatingFromControl = undefined;
 	}
 
 	setTileLayers(options: TileLayersOptions) {

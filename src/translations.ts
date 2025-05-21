@@ -895,4 +895,9 @@ export default {
 		en: "Borders of biogeographical provinces",
 		sv: "Gränser för biogeografiska provinser"
 	},
+	geolocatingBlocked: {
+		fi: "Sijainnin käyttö on estetty selaimessasi. Salli sijainnin käyttö selaimen asetuksista käyttääksesi tätä toimintoa.",
+		en: "Location access is blocked in your browser. Please enable location permissions in your browser settings to use this feature.",
+		sv: "Platsåtkomst är blockerad i din webbläsare. Aktivera platsbehörigheter i webbläsarens inställningar för att använda den här funktionen."
+	}
 };

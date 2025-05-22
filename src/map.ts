@@ -141,6 +141,73 @@ L.VectorMarkers.Icon.include({
 	}
 });
 
+// From https://github.com/domoritz/leaflet-locatecontrol/blob/gh-pages/src/L.Control.Locate.js
+/**
+ * Compatible with Circle but a true marker instead of a path
+ */
+const LocationMarker = L.Marker.extend({
+	initialize(latlng: L.LatLng, options: L.MarkerOptions) {
+		L.setOptions(this, options);
+		this._latlng = latlng;
+		this.createIcon();
+	},
+
+	/**
+	 * Create a styled circle location marker
+	 */
+	createIcon() {
+		const opt = this.options;
+
+		const style = [
+			["stroke", opt.color],
+			["stroke-width", opt.weight],
+			["fill", opt.fillColor],
+			["fill-opacity", opt.fillOpacity],
+			["opacity", opt.opacity]
+		]
+			.filter(([k,v]) => v !== undefined) // eslint-disable-line
+			.map(([k,v]) => `${k}="${v}"`)
+			.join(" ");
+
+		const icon = this._getIconSVG(opt, style);
+
+		this._locationIcon = L.divIcon({
+			className: icon.className,
+			html: icon.svg,
+			iconSize: [icon.w, icon.h]
+		});
+
+		this.setIcon(this._locationIcon);
+	},
+
+	/**
+	 * Return the raw svg for the shape
+	 *
+	 * Split so can be easily overridden
+	 */
+	_getIconSVG(options: any, style: any) {
+		const r = options.radius;
+		const w = options.weight;
+		const s = r + w;
+		const s2 = s * 2;
+		const svg =
+			`<svg xmlns="http://www.w3.org/2000/svg" width="${s2}" height="${s2}" version="1.1" viewBox="-${s} -${s} ${s2} ${s2}">` +
+			`<circle r="${r}" ${style} /></svg>`;
+		return {
+			className: "leaflet-control-locate-location",
+			svg,
+			w: s2,
+			h: s2
+		};
+	},
+
+	setStyle(style: any) {
+		L.setOptions(this, style);
+		this.createIcon();
+	}
+});
+
+
 interface ContextmenuItemOptions {
 	text: string;
 	iconCls: string;
@@ -2942,12 +3009,16 @@ export default class LajiMap {
 				fillColor: USER_LOCATION_COLOR,
 				opacity: 0
 			}).addTo(layerGroup);
-		const markerLayer = L.circleMarker(latlng,
-			{
-				color: USER_LOCATION_COLOR,
-				fillColor: USER_LOCATION_COLOR,
-				fillOpacity: 0.7
-			}).addTo(layerGroup);
+		
+		const markerLayer = new (LocationMarker as any)(latlng, {
+			className: "leaflet-control-locate-marker",
+			color: "#fff",
+			fillColor: "#2A93EE",
+			fillOpacity: 1,
+			weight: 3,
+			opacity: 1,
+			radius: 9
+		}).addTo(layerGroup);
 		markerLayer.on("click", () => {
 			!this._interceptClick() && this.map.fitBounds(radiusLayer.getBounds());
 		});

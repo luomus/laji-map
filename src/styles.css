@@ -667,4 +667,22 @@ li.laji-map-layer-control-layer-item.active span {
 	z-index: -1;
 }
 
+.laji-map .leaflet-control-locate-location circle {
+  animation: laji-map-control-locate-throb 4s ease infinite;
+}
+
+@keyframes laji-map-control-locate-throb {
+  0% {
+    stroke-width: 1;
+  }
+
+  50% {
+    stroke-width: 3;
+    transform: scale(0.8, 0.8);
+  }
+
+  100% {
+    stroke-width: 1;
+  }
+}
 

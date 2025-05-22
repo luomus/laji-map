@@ -134,7 +134,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	_onLocationNotFound(e: L.ErrorEvent) {
-		if (this.locatingFromControl) {
+		const USER_HAS_BLOCKED_LOCATING = 1;
+		if (this.locatingFromControl && e.code === USER_HAS_BLOCKED_LOCATING) {
 			alert(this.translations.GeolocatingBlocked);
 		}
 		super._onLocationNotFound(e);

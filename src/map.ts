@@ -2952,8 +2952,8 @@ export default class LajiMap {
 	}
 
 	@dependsOn("map")
-	_setLocateOff() {
-		if (!depsProvided(this, "_setLocateOff", arguments)) return;
+	setLocateOff() {
+		if (!depsProvided(this, "setLocateOff", arguments)) return;
 
 		this.locatingOn = false;
 		this.map.stopLocate();
@@ -3028,7 +3028,7 @@ export default class LajiMap {
 
 	_onLocationNotFound(e: L.ErrorEvent) {
 		this.locateOptions.onLocationError?.(e);
-		this._setLocateOff();
+		this.setLocateOff();
 	}
 
 	getDrawLayerByIdx(idx: number) {

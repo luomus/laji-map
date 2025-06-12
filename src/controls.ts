@@ -103,7 +103,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 	}
 
 	_toggleLocate() {
-		this._locateOn ? this._setLocateOff() : this._setLocateOnFromControl(!!"triggerEvent");
+		this._locateOn ? this.setLocateOff() : this._setLocateOnFromControl(!!"triggerEvent");
 	}
 
 	_setLocateOn(triggerEvent = false) {
@@ -122,8 +122,8 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 		this._setLocateOn(triggerEvent);
 	}
 
-	_setLocateOff() {
-		super._setLocateOff();
+	setLocateOff() {
+		super.setLocateOff();
 		this._updateUserLocate(false);
 	}
 

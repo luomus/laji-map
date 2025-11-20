@@ -101,7 +101,7 @@ class App {
 				on: {
 					click: (e, {idx, feature, layer}) => {
 						console.info("clicked", idx, feature, layer);
-					},
+					}
 				},
 				//activeIdx: 0,
 				//editable: true,

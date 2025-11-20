@@ -2769,8 +2769,12 @@ export default class LajiMap {
 		}
 
 		function closePopup() {
+			if (!that.popup) {
+				return;
+			}
 			if (latlng) that.map.closePopup();
 			if (that.onPopupClose) that.onPopupClose();
+			that.popup = undefined;
 			latlng = undefined;
 		}
 
@@ -2874,12 +2878,12 @@ export default class LajiMap {
 				{
 					text: translations.EditFeature,
 					callback: () => this._setEditable(layer),
-					iconCls: "glyphicon glyphicon-pencil"
+					iconCls: "laji-map-svg-icon laji-map-icon-pencil",
 				},
 				{
 					text: translations.DeleteFeature,
 					callback: () => this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]),
-					iconCls: "glyphicon glyphicon-trash"
+					iconCls: "laji-map-svg-icon laji-map-icon-trash",
 				},
 			];
 			if (isPolyline(layer)) {
@@ -2890,7 +2894,7 @@ export default class LajiMap {
 						const id = this.idxsToIds[dataIdx][featureIdx];
 						this._onEdit(dataIdx, {[id]: {layer}});
 					},
-					iconCls: "glyphicon glyphicon-sort"
+					iconCls: "laji-map-svg-icon laji-map-icon-reverse",
 				});
 			}
 		}
@@ -2945,6 +2949,7 @@ export default class LajiMap {
 			this._onLocationFound(<L.LocationEvent> userLocation);
 		}
 		this.map.locate({watch: true, enableHighAccuracy: true});
+		console.log(triggerEvent);
 		triggerEvent && this.map.fire("locateToggle", {locate: typeof this._locateParam === "boolean"
 			? true
 			: {...this.locateOptions, on: true}
@@ -3009,7 +3014,7 @@ export default class LajiMap {
 				fillColor: USER_LOCATION_COLOR,
 				opacity: 0
 			}).addTo(layerGroup);
-		
+
 		const markerLayer = new (LocationMarker as any)(latlng, {
 			className: "leaflet-control-locate-marker",
 			color: "#fff",

@@ -536,7 +536,7 @@ const LayerControl = L.Control.extend({
 		link.target = "_blank";
 		link.rel = "noopener norefererrer";
 		const glyph = document.createElement("span");
-		glyph.className = "glyphicon glyphicon-question-sign";
+		glyph.className = "layer-help-icon";
 		legend.appendChild(glyph);
 		if (this.helpTranslationHook) {
 			this.translateHooks = this.translateHooks.filter(h => h !== this.helpTranslationHook);

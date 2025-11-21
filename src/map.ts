@@ -2587,8 +2587,8 @@ export default class LajiMap {
 			return icon({...options, color, opacity}, feature);
 		}
 		return new L.VectorMarkers.Icon({
-			prefix: "glyphicon",
-			icon: "record",
+			prefix: "laji-map-icon",
+			icon: "dot",
 			...options,
 			color,
 			opacity,
@@ -2949,7 +2949,6 @@ export default class LajiMap {
 			this._onLocationFound(<L.LocationEvent> userLocation);
 		}
 		this.map.locate({watch: true, enableHighAccuracy: true});
-		console.log(triggerEvent);
 		triggerEvent && this.map.fire("locateToggle", {locate: typeof this._locateParam === "boolean"
 			? true
 			: {...this.locateOptions, on: true}

@@ -15,13 +15,9 @@ export default (lajiMap: LajiMap & WithControls) => {
 		translateHooks.push(lajiMap.addTranslationHook(label, translationKey));
 
 		const row = document.createElement("div");
-		row.className = "form-group row";
+		row.className = "laji-map-form-group";
 
-		const col = document.createElement("div");
-		col.className = "col-xs-12";
-
-		[label, input].forEach(elem => col.appendChild(elem));
-		row.appendChild(col);
+		[label, input].forEach(elem => row.appendChild(elem));
 
 		return row;
 	}

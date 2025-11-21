@@ -874,7 +874,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 						true
 					);
 				},
-				iconCls: "glyphicon glyphicon-remove-sign"
+				iconCls: "laji-map-icon laji-map-icon-delete"
 			},
 			{
 				text: this.translations.EditPoint,
@@ -886,7 +886,7 @@ export default function LajiMapWithLineTransect<LM extends Constructor<LajiMap>>
 						true
 					);
 				},
-				iconCls: "glyphicon glyphicon-remove-sign"
+				iconCls: "laji-map-icon laji-map-icon-pencil"
 			}
 		];
 

@@ -196,7 +196,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				name: "location",
 				position: "topleft",
 				text: this.translations.Geolocate,
-				iconCls: "laji-map-svg-icon laji-map-icon-locate",
+				iconCls: "laji-map-icon laji-map-icon-locate",
 				fn: () => this._toggleLocate(),
 				contextMenu: false
 			},
@@ -224,7 +224,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 				name: "fullscreen",
 				position: "bottomright",
 				text: this.translations.MapFullscreen,
-				iconCls: "laji-map-svg-icon laji-map-icon-resize",
+				iconCls: "laji-map-icon laji-map-icon-resize",
 				fn: () => this.toggleFullscreen()
 			},
 			{
@@ -255,13 +255,13 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					{
 						name: "copy",
 						text: this.translations.CopyDrawnFeatures,
-						iconCls: "laji-map-svg-icon laji-map-icon-export",
+						iconCls: "laji-map-icon laji-map-icon-export",
 						fn: () => this.openDrawCopyDialog()
 					},
 					{
 						name: "upload",
 						text: this.translations.UploadDrawnFeatures,
-						iconCls: "laji-map-svg-icon laji-map-icon-import",
+						iconCls: "laji-map-icon laji-map-icon-import",
 						fn: () => this.openDrawUploadDialog(),
 						dependencies: [
 							() => this.drawIsEditable()
@@ -270,7 +270,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					{
 						name: "clear",
 						text: this.translations.ClearMap,
-						iconCls: "laji-map-svg-icon laji-map-icon-trash",
+						iconCls: "laji-map-icon laji-map-icon-trash",
 						fn: () => drawClearControl(this),
 						dependencies: [
 							() => this.drawIsEditable()
@@ -279,7 +279,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					{
 						name: "delete",
 						text: this.translations.DeleteFeature,
-						iconCls: "laji-map-svg-icon laji-map-icon-delete",
+						iconCls: "laji-map-icon laji-map-icon-delete",
 						fn: () => {
 							this._startDrawRemove();
 						},
@@ -290,7 +290,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					},
 					{
 						name: "reverse",
-						iconCls: "laji-map-svg-icon laji-map-icon-reverse",
+						iconCls: "laji-map-icon laji-map-icon-reverse",
 						text: this.translations.ReverseFeature,
 						fn: () => {
 							this._startDrawReverse();
@@ -304,7 +304,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					{
 						name: "undo",
 						text: this.translations.Undo,
-						iconCls: "laji-map-svg-icon laji-map-icon-undo",
+						iconCls: "laji-map-icon laji-map-icon-undo",
 						fn: () => this.drawUndo(),
 						onAdd: () => this.updateDrawUndoButton(),
 						disabled: this._drawHistoryPointer <= 0,
@@ -315,7 +315,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					{
 						name: "redo",
 						text: this.translations.Redo,
-						iconCls: "laji-map-svg-icon laji-map-icon-redo",
+						iconCls: "laji-map-icon laji-map-icon-redo",
 						fn: () => this.drawRedo(),
 						onAdd: () => this.updateDrawRedoButton(),
 						disabled: this._drawHistoryPointer >= this._drawHistory.length - 1,
@@ -331,7 +331,7 @@ export default function LajiMapWithControls<LM extends Constructor<LajiMap>>(Bas
 					{
 						name: "split",
 						text: this.translations.SplitLine,
-						iconCls: "laji-map-svg-icon laji-map-icon-scissors",
+						iconCls: "laji-map-icon laji-map-icon-scissors",
 						fn: () => (<any> this).startLTLineSplit(),
 						finishFn: () => (<any> this).stopLTLineSplit(),
 						eventName: "lineTransect:split"

@@ -2878,12 +2878,12 @@ export default class LajiMap {
 				{
 					text: translations.EditFeature,
 					callback: () => this._setEditable(layer),
-					iconCls: "laji-map-svg-icon laji-map-icon-pencil",
+					iconCls: "laji-map-icon laji-map-icon-pencil",
 				},
 				{
 					text: translations.DeleteFeature,
 					callback: () => this._onDelete(dataIdx, this.idxsToIds[dataIdx][featureIdx]),
-					iconCls: "laji-map-svg-icon laji-map-icon-trash",
+					iconCls: "laji-map-icon laji-map-icon-trash",
 				},
 			];
 			if (isPolyline(layer)) {
@@ -2894,7 +2894,7 @@ export default class LajiMap {
 						const id = this.idxsToIds[dataIdx][featureIdx];
 						this._onEdit(dataIdx, {[id]: {layer}});
 					},
-					iconCls: "laji-map-svg-icon laji-map-icon-reverse",
+					iconCls: "laji-map-icon laji-map-icon-reverse",
 				});
 			}
 		}

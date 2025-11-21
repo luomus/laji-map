@@ -796,21 +796,7 @@ li.laji-map-layer-control-layer-item.active span {
 }
 
 
-/* .panel-default { */
-/* 	border-color: #ddd; */
-/* } */
-/* .panel-body { */
-/* 	padding: 15px; */
-/* } */
-/* .panel { */
-/* 	margin-bottom: 20px; */
-/* 	background-color: #fff; */
-/* 	border: 1px solid transparent; */
-/* 	border-radius: 4px; */
-/* 	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .05); */
-/* 	box-shadow: 0 1px 1px rgba(0, 0, 0, .05); */
-/* } */
-.panel {
+.laji-map-dialog.panel {
     background: white;
     padding: 15px;
     font-size: 16px;
@@ -818,7 +804,7 @@ li.laji-map-layer-control-layer-item.active span {
     border-radius: 2px;
 }
 
-button.close {
+.laji-map-dialog button.close {
     padding: 0;
     cursor: pointer;
     background: transparent;
@@ -826,7 +812,6 @@ button.close {
     -webkit-appearance: none;
     appearance: none;
     float: right;
-    font-size: 21px;
     font-weight: bold;
     line-height: 1;
     color: #000;
@@ -835,7 +820,7 @@ button.close {
     opacity: .2;
 }
 
-.help-block {
+.laji-map-dialog .help-block {
     display: block;
     margin-top: 5px;
     margin-bottom: 10px;

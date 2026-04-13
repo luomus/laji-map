@@ -58,6 +58,7 @@ export interface ControlsOptions {
 	zoom?: boolean;
 	scale?: boolean;
 	location?: boolean | LocationControlOptions;
+	geocoding?: boolean;
 	coordinates?: boolean;
 	lineTransect?: boolean | LineTransectControlOptions;
 	attribution?: boolean;

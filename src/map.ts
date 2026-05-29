@@ -424,6 +424,7 @@ export default class LajiMap {
 		clickBeforeZoomAndPan: boolean;
 		bodyOverflowY: string;
 	};
+	_fullScreenDomCleaner: () => void;
 	lajiGeoServerAddress = "https://geoserver.laji.fi/geoserver";
 
 	controls: L.Control[];
@@ -4083,6 +4084,11 @@ export default class LajiMap {
 		this._fullscreenCloseElem.className = "btn btn-danger fullscreen-exit";
 		this._fullscreenTranslateHook = this.addTranslationHook(this._fullscreenCloseElem, "MapExitFullscreen");
 		this.rootElem.appendChild(this._fullscreenCloseElem);
+		this._fullScreenDomCleaner = () => {
+			document.body.removeChild(this._fullscreenElem);
+			this.rootElem.removeChild(this._fullscreenCloseElem);
+		};
+		this._addDomCleaner(this._fullScreenDomCleaner);
 	}
 
 	setFullscreenOff() {
@@ -4097,6 +4103,7 @@ export default class LajiMap {
 
 		this._fullscreenCloseElem.remove();
 		this.removeTranslationHook(this._fullscreenTranslateHook);
+		this._removeDomCleaner(this._fullScreenDomCleaner);
 	}
 }
 

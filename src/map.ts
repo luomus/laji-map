@@ -4085,8 +4085,7 @@ export default class LajiMap {
 		this._fullscreenTranslateHook = this.addTranslationHook(this._fullscreenCloseElem, "MapExitFullscreen");
 		this.rootElem.appendChild(this._fullscreenCloseElem);
 		this._fullScreenDomCleaner = () => {
-			document.body.removeChild(this._fullscreenElem);
-			this.rootElem.removeChild(this._fullscreenCloseElem);
+			this.setFullscreenOff();
 		};
 		this._addDomCleaner(this._fullScreenDomCleaner);
 	}

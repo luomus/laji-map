@@ -748,6 +748,11 @@ export default class LajiMap {
 				this._showPreventShowTimeout = setTimeout(() => {
 					this._preventScrolling();
 				}, 10000);
+				this._addDomCleaner(() => {
+					clearTimeout(this._showPreventHideTimeout);
+					clearTimeout(this._showPreventShowTimeout);
+					clearTimeout(this._showPreventAnimationTimeout);
+				});
 			};
 		}
 

@@ -761,13 +761,11 @@ export default class LajiMap {
 
 			this._showingPreventScroll = true;
 			if (!showingAlready) {
-				[].forEach.call(
-					document.querySelectorAll(".laji-map-scroll-prevent"),
+				[this._scrollPreventElem, this._scrollPreventTextElemContainer].forEach(
 					elem => elem.className = elem.className.replace("left", "enter")
 				);
 				setTimeout(() => {
-					[].forEach.call(
-						document.querySelectorAll(".laji-map-scroll-prevent"),
+					[this._scrollPreventElem, this._scrollPreventTextElemContainer].forEach(
 						elem => elem.className = elem.className.replace(" enter", "")
 					);
 				});
@@ -782,7 +780,7 @@ export default class LajiMap {
 				hidePreventElem();
 			}, 2000);
 
-			[].forEach.call(document.querySelectorAll(".laji-map-scroll-prevent"), elem => elem.style.display = "block");
+			[this._scrollPreventElem, this._scrollPreventTextElemContainer].forEach(elem => elem.style.display = "block");
 		};
 
 		const hidePreventElem = () => {
@@ -792,14 +790,12 @@ export default class LajiMap {
 			clearTimeout(this._showPreventShowTimeout);
 			clearTimeout(this._showPreventAnimationTimeout);
 
-			[].forEach.call(
-				document.querySelectorAll(".laji-map-scroll-prevent"),
+			[this._scrollPreventElem, this._scrollPreventTextElemContainer].forEach(
 				elem => elem.className = `${elem.className} leaving`
 			);
 			this._showPreventAnimationTimeout = setTimeout(() => {
 				this._showingPreventScroll = false;
-				[].forEach.call(
-					document.querySelectorAll(".laji-map-scroll-prevent"),
+				[this._scrollPreventElem, this._scrollPreventTextElemContainer].forEach(
 					elem => elem.className = elem.className.replace("leaving", "left")
 				);
 				this._startPreventScrollingTimeout();
@@ -875,7 +871,7 @@ export default class LajiMap {
 			this.map.addEventListener("controlClick", this._onControlClickPreventScrolling);
 
 			this._scrollPreventScrollListeners = [];
-			"wheel touchstart".split(" ").forEach(eventName => {
+			["wheel", "touchstart"].forEach(eventName => {
 				const eventListener = (e) => {
 					const coordinatesSource = eventName === "touchstart" ? e.touches[0] : e;
 					const pointedElem = document.elementFromPoint(coordinatesSource.clientX, coordinatesSource.clientY);

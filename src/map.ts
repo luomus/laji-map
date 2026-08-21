@@ -10,8 +10,9 @@ import "leaflet-contextmenu";
 import "@luomus/leaflet-textpath";
 import "@luomus/leaflet-measure-path";
 import * as NonTiledLayer from "leaflet.nontiledlayer";
-import { Provider, ProviderOptions } from "leaflet-geosearch/lib/providers/provider";
+import { Provider } from "leaflet-geosearch/lib/providers/provider";
 import { GoogleProvider as _GoogleProvider } from "leaflet-geosearch";
+import { GoogleProviderOptions } from "leaflet-geosearch/lib/providers/googleProvider";
 import MMLProvider from "./mml-provider";
 import {
 	convertAnyToWGS84GeoJSON, convert, detectCRS, detectFormat, stringifyLajiMapError, isObject,
@@ -72,7 +73,7 @@ L.Draw.Tooltip = L.Draw.Tooltip.extend({
 	}
 });
 
-interface ExtendedProviderOptions extends ProviderOptions {
+interface ExtendedProviderOptions extends GoogleProviderOptions {
 	searchUrl?: string;
 }
 
@@ -4013,7 +4014,7 @@ export default class LajiMap {
 	@dependsOn("translations")
 	setGeocodingProvider() {
 		this.providers = [
-			["Google", new GoogleProvider({params: {key: this.googleApiKey, language: this.lang, region: "fi"}})],
+			["Google", new GoogleProvider({apiKey: this.googleApiKey, params: {language: this.lang, region: "fi"}})],
 			["MML", new MMLProvider({params: {language: this.lang, region: "fi"}})]
 		];
 		provide(this, "geocodingProvider");

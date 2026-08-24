@@ -9,6 +9,39 @@ export default function _SearchControl(...options: any[]) {
 	const [_options, ...restOptions] = options;
 	const [primaryProviderLabel, primaryProvider] = options[0].providers[0];
 	const control = new (SearchControl as any)({
+		// These are defaultOptions from SearchControl. Leaflet-geosearch should default to them, but for some reason it
+		// doesn't work. {
+		position: "topleft",
+		style: "button",
+		showMarker: true,
+		showPopup: false,
+		popupFormat: ({ result }) => `${result.label}`,
+		resultFormat: ({ result }) => `${result.label}`,
+		marker: {
+			icon: L && L.Icon ? new L.Icon.Default() : undefined,
+			draggable: false,
+		},
+		maxMarkers: 1,
+		maxSuggestions: 5,
+		retainZoomLevel: false,
+		animateZoom: true,
+		notFoundMessage: "Sorry, that address could not be found.",
+		messageHideDelay: 3000,
+		zoomLevel: 18,
+		classNames: {
+			container: "leaflet-bar leaflet-control leaflet-control-geosearch",
+			button: "leaflet-bar-part leaflet-bar-part-single",
+			resetButton: "reset",
+			msgbox: "leaflet-bar message",
+			form: "",
+			input: "",
+		},
+		autoComplete: true,
+		autoCompleteDelay: 250,
+		autoClose: false,
+		keepResult: false,
+		updateMap: true,
+		// }
 		..._options,
 		provider: primaryProvider,
 		searchLabel: `${_options.searchLabel} (${primaryProviderLabel})`

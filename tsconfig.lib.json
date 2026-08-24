@@ -7,7 +7,6 @@
 			"dom",
 			"es7"
 		],
-		"declaration": true,
-		"skipLibCheck": true
+		"declaration": true
 	}
 }

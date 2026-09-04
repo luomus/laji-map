@@ -87,7 +87,10 @@ export default function _SearchControl(...options: any[]) {
 			if (buttons.includes(e.relatedTarget)) {
 				return;
 			}
-			setTimeout(() => control.closeResults(), 300);
+			setTimeout(() => {
+				control.closeResults();
+				map.dragging.enable();
+			}, 300);
 		});
 
 		return container;

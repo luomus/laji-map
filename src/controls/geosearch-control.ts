@@ -89,7 +89,7 @@ export default function _SearchControl(...options: any[]) {
 			}
 			setTimeout(() => {
 				control.closeResults();
-				map.dragging.enable();
+				map.dragging.enable(); // fixes https://github.com/luomus/meta/issues/606
 			}, 300);
 		});
 

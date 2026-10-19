@@ -543,7 +543,7 @@ const LayerControl = L.Control.extend({
 		}
 		this.helpTranslationHook = this.lajiMap.addTranslationHook(link, "LayerHelp");
 		this.translateHooks.push(this.helpTranslationHook);
-		link.href = "http://laji.fi/about/5723";
+		link.href = "https://info.laji.fi/etusivu/laji-fi/lajitietokeskuksen-karttapalvelu/lajitietokeskuksen-karttapalvelun-karttatasot/";
 		list.appendChild(legend);
 		legend.appendChild(link);
 		const oldHelp = this.helpElem;

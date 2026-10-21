@@ -246,7 +246,7 @@ Install the dependencies with `npm start`.
 
 Start the development playground with `npm start`.
 
-To release a new version, run `npm run publish-to-npm`.
+To release a new version, run `npm version patch` (with semantic versioning in mind: use `npm version minor` for new features and `npm version major` for breaking changes).
 
 Try to keep the code style consistent - ```npm run lint``` should pass without errors.
 
